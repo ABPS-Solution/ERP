@@ -191,7 +191,8 @@
       <div class="section">
         <div class="section-header">Raw Materials Store Entry and GRN</div>
         <div class="section-body">
-          <div class="placeholder-empty-state">Store Entry / GRN form — to be built.</div>
+          <div id="store-entry-runtime-feedback-banner" style="display:none; padding:12px; font-size:0.88rem; font-weight:700; border-radius:var(--radius); margin-bottom:12px; border-left:4px solid;"></div>
+          <div id="store-entry-queue-cards-feed" style="display:flex; flex-direction:column; gap:14px;"></div>
         </div>
       </div>
     </div>
@@ -201,7 +202,12 @@
       <div class="section">
         <div class="section-header">Raw Materials Q/A Check</div>
         <div class="section-body">
-          <div class="placeholder-empty-state">Q/A Check form — to be built.</div>
+          <div style="display:flex; gap:8px; margin-bottom:12px;">
+            <button id="qa-tab-pending" class="dept-dash-pill" style="background:var(--brand); color:#fff;" onclick="switchQATab('pending')">Pending QA</button>
+            <button id="qa-tab-repair" class="dept-dash-pill" onclick="switchQATab('repair')">Repair Returns</button>
+          </div>
+          <div id="store-qa-runtime-feedback-banner" style="display:none; padding:12px; font-size:0.88rem; font-weight:700; border-radius:var(--radius); margin-bottom:12px; border-left:4px solid;"></div>
+          <div id="store-qa-queue-feed" style="display:flex; flex-direction:column; gap:14px;"></div>
         </div>
       </div>
     </div>
@@ -211,7 +217,21 @@
       <div class="section">
         <div class="section-header">Stock Sweep (Weekly Return)</div>
         <div class="section-body">
-          <div class="placeholder-empty-state">Stock Sweep form (Store + Q/A dept views) — to be built.</div>
+          <p style="font-size:0.82rem; color:var(--muted); margin-bottom:12px;">Add material recovered from any department/job card back into stock. Not tied to any project — surplus lands directly in Live Stock.</p>
+          <div id="stock-sweep-runtime-feedback-banner" style="display:none; padding:12px; font-size:0.88rem; font-weight:700; border-radius:var(--radius); margin-bottom:12px; border-left:4px solid;"></div>
+          <table style="width:100%; border-collapse:collapse; margin-bottom:10px;">
+            <thead><tr style="background:#f8fafc;">
+              <th style="text-align:left; padding:6px; font-size:0.7rem; text-transform:uppercase;">Item Code</th>
+              <th style="text-align:center; padding:6px; font-size:0.7rem; text-transform:uppercase; width:100px;">Quantity</th>
+              <th style="text-align:left; padding:6px; font-size:0.7rem; text-transform:uppercase;">Reason</th>
+              <th style="width:40px;"></th>
+            </tr></thead>
+            <tbody id="sweep-rows-body"></tbody>
+          </table>
+          <button onclick="addSweepRow()" style="background:#f1f5f9; border:1px dashed var(--border); padding:8px 14px; border-radius:var(--radius); cursor:pointer; font-weight:700; margin-bottom:14px;">+ Add Row</button>
+          <div style="display:flex; justify-content:flex-end;">
+            <button id="sweep-submit-btn" onclick="commitStockSweepToBackend()" style="background:var(--brand); color:#fff; border:none; padding:8px 20px; border-radius:var(--radius); font-weight:700; cursor:pointer;">Submit Stock Sweep</button>
+          </div>
         </div>
       </div>
     </div>
@@ -221,7 +241,16 @@
       <div class="section">
         <div class="section-header">Store Inward Rejected Material</div>
         <div class="section-body">
-          <div class="placeholder-empty-state">Rejected Material (Purchase dept) view — to be built.</div>
+          <div style="display:flex; gap:8px; margin-bottom:12px;">
+            <button id="rej-tab-pending" class="dept-dash-pill" style="background:var(--brand); color:#fff;" onclick="switchRejTab('pending')">Pending Review</button>
+            <button id="rej-tab-completed" class="dept-dash-pill" onclick="switchRejTab('completed')">Completed</button>
+          </div>
+          <div id="rej-completed-filters" style="display:none; gap:8px; margin-bottom:12px; flex-wrap:wrap; align-items:center;">
+            <input type="text" id="rej-vendor-filter" placeholder="Filter by vendor..." style="max-width:220px;">
+            <button onclick="loadRejectedMaterialQueue()" style="background:var(--brand); color:#fff; border:none; padding:6px 14px; border-radius:4px; font-weight:700; cursor:pointer;">Search</button>
+          </div>
+          <div id="rejected-material-runtime-feedback-banner" style="display:none; padding:12px; font-size:0.88rem; font-weight:700; border-radius:var(--radius); margin-bottom:12px; border-left:4px solid;"></div>
+          <div id="rejected-material-feed" style="display:flex; flex-direction:column; gap:14px;"></div>
         </div>
       </div>
     </div>
@@ -231,7 +260,23 @@
       <div class="section">
         <div class="section-header">Live Raw Materials Store Stock</div>
         <div class="section-body">
-          <div class="placeholder-empty-state">Live stock table — to be built.</div>
+          <div style="display:flex; gap:8px; margin-bottom:12px; align-items:center;">
+            <input type="text" id="live-stock-search" placeholder="Search item code or material name..." oninput="renderLiveStockTable()" style="max-width:300px;">
+            <button onclick="loadLiveStockData()" style="background:var(--brand); color:#fff; border:none; padding:6px 14px; border-radius:4px; font-weight:700; cursor:pointer;">🔄 Refresh</button>
+          </div>
+          <div style="overflow-x:auto;">
+            <table style="width:100%; border-collapse:collapse; min-width:600px;">
+              <thead><tr style="background:#f8fafc;">
+                <th style="text-align:left; padding:6px; font-size:0.7rem; text-transform:uppercase;">Item Code</th>
+                <th style="text-align:left; padding:6px; font-size:0.7rem; text-transform:uppercase;">Material Name</th>
+                <th style="text-align:center; padding:6px; font-size:0.7rem; text-transform:uppercase;">Total</th>
+                <th style="text-align:center; padding:6px; font-size:0.7rem; text-transform:uppercase;">Reserved</th>
+                <th style="text-align:center; padding:6px; font-size:0.7rem; text-transform:uppercase;">Available</th>
+                <th style="text-align:center; padding:6px; font-size:0.7rem; text-transform:uppercase;">Unit</th>
+              </tr></thead>
+              <tbody id="live-stock-table-body"></tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -241,7 +286,19 @@
       <div class="section">
         <div class="section-header">Store Dashboard</div>
         <div class="section-body">
-          <div class="placeholder-empty-state">Dashboard contents — TBD, to be discussed.</div>
+          <div class="dashboard-grid" id="store-dashboard-metrics-mount" style="margin-bottom:16px;"></div>
+          <div class="sec-label">Recent Gate Entries</div>
+          <div style="overflow-x:auto;">
+            <table style="width:100%; border-collapse:collapse; min-width:600px;">
+              <thead><tr style="background:#f8fafc;">
+                <th style="text-align:left; padding:6px; font-size:0.7rem; text-transform:uppercase;">Gate #</th>
+                <th style="text-align:left; padding:6px; font-size:0.7rem; text-transform:uppercase;">Vendor</th>
+                <th style="text-align:left; padding:6px; font-size:0.7rem; text-transform:uppercase;">Material</th>
+                <th style="text-align:left; padding:6px; font-size:0.7rem; text-transform:uppercase;">Status</th>
+              </tr></thead>
+              <tbody id="store-dashboard-recent-body"></tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -278,7 +335,13 @@ function navigateToModule(moduleId) {
   document.getElementById(panelId).style.display = "block";
 
   // Per-module init hooks
-  if (moduleId === "gate-entry") resetGateEntryWorkspaceState();
+  if (moduleId === "gate-entry")        resetGateEntryWorkspaceState();
+  if (moduleId === "store-grn")         initializeStoreEntryWorkspaceQueue();
+  if (moduleId === "store-qa")          { activeQATab = "pending"; switchQATab("pending"); }
+  if (moduleId === "stock-sweep")       { document.getElementById("sweep-rows-body").innerHTML = ""; addSweepRow(); document.getElementById('stock-sweep-runtime-feedback-banner').style.display = "none"; }
+  if (moduleId === "rejected-material") { activeRejTab = "pending"; switchRejTab("pending"); }
+  if (moduleId === "live-stock")        loadLiveStockData();
+  if (moduleId === "store-dashboard")   loadStoreDashboardData();
 }
 
 function exitToMenu() {
@@ -490,6 +553,493 @@ async function commitGateEntryRecordsToBackend() {
     alert(e.message);
     btn.disabled = false; btn.textContent = "Generate Gate Entry";
   }
+}
+
+// ══════════════════════════ ITEM CODE CATALOG CACHE ══════════════════════════
+window.itemCodeCatalogCache = [];
+async function loadItemCodeCatalogIntoCache() {
+  try {
+    const data = await apFetch({ action: "fetchItemCodeCatalog" });
+    if (data.success) window.itemCodeCatalogCache = data.catalog || [];
+  } catch (e) { console.error("loadItemCodeCatalogIntoCache failed:", e); }
+}
+
+// ══════════════════════════ STORE ENTRY & GRN ══════════════════════════
+async function initializeStoreEntryWorkspaceQueue() {
+  const feed = document.getElementById("store-entry-queue-cards-feed");
+  feed.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted);">Loading pending Store Entries...</div>`;
+  try {
+    await loadItemCodeCatalogIntoCache();
+    const data = await apFetch({ action: "fetchInwardWorkflowQueueStream", targetStep: "STORE pending" });
+    if (!data.success || data.queue.length === 0) {
+      feed.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);background:#fff;border:1px solid var(--border);border-radius:6px;">No records waiting for Raw Materials Store Entry and GRN.</div>';
+      return;
+    }
+
+    feed.innerHTML = "";
+    const catalog = window.itemCodeCatalogCache || [];
+    const catalogOptions = catalog.map(c => `<option value="${c.itemCode}">${c.itemCode} — ${c.productName}</option>`).join("");
+
+    data.queue.forEach((item) => {
+      let trs = "";
+      item.lineItems.forEach((line, idx) => {
+        const existingCode = (line.itemCode || "").toString().trim().toUpperCase();
+        trs += `<tr style="border-bottom:1px solid #f1f5f9;">
+          <td style="padding:6px; min-width:200px;">
+            <select class="se-item-code-${item.gateNumber}" data-idx="${idx}" style="width:100%; font-size:0.8rem; font-weight:700; padding:5px;">
+              <option value="">— Select Item Code —</option>
+              ${catalogOptions}
+            </select>
+          </td>
+          <td style="padding:8px; font-size:0.78rem; color:#64748b; max-width:200px;">${(line.materialName || "").replace(/</g,'&lt;')}</td>
+          <td style="text-align:center; font-weight:700; color:#64748b;">${line.unitType || "NOS"}</td>
+          <td style="text-align:center; font-weight:800;">${line.gateQuantity}</td>
+          <td style="text-align:center; width:100px;">
+            <input type="number" class="se-phys-qty-${item.gateNumber}" data-idx="${idx}" value="${line.gateQuantity}" style="width:100%; font-weight:700; text-align:center; border:1.5px solid var(--brand); padding:5px;">
+          </td>
+          <td style="width:100px;"><input type="number" class="se-rate-${item.gateNumber}" data-idx="${idx}" value="${line.ratePerQuantity || ''}" placeholder="Rate" style="width:100%; text-align:right; padding:5px;"></td>
+          <td style="width:70px;"><input type="number" class="se-gst-${item.gateNumber}" data-idx="${idx}" value="${line.gstPercent || 18}" style="width:100%; text-align:center; padding:5px;"></td>
+        </tr>`;
+      });
+      // Pre-select matching item code where Gate Entry already resolved one
+      const preSelectScript = item.lineItems.map((line, idx) => {
+        const code = (line.itemCode || "").toString().trim().toUpperCase();
+        return code ? `document.querySelector('.se-item-code-${item.gateNumber}[data-idx="${idx}"]').value = "${code}";` : "";
+      }).join("");
+
+      const card = document.createElement("div");
+      card.style.cssText = "background:#fff; border:1px solid var(--border); border-radius:6px; padding:12px;";
+      card.innerHTML = `
+        <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:10px; cursor:pointer;" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display==='block'?'none':'block';">
+          <div>
+            <span style="background:var(--brand); color:#fff; padding:3px 8px; font-weight:700; border-radius:3px;">GATE: ${item.gateNumber}</span>
+            <span style="background:#e0f2fe; color:#0369a1; font-weight:700; margin-left:4px; padding:3px 8px; border-radius:3px;">INV: ${item.invoiceNumber}</span>
+          </div>
+          <div style="font-weight:700; color:var(--muted);">Vendor: ${item.vendorName || "Unknown"}</div>
+        </div>
+        <div style="display:none;">
+          <div style="overflow-x:auto; margin-bottom:10px;">
+            <table style="width:100%; border-collapse:collapse; min-width:800px;">
+              <thead><tr style="background:#f8fafc;">
+                <th style="text-align:left; padding:6px; font-size:0.7rem; text-transform:uppercase;">Item Code</th>
+                <th style="text-align:left; padding:6px; font-size:0.7rem; text-transform:uppercase;">Invoice Description</th>
+                <th style="text-align:center; padding:6px; font-size:0.7rem; text-transform:uppercase;">Unit</th>
+                <th style="text-align:center; padding:6px; font-size:0.7rem; text-transform:uppercase;">Invoice Qty</th>
+                <th style="text-align:center; padding:6px; font-size:0.7rem; text-transform:uppercase;">Received Qty *</th>
+                <th style="text-align:center; padding:6px; font-size:0.7rem; text-transform:uppercase;">Rate</th>
+                <th style="text-align:center; padding:6px; font-size:0.7rem; text-transform:uppercase;">GST%</th>
+              </tr></thead>
+              <tbody>${trs}</tbody>
+            </table>
+          </div>
+          <div style="display:flex; justify-content:flex-end;">
+            <button onclick="commitStoreEntryVerificationToBackend('${item.gateNumber}', this)" style="background:var(--accent); color:#fff; border:none; padding:8px 18px; border-radius:var(--radius); font-weight:700; cursor:pointer;">Verify & Generate GRN</button>
+          </div>
+        </div>`;
+      feed.appendChild(card);
+      const script = document.createElement("script");
+      script.textContent = preSelectScript;
+      card.appendChild(script);
+    });
+  } catch (e) {
+    feed.innerHTML = `<p style="color:var(--warn);">${e.message}</p>`;
+  }
+}
+
+async function commitStoreEntryVerificationToBackend(gateNum, btn) {
+  const banner = document.getElementById('store-entry-runtime-feedback-banner');
+  banner.style.display = "none";
+  btn.disabled = true; btn.textContent = "Saving Entry...";
+
+  const lineItems = [];
+  document.querySelectorAll(`.se-item-code-${gateNum}`).forEach(sel => {
+    const idx = parseInt(sel.dataset.idx, 10);
+    lineItems[idx] = lineItems[idx] || {};
+    lineItems[idx].itemCode = sel.value.trim();
+    const opt = sel.options[sel.selectedIndex];
+    lineItems[idx].materialName = opt ? opt.textContent.split(" — ")[1] || "" : "";
+  });
+  document.querySelectorAll(`.se-phys-qty-${gateNum}`).forEach(inp => {
+    const idx = parseInt(inp.dataset.idx, 10);
+    lineItems[idx].verifiedPhysicalQuantity = parseInt(inp.value, 10) || 0;
+  });
+  document.querySelectorAll(`.se-rate-${gateNum}`).forEach(inp => {
+    const idx = parseInt(inp.dataset.idx, 10);
+    lineItems[idx].ratePerQuantity = parseFloat(inp.value) || 0;
+  });
+  document.querySelectorAll(`.se-gst-${gateNum}`).forEach(inp => {
+    const idx = parseInt(inp.dataset.idx, 10);
+    lineItems[idx].gstPercent = parseFloat(inp.value) || 18;
+    lineItems[idx].totalBasicAmount  = (lineItems[idx].verifiedPhysicalQuantity || 0) * (lineItems[idx].ratePerQuantity || 0);
+    lineItems[idx].totalInvoiceAmount = lineItems[idx].totalBasicAmount * (1 + (lineItems[idx].gstPercent || 18) / 100);
+  });
+
+  const missingCode = lineItems.some(li => !li.itemCode);
+  if (missingCode) {
+    alert("Every line item must have an Item Code selected before generating a GRN.");
+    btn.disabled = false; btn.textContent = "Verify & Generate GRN";
+    return;
+  }
+
+  showBlockingOverlay("Verifying Store Entry...");
+  try {
+    const data = await apFetch({ action: "commitStoreEntryPipelineStep", payload: { gateNumber: gateNum, lineItems: lineItems } });
+    hideBlockingOverlay();
+    if (data.success) {
+      banner.style.cssText = "display:block; background:#dcfce7; border-left:4px solid #15803d; color:#15803d; padding:20px; border-radius:var(--radius); margin-bottom:15px;";
+      banner.innerHTML = `<strong>Success! Store Entry + GRN Generated.</strong><br/>GRN Number: <strong style="font-family:monospace;">${data.grnNumber}</strong>`;
+      initializeStoreEntryWorkspaceQueue();
+    } else {
+      alert("Submission Error: " + data.error);
+      btn.disabled = false; btn.textContent = "Verify & Generate GRN";
+    }
+  } catch (e) {
+    hideBlockingOverlay();
+    alert(e.message);
+    btn.disabled = false; btn.textContent = "Verify & Generate GRN";
+  }
+}
+
+// ══════════════════════════ Q/A CHECK ══════════════════════════
+let activeQATab = "pending";
+function switchQATab(tab) {
+  activeQATab = tab;
+  document.getElementById("qa-tab-pending").style.cssText = tab === "pending" ? "background:var(--brand); color:#fff;" : "";
+  document.getElementById("qa-tab-repair").style.cssText  = tab === "repair"  ? "background:var(--brand); color:#fff;" : "";
+  loadStoreQAQueue();
+}
+
+async function loadStoreQAQueue() {
+  const feed = document.getElementById("store-qa-queue-feed");
+  feed.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted);">Loading...</div>`;
+  try {
+    const data = await apFetch({ action: "fetchStoreQAQueue", toggle: activeQATab });
+    if (!data.success || data.queue.length === 0) {
+      feed.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);background:#fff;border:1px solid var(--border);border-radius:6px;">Nothing here right now.</div>';
+      return;
+    }
+    feed.innerHTML = "";
+    data.queue.forEach(item => {
+      const card = document.createElement("div");
+      card.style.cssText = "background:#fff; border:1px solid var(--border); border-radius:6px; padding:12px;";
+      let trs = "";
+      if (activeQATab === "pending") {
+        item.lineItems.forEach((line, idx) => {
+          trs += `<tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:6px; font-weight:700; font-family:monospace;">${line.itemCode || "—"}</td>
+            <td style="padding:6px; font-size:0.8rem;">${line.materialName}</td>
+            <td style="text-align:center;">${line.unitType}</td>
+            <td style="text-align:center; font-weight:700;">${line.quantityReceived}</td>
+            <td style="text-align:center; width:90px;"><input type="number" class="qa-ok-${item.grnNumber}" data-idx="${idx}" value="${line.quantityReceived}" oninput="syncQANotOk('${item.grnNumber}', ${idx}, ${line.quantityReceived})" style="width:100%; text-align:center; font-weight:700; border:1.5px solid var(--accent); padding:4px;"></td>
+            <td style="text-align:center; width:90px;"><input type="number" class="qa-notok-${item.grnNumber}" data-idx="${idx}" value="0" oninput="syncQAOk('${item.grnNumber}', ${idx}, ${line.quantityReceived})" style="width:100%; text-align:center; font-weight:700; border:1.5px solid var(--warn); padding:4px;"></td>
+            <td style="width:150px;"><input type="text" class="qa-reason-${item.grnNumber}" data-idx="${idx}" placeholder="Reason (if any)" style="width:100%; padding:4px;"></td>
+            <td style="width:170px;">
+              <select class="qa-action-${item.grnNumber}" data-idx="${idx}" style="width:100%; padding:4px;">
+                <option value="">— Action —</option>
+                <option>Return to Vendor for Repair</option>
+                <option>Return to Vendor for Replacement</option>
+                <option>Ask Vendor to Repair at ABPS</option>
+              </select>
+            </td>
+          </tr>`;
+        });
+        card.innerHTML = `
+          <div style="font-weight:700; margin-bottom:8px;">GRN: ${item.grnNumber} <span style="color:var(--muted); font-weight:600;">— ${item.vendorName}</span></div>
+          <div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; min-width:900px;">
+            <thead><tr style="background:#f8fafc;">
+              <th style="text-align:left; padding:6px; font-size:0.68rem; text-transform:uppercase;">Item Code</th>
+              <th style="text-align:left; padding:6px; font-size:0.68rem; text-transform:uppercase;">Material</th>
+              <th style="text-align:center; padding:6px; font-size:0.68rem; text-transform:uppercase;">Unit</th>
+              <th style="text-align:center; padding:6px; font-size:0.68rem; text-transform:uppercase;">Received</th>
+              <th style="text-align:center; padding:6px; font-size:0.68rem; text-transform:uppercase;">OK Qty</th>
+              <th style="text-align:center; padding:6px; font-size:0.68rem; text-transform:uppercase;">Not OK Qty</th>
+              <th style="text-align:left; padding:6px; font-size:0.68rem; text-transform:uppercase;">Reason</th>
+              <th style="text-align:left; padding:6px; font-size:0.68rem; text-transform:uppercase;">Action if Rejected</th>
+            </tr></thead><tbody>${trs}</tbody></table></div>
+          <div style="display:flex; justify-content:flex-end; margin-top:10px;">
+            <button onclick="commitStoreQAToBackend('${item.grnNumber}', '${(item.vendorName||'').replace(/'/g,"")}', this)" style="background:var(--accent); color:#fff; border:none; padding:8px 18px; border-radius:var(--radius); font-weight:700; cursor:pointer;">Complete Q/A</button>
+          </div>`;
+      } else {
+        item.lineItems.forEach((line, idx) => {
+          trs += `<tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:6px; font-weight:700; font-family:monospace;">${line.itemCode}</td>
+            <td style="padding:6px; font-size:0.8rem;">${line.materialName}</td>
+            <td style="text-align:center;">${line.outstandingQty} ${line.unitType}</td>
+            <td style="width:120px;"><input type="number" class="repair-qty-${item.grnNumber}" data-idx="${idx}" data-rejid="${line.rejectionId}" value="${line.outstandingQty}" style="width:100%; text-align:center; padding:4px;"></td>
+          </tr>`;
+        });
+        card.innerHTML = `
+          <div style="font-weight:700; margin-bottom:8px;">GRN: ${item.grnNumber} <span style="color:var(--muted); font-weight:600;">— ${item.vendorName}</span></div>
+          <div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse;">
+            <thead><tr style="background:#f8fafc;">
+              <th style="text-align:left; padding:6px; font-size:0.68rem; text-transform:uppercase;">Item Code</th>
+              <th style="text-align:left; padding:6px; font-size:0.68rem; text-transform:uppercase;">Material</th>
+              <th style="text-align:center; padding:6px; font-size:0.68rem; text-transform:uppercase;">Outstanding</th>
+              <th style="text-align:center; padding:6px; font-size:0.68rem; text-transform:uppercase;">Repaired Qty</th>
+            </tr></thead><tbody>${trs}</tbody></table></div>
+          <div style="display:flex; justify-content:flex-end; margin-top:10px;">
+            <button onclick="commitRepairQAToBackend('${item.grnNumber}', this)" style="background:var(--accent); color:#fff; border:none; padding:8px 18px; border-radius:var(--radius); font-weight:700; cursor:pointer;">Return to Stock</button>
+          </div>`;
+      }
+      feed.appendChild(card);
+    });
+  } catch (e) { feed.innerHTML = `<p style="color:var(--warn);">${e.message}</p>`; }
+}
+
+function syncQANotOk(grn, idx, recvd) {
+  const okInp = document.querySelector(`.qa-ok-${grn}[data-idx="${idx}"]`);
+  const notOkInp = document.querySelector(`.qa-notok-${grn}[data-idx="${idx}"]`);
+  const ok = parseFloat(okInp.value) || 0;
+  notOkInp.value = Math.max(0, recvd - ok);
+}
+function syncQAOk(grn, idx, recvd) {
+  const okInp = document.querySelector(`.qa-ok-${grn}[data-idx="${idx}"]`);
+  const notOkInp = document.querySelector(`.qa-notok-${grn}[data-idx="${idx}"]`);
+  const notOk = parseFloat(notOkInp.value) || 0;
+  okInp.value = Math.max(0, recvd - notOk);
+}
+
+async function commitStoreQAToBackend(grn, vendorName, btn) {
+  const banner = document.getElementById('store-qa-runtime-feedback-banner');
+  banner.style.display = "none";
+  btn.disabled = true; btn.textContent = "Saving...";
+
+  const lineItems = [];
+  document.querySelectorAll(`.qa-ok-${grn}`).forEach(inp => {
+    const idx = parseInt(inp.dataset.idx, 10);
+    lineItems[idx] = lineItems[idx] || {};
+    lineItems[idx].okQuantity = parseFloat(inp.value) || 0;
+  });
+  // Re-collect itemCode/materialName/unitType/quantityReceived from the row cells directly
+  document.querySelectorAll(`.qa-notok-${grn}`).forEach(inp => {
+    const idx = parseInt(inp.dataset.idx, 10);
+    lineItems[idx].notOkQuantity = parseFloat(inp.value) || 0;
+    const row = inp.closest("tr");
+    lineItems[idx].itemCode = row.cells[0].textContent.trim();
+    lineItems[idx].materialName = row.cells[1].textContent.trim();
+    lineItems[idx].unitType = row.cells[2].textContent.trim();
+    lineItems[idx].quantityReceived = parseFloat(row.cells[3].textContent.trim()) || 0;
+  });
+  document.querySelectorAll(`.qa-reason-${grn}`).forEach(inp => {
+    lineItems[parseInt(inp.dataset.idx, 10)].reasonForNotOk = inp.value.trim();
+  });
+  document.querySelectorAll(`.qa-action-${grn}`).forEach(sel => {
+    lineItems[parseInt(sel.dataset.idx, 10)].actionForRejectedMaterial = sel.value;
+  });
+
+  try {
+    const data = await apFetch({ action: "commitStoreQAPipelineStep", payload: { grnNumber: grn, vendorName: vendorName, lineItems: lineItems } });
+    if (data.success) {
+      banner.style.cssText = "display:block; background:#dcfce7; border-left:4px solid #15803d; color:#15803d; padding:14px; border-radius:var(--radius);";
+      banner.innerHTML = `<strong>Q/A completed for GRN ${data.grnNumber}.</strong>`;
+      loadStoreQAQueue();
+    } else {
+      alert("Error: " + data.error);
+      btn.disabled = false; btn.textContent = "Complete Q/A";
+    }
+  } catch (e) { alert(e.message); btn.disabled = false; btn.textContent = "Complete Q/A"; }
+}
+
+async function commitRepairQAToBackend(grn, btn) {
+  btn.disabled = true; btn.textContent = "Saving...";
+  const lineItems = [];
+  document.querySelectorAll(`.repair-qty-${grn}`).forEach(inp => {
+    lineItems.push({ rejectionId: inp.dataset.rejid, repairedQuantity: parseFloat(inp.value) || 0 });
+  });
+  try {
+    const data = await apFetch({ action: "commitRepairQAPipelineStep", payload: { lineItems: lineItems } });
+    if (data.success) {
+      loadStoreQAQueue();
+    } else {
+      alert("Error: " + data.error);
+      btn.disabled = false; btn.textContent = "Return to Stock";
+    }
+  } catch (e) { alert(e.message); btn.disabled = false; btn.textContent = "Return to Stock"; }
+}
+
+// ══════════════════════════ STOCK SWEEP ══════════════════════════
+function addSweepRow() {
+  const tbody = document.getElementById("sweep-rows-body");
+  const tr = document.createElement("tr");
+  tr.innerHTML = `
+    <td style="padding:4px;"><input type="text" class="sweep-code" placeholder="Item Code" style="text-transform:uppercase;"></td>
+    <td style="padding:4px;"><input type="number" class="sweep-qty" placeholder="Qty"></td>
+    <td style="padding:4px;"><input type="text" class="sweep-reason" placeholder="Reason (optional)"></td>
+    <td style="text-align:center;"><button onclick="this.closest('tr').remove()" style="background:none; border:none; color:var(--warn); cursor:pointer; font-weight:700;">✕</button></td>`;
+  tbody.appendChild(tr);
+}
+
+async function commitStockSweepToBackend() {
+  const banner = document.getElementById('stock-sweep-runtime-feedback-banner');
+  const btn = document.getElementById('sweep-submit-btn');
+  const rows = document.querySelectorAll("#sweep-rows-body tr");
+  const sweepItems = [];
+  rows.forEach(row => {
+    const code = row.querySelector(".sweep-code").value.trim().toUpperCase();
+    const qty  = parseFloat(row.querySelector(".sweep-qty").value) || 0;
+    const reason = row.querySelector(".sweep-reason").value.trim();
+    if (code && qty > 0) sweepItems.push({ itemCode: code, quantity: qty, reason: reason });
+  });
+  if (sweepItems.length === 0) return alert("Add at least one item with a valid quantity.");
+
+  btn.disabled = true; btn.textContent = "Submitting...";
+  showBlockingOverlay("Recording Stock Sweep...");
+  try {
+    const data = await apFetch({ action: "commitStockSweep", payload: { sweepItems: sweepItems } });
+    hideBlockingOverlay();
+    if (data.success) {
+      banner.style.cssText = "display:block; background:#dcfce7; border-left:4px solid #15803d; color:#15803d; padding:14px; border-radius:var(--radius);";
+      let msg = `<strong>Stock Sweep recorded.</strong> ${data.itemsProcessed} item(s) processed.`;
+      if (data.notFound && data.notFound.length) msg += `<br/>Not found in MasterInventory: ${data.notFound.join(", ")}`;
+      banner.innerHTML = msg;
+      document.getElementById("sweep-rows-body").innerHTML = "";
+      addSweepRow();
+    } else {
+      alert("Error: " + data.error);
+    }
+  } catch (e) { hideBlockingOverlay(); alert(e.message); }
+  btn.disabled = false; btn.textContent = "Submit Stock Sweep";
+}
+
+// ══════════════════════════ REJECTED MATERIAL ══════════════════════════
+let activeRejTab = "pending";
+function switchRejTab(tab) {
+  activeRejTab = tab;
+  document.getElementById("rej-tab-pending").style.cssText   = tab === "pending"   ? "background:var(--brand); color:#fff;" : "";
+  document.getElementById("rej-tab-completed").style.cssText = tab === "completed" ? "background:var(--brand); color:#fff;" : "";
+  document.getElementById("rej-completed-filters").style.display = tab === "completed" ? "flex" : "none";
+  loadRejectedMaterialQueue();
+}
+
+async function loadRejectedMaterialQueue() {
+  const feed = document.getElementById("rejected-material-feed");
+  feed.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted);">Loading...</div>`;
+  try {
+    const vendorFilter = document.getElementById("rej-vendor-filter") ? document.getElementById("rej-vendor-filter").value.trim() : "";
+    const data = await apFetch({ action: "fetchRejectedMaterialQueue", toggle: activeRejTab, vendorName: vendorFilter, actions: [] });
+    if (data.requiresSearch) {
+      feed.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);background:#fff;border:1px solid var(--border);border-radius:6px;">Enter a vendor name and search to view completed records.</div>';
+      return;
+    }
+    if (!data.success || data.queue.length === 0) {
+      feed.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);background:#fff;border:1px solid var(--border);border-radius:6px;">Nothing here right now.</div>';
+      return;
+    }
+    feed.innerHTML = "";
+    data.queue.forEach(item => {
+      const card = document.createElement("div");
+      card.style.cssText = "background:#fff; border:1px solid var(--border); border-radius:6px; padding:12px;";
+      let trs = "";
+      item.lineItems.forEach((line, idx) => {
+        const editable = activeRejTab === "pending";
+        trs += `<tr style="border-bottom:1px solid #f1f5f9;">
+          <td style="padding:6px; font-weight:700; font-family:monospace;">${line.itemCode}</td>
+          <td style="padding:6px; font-size:0.8rem;">${line.materialName}</td>
+          <td style="text-align:center;">${line.outstandingQuantity} ${line.unitType}</td>
+          <td style="padding:6px; font-size:0.78rem; color:var(--muted);">${line.reasonForNotOk || "—"}</td>
+          <td style="width:220px;">
+            ${editable ? `<select class="rej-action-${item.grnNumber}" data-idx="${idx}" data-rejid="${line.rejectionId}" style="width:100%; padding:4px;">
+              <option value="">— Choose action —</option>
+              <option>Return to Vendor for Repair</option>
+              <option>Return to Vendor for Replacement</option>
+              <option>Ask Vendor to Repair at ABPS</option>
+            </select>` : `<span style="font-weight:700; color:var(--brand);">${line.action || line.status}</span>`}
+          </td>
+        </tr>`;
+      });
+      card.innerHTML = `
+        <div style="font-weight:700; margin-bottom:8px;">GRN: ${item.grnNumber} <span style="color:var(--muted); font-weight:600;">— ${item.vendorName}</span></div>
+        <div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse;">
+          <thead><tr style="background:#f8fafc;">
+            <th style="text-align:left; padding:6px; font-size:0.68rem; text-transform:uppercase;">Item Code</th>
+            <th style="text-align:left; padding:6px; font-size:0.68rem; text-transform:uppercase;">Material</th>
+            <th style="text-align:center; padding:6px; font-size:0.68rem; text-transform:uppercase;">Outstanding</th>
+            <th style="text-align:left; padding:6px; font-size:0.68rem; text-transform:uppercase;">Reason</th>
+            <th style="text-align:left; padding:6px; font-size:0.68rem; text-transform:uppercase;">Action</th>
+          </tr></thead><tbody>${trs}</tbody></table></div>
+        ${activeRejTab === "pending" ? `<div style="display:flex; justify-content:flex-end; margin-top:10px;">
+          <button onclick="commitRejectedMaterialActionToBackend('${item.grnNumber}', this)" style="background:var(--accent); color:#fff; border:none; padding:8px 18px; border-radius:var(--radius); font-weight:700; cursor:pointer;">Save Actions</button>
+        </div>` : ''}`;
+      feed.appendChild(card);
+    });
+  } catch (e) { feed.innerHTML = `<p style="color:var(--warn);">${e.message}</p>`; }
+}
+
+async function commitRejectedMaterialActionToBackend(grn, btn) {
+  btn.disabled = true; btn.textContent = "Saving...";
+  const lineItems = [];
+  document.querySelectorAll(`.rej-action-${grn}`).forEach(sel => {
+    if (sel.value) lineItems.push({ rejectionId: sel.dataset.rejid, actionForRejectedMaterial: sel.value });
+  });
+  if (lineItems.length === 0) { alert("Select at least one action."); btn.disabled = false; btn.textContent = "Save Actions"; return; }
+  try {
+    const data = await apFetch({ action: "commitRejectedMaterialAction", payload: { lineItems: lineItems } });
+    if (data.success) {
+      loadRejectedMaterialQueue();
+    } else {
+      alert("Error: " + data.error);
+      btn.disabled = false; btn.textContent = "Save Actions";
+    }
+  } catch (e) { alert(e.message); btn.disabled = false; btn.textContent = "Save Actions"; }
+}
+
+// ══════════════════════════ LIVE STOCK ══════════════════════════
+window.liveStockCache = [];
+async function loadLiveStockData() {
+  const tbody = document.getElementById("live-stock-table-body");
+  tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--muted);">Loading...</td></tr>`;
+  try {
+    const data = await apFetch({ action: "fetchLiveMaterialStock" });
+    if (data.success) {
+      window.liveStockCache = data.inventory || [];
+      renderLiveStockTable();
+    } else {
+      tbody.innerHTML = `<tr><td colspan="6" style="color:var(--warn); padding:20px;">${data.error}</td></tr>`;
+    }
+  } catch (e) { tbody.innerHTML = `<tr><td colspan="6" style="color:var(--warn); padding:20px;">${e.message}</td></tr>`; }
+}
+
+function renderLiveStockTable() {
+  const tbody = document.getElementById("live-stock-table-body");
+  const search = (document.getElementById("live-stock-search").value || "").trim().toLowerCase();
+  let rows = window.liveStockCache || [];
+  if (search) rows = rows.filter(r => r.itemCode.toLowerCase().includes(search) || r.materialName.toLowerCase().includes(search));
+  if (rows.length === 0) { tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--muted);">No items found.</td></tr>`; return; }
+  tbody.innerHTML = rows.map(r => `<tr style="border-bottom:1px solid #f1f5f9;">
+    <td style="padding:6px; font-family:monospace; font-weight:700;">${r.itemCode}</td>
+    <td style="padding:6px; font-size:0.82rem;">${r.materialName}</td>
+    <td style="text-align:center; font-weight:700;">${r.totalStock}</td>
+    <td style="text-align:center; color:var(--muted);">${r.reservedStock}</td>
+    <td style="text-align:center; font-weight:800; color:${r.availableStock <= 0 ? 'var(--warn)' : 'var(--accent)'};">${r.availableStock}</td>
+    <td style="text-align:center;">${r.unitType}</td>
+  </tr>`).join("");
+}
+
+// ══════════════════════════ STORE DASHBOARD ══════════════════════════
+async function loadStoreDashboardData() {
+  const mount = document.getElementById("store-dashboard-metrics-mount");
+  const tbody = document.getElementById("store-dashboard-recent-body");
+  mount.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--muted);">Loading...</div>`;
+  try {
+    const data = await apFetch({ action: "fetchStoreDashboardData" });
+    if (!data.success) { mount.innerHTML = `<p style="color:var(--warn);">${data.error}</p>`; return; }
+    const m = data.metrics;
+    const cards = [
+      { label: "Gate Entries Today", val: m.gateEntriesToday },
+      { label: "Store Pending", val: m.storePendingCount },
+      { label: "QA Pending", val: m.qaPendingCount },
+      { label: "Rejected — Pending Review", val: m.rejectedPendingCount },
+      { label: "Total SKUs", val: m.totalSKUs },
+      { label: "Zero Stock SKUs", val: m.zeroStockSKUs }
+    ];
+    mount.innerHTML = cards.map(c => `<div class="dd-stat-card"><div class="dd-stat-label">${c.label}</div><div class="dd-stat-val">${c.val}</div></div>`).join("");
+    tbody.innerHTML = (data.recentGateEntries || []).map(g => `<tr style="border-bottom:1px solid #f1f5f9;">
+      <td style="padding:6px; font-family:monospace; font-weight:700;">${g.gateNumber}</td>
+      <td style="padding:6px;">${g.vendorName}</td>
+      <td style="padding:6px; font-size:0.82rem;">${g.materialName}</td>
+      <td style="padding:6px;">${g.status}</td>
+    </tr>`).join("") || `<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--muted);">No recent entries.</td></tr>`;
+  } catch (e) { mount.innerHTML = `<p style="color:var(--warn);">${e.message}</p>`; }
 }
 
 // ══════════════════════════ AUTH (skeleton — to be wired to new Code.gs) ══════════════════════════
