@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+
+<title>ABPS Store Portal (Temp)</title>
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --brand: #0369a1;
+    --brand-dk: #075985;
+    --accent: #00a878;
+    --warn: #e84545;
+    --bg: #f0f4f8;
+    --card: #ffffff;
+    --border: #d0d9e4;
+    --text: #1a2332;
+    --muted: #6b7a8d;
+    --radius: 6px;
+    --highlight-bg: #eff8ff;
+    --highlight-border: #0369a1;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  html, body { height: 100%; overflow-x: hidden; }
+  body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); padding-bottom: 20px; }
+  input, select, textarea { width: 100%; padding: 6px 8px; border: 1.5px solid var(--border); border-radius: 4px; font-size: .85rem; background: #fff; color: var(--text); }
+  label.field-label { display: block; font-size: .68rem; font-weight: 700; color: var(--muted); text-transform: uppercase; margin: 8px 0 2px; }
+
+  /* --- AUTH --- */
+  #auth-container { display: flex; align-items: center; justify-content: center; min-height: 100vh; height: 100vh; overflow: hidden; background: linear-gradient(135deg, var(--brand-dk), var(--brand)); }
+  .auth-card { background: var(--card); width: 100%; max-width: 400px; padding: 25px; border-radius: var(--radius); box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center; }
+  .auth-title { font-size: 1.4rem; font-weight: 700; margin-bottom: 4px; }
+  .auth-subtitle { font-size: 0.75rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 25px; }
+  #auth-portal-processing-loader { display: none; align-items: center; justify-content: center; gap: 10px; margin-top: 15px; padding: 10px; background: var(--highlight-bg); border: 1px solid var(--border); border-radius: 4px; }
+  .spinner { width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--brand); border-radius: 50%; animation: spin 0.8s linear infinite; }
+
+  /* --- HEADER --- */
+  header { background: linear-gradient(135deg, var(--brand-dk), var(--brand)); color: #fff; padding: 10px 16px; position: sticky; top: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+  header h1 { font-size: 1.05rem; font-weight: 700; }
+  .header-actions-block { display: flex; flex-direction: column; align-items: flex-end; }
+  .user-full-name { font-size: 0.8rem; font-weight: 700; }
+  .user-display-username { font-size: 0.68rem; color: #d0d9e4; font-family: monospace; }
+  .logout-btn { background: transparent; border: 1px solid rgba(255,255,255,0.4); color: white; padding: 2px 5px; border-radius: 4px; cursor: pointer; font-size: 0.65rem; margin-top: 1px; text-transform: uppercase; }
+
+  /* --- DASHBOARD GRID --- */
+  .dashboard-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+  @media(max-width:640px) { .dashboard-grid { grid-template-columns: repeat(2,1fr); gap: 8px; } }
+  @media(max-width:400px) { .dashboard-grid { grid-template-columns: 1fr; } }
+  .menu-card { background: var(--card); border: 1.5px solid var(--border); padding: 0 14px; border-radius: 7px; cursor: pointer; font-weight: 700; font-size: 0.88rem; height: 64px; display:flex; align-items:center; justify-content:center; gap:10px; box-shadow:0 1px 2px rgba(0,0,0,0.04); transition:box-shadow 0.15s, border-color 0.15s; position:relative; overflow:hidden; }
+  .menu-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:var(--brand); border-radius:7px 7px 0 0; }
+  .menu-card:hover { box-shadow:0 3px 10px rgba(0,0,0,0.1); border-color:var(--brand); }
+  .menu-card .mc-label { font-size:0.88rem; font-weight:700; color:var(--text); text-align:center; white-space:normal; line-height:1.35; }
+  .dept-block { padding-top:10px; margin-bottom:10px; }
+  .dept-header { display: flex; align-items: center; gap: 10px; padding: 10px 12px 8px; }
+  .dept-bar { width: 4px; height: 20px; border-radius: 2px; flex-shrink: 0; background: var(--brand); }
+  .dept-name { font-size: 1rem; font-weight: 800; color: var(--text); flex: 1; }
+  .dept-dash-pill { font-size:0.72rem; font-weight:700; padding:3px 10px; border-radius:10px; cursor:pointer; border:none; background:var(--highlight-bg); color:var(--brand); }
+  .sec-label { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.8px; color:var(--brand); background:var(--highlight-bg); border-left:3px solid var(--brand); padding:4px 10px; border-radius:0 4px 4px 0; margin:10px 0 8px; display:inline-block; }
+
+  /* --- WORKSPACE PANELS --- */
+  .workspace-panel { padding: 4px 10px; min-width: 0; max-width: 100%; box-sizing: border-box; display: none; }
+  .section { background: var(--card); border-radius: var(--radius); margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid var(--border); overflow: hidden; }
+  .section-header { padding: 18px 18px 0 18px; margin: 0 0 14px 0; font-size: 1.3rem; font-weight: 700; }
+  .section-body { padding: 0 16px 16px 16px; }
+  .back-to-menu-btn { background: none; border: 1px solid var(--border); color: var(--muted); padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 10px; }
+  .back-to-menu-btn:hover { border-color: var(--brand); color: var(--brand); }
+  .placeholder-empty-state { padding: 40px 20px; text-align: center; color: var(--muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════ AUTH SCREEN ══════════════════════════ -->
+<div id="auth-container">
+  <div class="auth-card">
+    <div class="auth-title">ABPS Store Portal</div>
+    <div class="auth-subtitle">Temporary Store Inbound System</div>
+
+    <div id="google-auth-button-mount-point" style="display: flex; justify-content: center; margin-top: 15px; min-height: 40px;"></div>
+
+    <div id="auth-portal-processing-loader">
+       <div class="spinner"></div>
+       <span style="font-size: 0.85rem; font-weight: 700; color: var(--brand); text-transform: uppercase; letter-spacing: 0.5px;">Logging in... Please wait</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════ APP SHELL ══════════════════════════ -->
+<div id="app-container" style="display: none;">
+  <header>
+    <h1>ABPS Store Portal</h1>
+    <div class="header-actions-block">
+      <div class="user-profile-meta">
+        <div class="user-full-name" id="display-full-name"></div>
+        <div class="user-display-username" id="display-username"></div>
+      </div>
+      <button class="logout-btn" onclick="executeLogout()" style="margin-top: 10px;">Sign Out</button>
+    </div>
+  </header>
+
+  <!-- ── DASHBOARD MENU (home view) ───────────────────────────────── -->
+  <div id="dashboard-view" style="padding: 14px 16px; display: flex; flex-direction: column; gap: 0;">
+
+    <div id="dashboard-store-department-header-block" class="dept-block">
+      <div class="dept-header">
+        <div class="dept-bar"></div>
+        <span class="dept-name">Store Department</span>
+        <button class="dept-dash-pill" onclick="navigateToModule('store-dashboard')">📊 Dashboard</button>
+      </div>
+
+      <div class="sec-label">Raw Materials Store Inward</div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-gate-entry"    onclick="navigateToModule('gate-entry')"><span class="mc-label">Gate Entry</span></div>
+        <div class="menu-card" id="mod-store-grn"     onclick="navigateToModule('store-grn')"><span class="mc-label">Raw Materials Store Entry and GRN</span></div>
+        <div class="menu-card" id="mod-store-qa"      onclick="navigateToModule('store-qa')"><span class="mc-label">Raw Materials Q/A Check</span></div>
+        <div class="menu-card" id="mod-stock-sweep"   onclick="navigateToModule('stock-sweep')"><span class="mc-label">Stock Sweep (Weekly Return)</span></div>
+      </div>
+
+      <div class="sec-label">Purchase Coordination</div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-rejected-material" onclick="navigateToModule('rejected-material')"><span class="mc-label">Store Inward Rejected Material</span></div>
+      </div>
+
+      <div class="sec-label">Store Quantity</div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-live-stock" onclick="navigateToModule('live-stock')"><span class="mc-label">Live Raw Materials Store Stock</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── MODULE WORKSPACE CONTAINER (7 empty panels) ─────────────────── -->
+  <div id="module-workspace-container" style="display:none;">
+
+    <div class="workspace-panel" id="panel-gate-entry">
+      <button class="back-to-menu-btn" onclick="exitToMenu()">← Back to Menu</button>
+      <div class="section">
+        <div class="section-header">Gate Entry</div>
+        <div class="section-body">
+          <div id="store-gate-runtime-feedback-banner" style="display:none; padding:12px; font-size:0.88rem; font-weight:700; border-radius:var(--radius); margin-bottom:12px; border-left:4px solid;"></div>
+
+          <div id="gate-upload-fields-wrapper-group" style="display:block;">
+            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+              <div id="gate-invoice-box" onclick="document.getElementById('gate-invoice-file').click()" style="flex:1; min-width:200px; padding:24px; text-align:center; font-size:0.95rem; font-weight:700; border:1.5px dashed var(--border); border-radius:var(--radius); cursor:pointer; background:#f8fafc;">📷 Select Invoice Image</div>
+              <div id="gate-challan-box" onclick="document.getElementById('gate-challan-file').click()" style="flex:1; min-width:200px; padding:24px; text-align:center; font-size:0.95rem; font-weight:700; border:1.5px dashed var(--border); border-radius:var(--radius); cursor:pointer; background:#f8fafc;">📷 Select Challan Image</div>
+            </div>
+            <input type="file" id="gate-invoice-file" accept="image/*,application/pdf" hidden onchange="handleGateFileSelectionChange(this, 'gate-invoice-box', 'Invoice Attached ✅')" />
+            <input type="file" id="gate-challan-file" accept="image/*,application/pdf" hidden onchange="handleGateFileSelectionChange(this, 'gate-challan-box', 'Challan Attached ✅')" />
+            <button id="gate-parse-ai-btn" onclick="parseGateDocumentsWithAI()" style="width:100%; padding:10px; font-weight:700; background:var(--brand); color:#fff; border:none; border-radius:var(--radius); cursor:pointer;">Process Documents with AI</button>
+          </div>
+
+          <div id="gate-ai-verification-workspace" style="display:none; margin-top:15px; border-top:1px dashed var(--border); padding-top:15px;">
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px,1fr)); gap:8px; margin-bottom:14px;">
+              <div><label class="field-label">Invoice Number</label><input type="text" id="gate-meta-invoice" /></div>
+              <div><label class="field-label">Challan Number</label><input type="text" id="gate-meta-challan" /></div>
+              <div><label class="field-label">Vendor Name</label><input type="text" id="gate-meta-vendor" /></div>
+              <div><label class="field-label">Date</label><input type="text" id="gate-meta-date" /></div>
+              <input type="hidden" id="gate-meta-time" value="" />
+            </div>
+            <div style="margin-bottom:16px; overflow-x:auto;">
+              <table style="width:100%; border-collapse:collapse; min-width:560px;">
+                <thead>
+                  <tr style="background:#f8fafc;">
+                    <th style="width:160px; text-align:left; padding:6px; font-size:0.7rem; text-transform:uppercase; color:var(--muted);">Item Code</th>
+                    <th style="text-align:left; padding:6px; font-size:0.7rem; text-transform:uppercase; color:var(--muted);">Description of Material</th>
+                    <th style="width:120px; text-align:center; padding:6px; font-size:0.7rem; text-transform:uppercase; color:var(--muted);">Invoice Qty</th>
+                  </tr>
+                </thead>
+                <tbody id="gate-verification-table-body"></tbody>
+              </table>
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:10px;">
+              <button onclick="resetGateEntryWorkspaceState()" style="background:#718096; color:#fff; border:none; padding:8px 16px; border-radius:var(--radius); font-weight:700; cursor:pointer;">Cancel</button>
+              <button id="gate-submit-btn" onclick="commitGateEntryRecordsToBackend()" style="background:var(--brand); color:#fff; border:none; padding:8px 25px; border-radius:var(--radius); font-weight:700; cursor:pointer;">Generate Gate Entry</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="workspace-panel" id="panel-store-grn">
+      <button class="back-to-menu-btn" onclick="exitToMenu()">← Back to Menu</button>
+      <div class="section">
+        <div class="section-header">Raw Materials Store Entry and GRN</div>
+        <div class="section-body">
+          <div class="placeholder-empty-state">Store Entry / GRN form — to be built.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="workspace-panel" id="panel-store-qa">
+      <button class="back-to-menu-btn" onclick="exitToMenu()">← Back to Menu</button>
+      <div class="section">
+        <div class="section-header">Raw Materials Q/A Check</div>
+        <div class="section-body">
+          <div class="placeholder-empty-state">Q/A Check form — to be built.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="workspace-panel" id="panel-stock-sweep">
+      <button class="back-to-menu-btn" onclick="exitToMenu()">← Back to Menu</button>
+      <div class="section">
+        <div class="section-header">Stock Sweep (Weekly Return)</div>
+        <div class="section-body">
+          <div class="placeholder-empty-state">Stock Sweep form (Store + Q/A dept views) — to be built.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="workspace-panel" id="panel-rejected-material">
+      <button class="back-to-menu-btn" onclick="exitToMenu()">← Back to Menu</button>
+      <div class="section">
+        <div class="section-header">Store Inward Rejected Material</div>
+        <div class="section-body">
+          <div class="placeholder-empty-state">Rejected Material (Purchase dept) view — to be built.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="workspace-panel" id="panel-live-stock">
+      <button class="back-to-menu-btn" onclick="exitToMenu()">← Back to Menu</button>
+      <div class="section">
+        <div class="section-header">Live Raw Materials Store Stock</div>
+        <div class="section-body">
+          <div class="placeholder-empty-state">Live stock table — to be built.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="workspace-panel" id="panel-store-dashboard">
+      <button class="back-to-menu-btn" onclick="exitToMenu()">← Back to Menu</button>
+      <div class="section">
+        <div class="section-header">Store Dashboard</div>
+        <div class="section-body">
+          <div class="placeholder-empty-state">Dashboard contents — TBD, to be discussed.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ══════════════════════════ CONFIG ══════════════════════════
+const GAS_URL = "PASTE_NEW_APPS_SCRIPT_WEB_APP_URL_HERE";
+const GOOGLE_CLIENT_ID = "PASTE_GOOGLE_CLIENT_ID_HERE";
+
+// ══════════════════════════ GENERIC MODULE ROUTER ══════════════════════════
+// Maps dashboard menu-card clicks -> workspace-panel ids. Panels are currently
+// placeholders; each panel's own init function will be wired in as we build it.
+const MODULE_PANEL_MAP = {
+  "gate-entry":        "panel-gate-entry",
+  "store-grn":         "panel-store-grn",
+  "store-qa":          "panel-store-qa",
+  "stock-sweep":       "panel-stock-sweep",
+  "rejected-material": "panel-rejected-material",
+  "live-stock":        "panel-live-stock",
+  "store-dashboard":   "panel-store-dashboard"
+};
+
+function navigateToModule(moduleId) {
+  window.scrollTo(0, 0);
+  const panelId = MODULE_PANEL_MAP[moduleId];
+  if (!panelId) { console.warn("navigateToModule: unknown moduleId", moduleId); return; }
+
+  document.getElementById("dashboard-view").style.display = "none";
+  document.getElementById("module-workspace-container").style.display = "block";
+  document.querySelectorAll("#module-workspace-container .workspace-panel").forEach(p => p.style.display = "none");
+  document.getElementById(panelId).style.display = "block";
+
+  // Per-module init hooks
+  if (moduleId === "gate-entry") resetGateEntryWorkspaceState();
+}
+
+function exitToMenu() {
+  window.scrollTo(0, 0);
+  document.getElementById("module-workspace-container").style.display = "none";
+  document.querySelectorAll("#module-workspace-container .workspace-panel").forEach(p => p.style.display = "none");
+  document.getElementById("dashboard-view").style.display = "flex";
+}
+
+// ══════════════════════════ CORE FETCH HELPER ══════════════════════════
+async function apFetch(payload) {
+  payload.sessionToken = localStorage.getItem("sessionToken");
+  const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) });
+  const data = await res.json();
+  if (data.code === "SESSION_EXPIRED") {
+    alert("Session expired. Please log in again.");
+    executeLogout();
+  }
+  return data;
+}
+
+// Minimal blocking overlay — replace with a styled version later if needed
+function showBlockingOverlay(msg) {
+  let ov = document.getElementById("blocking-overlay");
+  if (!ov) {
+    ov = document.createElement("div");
+    ov.id = "blocking-overlay";
+    ov.style.cssText = "position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:999; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:0.95rem;";
+    document.body.appendChild(ov);
+  }
+  ov.textContent = msg || "Please wait...";
+  ov.style.display = "flex";
+}
+function hideBlockingOverlay() {
+  const ov = document.getElementById("blocking-overlay");
+  if (ov) ov.style.display = "none";
+}
+
+// ══════════════════════════ GATE ENTRY ══════════════════════════
+let targetGateInvoiceFileObj = null;
+let targetGateChallanFileObj = null;
+let activeParsedGatePayloadCache = null;
+
+function handleGateFileSelectionChange(input, boxId, textMsg) {
+  const file = input.files[0];
+  if (!file) return;
+  if (boxId === 'gate-invoice-box') targetGateInvoiceFileObj = file;
+  else if (boxId === 'gate-challan-box') targetGateChallanFileObj = file;
+  const box = document.getElementById(boxId);
+  box.textContent = textMsg;
+  box.style.borderColor = "var(--accent)";
+  box.style.background = "#f0fdf4";
+}
+
+function resetGateEntryWorkspaceState() {
+  targetGateInvoiceFileObj = null; targetGateChallanFileObj = null; activeParsedGatePayloadCache = null;
+  document.getElementById('gate-invoice-file').value = "";
+  document.getElementById('gate-challan-file').value = "";
+  const b1 = document.getElementById('gate-invoice-box'), b2 = document.getElementById('gate-challan-box');
+  if (b1) { b1.textContent = "📷 Select Invoice Image"; b1.style.borderColor = "var(--border)"; b1.style.background = "#f8fafc"; }
+  if (b2) { b2.textContent = "📷 Select Challan Image"; b2.style.borderColor = "var(--border)"; b2.style.background = "#f8fafc"; }
+  document.getElementById('gate-ai-verification-workspace').style.display = "none";
+  document.getElementById('gate-verification-table-body').innerHTML = "";
+  ["gate-meta-invoice","gate-meta-challan","gate-meta-vendor","gate-meta-date","gate-meta-time"].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = "";
+  });
+  const banner = document.getElementById('store-gate-runtime-feedback-banner');
+  if (banner) { banner.style.display = "none"; banner.innerHTML = ""; }
+  const uploadWrapper = document.getElementById('gate-upload-fields-wrapper-group');
+  if (uploadWrapper) uploadWrapper.style.display = "block";
+  const parseBtn = document.getElementById('gate-parse-ai-btn'), submitBtn = document.getElementById('gate-submit-btn');
+  if (parseBtn)  { parseBtn.disabled = false;  parseBtn.textContent = "Process Documents with AI"; }
+  if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "Generate Gate Entry"; }
+}
+
+async function parseGateDocumentsWithAI() {
+  const btn = document.getElementById('gate-parse-ai-btn');
+  if (!targetGateInvoiceFileObj && !targetGateChallanFileObj) return alert("Please select at least one document (Invoice or Challan) before processing.");
+  btn.disabled = true; btn.textContent = 'AI Processing...';
+  try {
+    const convertToBase64 = file => new Promise(res => {
+      if (!file) return res(null);
+      const r = new FileReader();
+      r.onload = () => res(r.result.split(',')[1]);
+      r.readAsDataURL(file);
+    });
+    const inv64 = targetGateInvoiceFileObj ? await convertToBase64(targetGateInvoiceFileObj) : null;
+    const ch64  = targetGateChallanFileObj  ? await convertToBase64(targetGateChallanFileObj)  : null;
+
+    const data = await apFetch({
+      action: "storeProcessAIInvoiceBlob",
+      imageBlobBase64: inv64 || ch64,
+      invoiceMimeType: targetGateInvoiceFileObj ? targetGateInvoiceFileObj.type : "image/jpeg",
+      challanImageBase64: (inv64 && ch64) ? ch64 : null,
+      challanMimeType: targetGateChallanFileObj ? targetGateChallanFileObj.type : "image/jpeg"
+    });
+    if (!data.success) return alert("AI Processing failed: " + data.error);
+    activeParsedGatePayloadCache = data.extractedData;
+
+    if (!activeParsedGatePayloadCache || !Array.isArray(activeParsedGatePayloadCache.lineItems)) {
+      activeParsedGatePayloadCache = activeParsedGatePayloadCache || {};
+      activeParsedGatePayloadCache.lineItems = [];
+      alert("AI could not detect any line items on this document. Please try a clearer scan or a different document.");
+    }
+
+    document.getElementById('gate-meta-invoice').value = activeParsedGatePayloadCache.invoiceNumber || "";
+    document.getElementById('gate-meta-vendor').value  = activeParsedGatePayloadCache.vendorName || "";
+    document.getElementById('gate-meta-challan').value = activeParsedGatePayloadCache.challanNumber || "";
+
+    const now = new Date();
+    document.getElementById('gate-meta-date').value = now.toLocaleDateString('en-CA');
+    document.getElementById('gate-meta-time').value = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase().replace(/\s+/g, '');
+
+    const tbody = document.getElementById('gate-verification-table-body'); tbody.innerHTML = "";
+    activeParsedGatePayloadCache.lineItems.forEach(item => {
+      const hasCode = (item.itemCode || "").toString().trim().toUpperCase().startsWith("ABPS");
+      const codeColor  = hasCode ? "var(--brand)" : "#b91c1c";
+      const codeBorder = hasCode ? "1.5px solid #86efac" : "1.5px solid #fca5a5";
+      const codeBg     = hasCode ? "#f0fdf4" : "#fff7f7";
+      tbody.innerHTML += `<tr>
+        <td style="padding:6px;">
+          <input type="text" class="gate-row-item-code-input" value="${item.itemCode || ""}" placeholder="Not found" readonly
+            style="width:100%; text-align:center; font-weight:700; font-size:0.85rem; padding:5px 4px; border-radius:3px; color:${codeColor}; border:${codeBorder}; background:${codeBg}; cursor:not-allowed;">
+        </td>
+        <td style="padding:8px; font-size:0.82rem; color:#64748b;">${item.rawDescriptionLine || "Line Item Description"}</td>
+        <td style="text-align:center; font-weight:700; color:#64748b;">${item.extractedQuantity}</td>
+      </tr>`;
+    });
+    document.getElementById('gate-ai-verification-workspace').style.display = "block";
+  } catch (e) {
+    alert("AI extraction pipeline failed: " + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = "Process Documents with AI";
+  }
+}
+
+async function commitGateEntryRecordsToBackend() {
+  const btn = document.getElementById('gate-submit-btn');
+  const banner = document.getElementById('store-gate-runtime-feedback-banner');
+  const uploadWrapperBlock = document.getElementById('gate-upload-fields-wrapper-group');
+
+  if (!activeParsedGatePayloadCache || !activeParsedGatePayloadCache.lineItems) return alert("Process data missing.");
+  if (!document.getElementById('gate-meta-vendor').value.trim()) return alert("Vendor Name is compulsory.");
+  if (!document.getElementById('gate-meta-invoice').value.trim()) return alert("Invoice Number is compulsory.");
+
+  btn.disabled = true; btn.textContent = 'Generating Gate Entry...';
+  showBlockingOverlay("Saving Gate Entry...");
+
+  const codeInputs = document.querySelectorAll('.gate-row-item-code-input');
+  const tableRows  = document.querySelectorAll('#gate-verification-table-body tr');
+  activeParsedGatePayloadCache.lineItems.forEach((item, idx) => {
+    item.itemCode = codeInputs[idx] ? codeInputs[idx].value.trim() : "";
+    if (!item.rawDescriptionLine && tableRows[idx]) item.rawDescriptionLine = tableRows[idx].cells[1].textContent.trim();
+  });
+
+  try {
+    const convertToBase64 = file => new Promise(resolve => {
+      if (!file) { resolve(""); return; }
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.readAsDataURL(file);
+    });
+    const [invoiceBase64, challanBase64] = await Promise.all([
+      convertToBase64(targetGateInvoiceFileObj),
+      convertToBase64(targetGateChallanFileObj)
+    ]);
+
+    const rawVendor  = document.getElementById('gate-meta-vendor').value.trim();
+    const rawInvoice = document.getElementById('gate-meta-invoice').value.trim();
+    const rawChallan = document.getElementById('gate-meta-challan').value.trim();
+    const cleanVendorName    = rawVendor.replace(/\s+/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    const cleanInvoiceNumber = rawInvoice.replace(/\s+/g, '').toUpperCase();
+    const cleanChallanNumber = rawChallan.replace(/\s+/g, '').toUpperCase();
+    const combinedTimestampString = document.getElementById('gate-meta-date').value.trim() + " " + document.getElementById('gate-meta-time').value.trim();
+
+    const payload = {
+      action: "commitGateEntryPipelineStep",
+      metadata: {
+        invoiceNumber: cleanInvoiceNumber,
+        challanNumber: cleanChallanNumber,
+        invoiceDate: combinedTimestampString,
+        vendorName: cleanVendorName,
+        invoiceImageBase64Raw: invoiceBase64,
+        challanImageBase64Raw: challanBase64
+      },
+      lineItems: activeParsedGatePayloadCache.lineItems
+    };
+    const data = await apFetch(payload);
+    hideBlockingOverlay();
+
+    if (data.success) {
+      if (uploadWrapperBlock) uploadWrapperBlock.style.display = "none";
+      document.getElementById('gate-ai-verification-workspace').style.display = "none";
+      banner.style.cssText = "display:block; background:#dcfce7; border-left:4px solid #15803d; color:#15803d; padding:20px; border-radius:var(--radius);";
+      banner.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+          <div>
+            <strong>Success! Gate Entry Generated.</strong><br/>
+            <span>Assigned Reference Code: <strong style="font-family:monospace; font-size:1.05rem; color:#111827;">${data.gateNumber}</strong></span>
+          </div>
+          <button onclick="resetGateEntryWorkspaceState()" style="background:#15803d; color:#fff; border:none; padding:8px 16px; border-radius:var(--radius); font-weight:700; cursor:pointer;">+ Create New Entry</button>
+        </div>`;
+    } else {
+      alert("Submission Error: " + data.error);
+      btn.disabled = false; btn.textContent = "Generate Gate Entry";
+    }
+  } catch (e) {
+    hideBlockingOverlay();
+    alert(e.message);
+    btn.disabled = false; btn.textContent = "Generate Gate Entry";
+  }
+}
+
+// ══════════════════════════ AUTH (skeleton — to be wired to new Code.gs) ══════════════════════════
+function executeLogout() {
+  localStorage.removeItem("sessionToken");
+  document.getElementById("app-container").style.display = "none";
+  document.getElementById("auth-container").style.display = "flex";
+  if (window.google && google.accounts && google.accounts.id) {
+    google.accounts.id.disableAutoSelect();
+  }
+}
+
+function initGoogleAuthButton() {
+  if (!window.google || !google.accounts || !google.accounts.id) return;
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback: handleGoogleCredentialResponse
+  });
+  google.accounts.id.renderButton(
+    document.getElementById("google-auth-button-mount-point"),
+    { theme: "outline", size: "large", width: 260 }
+  );
+}
+
+async function handleGoogleCredentialResponse(response) {
+  // Placeholder — will POST response.credential to GAS_URL for verification
+  // against the new ABPS Temporary Admin Database Users sheet once Code.gs exists.
+  console.log("Google credential received — backend auth wiring pending.");
+}
+
+window.onload = function() {
+  initGoogleAuthButton();
+};
+</script>
+
+</body>
+</html>
