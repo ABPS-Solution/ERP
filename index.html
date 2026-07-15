@@ -9,7 +9,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
 
-<title>ABPS Store Portal (Temp)</title>
+<title>ABPS Store ERP</title>
 
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -81,9 +81,22 @@
 <!-- ══════════════════════════ AUTH SCREEN ══════════════════════════ -->
 <div id="auth-container">
   <div class="auth-card">
-    <div class="auth-title">ABPS Store Portal</div>
-    <div class="auth-subtitle">Temporary Store Inbound System</div>
+    <div class="auth-title">ABPS Store ERP</div>
+    <div class="auth-subtitle">Store Inbound System</div>
 
+    <div style="text-align: left; background: #f8fafc; padding: 15px; border: 1px dashed var(--border); border-radius: 8px; margin: 15px 0;">
+      <label class="field-label" style="margin-top: 0; color: var(--brand);">1. Select Your Department *</label>
+      <select id="app-auth-active-department-identity" onchange="handleLoginDepartmentSelectionChange(this.value)" style="margin-bottom: 12px;">
+        <option value="">— Select Department —</option>
+      </select>
+
+      <label class="field-label" style="margin-top: 0; color: var(--brand);">2. Select Your Name *</label>
+      <select id="app-auth-active-engineer-identity" disabled>
+        <option value="">— Choose Department First —</option>
+      </select>
+    </div>
+
+    <label class="field-label" style="text-align: left; font-weight: 700;">VERIFY ACCESS ACCOUNT</label>
     <div id="google-auth-button-mount-point" style="display: flex; justify-content: center; margin-top: 15px; min-height: 40px;"></div>
 
     <div id="auth-portal-processing-loader">
@@ -96,7 +109,7 @@
 <!-- ══════════════════════════ APP SHELL ══════════════════════════ -->
 <div id="app-container" style="display: none;">
   <header>
-    <h1>ABPS Store Portal</h1>
+    <h1>ABPS Store ERP</h1>
     <div class="header-actions-block">
       <div class="user-profile-meta">
         <div class="user-full-name" id="display-full-name"></div>
@@ -308,8 +321,7 @@
 
 <script>
 // ══════════════════════════ CONFIG ══════════════════════════
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxrka9R-kWTeIkwqzFFDXI0jlTj4XEthgaVPNmgfX74loDqStbHZQLJ7GSKL86mWbGY/exec";
-const GOOGLE_CLIENT_ID = "223982503901-jij5hbl0npjmbqnsgl352pvmq4sk75nt.apps.googleusercontent.com";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbx-pTvjaIQVPSbkPxe2KSajY3b51FSbynbY6kzggnr8HjZx02tI3EjB4E5ZmA8uMNUx/exec";
 
 // ══════════════════════════ GENERIC MODULE ROUTER ══════════════════════════
 // Maps dashboard menu-card clicks -> workspace-panel ids. Panels are currently
@@ -353,7 +365,11 @@ function exitToMenu() {
 
 // ══════════════════════════ CORE FETCH HELPER ══════════════════════════
 async function apFetch(payload) {
-  payload.sessionToken = localStorage.getItem("sessionToken");
+  if (!UNAUTHENTICATED_ACTIONS_FRONTEND.includes(payload.action)) {
+    payload.sessionToken = localStorage.getItem("sessionToken");
+  } else {
+    payload.sessionToken = localStorage.getItem("sessionToken");
+  }
   const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) });
   const data = await res.json();
   if (data.code === "SESSION_EXPIRED") {
@@ -1042,36 +1058,174 @@ async function loadStoreDashboardData() {
   } catch (e) { mount.innerHTML = `<p style="color:var(--warn);">${e.message}</p>`; }
 }
 
-// ══════════════════════════ AUTH (skeleton — to be wired to new Code.gs) ══════════════════════════
-function executeLogout() {
-  localStorage.removeItem("sessionToken");
-  document.getElementById("app-container").style.display = "none";
-  document.getElementById("auth-container").style.display = "flex";
-  if (window.google && google.accounts && google.accounts.id) {
-    google.accounts.id.disableAutoSelect();
+// ══════════════════════════ AUTH ══════════════════════════
+let appActiveOperatorIdentityString = "";
+let userPermissions = {};
+let globalPersonnelAuthDirectoryTreePayloadCache = {};
+
+async function syncPlatformPersonnelDropdownOptionsList() {
+  const deptSelect = document.getElementById("app-auth-active-department-identity");
+  const nameSelect = document.getElementById("app-auth-active-engineer-identity");
+  if (!deptSelect || !nameSelect) return;
+  try {
+    const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "pullGlobalPersonnelDirectory" }) });
+    const data = await res.json();
+    if (data.success && data.departmentsList && data.personnelTree) {
+      globalPersonnelAuthDirectoryTreePayloadCache = data.personnelTree;
+      deptSelect.innerHTML = '<option value="">— Select Department —</option>';
+      data.departmentsList.forEach(deptName => {
+        const opt = document.createElement("option");
+        opt.value = deptName; opt.textContent = deptName;
+        deptSelect.appendChild(opt);
+      });
+      nameSelect.innerHTML = '<option value="">— Choose Department First —</option>';
+      nameSelect.disabled = true;
+    } else {
+      deptSelect.innerHTML = '<option value="">Error syncing departments</option>';
+    }
+  } catch (error) {
+    console.error("Directory sync failed:", error);
+    deptSelect.innerHTML = '<option value="">Network connection drop</option>';
   }
 }
 
-function initGoogleAuthButton() {
-  if (!window.google || !google.accounts || !google.accounts.id) return;
-  google.accounts.id.initialize({
-    client_id: GOOGLE_CLIENT_ID,
-    callback: handleGoogleCredentialResponse
+function handleLoginDepartmentSelectionChange(selectedDept) {
+  const nameSelect = document.getElementById("app-auth-active-engineer-identity");
+  if (!nameSelect) return;
+  if (!selectedDept || !globalPersonnelAuthDirectoryTreePayloadCache[selectedDept]) {
+    nameSelect.innerHTML = '<option value="">— Choose Department First —</option>';
+    nameSelect.disabled = true;
+    return;
+  }
+  nameSelect.innerHTML = '<option value="">— Select Your Name —</option>';
+  globalPersonnelAuthDirectoryTreePayloadCache[selectedDept].forEach(fullName => {
+    const opt = document.createElement("option");
+    opt.value = fullName.trim(); opt.textContent = fullName.trim();
+    nameSelect.appendChild(opt);
   });
-  google.accounts.id.renderButton(
-    document.getElementById("google-auth-button-mount-point"),
-    { theme: "outline", size: "large", width: 260 }
-  );
+  nameSelect.disabled = false;
 }
 
-async function handleGoogleCredentialResponse(response) {
-  // Placeholder — will POST response.credential to GAS_URL for verification
-  // against the new ABPS Temporary Admin Database Users sheet once Code.gs exists.
-  console.log("Google credential received — backend auth wiring pending.");
+function initializeGoogleAuthPlatformEngine() {
+  const loader = document.getElementById("auth-portal-processing-loader");
+  if (loader) loader.style.display = "none";
+
+  localStorage.clear();
+  appActiveOperatorIdentityString = "";
+  document.getElementById("app-container").style.display = "none";
+  document.getElementById("auth-container").style.display = "flex";
+
+  setTimeout(() => {
+    const mountNode = document.getElementById("google-auth-button-mount-point");
+    if (!mountNode) return;
+    const parentContainer = mountNode.parentNode;
+    mountNode.remove();
+    const freshMountNode = document.createElement("div");
+    freshMountNode.id = "google-auth-button-mount-point";
+    freshMountNode.style.cssText = "display: flex; justify-content: center; margin-top: 15px; min-height: 40px;";
+    parentContainer.insertBefore(freshMountNode, document.getElementById("auth-portal-processing-loader"));
+
+    google.accounts.id.initialize({
+      client_id: "223982503901-hj5uc9nbm6b7a83n12d2i65m8nt5fu77.apps.googleusercontent.com",
+      callback: handleGooglePlatformCredentialResponse,
+      ux_mode: "popup",
+      use_fedcm_for_prompt: true
+    });
+    google.accounts.id.renderButton(freshMountNode, { theme: "outline", size: "large", width: "320" });
+  }, 250);
 }
 
-window.onload = function() {
-  initGoogleAuthButton();
+async function handleGooglePlatformCredentialResponse(response) {
+  const selectedEngineer = document.getElementById("app-auth-active-engineer-identity").value;
+  if (!selectedEngineer) {
+    alert("Please select your Department and Name before signing in with Google.");
+    return;
+  }
+  const googleBtnMount = document.getElementById("google-auth-button-mount-point");
+  const processingLoader = document.getElementById("auth-portal-processing-loader");
+  if (googleBtnMount) googleBtnMount.style.display = "none";
+  if (processingLoader) processingLoader.style.display = "flex";
+
+  try {
+    const res = await fetch(GAS_URL, {
+      method: "POST",
+      body: JSON.stringify({ action: "googleLogin", idToken: response.credential, requestedEngineer: selectedEngineer })
+    });
+    const data = await res.json();
+    if (data.success) {
+      localStorage.setItem("sessionToken", data.sessionToken);
+      localStorage.setItem("sessionExpiry", data.expires);
+      localStorage.setItem("sessionUser", data.email);
+      localStorage.setItem("userFirstName", data.firstName);
+      localStorage.setItem("userLastName", data.lastName);
+      localStorage.setItem("activeOperatorSignature", selectedEngineer);
+      localStorage.setItem("userPermissions", JSON.stringify(data.permissions));
+      localStorage.setItem("isUserAdminGlobal", data.isAdmin ? "true" : "false");
+      appActiveOperatorIdentityString = selectedEngineer;
+      userPermissions = data.permissions;
+      showAppView();
+    } else {
+      alert("Authentication Error: " + data.error);
+      if (googleBtnMount) googleBtnMount.style.display = "flex";
+      if (processingLoader) processingLoader.style.display = "none";
+    }
+  } catch (e) {
+    alert("Connection error: " + e.message);
+    if (googleBtnMount) googleBtnMount.style.display = "flex";
+    if (processingLoader) processingLoader.style.display = "none";
+  }
+}
+
+function showAppView() {
+  document.getElementById("auth-container").style.display = "none";
+  document.getElementById("app-container").style.display = "block";
+  document.getElementById("dashboard-view").style.display = "flex";
+  document.getElementById("module-workspace-container").style.display = "none";
+
+  document.getElementById("display-full-name").textContent = localStorage.getItem("userFirstName") + " " + localStorage.getItem("userLastName");
+  document.getElementById("display-username").textContent = "@" + localStorage.getItem("sessionUser");
+
+  // Gate the 7 menu cards by permission — admins see everything.
+  const isAdmin = localStorage.getItem("isUserAdminGlobal") === "true";
+  const menuPermissions = [
+    { id: "mod-gate-entry",        key: "gateEntry" },
+    { id: "mod-store-grn",         key: "storeEntryAndGrn" },
+    { id: "mod-store-qa",          key: "qaCheck" },
+    { id: "mod-stock-sweep",       key: "storeEntryAndGrn" },
+    { id: "mod-rejected-material", key: "rejectedMaterial" },
+    { id: "mod-live-stock",        key: "liveStoreStock" }
+  ];
+  menuPermissions.forEach(item => {
+    const el = document.getElementById(item.id);
+    if (!el) return;
+    const hasAccess = isAdmin || userPermissions[item.key];
+    el.style.display = hasAccess ? "flex" : "none";
+  });
+}
+
+function executeLogout() {
+  localStorage.clear();
+  userPermissions = {};
+  appActiveOperatorIdentityString = "";
+  document.getElementById("app-container").style.display = "none";
+  if (window.google && google.accounts && google.accounts.id) {
+    google.accounts.id.disableAutoSelect();
+  }
+  initializeGoogleAuthPlatformEngine();
+  syncPlatformPersonnelDropdownOptionsList();
+}
+
+window.onload = function () {
+  const savedToken = localStorage.getItem("sessionToken");
+  const savedExpiry = localStorage.getItem("sessionExpiry");
+  if (savedToken && savedExpiry && new Date() < new Date(savedExpiry)) {
+    appActiveOperatorIdentityString = localStorage.getItem("activeOperatorSignature") || "";
+    try { userPermissions = JSON.parse(localStorage.getItem("userPermissions") || "{}"); } catch (_) { userPermissions = {}; }
+    showAppView();
+  } else {
+    initializeGoogleAuthPlatformEngine();
+  }
+  syncPlatformPersonnelDropdownOptionsList();
 };
 </script>
 
