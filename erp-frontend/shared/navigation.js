@@ -124,6 +124,13 @@ function switchActiveDashboardModule(targetSectionId) {
 
   const target = document.getElementById("canvas-module-" + targetSectionId);
   if (target) target.style.display = "block";
+
+  // Each real screen owns an init function that (re)builds its panel from
+  // scratch on open — same convention Portal uses (its own
+  // switchActiveDashboardModule calls initializeTourExpensePanel /
+  // initializeCashExpensesPanel the same way).
+  if (targetSectionId === "tourexpense" && typeof initializeTourExpensePanel === "function") initializeTourExpensePanel();
+  if (targetSectionId === "cashexpenses" && typeof initializeCashExpensesPanel === "function") initializeCashExpensesPanel();
 }
 
 function returnToDashboard() {

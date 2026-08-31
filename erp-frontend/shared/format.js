@@ -25,6 +25,14 @@ function formatQtyTrimmed(value) {
   return String(parseFloat(n.toFixed(6)));
 }
 
+// Trimmed + comma-grouped (Indian digit grouping) — "16000" -> "16,000".
+// Ported here (not left duplicated per-file like Portal's tour-shell.js /
+// cash-expense-shell.js both do) since it's a generic formatter used by
+// every accounts/*.js screen.
+function formatINRComma(n) {
+  return Number(trimNum(n)).toLocaleString('en-IN');
+}
+
 function trimNum(n) {
   const x = Number(n) || 0;
   return Number.isInteger(x) ? String(x) : x.toFixed(2);
