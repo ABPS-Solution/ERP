@@ -77,20 +77,23 @@
   .menu-card.locked:hover { transform:none; }
   .menu-card .mc-icon { font-size:1.3rem; flex-shrink:0; }
   .menu-card .mc-label { font-size:0.95rem; font-weight:700; color:var(--text); text-align:center; white-space:normal; line-height:1.4; display:flex; align-items:center; justify-content:center; width:100%; height:100%; }
-  /* --- SECTION TAB BAR — sits below the header, lets you jump straight to
-     one section instead of scrolling the whole dashboard. Same mechanism
-     as Portal's .dept-tabs-bar, renamed .section-tabs-bar since ERP's 3
-     entries are individual sections, not full departments. --- */
-  .section-tabs-bar { position: sticky; top: 0; z-index: 90; background: var(--card); border-bottom: 1px solid var(--border); padding: 10px 8px; display: flex; align-items: center; gap: 10px; overflow-x: auto; scrollbar-width: thin; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
-  .section-tabs-bar::-webkit-scrollbar { height: 4px; }
-  .section-tabs-label { flex-shrink: 0; font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; color: #000; padding-left: 6px; }
-  .section-tab { flex-shrink: 0; background: transparent; border: 1.5px solid var(--border); color: var(--muted); font-weight: 700; font-size: 0.9rem; padding: 9px 22px; border-radius: 22px; cursor: pointer; transition: background 0.15s, border-color 0.15s, color 0.15s; white-space: nowrap; }
-  .section-tab:hover { background: var(--highlight-bg); color: var(--text); border-color: var(--tab-accent, var(--brand)); }
-  .section-tab.active { background: var(--tab-accent, var(--brand)); border-color: var(--tab-accent, var(--brand)); color: #fff; }
+  /* --- DEPARTMENT TAB BAR — sits below the header, lets you jump straight
+     to one department instead of scrolling the whole dashboard. Same
+     mechanism AND naming as Portal's .dept-tabs-bar (31 Aug 2026 —
+     previously a flat per-SECTION bar named .section-tabs-bar; ERP's 4
+     screens now group into 3 real departments — Accounts, Design, Admin —
+     each opening a dashboard with one or more tiles, exactly like Portal's
+     own two-level dept-tab -> dept-block -> menu-card structure). --- */
+  .dept-tabs-bar { position: sticky; top: 0; z-index: 90; background: var(--card); border-bottom: 1px solid var(--border); padding: 10px 8px; display: flex; align-items: center; gap: 10px; overflow-x: auto; scrollbar-width: thin; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  .dept-tabs-bar::-webkit-scrollbar { height: 4px; }
+  .dept-tabs-label { flex-shrink: 0; font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; color: #000; padding-left: 6px; }
+  .dept-tab { flex-shrink: 0; background: transparent; border: 1.5px solid var(--border); color: var(--muted); font-weight: 700; font-size: 0.9rem; padding: 9px 22px; border-radius: 22px; cursor: pointer; transition: background 0.15s, border-color 0.15s, color 0.15s; white-space: nowrap; }
+  .dept-tab:hover { background: var(--highlight-bg); color: var(--text); border-color: var(--tab-accent, var(--brand)); }
+  .dept-tab.active { background: var(--tab-accent, var(--brand)); border-color: var(--tab-accent, var(--brand)); color: #fff; }
   @media(max-width:640px) {
-    .section-tabs-bar { padding: 8px 6px; gap: 7px; }
-    .section-tabs-label { display: none; }
-    .section-tab { font-size: 0.8rem; padding: 7px 16px; }
+    .dept-tabs-bar { padding: 8px 6px; gap: 7px; }
+    .dept-tabs-label { display: none; }
+    .dept-tab { font-size: 0.8rem; padding: 7px 16px; }
   }
   .dept-block { border-top:1px solid var(--border); padding-top:16px; margin-bottom:24px; }
   .dept-header { display: flex; align-items: center; gap: 12px; padding: 0 12px 16px; }
@@ -196,54 +199,43 @@
     </div>
   </header>
 
-  <div id="section-tabs-bar" class="section-tabs-bar" style="display:none;">
-    <span class="section-tabs-label">Sections</span>
-    <button class="section-tab" id="section-tab-tourexpense" data-accent="#0f766e" onclick="handleSectionTabClick('tourexpense')">Tour Expense Tracker</button>
-    <button class="section-tab" id="section-tab-cashexpenses" data-accent="#0d9488" onclick="handleSectionTabClick('cashexpenses')">Cash / UPI Expenses</button>
-    <button class="section-tab" id="section-tab-itemcode" data-accent="#2563eb" onclick="handleSectionTabClick('itemcode')">Add/Check Item Code</button>
-    <button class="section-tab" id="section-tab-security" data-accent="#7c3aed" onclick="handleSectionTabClick('security')">Security &amp; Login Access</button>
+  <div id="dept-tabs-bar" class="dept-tabs-bar" style="display:none;">
+    <span class="dept-tabs-label">Departments</span>
+    <button class="dept-tab" id="dept-tab-accounts" data-accent="#0f766e" onclick="handleDepartmentTabClick('accounts')">Accounts</button>
+    <button class="dept-tab" id="dept-tab-design" data-accent="#2563eb" onclick="handleDepartmentTabClick('design')">Design</button>
+    <button class="dept-tab" id="dept-tab-admin" data-accent="#7c3aed" onclick="handleDepartmentTabClick('admin')">Admin</button>
   </div>
 
   <div id="dashboard-view" style="padding: 14px 16px; display: flex; flex-direction: column; gap: 0;">
 
-    <!-- ── TOUR EXPENSE TRACKER ─────────────────────────────────────────── -->
-    <div id="dashboard-tourexpense-section-header-block" class="dept-block" style="display:none; --dept-accent:#0f766e;">
+    <!-- ── ACCOUNTS ─────────────────────────────────────────────────────── -->
+    <div id="dashboard-accounts-department-header-block" class="dept-block" style="display:none; --dept-accent:#0f766e;">
       <div class="dept-header">
         <div class="dept-bar" style="background:#0f766e;"></div>
-        <span class="dept-name">Tour Expense Tracker</span>
+        <span class="dept-name">Accounts Department</span>
       </div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-tourexpense" onclick="switchActiveDashboardModule('tourexpense')"><span class="mc-label">Tour Expense Tracker</span></div>
-      </div>
-    </div>
-
-    <!-- ── CASH / UPI EXPENSES ──────────────────────────────────────────── -->
-    <div id="dashboard-cashexpenses-section-header-block" class="dept-block" style="display:none; --dept-accent:#0d9488;">
-      <div class="dept-header">
-        <div class="dept-bar" style="background:#0d9488;"></div>
-        <span class="dept-name">Daily Cash / UPI Expenses</span>
-      </div>
-      <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-cashexpenses" onclick="switchActiveDashboardModule('cashexpenses')"><span class="mc-label">Daily Cash / UPI Expenses</span></div>
       </div>
     </div>
 
-    <!-- ── ADD/CHECK ITEM CODE ───────────────────────────────────────────── -->
-    <div id="dashboard-itemcode-section-header-block" class="dept-block" style="display:none; --dept-accent:#2563eb;">
+    <!-- ── DESIGN ───────────────────────────────────────────────────────── -->
+    <div id="dashboard-design-department-header-block" class="dept-block" style="display:none; --dept-accent:#2563eb;">
       <div class="dept-header">
         <div class="dept-bar" style="background:#2563eb;"></div>
-        <span class="dept-name">Add/Check Item Code</span>
+        <span class="dept-name">Design Department</span>
       </div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-itemcode" onclick="switchActiveDashboardModule('itemcode')"><span class="mc-label">Add / Check Item Code</span></div>
       </div>
     </div>
 
-    <!-- ── SECURITY & LOGIN ACCESS ───────────────────────────────────────── -->
-    <div id="dashboard-security-section-header-block" class="dept-block" style="display:none; --dept-accent:#7c3aed;">
+    <!-- ── ADMIN ────────────────────────────────────────────────────────── -->
+    <div id="dashboard-admin-department-header-block" class="dept-block" style="display:none; --dept-accent:#7c3aed;">
       <div class="dept-header">
         <div class="dept-bar" style="background:#7c3aed;"></div>
-        <span class="dept-name">Security &amp; Login Access</span>
+        <span class="dept-name">Admin</span>
       </div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-security" onclick="switchActiveDashboardModule('security')"><span class="mc-label">Security &amp; Login Access</span></div>

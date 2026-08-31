@@ -1,32 +1,39 @@
 // shared/navigation.js — ERP's trimmed port of Portal's shared/navigation.js
-// (31 Aug 2026). Portal's version drives 7 departments and dozens of
-// workspace panels; ERP has exactly 4 sections — Tour Expense Tracker,
-// Daily Cash/UPI Expenses, Add/Check Item Code, and Security & Login
-// Access — each gated by its own single perm column (no umbrella
-// "Accounts" grouping), each a single top-level "canvas-module-*" panel
-// with its own dashboard card. The overall MECHANISM (permission-gated
-// section-tabs-bar built on top of enforceDynamicModuleRoleGateways,
-// module-workspace-container / workspace-panel show/hide convention) is
-// carried over unchanged from Portal's dept-tabs-bar.
+// (31 Aug 2026, revised same day to a real two-level department structure —
+// previously a flat per-SECTION tab bar with one tab per screen). ERP's 4
+// screens now group into 3 departments, mirroring Portal's actual
+// dept-tab -> dept-block -> menu-card shape exactly:
+//   Accounts department -> Tour Expense Tracker, Daily Cash/UPI Expenses
+//   Design department    -> Add/Check Item Code
+//   Admin department     -> Security & Login Access
+// (Security & Login Access sits under Project department in Portal, but
+// ERP has no other Project-department content, so it's grouped under a
+// plain "Admin" department tab instead — the tile/permission/panel itself
+// is unchanged.) The overall MECHANISM (permission-gated dept-tabs-bar
+// built on top of enforceDynamicModuleRoleGateways, module-workspace-
+// container / workspace-panel show/hide convention) is carried over
+// unchanged from Portal's dept-tabs-bar, now with matching names too.
 //
-// Each of the 4 sections is currently a placeholder — the real screen
+// Each of the 4 screens is currently a placeholder — the real screen
 // content (accounts/*.js, design/item-codes.js, project/security-admin.js)
 // is later, separate work per the task this file was built for.
 
-const SECTION_TAB_KEYS = ['tourexpense', 'cashexpenses', 'itemcode', 'security'];
-const SECTION_TAB_STORAGE_KEY = 'erpActiveSectionTab';
-// Same reasoning as Portal's deptTabVisibleKeys: selectSectionTab must
-// consult which sections are actually permission-visible (set once per
+const DEPT_TAB_KEYS = ['accounts', 'design', 'admin'];
+const DEPT_TAB_STORAGE_KEY = 'erpActiveDeptTab';
+// Same reasoning as Portal's deptTabVisibleKeys: selectDepartmentTab must
+// consult which departments are actually permission-visible (set once per
 // enforceDynamicModuleRoleGateways pass), never live block.style.display —
 // after switching tabs, every non-active block sits at display:none from
 // that switch itself, indistinguishable from a permission-driven hide.
-let sectionTabVisibleKeys = SECTION_TAB_KEYS.slice();
+let deptTabVisibleKeys = DEPT_TAB_KEYS.slice();
 
 // ── Permission-driven visibility ────────────────────────────────────────
 // userPermissions only ever carries the 4 camelCase keys erp-backend's
 // lib/permMap.js sends (itemCodeAccess, tourExpense, cashExpenses,
 // securityLoginAccess) — see shared/apFetch.js's userPermissions default.
-// Each of ERP's 4 sections is gated on exactly ONE of those, no OR'ing.
+// Each individual TILE is still gated on exactly one perm; a DEPARTMENT
+// tab is visible if any of its tiles are (an OR across the department's
+// own tiles only, same as Portal's per-department dashboard logic).
 function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canTourExpense = userPermissionsObject.tourExpense === true;
   const canCashExpenses = userPermissionsObject.cashExpenses === true;
@@ -38,47 +45,45 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-itemcode"))     document.getElementById("mod-itemcode").style.display     = canItemCode     ? "block" : "none";
   if (document.getElementById("mod-security"))     document.getElementById("mod-security").style.display     = canSecurity     ? "block" : "none";
 
-  const tourExpenseBlock = document.getElementById("dashboard-tourexpense-section-header-block");
-  if (tourExpenseBlock) tourExpenseBlock.style.display = canTourExpense ? "block" : "none";
-  const cashExpensesBlock = document.getElementById("dashboard-cashexpenses-section-header-block");
-  if (cashExpensesBlock) cashExpensesBlock.style.display = canCashExpenses ? "block" : "none";
-  const itemCodeBlock = document.getElementById("dashboard-itemcode-section-header-block");
-  if (itemCodeBlock) itemCodeBlock.style.display = canItemCode ? "block" : "none";
-  const securityBlock = document.getElementById("dashboard-security-section-header-block");
-  if (securityBlock) securityBlock.style.display = canSecurity ? "block" : "none";
+  const accountsBlock = document.getElementById("dashboard-accounts-department-header-block");
+  if (accountsBlock) accountsBlock.style.display = (canTourExpense || canCashExpenses) ? "block" : "none";
+  const designBlock = document.getElementById("dashboard-design-department-header-block");
+  if (designBlock) designBlock.style.display = canItemCode ? "block" : "none";
+  const adminBlock = document.getElementById("dashboard-admin-department-header-block");
+  if (adminBlock) adminBlock.style.display = canSecurity ? "block" : "none";
 
-  refreshSectionTabsBar();
+  refreshDepartmentTabsBar();
 }
 
-// ── Section tab bar ──────────────────────────────────────────────────────
-function refreshSectionTabsBar() {
-  const bar = document.getElementById('section-tabs-bar');
+// ── Department tab bar ───────────────────────────────────────────────────
+function refreshDepartmentTabsBar() {
+  const bar = document.getElementById('dept-tabs-bar');
   if (!bar) return;
 
-  const visibleKeys = SECTION_TAB_KEYS.filter(key => {
-    const block = document.getElementById(`dashboard-${key}-section-header-block`);
-    const tab = document.getElementById(`section-tab-${key}`);
+  const visibleKeys = DEPT_TAB_KEYS.filter(key => {
+    const block = document.getElementById(`dashboard-${key}-department-header-block`);
+    const tab = document.getElementById(`dept-tab-${key}`);
     const isVisible = !!block && block.style.display !== 'none';
     if (tab) tab.style.display = isVisible ? 'inline-flex' : 'none';
     return isVisible;
   });
-  sectionTabVisibleKeys = visibleKeys;
+  deptTabVisibleKeys = visibleKeys;
 
   if (visibleKeys.length === 0) { bar.style.display = 'none'; return; }
   bar.style.display = 'flex';
 
   let activeKey = null;
-  try { activeKey = localStorage.getItem(SECTION_TAB_STORAGE_KEY); } catch (e) { /* storage unavailable */ }
+  try { activeKey = localStorage.getItem(DEPT_TAB_STORAGE_KEY); } catch (e) { /* storage unavailable */ }
   if (!activeKey || !visibleKeys.includes(activeKey)) activeKey = visibleKeys[0];
 
-  selectSectionTab(activeKey);
+  selectDepartmentTab(activeKey);
 }
 
-function selectSectionTab(key) {
-  SECTION_TAB_KEYS.forEach(k => {
-    const block = document.getElementById(`dashboard-${k}-section-header-block`);
-    const tab = document.getElementById(`section-tab-${k}`);
-    if (block && sectionTabVisibleKeys.includes(k)) {
+function selectDepartmentTab(key) {
+  DEPT_TAB_KEYS.forEach(k => {
+    const block = document.getElementById(`dashboard-${k}-department-header-block`);
+    const tab = document.getElementById(`dept-tab-${k}`);
+    if (block && deptTabVisibleKeys.includes(k)) {
       block.style.display = (k === key) ? 'block' : 'none';
     }
     if (tab) {
@@ -87,15 +92,14 @@ function selectSectionTab(key) {
       tab.style.setProperty('--tab-accent', tab.dataset.accent || '');
     }
   });
-  try { localStorage.setItem(SECTION_TAB_STORAGE_KEY, key); } catch (e) { /* storage unavailable */ }
+  try { localStorage.setItem(DEPT_TAB_STORAGE_KEY, key); } catch (e) { /* storage unavailable */ }
 }
 
-// handleSectionTabClick — same generic-reset-then-select shape as Portal's
-// handleDepartmentTabClick: a tab click behaves like Return to Main
-// Dashboard first (the user may be deep inside a canvas-module-* screen,
-// where dashboard-view itself is hidden), then switches to the clicked
-// section.
-function handleSectionTabClick(key) {
+// handleDepartmentTabClick — same generic-reset-then-select shape as
+// Portal's own version: a tab click behaves like Return to Main Dashboard
+// first (the user may be deep inside a canvas-module-* screen, where
+// dashboard-view itself is hidden), then switches to the clicked department.
+function handleDepartmentTabClick(key) {
   document.querySelectorAll('[id^="canvas-module-"]').forEach(p => p.style.display = 'none');
   const workspaceContainer = document.getElementById('module-workspace-container');
   if (workspaceContainer) workspaceContainer.style.display = 'none';
@@ -105,12 +109,14 @@ function handleSectionTabClick(key) {
   }
   document.getElementById('dashboard-view').style.display = 'flex';
   window.scrollTo(0, 0);
-  selectSectionTab(key);
+  selectDepartmentTab(key);
 }
 
-// ── Opening / closing the 4 section panels ──────────────────────────────
+// ── Opening / closing the 4 screen panels ────────────────────────────────
 // Mirrors Portal's switchActiveDashboardModule/returnToDashboard shape:
-// dashboard-view hides, the target canvas-module-* panel shows.
+// dashboard-view hides, the target canvas-module-* panel shows. Unchanged
+// by the department-grouping revision above — a tile still opens its own
+// single full-screen panel regardless of which department tab it lives under.
 function switchActiveDashboardModule(targetSectionId) {
   window.scrollTo(0, 0);
   document.getElementById("dashboard-view").style.display = "none";
