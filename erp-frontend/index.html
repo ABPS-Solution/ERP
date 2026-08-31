@@ -32,8 +32,8 @@
   // ABPS_ERP_API points at the erp-backend Cloud Run service's /exec
   // bridge, same calling convention as ABPS Portal's apFetch (single
   // POST endpoint, { action, ...payload }).
-  const ABPS_ERP_API = "__ERP_BACKEND_URL__/exec";
-  const GOOGLE_CLIENT_ID = "__GOOGLE_CLIENT_ID__";
+  const ABPS_ERP_API = "https://erp-backend-244281871074.asia-south1.run.app/exec";
+  const GOOGLE_CLIENT_ID = "223982503901-jij5hbl0npjmbqnsgl352pvmq4sk75nt.apps.googleusercontent.com";
 
   function setStatus(msg) { document.getElementById("status").textContent = msg || ""; }
 
@@ -59,7 +59,7 @@
   }
 
   window.onload = function () {
-    if (window.google && GOOGLE_CLIENT_ID !== "__GOOGLE_CLIENT_ID__") {
+    if (window.google) {
       google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: handleCredentialResponse });
       google.accounts.id.renderButton(document.getElementById("g_id_signin"), { theme: "outline", size: "large" });
     } else {
