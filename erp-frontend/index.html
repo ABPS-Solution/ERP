@@ -1,71 +1,320 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <!-- Same no-cache guard Portal uses — avoids serving a stale cached copy after a deploy. -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+
 <title>ABPS ERP</title>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
+
 <style>
-  body { font-family: -apple-system, 'Segoe UI', system-ui, sans-serif; background:#f4f6f9; margin:0; display:flex; align-items:center; justify-content:center; min-height:100vh; }
-  .card { background:#fff; border-radius:10px; box-shadow:0 4px 20px rgba(0,0,0,0.08); padding:40px; max-width:420px; width:90%; text-align:center; }
-  h1 { color:#1e3a8a; font-size:1.6rem; margin:0 0 6px; }
-  p.sub { color:#64748b; font-size:0.85rem; margin:0 0 24px; }
-  #status { font-size:0.85rem; color:#b45309; margin-top:16px; min-height:1.2em; }
-  #app { display:none; }
-</style>
-</head>
-<body>
-  <div class="card" id="login-card">
-    <h1>ABPS ERP</h1>
-    <p class="sub">Under construction — Accounts and Add/Check Item Code are being migrated here first.</p>
-    <div id="g_id_signin"></div>
-    <div id="status"></div>
-  </div>
-
-  <div class="card" id="app">
-    <h1>Signed in</h1>
-    <p class="sub" id="welcome"></p>
-    <p style="font-size:0.8rem; color:#94a3b8;">No sections are live yet — this confirms login works end to end.</p>
-  </div>
-
-<script>
-  // ABPS_ERP_API points at the erp-backend Cloud Run service's /exec
-  // bridge, same calling convention as ABPS Portal's apFetch (single
-  // POST endpoint, { action, ...payload }).
-  const ABPS_ERP_API = "https://erp-backend-244281871074.asia-south1.run.app/exec";
-  const GOOGLE_CLIENT_ID = "223982503901-jij5hbl0npjmbqnsgl352pvmq4sk75nt.apps.googleusercontent.com";
-
-  function setStatus(msg) { document.getElementById("status").textContent = msg || ""; }
-
-  async function handleCredentialResponse(response) {
-    setStatus("Signing in...");
-    try {
-      const res = await fetch(ABPS_ERP_API, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "googleLogin", idToken: response.credential }),
-      });
-      const data = await res.json();
-      if (!data.success) { setStatus(data.error || "Login failed."); return; }
-      localStorage.setItem("erpSessionToken", data.sessionToken);
-      localStorage.setItem("erpUserFirstName", data.firstName);
-      localStorage.setItem("erpUserLastName", data.lastName);
-      document.getElementById("login-card").style.display = "none";
-      document.getElementById("app").style.display = "block";
-      document.getElementById("welcome").textContent = `Welcome, ${data.firstName} ${data.lastName}.`;
-    } catch (e) {
-      setStatus("Network error: " + e.message);
-    }
+  /* --- BASE RESET & CORE VARIABLES --- */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --brand: #0056b3;
+    --brand-dk: #003d82;
+    --accent: #00a878;
+    --warn: #e84545;
+    --bg: #f0f4f8;
+    --card: #ffffff;
+    --border: #d0d9e4;
+    --text: #1a2332;
+    --muted: #6b7a8d;
+    --radius: 6px;
+    --highlight-bg: #f0f7ff;
+    --highlight-border: #0056b3;
   }
 
-  window.onload = function () {
-    if (window.google) {
-      google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: handleCredentialResponse });
-      google.accounts.id.renderButton(document.getElementById("g_id_signin"), { theme: "outline", size: "large" });
-    } else {
-      setStatus("Login not configured yet.");
-    }
-  };
-</script>
+  /* --- KEYFRAME ANIMATIONS --- */
+  @keyframes pulseGlow {
+    0% { opacity: 0.85; box-shadow: 0 0 0 0 rgba(0, 86, 179, 0.05); }
+    50% { opacity: 1; box-shadow: 0 4px 12px rgba(0, 86, 179, 0.12); }
+    100% { opacity: 0.85; box-shadow: 0 0 0 0 rgba(0, 86, 179, 0.05); }
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* --- BODY & GLOBAL FORM INPUT ELEMENTS --- */
+  body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); padding-bottom: 20px; }
+  input, select, textarea { width: 100%; padding: 6px 8px; border: 1.5px solid var(--border); border-radius: 4px; font-size: .85rem; background: #fff; color: var(--text); }
+  label.field-label { display: block; font-size: .68rem; font-weight: 700; color: var(--muted); text-transform: uppercase; margin: 8px 0 2px; }
+
+  /* --- SECURE AUTHENTICATION CONTAINER WINDOW --- */
+  #auth-container { display: flex; align-items: center; justify-content: center; min-height: 100vh; height: 100vh; overflow: hidden; background: linear-gradient(135deg, var(--brand-dk), var(--brand)); }
+  html, body { height: 100%; overflow-x: hidden; scroll-behavior: auto; }
+  .auth-card { background: var(--card); width: 100%; max-width: 400px; padding: 25px; border-radius: var(--radius); box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center; }
+  .auth-title { font-size: 1.4rem; font-weight: 700; margin-bottom: 25px; }
+
+  /* --- PORTAL STICKY APP HEADER --- */
+  header { background: linear-gradient(135deg, var(--brand-dk), var(--brand)); color: #fff; padding: 10px 16px; position: sticky; top: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+  header h1 { font-size: 1.05rem; font-weight: 700; }
+  .header-actions-block { display: flex; flex-direction: row; align-items: center; gap: 12px; }
+  .user-full-name { font-size: 1.05rem; font-weight: 700; }
+  .user-display-username { font-size: 0.68rem; color: #d0d9e4; font-family: monospace; }
+  .logout-btn { background: transparent; border: 1px solid rgba(255,255,255,0.4); color: white; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; text-transform: uppercase; }
+
+  /* --- DASHBOARD WRAPPER RESPONSIVE GRID FRAMES --- */
+  .dashboard-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
+  @media(max-width:1400px) {
+    .dashboard-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media(max-width:640px) {
+    .dashboard-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .menu-card { height: auto; min-height: 76px; padding: 14px 10px; }
+    .menu-card .mc-label { font-size: 0.88rem; line-height: 1.3; }
+  }
+  @media(max-width:400px) {
+    .dashboard-grid { grid-template-columns: 1fr; }
+  }
+  .menu-card { background: var(--card); border: 1.5px solid var(--border); padding: 0 20px; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 0.95rem; height: 84px; display:flex; align-items:center; justify-content:center; gap:12px; box-shadow:0 1px 2px rgba(0,0,0,0.04); transition:box-shadow 0.15s, border-color 0.15s, transform 0.15s; position:relative; overflow:hidden; }
+  .menu-card::before { content:''; position:absolute; top:0; left:0; right:0; height:4px; background:var(--dept-accent, var(--brand)); border-radius:10px 10px 0 0; }
+  .menu-card:hover { box-shadow:0 4px 14px rgba(0,0,0,0.1); border-color:var(--dept-accent, var(--brand)); transform:translateY(-2px); }
+  .menu-card.locked { opacity: 0.5; cursor: not-allowed; background: #e9ecef; }
+  .menu-card.locked:hover { transform:none; }
+  .menu-card .mc-icon { font-size:1.3rem; flex-shrink:0; }
+  .menu-card .mc-label { font-size:0.95rem; font-weight:700; color:var(--text); text-align:center; white-space:normal; line-height:1.4; display:flex; align-items:center; justify-content:center; width:100%; height:100%; }
+  /* --- SECTION TAB BAR — sits below the header, lets you jump straight to
+     one section instead of scrolling the whole dashboard. Same mechanism
+     as Portal's .dept-tabs-bar, renamed .section-tabs-bar since ERP's 3
+     entries are individual sections, not full departments. --- */
+  .section-tabs-bar { position: sticky; top: 0; z-index: 90; background: var(--card); border-bottom: 1px solid var(--border); padding: 10px 8px; display: flex; align-items: center; gap: 10px; overflow-x: auto; scrollbar-width: thin; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  .section-tabs-bar::-webkit-scrollbar { height: 4px; }
+  .section-tabs-label { flex-shrink: 0; font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; color: #000; padding-left: 6px; }
+  .section-tab { flex-shrink: 0; background: transparent; border: 1.5px solid var(--border); color: var(--muted); font-weight: 700; font-size: 0.9rem; padding: 9px 22px; border-radius: 22px; cursor: pointer; transition: background 0.15s, border-color 0.15s, color 0.15s; white-space: nowrap; }
+  .section-tab:hover { background: var(--highlight-bg); color: var(--text); border-color: var(--tab-accent, var(--brand)); }
+  .section-tab.active { background: var(--tab-accent, var(--brand)); border-color: var(--tab-accent, var(--brand)); color: #fff; }
+  @media(max-width:640px) {
+    .section-tabs-bar { padding: 8px 6px; gap: 7px; }
+    .section-tabs-label { display: none; }
+    .section-tab { font-size: 0.8rem; padding: 7px 16px; }
+  }
+  .dept-block { border-top:1px solid var(--border); padding-top:16px; margin-bottom:24px; }
+  .dept-header { display: flex; align-items: center; gap: 12px; padding: 0 12px 16px; }
+  .dept-bar { width: 5px; height: 28px; border-radius: 2px; flex-shrink: 0; }
+  .dept-name { font-size: 1.35rem; font-weight: 800; color: var(--text); flex: 1; }
+  .sec-label { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.8px; color:var(--brand); background:var(--highlight-bg); border-left:3px solid var(--dept-accent, var(--brand)); padding:4px 10px; border-radius:0 4px 4px 0; margin:14px 0 8px; display:inline-block; }
+  .sec-label:first-of-type { margin-top:0; }
+
+  /* --- WORKSPACE BLOCK WRAPPERS --- */
+  .workspace-panel { padding: 4px 10px; min-width: 0; max-width: 100%; box-sizing: border-box; }
+  .section { background: var(--card); border-radius: var(--radius); margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid var(--border); overflow: hidden; }
+  .section-header { background: none; color: var(--brand); padding: 18px 18px 0 18px; margin: 0 0 14px 0; font-family: -apple-system, 'Segoe UI', system-ui, sans-serif; font-size: 1.55rem; font-weight: 600; letter-spacing: 0.01em; text-transform: none; border: none; }
+  .section-body { padding: 0 16px 16px 16px; }
+
+  /* --- SHARED WORKSPACE PANEL TITLE — one look for every section's main heading --- */
+  .panel-title { color: var(--brand); font-family: -apple-system, 'Segoe UI', system-ui, sans-serif; font-size: 1.55rem; font-weight: 800; letter-spacing: 0.01em; margin: 0 0 16px 0; }
+
+  /* --- INPUT PILL FILTER ASSEMBLIES --- */
+  .pill-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; margin-bottom: 10px;}
+  .pill-group input { display: none; }
+  .pill-group label { display: inline-block; padding: 5px 10px; border: 1.5px solid var(--border); border-radius: 12px; font-size: 0.82rem; font-weight: 600; cursor: pointer; background: #fff; white-space: nowrap; margin: 2px 0; user-select: none; transition: all 0.15s ease; }
+  .pill-group input:checked + label { background: var(--brand); border-color: var(--brand); color: #fff; }
+
+  /* --- MATERIAL/DATA TABLES --- */
+  .store-basket-data-table { width: 100%; border-collapse: collapse; margin-top: 10px; text-align: left; }
+  .store-basket-data-table th { background: #f8fafc; color: #64748b; font-size: 0.75rem; text-transform: uppercase; font-weight: 700; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+  .store-basket-data-table td { padding: 10px; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem; }
+
+  .grid-cell-item { display: flex; flex-direction: column; background: #f8fafc; padding: 2px 4px; border: 1px solid #e2e8f0; border-radius: 4px; min-width: 0; word-wrap: break-word; overflow-wrap: break-word; }
+  .grid-cell-item label { font-size: 0.58rem; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 1px; }
+  .grid-cell-item input, .grid-cell-item select, .grid-cell-item textarea { padding: 2px 4px; font-size: 0.78rem; font-weight: 600; border-radius: 3px; border: 1px solid var(--border); }
+  .grid-cell-item textarea { width: 100%; resize: none; overflow: hidden; font-family: inherit; box-sizing: border-box; }
+
+  /* --- NAVIGATION CONTROLS & COMPACT INTERACTION BUTTONS --- */
+  .navigation-action-header-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 10px; background: #ffffff; border-radius: 6px; margin-bottom: 6px; border: 1px solid var(--border); min-height: 48px;}
+  .nav-btn-styled { background: var(--brand); color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: background 0.15s; outline: none; }
+  .nav-btn-styled:hover { background: var(--brand-dk); }
+  .nav-btn-styled:active, .btn-sub:active {transform: scale(0.97); opacity: 0.85; transition: all 0.1s ease;}
+
+  .btn { width: 100%; padding: 6px 10px; border: none; border-radius: 4px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.82rem; }
+  .btn-sub { background: var(--brand); color: #fff; }
+  .btn-ai { background: var(--accent); color: #fff; margin-bottom: 4px; padding: 4px; }
+  .btn-warn { background: #718096; color: #fff; }
+  .btn.loading { opacity: 0.7; cursor: wait; pointer-events: none; }
+  .btn.loading::after { content: " ..."; animation: blink 1.2s infinite;}
+  .btn-warn.loading { opacity: 0.5; cursor: progress; transform: scale(0.95); }
+
+</style>
+
+</head>
+
+<body>
+
+<div id="auth-container">
+  <div class="auth-card" style="max-width: 440px; padding: 30px;">
+    <div class="auth-title" style="margin-bottom: 10px;">ABPS ERP</div>
+
+    <!-- PIN-only login (no Google Sign-In, no self-service Enrollment Code
+         mode on this screen — enrolling a device/PIN is admin-driven, via
+         Security & Login Access, not something an end user self-serves
+         here). Same markup/behavior as Portal's login-section-pin block,
+         auto-submits the instant a 4th digit is entered
+         (see handlePinDigitInput in pinLogin.js). -->
+    <div style="text-align: left; background: #f8fafc; padding: 15px; border: 1px dashed var(--border); border-radius: 8px; margin-bottom: 20px;">
+      <label class="field-label" style="margin-top: 0; margin-bottom: 4px; color: var(--brand);">1. Select Your Department *</label>
+      <select id="app-auth-active-department-identity" onchange="handleLoginDepartmentSelectionChange(this.value)" style="padding: 10px; font-weight: 600; font-size: 0.9rem; margin-bottom: 12px;">
+        <option value="">— Select Department —</option>
+      </select>
+
+      <label class="field-label" style="margin-top: 0; margin-bottom: 4px; color: var(--brand);">2. Select Your Name *</label>
+      <select id="app-auth-active-engineer-identity" style="padding: 10px; font-weight: 600; font-size: 0.9rem; margin-bottom: 5px;" disabled>
+        <option value="">— Choose Department First —</option>
+      </select>
+    </div>
+
+    <div id="login-section-pin" style="text-align:left;">
+      <div id="pin-login-not-registered-notice" style="display:none; background:#fef3c7; border:1px solid #f59e0b; color:#78350f; padding:10px 12px; border-radius:6px; font-size:0.8rem; margin-bottom:12px;">
+        This device hasn't been set up for PIN login yet. Contact your administrator to issue an enrollment code.
+      </div>
+      <div id="pin-login-input-wrap" style="display:flex; flex-direction:column; align-items:center; text-align:center;">
+        <label class="field-label" style="margin-top:0; margin-bottom:4px;">Enter 4-Digit PIN *</label>
+        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" id="pin-login-pin-input"
+          oninput="handlePinDigitInput()" style="padding:10px; font-weight:700; font-size:1.2rem; letter-spacing:6px; width:100px; text-align:center;" />
+      </div>
+      <div id="pin-login-feedback" style="display:none; margin-top:8px; font-size:0.82rem; font-weight:700;"></div>
+    </div>
+
+    <div id="auth-portal-processing-loader" style="display: none; align-items: center; justify-content: center; gap: 10px; margin-top: 15px; padding: 10px; background: var(--highlight-bg); border: 1px solid var(--border); border-radius: 4px;">
+       <div class="spinner" style="width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--brand); border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+       <span style="font-size: 0.85rem; font-weight: 700; color: var(--brand); text-transform: uppercase; letter-spacing: 0.5px;">Logging in... Please wait</span>
+    </div>
+  </div>
+</div>
+
+<div id="app-container" style="display: none;">
+  <header>
+    <h1>ABPS ERP</h1>
+    <div class="header-actions-block">
+      <div class="user-profile-meta">
+        <div class="user-full-name" id="display-full-name"></div>
+      </div>
+      <button class="logout-btn" onclick="executeLogout()">Sign Out</button>
+    </div>
+  </header>
+
+  <div id="section-tabs-bar" class="section-tabs-bar" style="display:none;">
+    <span class="section-tabs-label">Sections</span>
+    <button class="section-tab" id="section-tab-tourexpense" data-accent="#0f766e" onclick="handleSectionTabClick('tourexpense')">Tour Expense Tracker</button>
+    <button class="section-tab" id="section-tab-cashexpenses" data-accent="#0d9488" onclick="handleSectionTabClick('cashexpenses')">Cash / UPI Expenses</button>
+    <button class="section-tab" id="section-tab-itemcode" data-accent="#2563eb" onclick="handleSectionTabClick('itemcode')">Add/Check Item Code</button>
+    <button class="section-tab" id="section-tab-security" data-accent="#7c3aed" onclick="handleSectionTabClick('security')">Security &amp; Login Access</button>
+  </div>
+
+  <div id="dashboard-view" style="padding: 14px 16px; display: flex; flex-direction: column; gap: 0;">
+
+    <!-- ── TOUR EXPENSE TRACKER ─────────────────────────────────────────── -->
+    <div id="dashboard-tourexpense-section-header-block" class="dept-block" style="display:none; --dept-accent:#0f766e;">
+      <div class="dept-header">
+        <div class="dept-bar" style="background:#0f766e;"></div>
+        <span class="dept-name">Tour Expense Tracker</span>
+      </div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-tourexpense" onclick="switchActiveDashboardModule('tourexpense')"><span class="mc-label">Tour Expense Tracker</span></div>
+      </div>
+    </div>
+
+    <!-- ── CASH / UPI EXPENSES ──────────────────────────────────────────── -->
+    <div id="dashboard-cashexpenses-section-header-block" class="dept-block" style="display:none; --dept-accent:#0d9488;">
+      <div class="dept-header">
+        <div class="dept-bar" style="background:#0d9488;"></div>
+        <span class="dept-name">Daily Cash / UPI Expenses</span>
+      </div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-cashexpenses" onclick="switchActiveDashboardModule('cashexpenses')"><span class="mc-label">Daily Cash / UPI Expenses</span></div>
+      </div>
+    </div>
+
+    <!-- ── ADD/CHECK ITEM CODE ───────────────────────────────────────────── -->
+    <div id="dashboard-itemcode-section-header-block" class="dept-block" style="display:none; --dept-accent:#2563eb;">
+      <div class="dept-header">
+        <div class="dept-bar" style="background:#2563eb;"></div>
+        <span class="dept-name">Add/Check Item Code</span>
+      </div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-itemcode" onclick="switchActiveDashboardModule('itemcode')"><span class="mc-label">Add / Check Item Code</span></div>
+      </div>
+    </div>
+
+    <!-- ── SECURITY & LOGIN ACCESS ───────────────────────────────────────── -->
+    <div id="dashboard-security-section-header-block" class="dept-block" style="display:none; --dept-accent:#7c3aed;">
+      <div class="dept-header">
+        <div class="dept-bar" style="background:#7c3aed;"></div>
+        <span class="dept-name">Security &amp; Login Access</span>
+      </div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-security" onclick="switchActiveDashboardModule('security')"><span class="mc-label">Security &amp; Login Access</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── FULL-SCREEN SECTION PANELS ──────────────────────────────────────
+       Same top-level-sibling "canvas-module-*" shape Portal uses for its
+       own full-screen canvases (Tour Expense, Cash Expenses, Security
+       Admin, ...) — each is a placeholder for now; the real screen content
+       (accounts/*.js, design/item-codes.js, project/security-admin.js) is
+       separate, later work. -->
+  <div id="canvas-module-tourexpense" class="workspace-panel" style="display:none;">
+    <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
+      <div></div>
+      <button class="nav-btn-styled" onclick="returnToDashboard()">Return to Main Dashboard</button>
+    </div>
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px; text-align:center;">
+      <h2 class="panel-title">Tour Expense Tracker</h2>
+      <p style="font-size:0.9rem; color:var(--muted);">Advance Vouchers, Employee Tour Expense Vouchers, Search Vouchers and Employee Details are being ported here from ABPS Portal — coming soon.</p>
+    </div>
+  </div>
+
+  <div id="canvas-module-cashexpenses" class="workspace-panel" style="display:none;">
+    <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
+      <div></div>
+      <button class="nav-btn-styled" onclick="returnToDashboard()">Return to Main Dashboard</button>
+    </div>
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px; text-align:center;">
+      <h2 class="panel-title">Daily Cash / UPI Expenses</h2>
+      <p style="font-size:0.9rem; color:var(--muted);">Daily Advance, Daily Expense Vouchers, Add to Cash Box, Search and Employee Details are being ported here from ABPS Portal — coming soon.</p>
+    </div>
+  </div>
+
+  <div id="canvas-module-itemcode" class="workspace-panel" style="display:none;">
+    <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
+      <div></div>
+      <button class="nav-btn-styled" onclick="returnToDashboard()">Return to Main Dashboard</button>
+    </div>
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px; text-align:center;">
+      <h2 class="panel-title">Add / Check Item Code</h2>
+      <p style="font-size:0.9rem; color:var(--muted);">The Item Code catalog and creation screen are being ported here from ABPS Portal — coming soon.</p>
+    </div>
+  </div>
+
+  <div id="canvas-module-security" class="workspace-panel" style="display:none;">
+    <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
+      <div></div>
+      <button class="nav-btn-styled" onclick="returnToDashboard()">Return to Main Dashboard</button>
+    </div>
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px; text-align:center;">
+      <h2 class="panel-title">Security &amp; Login Access</h2>
+      <p style="font-size:0.9rem; color:var(--muted);">Permissions, Login Anywhere, Login PINs, Registered Devices, Login Log and Office Networks are being ported here from ABPS Portal — coming soon.</p>
+    </div>
+  </div>
+
+  <!-- Kept for parity with Portal's convention (shared/apFetch.js and
+       shared/navigation.js both reference this id) even though nothing
+       currently nests inside it — every ERP section today is a top-level
+       canvas-module-* panel, same shape as Portal's own full-screen
+       canvases. -->
+  <div id="module-workspace-container" style="display: none;"></div>
+
+</div>
+
+<script src="shared/apFetch.js"></script>
+<script src="shared/pinLogin.js"></script>
+<script src="shared/format.js"></script>
+<script src="shared/ui.js"></script>
+<script src="shared/navigation.js"></script>
 </body>
 </html>
