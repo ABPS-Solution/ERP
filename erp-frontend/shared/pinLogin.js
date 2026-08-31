@@ -17,7 +17,7 @@ let activeLoginMode = null;
 // login screen is (re)shown, so the default mode always reflects this
 // browser's current enrollment state.
 function renderPinLoginUiForThisDevice() {
-  const hasDevice = !!localStorage.getItem("abpsPcDeviceSecret");
+  const hasDevice = !!localStorage.getItem("erpAbpsPcDeviceSecret");
   selectLoginMode(hasDevice ? 'pin' : 'enroll');
 }
 
@@ -35,7 +35,7 @@ function selectLoginMode(mode) {
   });
 
   if (mode === 'pin') {
-    const hasDevice = !!localStorage.getItem("abpsPcDeviceSecret");
+    const hasDevice = !!localStorage.getItem("erpAbpsPcDeviceSecret");
     document.getElementById('pin-login-not-registered-notice').style.display = hasDevice ? 'none' : 'block';
     document.getElementById('pin-login-input-wrap').style.display = hasDevice ? 'flex' : 'none';
     const pinInput = document.getElementById('pin-login-pin-input');
@@ -82,7 +82,7 @@ async function submitPinLoginAttempt() {
   const engineerSelect = document.getElementById("app-auth-active-engineer-identity");
   const pinInput = document.getElementById("pin-login-pin-input");
   const feedback = document.getElementById("pin-login-feedback");
-  const deviceSecret = localStorage.getItem("abpsPcDeviceSecret");
+  const deviceSecret = localStorage.getItem("erpAbpsPcDeviceSecret");
 
   const showFeedback = (msg, isError) => {
     if (!feedback) return;
@@ -177,7 +177,7 @@ async function submitDeviceEnrollmentCode() {
     const data = await res.json();
 
     if (data.success) {
-      localStorage.setItem("abpsPcDeviceSecret", data.deviceSecret);
+      localStorage.setItem("erpAbpsPcDeviceSecret", data.deviceSecret);
       showFeedback(`✅ This device is set up as "${data.deviceLabel}". Reloading...`, false);
       setTimeout(() => window.location.reload(), 1200);
     } else {

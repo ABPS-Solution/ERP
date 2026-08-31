@@ -8,15 +8,36 @@
 
 const GAS_URL = "https://erp-backend-244281871074.asia-south1.run.app/exec";
 
+// All localStorage keys ERP writes are prefixed "erp" (31 Aug 2026,
+// fixing a real cross-app bug — see below) — collected here as one list
+// so clearAppLocalStorageKeepingDeviceKeys can remove exactly these and
+// nothing else, never a bare .clear().
+const ERP_LOCAL_STORAGE_KEYS = [
+  "erpSessionToken", "erpSessionExpiry", "erpSessionUser", "erpUserFirstName",
+  "erpUserLastName", "erpActiveOperatorSignature", "erpUserPermissions", "erpIsUserAdminGlobal",
+];
+
 // clearAppLocalStorageKeepingDeviceKeys — a bare localStorage.clear() must
-// never wipe abpsPcDeviceSecret (PIN-login registered-device secret) on a
-// session-expiry path. Only executeLogout() should decide whether it
+// never wipe erpAbpsPcDeviceSecret (PIN-login registered-device secret) on
+// a session-expiry path. Only executeLogout() should decide whether it
 // survives, and it deliberately keeps it too (logging out shouldn't
 // un-enroll the device).
+//
+// ★ Real bug fixed 31 Aug 2026: this used to be a bare `localStorage.clear()`
+// with unprefixed key names (sessionToken, userPermissions, etc.) — IDENTICAL
+// to the key names Portal's own abps-frontend/shared/apFetch.js uses.
+// Portal (abps-solution.github.io/Portal/) and ERP (abps-solution.github.io/ERP/)
+// are the SAME origin, just different paths — localStorage is partitioned
+// by origin, not by path, so both apps were reading/writing the exact same
+// storage bucket. Logging into ERP silently overwrote Portal's session
+// token (and vice versa), and `.clear()` wiped BOTH apps' entire storage,
+// not just ERP's own. Every key ERP writes is now prefixed "erp" and this
+// function only ever removes that specific list — Portal's own keys (and
+// anything else sharing this origin) are never touched.
 function clearAppLocalStorageKeepingDeviceKeys() {
-  const pcDeviceSecret = localStorage.getItem("abpsPcDeviceSecret");
-  localStorage.clear();
-  if (pcDeviceSecret) localStorage.setItem("abpsPcDeviceSecret", pcDeviceSecret);
+  const pcDeviceSecret = localStorage.getItem("erpAbpsPcDeviceSecret");
+  ERP_LOCAL_STORAGE_KEYS.forEach(k => localStorage.removeItem(k));
+  if (pcDeviceSecret) localStorage.setItem("erpAbpsPcDeviceSecret", pcDeviceSecret);
 }
 
 // driveLink — kept for parity with Portal's convention even though no
@@ -25,12 +46,12 @@ function clearAppLocalStorageKeepingDeviceKeys() {
 // does, rather than a bare Drive URL.
 function driveLink(url) {
   if (!url) return url;
-  const token = localStorage.getItem("sessionToken") || "";
+  const token = localStorage.getItem("erpSessionToken") || "";
   return url + (url.includes("?") ? "&" : "?") + "token=" + encodeURIComponent(token);
 }
 
 async function apFetch(payload) {
-  payload.sessionToken = localStorage.getItem("sessionToken");
+  payload.sessionToken = localStorage.getItem("erpSessionToken");
   const res  = await fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) });
   const data = await res.json();
   if (!data.success && data.code === "SESSION_EXPIRED") {
@@ -95,9 +116,9 @@ if ("scrollRestoration" in history) history.scrollRestoration = "manual";
 
 window.onload = async function() {
   window.scrollTo(0, 0);
-  const token   = localStorage.getItem("sessionToken");
-  const expires = localStorage.getItem("sessionExpiry");
-  const cachedOperator = localStorage.getItem("activeOperatorSignature");
+  const token   = localStorage.getItem("erpSessionToken");
+  const expires = localStorage.getItem("erpSessionExpiry");
+  const cachedOperator = localStorage.getItem("erpActiveOperatorSignature");
 
   if (token && expires && new Date() < new Date(expires) && cachedOperator) {
     // Portal re-fetches permissions fresh from the server on every load
@@ -109,7 +130,7 @@ window.onload = async function() {
     // a permission revoked mid-session won't take effect here until the
     // next fresh login.
     appActiveOperatorIdentityString = cachedOperator;
-    const savedPerms = localStorage.getItem("userPermissions");
+    const savedPerms = localStorage.getItem("erpUserPermissions");
     if (savedPerms) {
       try { userPermissions = JSON.parse(savedPerms); } catch (e) { userPermissions = {}; }
       showAppView();
@@ -188,21 +209,21 @@ function initializeLoginScreen() {
 // path). isUserAdminGlobal comes straight from the server's real
 // perm_admin flag (data.isAdmin).
 function completeSuccessfulLogin(data, activeOperatorDisplayName, isUserAdminGlobal) {
-  localStorage.setItem("sessionToken",  data.sessionToken);
-  localStorage.setItem("sessionExpiry", data.expires);
-  localStorage.setItem("sessionUser",   data.email);
-  localStorage.setItem("userFirstName", data.firstName);
-  localStorage.setItem("userLastName",  data.lastName);
-  localStorage.setItem("activeOperatorSignature", activeOperatorDisplayName);
-  localStorage.setItem("userPermissions", JSON.stringify(data.permissions));
-  localStorage.setItem("isUserAdminGlobal", isUserAdminGlobal ? "true" : "false");
+  localStorage.setItem("erpSessionToken",  data.sessionToken);
+  localStorage.setItem("erpSessionExpiry", data.expires);
+  localStorage.setItem("erpSessionUser",   data.email);
+  localStorage.setItem("erpUserFirstName", data.firstName);
+  localStorage.setItem("erpUserLastName",  data.lastName);
+  localStorage.setItem("erpActiveOperatorSignature", activeOperatorDisplayName);
+  localStorage.setItem("erpUserPermissions", JSON.stringify(data.permissions));
+  localStorage.setItem("erpIsUserAdminGlobal", isUserAdminGlobal ? "true" : "false");
   appActiveOperatorIdentityString = activeOperatorDisplayName;
   userPermissions = data.permissions;
   showAppView();
 }
 
 function executeLogout() {
-  const outgoingSessionToken = localStorage.getItem("sessionToken");
+  const outgoingSessionToken = localStorage.getItem("erpSessionToken");
   if (outgoingSessionToken) {
     fetch(GAS_URL, {
       method: "POST",
@@ -228,7 +249,7 @@ async function showAppView() {
   document.querySelectorAll(".workspace-panel").forEach(p => { p.style.display = "none"; });
 
   document.getElementById("display-full-name").textContent =
-    (localStorage.getItem("userFirstName") || "") + " " + (localStorage.getItem("userLastName") || "");
+    (localStorage.getItem("erpUserFirstName") || "") + " " + (localStorage.getItem("erpUserLastName") || "");
 
   if (!userPermissions || Object.keys(userPermissions).length === 0) {
     console.error("showAppView: userPermissions is empty — every section will render hidden.", userPermissions);
