@@ -11,6 +11,11 @@
 
 <title>ABPS ERP</title>
 
+<!-- Google Identity Services — powers the Google Account login mode
+     (shared/googleLogin.js), restored 1 Sep 2026. Same origin as Portal
+     (abps-solution.github.io), same authorized-origins registration. -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+
 <style>
   /* --- BASE RESET & CORE VARIABLES --- */
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -160,14 +165,14 @@
   <div class="auth-card" style="max-width: 440px; padding: 30px;">
     <div class="auth-title" style="margin-bottom: 10px;">ABPS ERP</div>
 
-    <!-- 2-mode login selector (PIN / Enrollment Code — no Google button,
-         that stays a confirmed exclusion). Same markup/behavior as
-         Portal's login-mode-btn-pin/login-mode-btn-enroll pair, minus the
-         hidden Google button. Rendering/state in shared/pinLogin.js's
-         selectLoginMode(). -->
+    <!-- 3-mode login selector (PIN / Google Account / Enrollment Code —
+         Google Sign-In restored 1 Sep 2026). Same markup/behavior as
+         Portal's login-mode-btn-pin/google/enroll trio. Rendering/state in
+         shared/pinLogin.js's selectLoginMode(). -->
     <div style="margin-bottom: 16px;">
       <div style="display: flex; gap: 6px;">
         <button type="button" id="login-mode-btn-pin" class="nav-btn-styled" onclick="selectLoginMode('pin')" style="flex: 1; padding: 8px 4px; font-size: 0.76rem;">PIN</button>
+        <button type="button" id="login-mode-btn-google" class="nav-btn-styled" onclick="selectLoginMode('google')" style="flex: 1; padding: 8px 4px; font-size: 0.76rem;">Google Account</button>
         <button type="button" id="login-mode-btn-enroll" class="nav-btn-styled" onclick="selectLoginMode('enroll')" style="flex: 1; padding: 8px 4px; font-size: 0.76rem;">Enrollment Code</button>
       </div>
     </div>
@@ -206,6 +211,12 @@
       <select id="app-auth-active-engineer-identity" style="padding: 10px; font-weight: 600; font-size: 0.9rem; margin-bottom: 5px;" disabled>
         <option value="">— Choose Department First —</option>
       </select>
+    </div>
+
+    <!-- GOOGLE mode -->
+    <div id="login-section-google" style="display:none;">
+      <label class="field-label" style="text-align: left; color: var(--text); font-weight: 700;">VERIFY ACCESS ACCOUNT</label>
+      <div id="google-auth-button-mount-point" style="display: flex; justify-content: center; margin-top: 15px; min-height: 40px;"></div>
     </div>
 
     <div id="login-section-pin" style="display:none; text-align:left;">
@@ -393,16 +404,150 @@
     </div>
   </div>
 
+  <!-- Full 8-tab Security & Login Access screen (1 Sep 2026), ported from
+       ABPS Portal's canvas-module-security-admin. Logic in
+       project/security-admin.js; init entry point is
+       initializeSecurityAdminPanel() (called from the dashboard tile, same
+       as before), Return button now calls exitSecurityAdminBackToMenu()
+       matching Portal's own function name for this screen. -->
   <div id="canvas-module-security" class="workspace-panel" style="display:none;">
     <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
       <div></div>
-      <button class="nav-btn-styled" onclick="returnToDashboard()">Return to Main Dashboard</button>
+      <button class="nav-btn-styled" onclick="exitSecurityAdminBackToMenu()">Return to Main Dashboard</button>
     </div>
     <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 class="panel-title">Security &amp; Login Access</h2>
-      <p style="font-size:0.85rem; color:var(--muted); margin-bottom:16px;">Only PIN-login device enrollment is ported here so far. Permissions, Login Anywhere, Registered Devices, Login Log and Office Networks are being ported from ABPS Portal separately — coming soon.</p>
-      <div id="sa-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
-      <div id="sa-enroll-panel"></div>
+    <h2 class="panel-title">Security &amp; Login Access</h2>
+    <div id="sa-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+
+    <div style="display:flex; gap:10px; margin-bottom:22px; align-items:center; flex-wrap:wrap;">
+      <button id="sa-tab-permissions" class="nav-btn-styled" onclick="switchSecurityAdminTab('permissions')" style="flex:1; padding:11px 16px;">Permissions</button>
+      <button id="sa-tab-users" class="nav-btn-styled" onclick="switchSecurityAdminTab('users')" style="flex:1; padding:11px 16px;">Login Anywhere</button>
+      <button id="sa-tab-pins" class="nav-btn-styled" onclick="switchSecurityAdminTab('pins')" style="flex:1; padding:11px 16px;">Login PINs</button>
+      <button id="sa-tab-registeredpcs" class="nav-btn-styled" onclick="switchSecurityAdminTab('registeredpcs')" style="flex:1; padding:11px 16px;">Registered Devices</button>
+      <button id="sa-tab-log" class="nav-btn-styled" onclick="switchSecurityAdminTab('log')" style="flex:1; padding:11px 16px;">Login Log</button>
+      <button id="sa-tab-devices" class="nav-btn-styled" onclick="switchSecurityAdminTab('devices')" style="flex:1; padding:11px 16px;">Trusted Devices</button>
+      <button id="sa-tab-networks" class="nav-btn-styled" onclick="switchSecurityAdminTab('networks')" style="flex:1; padding:11px 16px;">Office Networks</button>
+      <button id="sa-tab-settings" class="nav-btn-styled" onclick="switchSecurityAdminTab('settings')" style="flex:1; padding:11px 16px;">Settings</button>
+    </div>
+
+    <!-- PERMISSIONS MATRIX — renders whatever lib/permissionCatalog.js on
+         erp-backend actually returns (ERP's scoped-down 4-permission
+         catalog: Item Code Access, Tour Expense, Cash/UPI Expenses,
+         Security & Login Access) — nothing here hardcodes Portal's full
+         permission list. -->
+    <div id="sa-panel-permissions" style="display:none;">
+      <p style="font-size:0.8rem; color:var(--muted); margin-bottom:14px;">
+        Search for a person to see every section of ERP, grouped by department.
+        Colored = they have access. Click a colored section to revoke it, click a gray one to grant it.
+      </p>
+      <input type="text" id="pm-user-search" placeholder="Search by Name..." autocomplete="off"
+        oninput="handlePermissionMatrixSearchInput(this.value)" style="max-width:340px; margin-bottom:10px;">
+      <div id="pm-user-search-results" style="display:none; max-width:340px; margin-bottom:14px; border:1px solid var(--border); border-radius:var(--radius); overflow:hidden;"></div>
+      <div id="pm-matrix-root"></div>
+    </div>
+
+    <!-- LOGIN ANYWHERE — department "family tree", built fresh from
+         fetchAdminUserList on every load so a person added in any
+         department appears automatically. -->
+    <div id="sa-panel-users">
+      <p style="font-size:0.8rem; color:var(--muted); margin-bottom:14px;">
+        Click a person's name to grant or revoke Login Anywhere (bypasses the office-network requirement). A thick black border means they already have it.
+      </p>
+      <input type="text" id="sa-user-search" placeholder="Search by Name..." oninput="renderSecurityAdminUsers()" style="max-width:340px; margin-bottom:20px;">
+      <div id="sa-user-tree-root"></div>
+    </div>
+
+    <!-- OFFICE NETWORKS -->
+    <div id="sa-panel-networks" style="display:none;">
+      <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; align-items:flex-end;">
+        <div>
+          <label class="field-label" style="margin-top:0;">CIDR (e.g. 27.107.1.226/32)</label>
+          <input type="text" id="sa-network-cidr" placeholder="x.x.x.x/32" style="min-width:220px;">
+        </div>
+        <div>
+          <label class="field-label" style="margin-top:0;">Label</label>
+          <input type="text" id="sa-network-label" placeholder="e.g. Chakan Office" style="min-width:260px;">
+        </div>
+        <button class="nav-btn-styled" onclick="submitAddAllowedNetwork()">+ Add Network</button>
+      </div>
+      <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+        <thead><tr style="background:var(--highlight-bg); text-align:left;">
+          <th style="padding:8px;">CIDR</th><th style="padding:8px;">Label</th><th style="padding:8px;">Active</th>
+          <th style="padding:8px;">Added</th><th style="padding:8px;">Action</th>
+        </tr></thead>
+        <tbody id="sa-network-list-body"></tbody>
+      </table>
+    </div>
+
+    <!-- TRUSTED DEVICES -->
+    <div id="sa-panel-devices" style="display:none;">
+      <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+        <thead><tr style="background:var(--highlight-bg); text-align:left;">
+          <th style="padding:8px;">User</th><th style="padding:8px;">Device</th><th style="padding:8px;">Created</th>
+          <th style="padding:8px;">Last Used</th><th style="padding:8px;">Expires</th><th style="padding:8px;">Status</th><th style="padding:8px;">Action</th>
+        </tr></thead>
+        <tbody id="sa-device-list-body"></tbody>
+      </table>
+    </div>
+
+    <!-- LOGIN LOG -->
+    <div id="sa-panel-log" style="display:none;">
+      <input type="text" id="sa-log-search" placeholder="Search by Name..." oninput="renderLoginLog()" style="max-width:340px; margin-bottom:14px;">
+      <table style="width:100%; border-collapse:collapse; font-size:0.8rem;">
+        <thead><tr style="background:var(--highlight-bg); text-align:left;">
+          <th style="padding:8px;">When</th><th style="padding:8px;">Name</th><th style="padding:8px;">IP</th>
+          <th style="padding:8px;">Allowed</th><th style="padding:8px;">Reason</th><th style="padding:8px;">City/Country</th>
+          <th style="padding:8px;">ISP/ASN</th><th style="padding:8px;">VPN</th>
+        </tr></thead>
+        <tbody id="sa-log-list-body"></tbody>
+      </table>
+    </div>
+
+    <!-- SETTINGS -->
+    <div id="sa-panel-settings" style="display:none; max-width:520px;">
+      <label class="field-label" style="margin-top:0;">Business Hours Start</label>
+      <input type="time" id="sa-settings-hours-start">
+      <label class="field-label">Business Hours End</label>
+      <input type="time" id="sa-settings-hours-end">
+      <button class="nav-btn-styled" style="margin-top:16px;" onclick="submitSecuritySettings()">Save Settings</button>
+
+      <div style="margin-top:28px; padding-top:20px; border-top:1px solid var(--border);">
+        <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:10px; letter-spacing:0.5px;">Outage Mode</div>
+        <div id="sa-outage-mode-status" style="padding:12px 14px; border-left:4px solid; border-radius:var(--radius); font-size:0.85rem;"></div>
+      </div>
+    </div>
+
+    <!-- PIN LOGIN — view-only PIN values plus a per-person "Generate
+         Enrollment Code" action (folds in the enrollment-generation logic
+         the earlier minimal screen had as a standalone form). -->
+    <div id="sa-panel-pins" style="display:none;">
+      <p style="font-size:0.8rem; color:var(--muted); margin-bottom:14px;">
+        In <strong>PINs</strong> mode, hover a name to reveal their current PIN (or "None"), then click it to type a new
+        one — saving it immediately signs that person out of every device and they must use the new PIN from then on.
+        In <strong>Generate Enrollment Code</strong> mode, click a name to generate a fresh one-time code on the spot.
+      </p>
+      <div style="display:flex; gap:6px; margin-bottom:14px; max-width:480px;">
+        <button type="button" id="pinmode-btn-changepin" class="nav-btn-styled" onclick="selectPinTreeMode('changepin')" style="flex:1; padding:9px 10px; font-size:0.8rem;">PINs</button>
+        <button type="button" id="pinmode-btn-enroll" class="nav-btn-styled" onclick="selectPinTreeMode('enroll')" style="flex:1; padding:9px 10px; font-size:0.8rem;">Generate Enrollment Code</button>
+      </div>
+      <div id="sa-pin-change-banner" style="display:none; margin-bottom:14px; padding:10px 14px; border-radius:var(--radius); font-size:0.85rem; font-weight:700;"></div>
+      <input type="text" id="sa-pin-user-search" placeholder="Search by Name..." oninput="renderSecurityAdminPinUsers()" style="max-width:340px; margin-bottom:20px;">
+      <div id="sa-pin-tree-root"></div>
+    </div>
+
+    <!-- REGISTERED DEVICES — read-only summary; enrollment happens
+         entirely via the per-person codes generated from the Login PINs
+         tab + self-service redemption on the login screen. -->
+    <div id="sa-panel-registeredpcs" style="display:none;">
+      <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+        <thead><tr style="background:var(--highlight-bg); text-align:left;">
+          <th style="padding:8px;">Device Label</th><th style="padding:8px;">Allowed Users</th><th style="padding:8px;">Status</th>
+          <th style="padding:8px;">Access</th>
+          <th style="padding:8px;">Registered</th><th style="padding:8px;">Last Used</th><th style="padding:8px;">Action</th>
+        </tr></thead>
+        <tbody id="sa-registereddevice-list-body"></tbody>
+      </table>
+    </div>
     </div>
   </div>
 
@@ -417,6 +562,7 @@
 
 <script src="shared/apFetch.js"></script>
 <script src="shared/pinLogin.js"></script>
+<script src="shared/googleLogin.js"></script>
 <script src="shared/format.js"></script>
 <script src="shared/ui.js"></script>
 <script src="shared/navigation.js"></script>

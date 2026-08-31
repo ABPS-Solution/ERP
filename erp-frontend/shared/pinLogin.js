@@ -1,8 +1,8 @@
 // shared/pinLogin.js — ported from ABPS Portal's shared/pinLogin.js
-// (31 Aug 2026, revised 1 Sep 2026 to restore Enrollment Code mode).
-// PIN + Enrollment Code only — Google Sign-In stays a confirmed exclusion,
-// there's no login-mode-btn-google here at all (Portal keeps its own
-// hidden pending a separate decision). erp-backend/auth.js's pinLogin and
+// (31 Aug 2026, revised 1 Sep 2026 to restore Enrollment Code mode, revised
+// again same day to restore Google Sign-In as a 3rd mode — see
+// shared/googleLogin.js for that mode's own button-init/callback logic).
+// erp-backend/auth.js's pinLogin and
 // redeemDeviceEnrollmentCode routes are already faithful ports of
 // Portal's, so this file needed only one real adaptation: Portal derived
 // the admin flag from `data.permissions.admin` (a field ERP's permission
@@ -24,7 +24,7 @@ function renderPinLoginUiForThisDevice() {
 function selectLoginMode(mode) {
   activeLoginMode = mode;
 
-  ['pin', 'enroll'].forEach(m => {
+  ['pin', 'google', 'enroll'].forEach(m => {
     const btn = document.getElementById(`login-mode-btn-${m}`);
     if (btn) {
       btn.style.background = (m === mode) ? 'var(--brand)' : '#e2e8f0';
@@ -33,6 +33,11 @@ function selectLoginMode(mode) {
     const section = document.getElementById(`login-section-${m}`);
     if (section) section.style.display = (m === mode) ? 'block' : 'none';
   });
+  // Google's own section uses flex for its button-centering row, not the
+  // generic 'block' the other two use — fix that one up after the loop
+  // (same pattern Portal's selectLoginMode uses).
+  const googleSection = document.getElementById('login-section-google');
+  if (googleSection) googleSection.style.display = (mode === 'google') ? 'block' : 'none';
 
   if (mode === 'pin') {
     const hasDevice = !!localStorage.getItem("erpAbpsPcDeviceSecret");

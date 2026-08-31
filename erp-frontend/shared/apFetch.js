@@ -36,8 +36,13 @@ const ERP_LOCAL_STORAGE_KEYS = [
 // anything else sharing this origin) are never touched.
 function clearAppLocalStorageKeepingDeviceKeys() {
   const pcDeviceSecret = localStorage.getItem("erpAbpsPcDeviceSecret");
+  // erpDeviceToken (1 Sep 2026, Google Sign-In restored as a 3rd login
+  // mode) — the location-restricted-login device-trust token, same
+  // preserved-across-logout treatment Portal gives its own abpsDeviceToken.
+  const googleDeviceToken = localStorage.getItem("erpDeviceToken");
   ERP_LOCAL_STORAGE_KEYS.forEach(k => localStorage.removeItem(k));
   if (pcDeviceSecret) localStorage.setItem("erpAbpsPcDeviceSecret", pcDeviceSecret);
+  if (googleDeviceToken) localStorage.setItem("erpDeviceToken", googleDeviceToken);
 }
 
 // driveLink — kept for parity with Portal's convention even though no
@@ -203,6 +208,10 @@ function initializeLoginScreen() {
   document.getElementById("auth-container").style.display = "flex";
   document.getElementById("app-container").style.display = "none";
   if (typeof renderPinLoginUiForThisDevice === "function") renderPinLoginUiForThisDevice();
+  // Google Sign-In restored as a 3rd mode (1 Sep 2026, shared/googleLogin.js)
+  // — mount/re-mount the button on every login-screen show, same as
+  // Portal's initializeGoogleAuthPlatformEngine does.
+  if (typeof initializeGoogleSignInButton === "function") initializeGoogleSignInButton();
 }
 
 // completeSuccessfulLogin — shared tail end of pinLogin (the only login
