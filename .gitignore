@@ -1,0 +1,35 @@
+# ─────────────────────────────────────────────────────────────────────
+# THIS REPO IS PUBLIC (same convention as ABPS-Solution/Portal). Only the
+# frontend is published here.
+#
+# What SHOULD be tracked:
+#   erp-frontend/                      the deployed site (GitHub Pages)
+#   .github/workflows/                 the deploy workflow
+#   .gitignore
+#
+# Backend deploys straight from local disk:
+#   gcloud run deploy erp-backend --source ./erp-backend --region asia-south1
+# ─────────────────────────────────────────────────────────────────────
+
+# Backend source — never publish (public repo)
+erp-backend/
+
+# Dependencies
+node_modules/
+
+# Environment variables and secrets
+.env
+credentials.json
+*.pem
+*.key
+service-account*.json
+
+# Local tooling / editor
+.claude/
+.vscode/
+.idea/
+
+# Internal documentation — not for public view
+ERP_SYSTEM_OVERVIEW.md
+CLAUDE.md
+HANDOFF.md

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ABPS ERP</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+  body { font-family: -apple-system, 'Segoe UI', system-ui, sans-serif; background:#f4f6f9; margin:0; display:flex; align-items:center; justify-content:center; min-height:100vh; }
+  .card { background:#fff; border-radius:10px; box-shadow:0 4px 20px rgba(0,0,0,0.08); padding:40px; max-width:420px; width:90%; text-align:center; }
+  h1 { color:#1e3a8a; font-size:1.6rem; margin:0 0 6px; }
+  p.sub { color:#64748b; font-size:0.85rem; margin:0 0 24px; }
+  #status { font-size:0.85rem; color:#b45309; margin-top:16px; min-height:1.2em; }
+  #app { display:none; }
+</style>
+</head>
+<body>
+  <div class="card" id="login-card">
+    <h1>ABPS ERP</h1>
+    <p class="sub">Under construction — Accounts and Add/Check Item Code are being migrated here first.</p>
+    <div id="g_id_signin"></div>
+    <div id="status"></div>
+  </div>
+
+  <div class="card" id="app">
+    <h1>Signed in</h1>
+    <p class="sub" id="welcome"></p>
+    <p style="font-size:0.8rem; color:#94a3b8;">No sections are live yet — this confirms login works end to end.</p>
+  </div>
+
+<script>
+  // ABPS_ERP_API points at the erp-backend Cloud Run service's /exec
+  // bridge, same calling convention as ABPS Portal's apFetch (single
+  // POST endpoint, { action, ...payload }).
+  const ABPS_ERP_API = "__ERP_BACKEND_URL__/exec";
+  const GOOGLE_CLIENT_ID = "__GOOGLE_CLIENT_ID__";
+
+  function setStatus(msg) { document.getElementById("status").textContent = msg || ""; }
+
+  async function handleCredentialResponse(response) {
+    setStatus("Signing in...");
+    try {
+      const res = await fetch(ABPS_ERP_API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "googleLogin", idToken: response.credential }),
+      });
+      const data = await res.json();
+      if (!data.success) { setStatus(data.error || "Login failed."); return; }
+      localStorage.setItem("erpSessionToken", data.sessionToken);
+      localStorage.setItem("erpUserFirstName", data.firstName);
+      localStorage.setItem("erpUserLastName", data.lastName);
+      document.getElementById("login-card").style.display = "none";
+      document.getElementById("app").style.display = "block";
+      document.getElementById("welcome").textContent = `Welcome, ${data.firstName} ${data.lastName}.`;
+    } catch (e) {
+      setStatus("Network error: " + e.message);
+    }
+  }
+
+  window.onload = function () {
+    if (window.google && GOOGLE_CLIENT_ID !== "__GOOGLE_CLIENT_ID__") {
+      google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: handleCredentialResponse });
+      google.accounts.id.renderButton(document.getElementById("g_id_signin"), { theme: "outline", size: "large" });
+    } else {
+      setStatus("Login not configured yet.");
+    }
+  };
+</script>
+</body>
+</html>

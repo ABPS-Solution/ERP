@@ -1,0 +1,37 @@
+# Publishes erp-frontend/ to GitHub Pages on every push to main.
+# Same shape as ABPS-Solution/Portal's deploy-frontend.yml — see that
+# repo if this ever needs changing, keep both in sync.
+name: Deploy frontend to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'erp-frontend/**'
+      - '.github/workflows/deploy-frontend.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - name: Upload erp-frontend as the site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: erp-frontend
+      - id: deployment
+        uses: actions/deploy-pages@v4
