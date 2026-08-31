@@ -151,12 +151,18 @@
   <div class="auth-card" style="max-width: 440px; padding: 30px;">
     <div class="auth-title" style="margin-bottom: 10px;">ABPS ERP</div>
 
-    <!-- PIN-only login (no Google Sign-In, no self-service Enrollment Code
-         mode on this screen — enrolling a device/PIN is admin-driven, via
-         Security & Login Access, not something an end user self-serves
-         here). Same markup/behavior as Portal's login-section-pin block,
-         auto-submits the instant a 4th digit is entered
-         (see handlePinDigitInput in pinLogin.js). -->
+    <!-- 2-mode login selector (PIN / Enrollment Code — no Google button,
+         that stays a confirmed exclusion). Same markup/behavior as
+         Portal's login-mode-btn-pin/login-mode-btn-enroll pair, minus the
+         hidden Google button. Rendering/state in shared/pinLogin.js's
+         selectLoginMode(). -->
+    <div style="margin-bottom: 16px;">
+      <div style="display: flex; gap: 6px;">
+        <button type="button" id="login-mode-btn-pin" class="nav-btn-styled" onclick="selectLoginMode('pin')" style="flex: 1; padding: 8px 4px; font-size: 0.76rem;">PIN</button>
+        <button type="button" id="login-mode-btn-enroll" class="nav-btn-styled" onclick="selectLoginMode('enroll')" style="flex: 1; padding: 8px 4px; font-size: 0.76rem;">Enrollment Code</button>
+      </div>
+    </div>
+
     <div style="text-align: left; background: #f8fafc; padding: 15px; border: 1px dashed var(--border); border-radius: 8px; margin-bottom: 20px;">
       <label class="field-label" style="margin-top: 0; margin-bottom: 4px; color: var(--brand);">1. Select Your Department *</label>
       <select id="app-auth-active-department-identity" onchange="handleLoginDepartmentSelectionChange(this.value)" style="padding: 10px; font-weight: 600; font-size: 0.9rem; margin-bottom: 12px;">
@@ -169,9 +175,9 @@
       </select>
     </div>
 
-    <div id="login-section-pin" style="text-align:left;">
+    <div id="login-section-pin" style="display:none; text-align:left;">
       <div id="pin-login-not-registered-notice" style="display:none; background:#fef3c7; border:1px solid #f59e0b; color:#78350f; padding:10px 12px; border-radius:6px; font-size:0.8rem; margin-bottom:12px;">
-        This device hasn't been set up for PIN login yet. Contact your administrator to issue an enrollment code.
+        This device hasn't been set up for PIN login yet. Choose "Enrollment Code" above to set it up.
       </div>
       <div id="pin-login-input-wrap" style="display:flex; flex-direction:column; align-items:center; text-align:center;">
         <label class="field-label" style="margin-top:0; margin-bottom:4px;">Enter 4-Digit PIN *</label>
@@ -179,6 +185,32 @@
           oninput="handlePinDigitInput()" style="padding:10px; font-weight:700; font-size:1.2rem; letter-spacing:6px; width:100px; text-align:center;" />
       </div>
       <div id="pin-login-feedback" style="display:none; margin-top:8px; font-size:0.82rem; font-weight:700;"></div>
+    </div>
+
+    <!-- ENROLLMENT CODE mode — self-service: the person redeeming the code
+         picks their own device label and their own PIN right here. -->
+    <div id="login-section-enroll" style="display:none; text-align:left;">
+      <label class="field-label" style="margin-top:0; margin-bottom:4px;">Enrollment Code (from your administrator)</label>
+      <input type="text" id="device-enrollment-code-input" maxlength="8"
+        style="padding:10px; font-weight:700; font-size:1rem; letter-spacing:2px; text-transform:uppercase; width:100%; margin-bottom:10px;" />
+      <label class="field-label" style="margin-top:0; margin-bottom:4px;">Device Label (e.g. "My Laptop")</label>
+      <input type="text" id="device-enrollment-label-input" placeholder="My Laptop"
+        style="padding:10px; font-size:0.9rem; width:100%; margin-bottom:10px;" />
+      <label class="field-label" style="margin-top:0; margin-bottom:4px;">4-Digit PIN * (your existing one, if you already have it)</label>
+      <div style="display:flex; gap:16px; margin-bottom:10px;">
+        <div>
+          <label class="field-label" style="margin-top:0; margin-bottom:4px; font-size:0.62rem;">PIN</label>
+          <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" id="device-enrollment-pin-input"
+            style="padding:10px; font-weight:700; font-size:1.1rem; letter-spacing:5px; width:90px; text-align:center;" />
+        </div>
+        <div>
+          <label class="field-label" style="margin-top:0; margin-bottom:4px; font-size:0.62rem;">Confirm</label>
+          <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" id="device-enrollment-pin-confirm-input"
+            style="padding:10px; font-weight:700; font-size:1.1rem; letter-spacing:5px; width:90px; text-align:center;" />
+        </div>
+      </div>
+      <button class="nav-btn-styled" onclick="submitDeviceEnrollmentCode()" style="margin-top:14px; display:block;">Activate</button>
+      <div id="device-enrollment-feedback" style="display:none; margin-top:8px; font-size:0.82rem; font-weight:700;"></div>
     </div>
 
     <div id="auth-portal-processing-loader" style="display: none; align-items: center; justify-content: center; gap: 10px; margin-top: 15px; padding: 10px; background: var(--highlight-bg); border: 1px solid var(--border); border-radius: 4px;">
@@ -238,7 +270,7 @@
         <span class="dept-name">Admin</span>
       </div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
-        <div class="menu-card" id="mod-security" onclick="switchActiveDashboardModule('security')"><span class="mc-label">Security &amp; Login Access</span></div>
+        <div class="menu-card" id="mod-security" onclick="switchActiveDashboardModule('security'); initializeSecurityAdminPanel();"><span class="mc-label">Security &amp; Login Access</span></div>
       </div>
     </div>
 
@@ -333,9 +365,11 @@
       <div></div>
       <button class="nav-btn-styled" onclick="returnToDashboard()">Return to Main Dashboard</button>
     </div>
-    <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px; text-align:center;">
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 class="panel-title">Security &amp; Login Access</h2>
-      <p style="font-size:0.9rem; color:var(--muted);">Permissions, Login Anywhere, Login PINs, Registered Devices, Login Log and Office Networks are being ported here from ABPS Portal — coming soon.</p>
+      <p style="font-size:0.85rem; color:var(--muted); margin-bottom:16px;">Only PIN-login device enrollment is ported here so far. Permissions, Login Anywhere, Registered Devices, Login Log and Office Networks are being ported from ABPS Portal separately — coming soon.</p>
+      <div id="sa-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+      <div id="sa-enroll-panel"></div>
     </div>
   </div>
 
@@ -364,5 +398,6 @@
 <script src="accounts/cash-expense-search.js"></script>
 <script src="accounts/cash-expense-employees.js"></script>
 <script src="accounts/cash-balance.js"></script>
+<script src="project/security-admin.js"></script>
 </body>
 </html>

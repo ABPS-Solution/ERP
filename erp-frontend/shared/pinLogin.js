@@ -1,36 +1,53 @@
 // shared/pinLogin.js — ported from ABPS Portal's shared/pinLogin.js
-// (31 Aug 2026), trimmed to PIN-ONLY (no Google Sign-In, no self-service
-// Enrollment Code mode on the login screen — enrolling a device/PIN is
-// admin-driven, via Security & Login Access, not something an end user
-// self-serves from here; submitDeviceEnrollmentCode/redeemDeviceEnrollment
-// Code stay live on erp-backend/auth.js for that admin-driven flow, just
-// not wired to any UI here). erp-backend/auth.js's pinLogin route is
-// already a faithful port of Portal's, so this file needed only one real
-// adaptation: Portal derived the admin flag from `data.permissions.admin`
-// (a field ERP's permission object doesn't carry — see lib/permMap.js's
-// deliberately small camelCase list); ERP's pinLogin response instead
-// returns a top-level `isAdmin` flag directly, so that's what
-// completeSuccessfulLogin() is handed here.
+// (31 Aug 2026, revised 1 Sep 2026 to restore Enrollment Code mode).
+// PIN + Enrollment Code only — Google Sign-In stays a confirmed exclusion,
+// there's no login-mode-btn-google here at all (Portal keeps its own
+// hidden pending a separate decision). erp-backend/auth.js's pinLogin and
+// redeemDeviceEnrollmentCode routes are already faithful ports of
+// Portal's, so this file needed only one real adaptation: Portal derived
+// the admin flag from `data.permissions.admin` (a field ERP's permission
+// object doesn't carry — see lib/permMap.js's deliberately small
+// camelCase list); ERP's pinLogin response instead returns a top-level
+// `isAdmin` flag directly, so that's what completeSuccessfulLogin() is
+// handed here.
+
+let activeLoginMode = null;
 
 // Called from initializeLoginScreen() (shared/apFetch.js) every time the
-// login screen is (re)shown. Portal's version picked between PIN/Google/
-// Enroll modes here — ERP has only the one PIN screen, so this just shows
-// the "not registered" notice when this browser has no enrolled device yet
-// (nothing to switch INTO — the operator has to be enrolled by an admin).
+// login screen is (re)shown, so the default mode always reflects this
+// browser's current enrollment state.
 function renderPinLoginUiForThisDevice() {
   const hasDevice = !!localStorage.getItem("abpsPcDeviceSecret");
-  document.getElementById('pin-login-not-registered-notice').style.display = hasDevice ? 'none' : 'block';
-  document.getElementById('pin-login-input-wrap').style.display = hasDevice ? 'flex' : 'none';
-  const pinInput = document.getElementById('pin-login-pin-input');
-  // .disabled is left `true` after a SUCCESSFUL login (submitPinLoginAttempt
-  // only ever re-enables it on failure, since success normally navigates
-  // away) — logging back out without a full page refresh re-showed this
-  // same input still disabled, with no way to type into it. Always reset
-  // it here so re-entering the login screen never inherits a stale
-  // disabled state.
-  if (pinInput) { pinInput.value = ''; pinInput.disabled = false; if (hasDevice) pinInput.focus(); }
-  const feedback = document.getElementById('pin-login-feedback');
-  if (feedback) feedback.style.display = 'none';
+  selectLoginMode(hasDevice ? 'pin' : 'enroll');
+}
+
+function selectLoginMode(mode) {
+  activeLoginMode = mode;
+
+  ['pin', 'enroll'].forEach(m => {
+    const btn = document.getElementById(`login-mode-btn-${m}`);
+    if (btn) {
+      btn.style.background = (m === mode) ? 'var(--brand)' : '#e2e8f0';
+      btn.style.color = (m === mode) ? '#fff' : '#334155';
+    }
+    const section = document.getElementById(`login-section-${m}`);
+    if (section) section.style.display = (m === mode) ? 'block' : 'none';
+  });
+
+  if (mode === 'pin') {
+    const hasDevice = !!localStorage.getItem("abpsPcDeviceSecret");
+    document.getElementById('pin-login-not-registered-notice').style.display = hasDevice ? 'none' : 'block';
+    document.getElementById('pin-login-input-wrap').style.display = hasDevice ? 'flex' : 'none';
+    const pinInput = document.getElementById('pin-login-pin-input');
+    // .disabled is left `true` after a SUCCESSFUL login (submitPinLoginAttempt
+    // only ever re-enables it on failure, since success normally navigates
+    // away) — logging back out without a full page refresh re-showed this
+    // same input still disabled, with no way to type into it. Always reset
+    // it here so re-entering PIN mode never inherits a stale disabled state.
+    if (pinInput) { pinInput.value = ''; pinInput.disabled = false; if (hasDevice) pinInput.focus(); }
+    const feedback = document.getElementById('pin-login-feedback');
+    if (feedback) feedback.style.display = 'none';
+  }
 }
 
 // Auto-submits the instant a valid 4-digit PIN has been typed — no
@@ -97,4 +114,57 @@ function resolveEmailForSelectedEngineerName(name) {
   const dept = document.getElementById("app-auth-active-department-identity")?.value || '';
   const hit = globalPersonnelEmailLookupCache.find(p => p.name === name && p.department === dept);
   return hit ? hit.email : null;
+}
+
+// submitDeviceEnrollmentCode — ported from Portal, unauthenticated (raw
+// fetch to GAS_URL, same as submitPinLoginAttempt above — apFetch attaches
+// a sessionToken this screen doesn't have yet). Response shape confirmed
+// against erp-backend/auth.js's redeemDeviceEnrollmentCode:
+// { success, deviceSecret, deviceLabel }.
+async function submitDeviceEnrollmentCode() {
+  const engineerSelect = document.getElementById("app-auth-active-engineer-identity");
+  const codeInput = document.getElementById("device-enrollment-code-input");
+  const labelInput = document.getElementById("device-enrollment-label-input");
+  const pinInput = document.getElementById("device-enrollment-pin-input");
+  const pinConfirmInput = document.getElementById("device-enrollment-pin-confirm-input");
+  const feedback = document.getElementById("device-enrollment-feedback");
+
+  const showFeedback = (msg, isError) => {
+    if (!feedback) return;
+    feedback.style.display = "block";
+    feedback.style.color = isError ? "var(--warn)" : "var(--accent)";
+    feedback.textContent = msg;
+  };
+
+  const selectedName = engineerSelect ? engineerSelect.value : '';
+  if (!selectedName) return showFeedback("Select your name first.", true);
+  const email = resolveEmailForSelectedEngineerName(selectedName);
+  if (!email) return showFeedback("Could not resolve an account for that name. Contact your administrator.", true);
+  const code = (codeInput.value || "").trim().toUpperCase();
+  const deviceLabel = (labelInput.value || "").trim();
+  const pin = pinInput.value.trim();
+  const pinConfirm = pinConfirmInput.value.trim();
+
+  if (!code) return showFeedback("Enter the enrollment code.", true);
+  if (!deviceLabel) return showFeedback("Give this device a label (e.g. \"My Laptop\").", true);
+  if (!/^\d{4}$/.test(pin)) return showFeedback("Choose a 4-digit PIN.", true);
+  if (pin !== pinConfirm) return showFeedback("PIN and Confirm PIN don't match.", true);
+
+  try {
+    const res = await fetch(GAS_URL, {
+      method: "POST",
+      body: JSON.stringify({ action: "redeemDeviceEnrollmentCode", code, email, deviceLabel, pin }),
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      localStorage.setItem("abpsPcDeviceSecret", data.deviceSecret);
+      showFeedback(`✅ This device is set up as "${data.deviceLabel}". Reloading...`, false);
+      setTimeout(() => window.location.reload(), 1200);
+    } else {
+      showFeedback(data.error || "Enrollment failed.", true);
+    }
+  } catch (e) {
+    showFeedback("Connection error: " + e.message, true);
+  }
 }
