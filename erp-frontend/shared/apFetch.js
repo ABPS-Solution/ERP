@@ -108,7 +108,7 @@ window.addEventListener("unhandledrejection", function(event) {
 });
 
 // ── Session bootstrap globals ───────────────────────────────────────────
-let globalPersonnelEmailLookupCache = [];
+let globalPersonnelKeyLookupCache = [];
 let appActiveOperatorIdentityString = "";
 // Only the 4 camelCase keys erp-backend/lib/permMap.js actually sends —
 // see mapPermissionsForFrontend there. Nothing else exists on this object.
@@ -165,7 +165,7 @@ async function syncPlatformPersonnelDropdownOptionsList() {
     const data = await res.json();
 
     if (data.success && data.departmentsList && data.personnelTree) {
-      globalPersonnelEmailLookupCache = data.people || [];
+      globalPersonnelKeyLookupCache = data.people || [];
       window._personnelTree = data.personnelTree;
 
       deptSelect.innerHTML = '<option value="">— Select Department —</option>';
@@ -220,7 +220,7 @@ function initializeLoginScreen() {
 function completeSuccessfulLogin(data, activeOperatorDisplayName, isUserAdminGlobal) {
   localStorage.setItem("erpSessionToken",  data.sessionToken);
   localStorage.setItem("erpSessionExpiry", data.expires);
-  localStorage.setItem("erpSessionUser",   data.email);
+  localStorage.setItem("erpSessionUser",   data.personKey);
   localStorage.setItem("erpUserFirstName", data.firstName);
   localStorage.setItem("erpUserLastName",  data.lastName);
   localStorage.setItem("erpActiveOperatorSignature", activeOperatorDisplayName);
