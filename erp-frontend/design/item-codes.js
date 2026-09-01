@@ -71,7 +71,7 @@ function filterItemCodeCatalogStrict(query, catalog, topN) {
   const codeQuery = query.toLowerCase().replace(/\s+/g, '');
 
   const scored = catalog.map(item => {
-    const nameNorm = (item.productName || "").toLowerCase().replace(/[^a-z0-9\s]/g, ' ');
+    const nameNorm = (item.combinedName || item.productName || "").toLowerCase().replace(/[^a-z0-9\s]/g, ' ');
     const nameWords = nameNorm.split(/\s+/).filter(Boolean);
     const codeNorm = (item.itemCode || "").toLowerCase();
     const codeMatch = codeQuery.length >= 3 && codeNorm.includes(codeQuery);
@@ -131,7 +131,7 @@ async function executeItemCodeSearch() {
       : allCatalog;
 
     const exactMatch = catalogToSearch.filter(item =>
-      (item.productName || "").toLowerCase().includes(query.toLowerCase())
+      (item.combinedName || item.productName || "").toLowerCase().includes(query.toLowerCase())
     );
     const top15 = filterItemCodeCatalogStrict(query, catalogToSearch, 15);
     const candidatesToUse = top15.length > 0 ? top15 : exactMatch;
