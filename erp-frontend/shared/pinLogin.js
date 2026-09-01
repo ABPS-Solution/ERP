@@ -24,6 +24,10 @@ function renderPinLoginUiForThisDevice() {
 function selectLoginMode(mode) {
   activeLoginMode = mode;
 
+  // 'google' kept here even though its selector button was removed from the
+  // login screen (1 Sep 2026) — login-section-google still exists in the
+  // DOM (hidden), and this loop is what would hide/show it if 'google' is
+  // ever passed in again.
   ['pin', 'google', 'enroll'].forEach(m => {
     const btn = document.getElementById(`login-mode-btn-${m}`);
     if (btn) {
