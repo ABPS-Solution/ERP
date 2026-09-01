@@ -165,14 +165,14 @@
   <div class="auth-card" style="max-width: 440px; padding: 30px;">
     <div class="auth-title" style="margin-bottom: 10px;">ABPS ERP</div>
 
-    <!-- 3-mode login selector (PIN / Google Account / Enrollment Code —
-         Google Sign-In restored 1 Sep 2026). Same markup/behavior as
-         Portal's login-mode-btn-pin/google/enroll trio. Rendering/state in
+    <!-- 2-mode login selector (PIN / Enrollment Code). Google Account mode
+         removed from the UI 1 Sep 2026 (underlying googleLogin backend
+         route + shared/googleLogin.js left in place, just no longer
+         reachable from this screen). Rendering/state in
          shared/pinLogin.js's selectLoginMode(). -->
     <div style="margin-bottom: 16px;">
       <div style="display: flex; gap: 6px;">
         <button type="button" id="login-mode-btn-pin" class="nav-btn-styled" onclick="selectLoginMode('pin')" style="flex: 1; padding: 8px 4px; font-size: 0.76rem;">PIN</button>
-        <button type="button" id="login-mode-btn-google" class="nav-btn-styled" onclick="selectLoginMode('google')" style="flex: 1; padding: 8px 4px; font-size: 0.76rem;">Google Account</button>
         <button type="button" id="login-mode-btn-enroll" class="nav-btn-styled" onclick="selectLoginMode('enroll')" style="flex: 1; padding: 8px 4px; font-size: 0.76rem;">Enrollment Code</button>
       </div>
     </div>
@@ -190,13 +190,13 @@
       <div id="login-dept-button-rows" style="margin-bottom: 14px;">
         <div style="display:flex; justify-content:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
           <button type="button" class="login-dept-btn" data-dept="Admin" onclick="selectLoginDeptButton('Admin')">Admin</button>
-          <button type="button" class="login-dept-btn" data-dept="HR" onclick="selectLoginDeptButton('HR')">HR</button>
+          <button type="button" class="login-dept-btn" data-dept="Design" onclick="selectLoginDeptButton('Design')">Design</button>
           <button type="button" class="login-dept-btn" data-dept="Accounts" onclick="selectLoginDeptButton('Accounts')">Accounts</button>
         </div>
         <div style="display:flex; justify-content:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
+          <button type="button" class="login-dept-btn" data-dept="HR" onclick="selectLoginDeptButton('HR')">HR</button>
           <button type="button" class="login-dept-btn" data-dept="Marketing" onclick="selectLoginDeptButton('Marketing')">Marketing</button>
           <button type="button" class="login-dept-btn" data-dept="Project" onclick="selectLoginDeptButton('Project')">Project</button>
-          <button type="button" class="login-dept-btn" data-dept="Design" onclick="selectLoginDeptButton('Design')">Design</button>
           <button type="button" class="login-dept-btn" data-dept="Purchase" onclick="selectLoginDeptButton('Purchase')">Purchase</button>
         </div>
         <div style="display:flex; justify-content:center; flex-wrap:wrap; gap:8px;">
@@ -213,7 +213,10 @@
       </select>
     </div>
 
-    <!-- GOOGLE mode -->
+    <!-- GOOGLE mode section intentionally kept in the DOM (hidden, no
+         longer reachable from the mode selector above) — googleLogin.js
+         still mounts its button into this div if the mode is ever
+         re-enabled; not deleted so that file doesn't need touching. -->
     <div id="login-section-google" style="display:none;">
       <label class="field-label" style="text-align: left; color: var(--text); font-weight: 700;">VERIFY ACCESS ACCOUNT</label>
       <div id="google-auth-button-mount-point" style="display: flex; justify-content: center; margin-top: 15px; min-height: 40px;"></div>
@@ -398,9 +401,244 @@
       <div></div>
       <button class="nav-btn-styled" onclick="returnToDashboard()">Return to Main Dashboard</button>
     </div>
-    <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px; text-align:center;">
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 class="panel-title">Add / Check Item Code</h2>
-      <p style="font-size:0.9rem; color:var(--muted);">The Item Code catalog and creation screen are being ported here from ABPS Portal — coming soon.</p>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:14px;">Create a new Item Code directly below, or search the catalog first if you just want to check what already exists.</p>
+
+      <div style="display:flex; gap:10px; margin-bottom:18px;">
+        <button class="nav-btn-styled" id="icf-mode-btn-search" onclick="switchItemCodeMode('search')" style="flex:1; background:var(--brand); color:#fff; font-weight:700; padding:11px 16px;">Search / Add Item Code</button>
+        <button class="nav-btn-styled" id="icf-mode-btn-format" onclick="switchItemCodeMode('format')" style="display:none; flex:1; background:#e2e8f0; color:#334155; font-weight:700; padding:11px 16px;">Add / Change Item Code Format</button>
+      </div>
+
+      <div id="itemcode-feedback-banner" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+
+      <!-- ═══════ MODE: SEARCH / ADD ═══════ -->
+      <div id="icf-mode-search">
+
+      <div id="itemcode-direct-create-btn-wrap" style="margin-bottom:16px;">
+        <button class="nav-btn-styled" id="itemcode-direct-create-btn" onclick="revealItemCodeCreateForm()"
+          style="width:100%; padding:12px 16px; font-weight:700; background:var(--accent); font-size:0.95rem;">+ Create New Item Code</button>
+      </div>
+
+      <div id="itemcode-or-search-divider" style="text-align:center; font-size:0.72rem; font-weight:700; text-transform:uppercase; color:var(--muted); letter-spacing:0.5px; margin-bottom:12px;">— or search the catalog first —</div>
+
+      <!-- SEARCH ZONE -->
+      <div id="itemcode-search-zone-wrapper" style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:16px;">
+        <div style="display:grid; grid-template-columns:1fr 2fr; gap:14px;">
+          <div style="position:relative;">
+            <label class="field-label" style="margin-top:0;">Type of Material (optional)</label>
+            <input type="text" id="icf-search-type-ta-input" placeholder="Narrow by type..." autocomplete="off"
+              oninput="handleIcfTypeTypeaheadInput(this.value, 'icf-search-type-ta-input', 'icf-search-type-ta-dropdown')"
+              onchange="handleIcfSearchTypeChange(this.value)"
+              style="padding:10px; font-size:0.9rem; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;" />
+            <div id="icf-search-type-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          </div>
+          <div>
+            <label class="field-label" style="margin-top:0; color:var(--brand);">Search Material Name *</label>
+            <div style="display:flex; gap:10px; align-items:center;">
+              <div style="flex-grow:1;">
+                <input type="text" id="itemcode-search-input" placeholder="e.g. HT Capacitor 413KVAR, Aluminum Busbar 40x10mm..."
+                  style="padding:10px; font-size:0.9rem; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;"
+                  onkeydown="if(event.key==='Enter') executeItemCodeSearch()" />
+              </div>
+              <button class="nav-btn-styled" id="itemcode-search-btn" onclick="executeItemCodeSearch()"
+                style="padding:10px 24px; font-weight:700; background:var(--brand); flex-shrink:0;">Search</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SEARCH RESULTS ZONE -->
+      <div id="itemcode-search-results-zone" style="display:none; margin-bottom:16px;">
+        <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:10px; letter-spacing:0.5px;">
+          Did you mean one of these?
+        </div>
+        <div id="itemcode-suggestions-mount" style="display:flex; flex-direction:column; gap:8px;"></div>
+
+        <div id="itemcode-none-match-banner" style="margin-top:14px; padding:10px 14px; background:#fffbeb; border:1px solid #f59e0b; border-radius:var(--radius); font-size:0.82rem; color:#92400e; font-weight:600;">
+          None of these match your product?
+          <button onclick="revealItemCodeCreateForm()"
+            style="background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; font-size:0.78rem; font-weight:700; cursor:pointer; margin-left:8px;">
+            Create New Item Code
+          </button>
+        </div>
+      </div>
+
+      <!-- NO RESULTS ZONE -->
+      <div id="itemcode-no-results-zone" style="display:none; margin-bottom:16px; padding:14px; background:#fff5f5; border:1px solid #fca5a5; border-radius:var(--radius); font-size:0.85rem; color:#b91c1c; font-weight:600;">
+        No similar materials found in the catalog.
+        <button id="itemcode-no-results-create-btn" onclick="revealItemCodeCreateForm()"
+          style="background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; font-size:0.78rem; font-weight:700; cursor:pointer; margin-left:10px;">
+          Create New Item Code
+        </button>
+      </div>
+
+      <!-- CREATE NEW FORM -->
+      <div id="itemcode-create-form-zone" style="display:none; background:#f0fdf4; border:2px solid var(--accent); border-radius:var(--radius); padding:16px;">
+        <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--accent); margin-bottom:14px; letter-spacing:0.5px;">Create New Item Code</div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+          <div>
+            <label class="field-label" style="margin-top:0;">Item Code (Auto-assigned)</label>
+            <input type="text" id="itemcode-new-code" readonly
+              style="padding:10px; font-family:monospace; font-size:1rem; font-weight:800; color:var(--brand); background:#e0f2fe; border:1.5px solid var(--brand); border-radius:var(--radius); cursor:not-allowed;" />
+          </div>
+          <div style="position:relative;">
+            <label class="field-label" style="margin-top:0;">Type of Material *</label>
+            <input type="text" id="icf-new-type-ta-input" placeholder="Type to search..." autocomplete="off"
+              oninput="handleIcfTypeTypeaheadInput(this.value, 'icf-new-type-ta-input', 'icf-new-type-ta-dropdown')"
+              onchange="handleIcfNewTypeChange(this.value)"
+              style="padding:10px; font-size:0.9rem; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;" />
+            <div id="icf-new-type-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          </div>
+        </div>
+
+        <!-- Fixed-Format sub-flow: sub-option picker + dynamic template form -->
+        <div id="icf-new-fixed-zone" style="display:none; margin-bottom:14px;">
+          <label class="field-label" style="margin-top:0;">Sub-Option *</label>
+          <select id="icf-new-suboption-select" onchange="handleIcfSubOptionChange(this.value)" style="padding:10px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; margin-bottom:12px;">
+            <option value="">— Select Sub-Option —</option>
+          </select>
+          <div id="icf-new-fixed-form" style="display:none; background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:12px; margin-bottom:10px;">
+            <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:6px;">Material Name</div>
+            <div id="icf-new-name-inputs" style="display:flex; flex-wrap:wrap; align-items:flex-end;"></div>
+            <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin:12px 0 6px;">Rating</div>
+            <div id="icf-new-rating-inputs" style="display:flex; flex-wrap:wrap; align-items:flex-end;"></div>
+          </div>
+          <div style="margin-bottom:12px;">
+            <label class="field-label" style="margin-top:0;">Make (optional)</label>
+            <input type="text" id="icf-new-fixed-make" oninput="this.value=this.value.toUpperCase()"
+              style="padding:10px; font-size:0.9rem; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; text-transform:uppercase;"
+              placeholder="OPTIONAL — MANUFACTURER/BRAND, IF ANY. DO NOT ENTER ABPS AS MAKE — ONLY OTHER COMPANIES." />
+          </div>
+          <div style="background:#f1f5f9; border-radius:4px; padding:10px; font-size:0.85rem;">
+            <div style="font-size:0.68rem; font-weight:800; text-transform:uppercase; color:var(--muted); margin-bottom:4px;">Preview</div>
+            <div><strong>Material Name:</strong> <span id="icf-new-preview-name" style="color:var(--brand); font-weight:700;">—</span></div>
+            <div><strong>Rating:</strong> <span id="icf-new-preview-rating" style="color:var(--brand); font-weight:700;">—</span></div>
+            <div><strong>Unit:</strong> <span id="icf-new-preview-unit" style="color:var(--brand); font-weight:700;">—</span></div>
+          </div>
+          <div id="icf-new-admin-manual-toggle" style="display:none; margin-top:10px;">
+            <label style="font-size:0.8rem; font-weight:600; cursor:pointer;">
+              <input type="checkbox" id="icf-new-admin-manual-checkbox" onchange="handleIcfAdminManualToggle(this.checked)" /> Create manually (admin bypass — ignores the format)
+            </label>
+          </div>
+        </div>
+
+        <!-- Free-Form sub-flow: today's plain fields -->
+        <div id="icf-new-freeform-zone" style="display:none;">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+            <div>
+              <label class="field-label" style="margin-top:0;">Material Name *</label>
+              <input type="text" id="itemcode-new-name"
+                style="padding:10px; font-size:0.9rem; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;"
+                placeholder="Enter the full standard product name..." />
+              <div style="font-size:0.72rem; color:var(--muted); margin-top:4px;">Full descriptive name. Cannot be changed later without admin access.</div>
+            </div>
+            <div>
+              <label class="field-label" style="margin-top:0;">Rating (optional)</label>
+              <input type="text" id="itemcode-new-rating"
+                style="padding:10px; font-size:0.9rem; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;"
+                placeholder="e.g. 300 kVAr, 11 kV, 3 Ph, 50 Hz" />
+              <div style="font-size:0.72rem; color:var(--muted); margin-top:4px;">Combined with Material Name wherever this code is looked up. Leave blank if not applicable.</div>
+            </div>
+          </div>
+          <div style="margin-bottom:14px;">
+            <label class="field-label" style="margin-top:0;">Make (optional)</label>
+            <input type="text" id="itemcode-new-make" oninput="this.value=this.value.toUpperCase()"
+              style="padding:10px; font-size:0.9rem; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; text-transform:uppercase;"
+              placeholder="OPTIONAL — MANUFACTURER/BRAND, IF ANY. DO NOT ENTER ABPS AS MAKE — ONLY OTHER COMPANIES." />
+          </div>
+          <div style="margin-bottom:14px;">
+            <label class="field-label" style="margin-top:0;">Unit *</label>
+            <select id="itemcode-new-unit" style="padding:10px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
+              <option value="">— Select Unit —</option>
+              <option value="NOS">NOS (Numbers)</option>
+              <option value="KG"> KG (Kilograms)</option>
+              <option value="MTR">MTR (Metres)</option>
+              <option value="SET">SET (Sets)</option>
+              <option value="LTR">LTR (Litres)</option>
+              <option value="ROL">ROL (Rolls)</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid #86efac; padding-top:14px;">
+          <button onclick="document.getElementById('itemcode-create-form-zone').style.display='none';"
+            style="background:#718096; color:#fff; border:none; padding:8px 16px; border-radius:4px; font-weight:700; cursor:pointer; font-size:0.82rem;">Cancel</button>
+          <button id="itemcode-create-submit-btn" onclick="submitNewItemCode()"
+            style="background:var(--accent); color:#fff; border:none; padding:8px 20px; border-radius:4px; font-weight:700; cursor:pointer; font-size:0.82rem;">
+            Create Item Code
+          </button>
+        </div>
+      </div>
+      </div>
+      <!-- ═══════ /MODE: SEARCH / ADD ═══════ -->
+
+      <!-- ═══════ MODE: ADD / CHANGE ITEM CODE FORMAT (admin) ═══════ -->
+      <div id="icf-mode-format" style="display:none;">
+        <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:16px; position:relative;">
+          <label class="field-label" style="margin-top:0;">Type of Material</label>
+          <input type="text" id="icf-fmt-type-ta-input" placeholder="Type to search..." autocomplete="off"
+            oninput="handleIcfTypeTypeaheadInput(this.value, 'icf-fmt-type-ta-input', 'icf-fmt-type-ta-dropdown')"
+            onchange="handleIcfFormatTypeChange(this.value)"
+            style="padding:10px; font-size:0.9rem; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; max-width:420px;" />
+          <div id="icf-fmt-type-ta-dropdown" style="display:none; position:absolute; top:68px; left:16px; width:calc(100% - 32px); max-width:420px; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          <div style="margin-top:10px;">
+            <label style="font-size:0.8rem; font-weight:600;">Entry Mode:</label>
+            <select id="icf-fmt-entry-mode" onchange="handleIcfEntryModeChange(this.value)" style="padding:6px; font-weight:600; border:1.5px solid var(--border); border-radius:4px; margin-left:8px;">
+              <option value="Fixed Format">Fixed Format</option>
+              <option value="Free Form">Free Form</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="icf-fmt-list-zone" style="display:none;">
+          <div id="icf-fmt-formats-list" style="display:flex; flex-direction:column; gap:12px; margin-bottom:16px;"></div>
+          <button class="nav-btn-styled" style="background:var(--brand);" onclick="openIcfAddFormatEditor()">+ Add Item Code Format</button>
+        </div>
+
+        <!-- One format editor (shared for edit-existing and add-new) -->
+        <div id="icf-fmt-editor-zone" style="display:none; background:#fffbeb; border:2px solid #f59e0b; border-radius:var(--radius); padding:16px; margin-top:16px;">
+          <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#b45309; margin-bottom:12px;">Format Editor</div>
+          <input type="hidden" id="icf-fmt-editor-formatid" value="" />
+          <label class="field-label" style="margin-top:0;">Sub-Option *</label>
+          <input type="text" id="icf-fmt-editor-suboption" placeholder="e.g. HT Capacitor Bank" style="padding:8px; border:1.5px solid var(--border); border-radius:4px; width:100%; margin-bottom:10px;" />
+
+          <label class="field-label" style="margin-top:0;">Material Name Template *</label>
+          <textarea id="icf-fmt-editor-name-template" rows="2" placeholder="e.g. HT Capacitor Bank" oninput="renderIcfFormatEditorPreview()" style="padding:8px; border:1.5px solid var(--border); border-radius:4px; width:100%; font-family:monospace; font-size:0.85rem; margin-bottom:6px;"></textarea>
+          <div id="icf-fmt-editor-name-error" style="font-size:0.75rem; color:#b91c1c; font-weight:600; margin-bottom:8px;"></div>
+
+          <label class="field-label" style="margin-top:0;">Rating Template (optional)</label>
+          <textarea id="icf-fmt-editor-rating-template" rows="3" placeholder="e.g. <Indoor or Outdoor>, nph kVAr, nph kV, nph Ph, nph Hz" oninput="renderIcfFormatEditorPreview()" style="padding:8px; border:1.5px solid var(--border); border-radius:4px; width:100%; font-family:monospace; font-size:0.85rem; margin-bottom:6px;"></textarea>
+          <div id="icf-fmt-editor-rating-error" style="font-size:0.75rem; color:#b91c1c; font-weight:600; margin-bottom:8px;"></div>
+
+          <label class="field-label" style="margin-top:0;">Unit *</label>
+          <select id="icf-fmt-editor-unit" style="padding:8px; font-weight:600; border:1.5px solid var(--border); border-radius:4px; margin-bottom:10px;">
+            <option value="">— Select Unit —</option>
+            <option value="NOS">NOS</option>
+            <option value="KG">KG</option>
+            <option value="MTR">MTR</option>
+            <option value="SET">SET</option>
+            <option value="LTR">LTR</option>
+            <option value="ROL">ROL</option>
+          </select>
+
+          <div style="background:#fff; border:1px solid var(--border); border-radius:4px; padding:10px; margin-bottom:10px;">
+            <div style="font-size:0.68rem; font-weight:800; text-transform:uppercase; color:var(--muted); margin-bottom:6px;">Live Preview — what the operator will see</div>
+            <div style="margin-bottom:8px;"><strong>Material Name form:</strong><div id="icf-fmt-editor-name-preview" style="margin-top:4px;"></div></div>
+            <div><strong>Rating form:</strong><div id="icf-fmt-editor-rating-preview" style="margin-top:4px;"></div></div>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid #fcd34d; padding-top:12px;">
+            <button id="icf-fmt-editor-deactivate-btn" onclick="submitIcfDeactivateFormat()" style="display:none; background:#b91c1c; color:#fff; border:none; padding:8px 16px; border-radius:4px; font-weight:700; cursor:pointer; font-size:0.82rem;">Deactivate This Format</button>
+            <div style="display:flex; gap:10px; margin-left:auto;">
+              <button onclick="closeIcfFormatEditor()" style="background:#718096; color:#fff; border:none; padding:8px 16px; border-radius:4px; font-weight:700; cursor:pointer; font-size:0.82rem;">Cancel</button>
+              <button onclick="submitIcfSaveFormat()" style="background:var(--accent); color:#fff; border:none; padding:8px 20px; border-radius:4px; font-weight:700; cursor:pointer; font-size:0.82rem;">Save Format</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- ═══════ /MODE: ADD / CHANGE ITEM CODE FORMAT ═══════ -->
     </div>
   </div>
 
@@ -577,6 +815,8 @@
 <script src="accounts/cash-expense-search.js"></script>
 <script src="accounts/cash-expense-employees.js"></script>
 <script src="accounts/cash-balance.js"></script>
+<script src="design/item-code-format.js"></script>
+<script src="design/item-codes.js"></script>
 <script src="project/security-admin.js"></script>
 </body>
 </html>

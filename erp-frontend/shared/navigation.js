@@ -131,6 +131,7 @@ function switchActiveDashboardModule(targetSectionId) {
   // initializeCashExpensesPanel the same way).
   if (targetSectionId === "tourexpense" && typeof initializeTourExpensePanel === "function") initializeTourExpensePanel();
   if (targetSectionId === "cashexpenses" && typeof initializeCashExpensesPanel === "function") initializeCashExpensesPanel();
+  if (targetSectionId === "itemcode" && typeof initializeItemCodePanel === "function") initializeItemCodePanel();
 }
 
 function returnToDashboard() {
