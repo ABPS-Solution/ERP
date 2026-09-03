@@ -136,6 +136,18 @@ async function runCashExpenseSearch() {
       resultsEl.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted); background:var(--highlight-bg); border-radius:var(--radius);">No expenses match this filter.</div>`;
       return;
     }
+    // Same bordered/wrapping table shape as Tour Expense's Search
+    // Vouchers screen — left border between columns, every header/value
+    // centered both ways.
+    const colBorder = "border-left:2px solid var(--border);";
+    const cell = "padding:8px 6px; font-size:0.85rem; color:#000; text-align:center; vertical-align:middle; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap;";
+    const th = "padding:8px 6px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted); vertical-align:middle;";
+    const isAdminUser = localStorage.getItem("erpIsUserAdminGlobal") === "true";
+    // Deletable only while still Open (never closed), for every payment
+    // mode including Online — same eligibility deleteCashExpenseVoucher
+    // re-checks server-side. An already-closed voucher isn't deletable
+    // here; correct it via the Actual Amount input instead.
+    const canDelete = (x) => isAdminUser && x.isOpen;
     const rows = data.expenses.map(x => {
       const typeLabel = x.expenseType === 'Food & Snacks' && x.subType ? `Food & Snacks (${escapeHtml(x.subType)})`
         : x.expenseType === 'Others' && x.otherText ? `Others (${escapeHtml(x.otherText)})` : escapeHtml(x.expenseType);
@@ -153,26 +165,46 @@ async function runCashExpenseSearch() {
              style="width:90px; padding:2px 4px; font-size:0.8rem; text-align:right; font-weight:700;"
              onchange="cesSaveActual(${x.expenseId}, ${rawActual})">
            <span id="ces-actual-err-${x.expenseId}" style="color:#b91c1c; font-size:0.62rem; display:block;"></span>`;
-      return `<tr style="border-bottom:1px solid var(--border);">
-        <td style="padding:7px;">${formatDateDMY(x.createdDate)}</td>
-        <td style="padding:7px;">${escapeHtml(x.employeeName)}</td>
-        <td style="padding:7px;">${escapeHtml(x.departmentName || '—')}</td>
-        <td style="padding:7px;">${typeLabel}</td>
-        <td style="padding:7px;"><span style="background:${modeColor}; color:#fff; font-weight:700; font-size:0.75rem; padding:3px 8px; border-radius:3px;">${x.paymentMode}</span></td>
-        <td style="padding:7px; text-align:right;">${actualCell}</td>
+      const deleteCell = isAdminUser
+        ? `<td style="${cell} ${colBorder}">${canDelete(x) ? `<button class="nav-btn-styled" onclick="cesDeleteVoucher(${x.expenseId})" style="padding:3px 10px; font-size:0.72rem; background:#fee2e2; color:#b91c1c;">Delete</button>` : '—'}</td>`
+        : '';
+      return `<tr style="border-bottom:2px solid var(--border);">
+        <td style="${cell}">${formatOrdinalDate(x.createdDate)}</td>
+        <td style="${cell} ${colBorder}">${escapeHtml(x.employeeName)}</td>
+        <td style="${cell} ${colBorder}">${escapeHtml(x.departmentName || '—')}</td>
+        <td style="${cell} ${colBorder}">${typeLabel}</td>
+        <td style="${cell} ${colBorder}"><span style="background:${modeColor}; color:#fff; font-weight:700; font-size:0.75rem; padding:3px 8px; border-radius:3px;">${x.paymentMode}</span></td>
+        <td style="${cell} ${colBorder}">${actualCell}</td>
+        ${deleteCell}
       </tr>`;
     }).join("");
     resultsEl.innerHTML = `
       <div style="overflow-x:auto;">
-        <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
-          <thead><tr style="background:var(--highlight-bg); text-align:left;">
-            <th style="padding:8px;">Date</th><th style="padding:8px;">Employee</th><th style="padding:8px;">Department</th>
-            <th style="padding:8px;">Type</th><th style="padding:8px;">Payment Mode</th><th style="padding:8px; text-align:right;">Actual Amount</th>
+        <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
+          <thead><tr style="background:var(--highlight-bg); border-bottom:2px solid var(--border);">
+            <th style="${th}">Date</th><th style="${th} ${colBorder}">Employee</th><th style="${th} ${colBorder}">Department</th>
+            <th style="${th} ${colBorder}">Type</th><th style="${th} ${colBorder}">Payment Mode</th><th style="${th} ${colBorder}">Actual Amount</th>
+            ${isAdminUser ? `<th style="${th} ${colBorder}">Actions</th>` : ''}
           </tr></thead>
           <tbody>${rows}</tbody>
         </table>
       </div>`;
   } catch (e) { resultsEl.innerHTML = `<p style="color:var(--warn);">${escapeHtml(e.message)}</p>`; }
+}
+
+// Admin-only — for the "employee made a mistake" case. Only offered for
+// a still-Open voucher; server-side deleteCashExpenseVoucher re-checks
+// this regardless of what got sent.
+async function cesDeleteVoucher(expenseId) {
+  const reason = prompt("Reason for deleting this voucher (optional):") || null;
+  if (!confirm("Permanently delete this voucher? This cannot be undone — the employee will need a new one.")) return;
+  showBlockingOverlay("Deleting voucher...");
+  try {
+    const data = await apFetch({ action: "deleteCashExpenseVoucher", expenseId, reason });
+    hideBlockingOverlay();
+    if (!data.success) { alert(data.error); return; }
+    runCashExpenseSearch();
+  } catch (e) { hideBlockingOverlay(); alert("Network error: " + e.message); }
 }
 
 // Actual Amount correction for an already-closed voucher — plain input
