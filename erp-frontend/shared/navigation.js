@@ -37,16 +37,20 @@ let deptTabVisibleKeys = DEPT_TAB_KEYS.slice();
 function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canTourExpense = userPermissionsObject.tourExpense === true;
   const canCashExpenses = userPermissionsObject.cashExpenses === true;
+  const canTravelTickets = userPermissionsObject.travelTickets === true;
+  const canViewAccountsDashboard = userPermissionsObject.viewAccountsDashboard === true;
   const canItemCode = userPermissionsObject.itemCodeAccess === true;
   const canSecurity  = userPermissionsObject.securityLoginAccess === true;
 
   if (document.getElementById("mod-tourexpense"))  document.getElementById("mod-tourexpense").style.display  = canTourExpense  ? "block" : "none";
   if (document.getElementById("mod-cashexpenses")) document.getElementById("mod-cashexpenses").style.display = canCashExpenses ? "block" : "none";
+  if (document.getElementById("mod-traveltickets")) document.getElementById("mod-traveltickets").style.display = canTravelTickets ? "block" : "none";
+  if (document.getElementById("mod-accounts-dashboard-wrapper")) document.getElementById("mod-accounts-dashboard-wrapper").style.display = canViewAccountsDashboard ? "block" : "none";
   if (document.getElementById("mod-itemcode"))     document.getElementById("mod-itemcode").style.display     = canItemCode     ? "block" : "none";
   if (document.getElementById("mod-security"))     document.getElementById("mod-security").style.display     = canSecurity     ? "block" : "none";
 
   const accountsBlock = document.getElementById("dashboard-accounts-department-header-block");
-  if (accountsBlock) accountsBlock.style.display = (canTourExpense || canCashExpenses) ? "block" : "none";
+  if (accountsBlock) accountsBlock.style.display = (canTourExpense || canCashExpenses || canTravelTickets || canViewAccountsDashboard) ? "block" : "none";
   const designBlock = document.getElementById("dashboard-design-department-header-block");
   if (designBlock) designBlock.style.display = canItemCode ? "block" : "none";
   const adminBlock = document.getElementById("dashboard-admin-department-header-block");
@@ -131,6 +135,7 @@ function switchActiveDashboardModule(targetSectionId) {
   // initializeCashExpensesPanel the same way).
   if (targetSectionId === "tourexpense" && typeof initializeTourExpensePanel === "function") initializeTourExpensePanel();
   if (targetSectionId === "cashexpenses" && typeof initializeCashExpensesPanel === "function") initializeCashExpensesPanel();
+  if (targetSectionId === "traveltickets" && typeof initializeTravelTicketsPanel === "function") initializeTravelTicketsPanel();
   if (targetSectionId === "itemcode" && typeof initializeItemCodePanel === "function") initializeItemCodePanel();
 }
 

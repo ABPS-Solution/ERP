@@ -2,7 +2,7 @@
 // the checking queue Accounts works through. Vouchers were submitted on
 // the public page; nothing here is editable except Actual Amount and
 // Bill Checked. Balance only moves when a voucher is Checked (never at
-// submission). Ported from ABPS Portal (31 Aug 2026).
+// submission) — see routes/accounts.js checkTourVoucher.
 
 async function initializeVoucherCheckPanel() {
   const panel = document.getElementById("te-panel-check");
@@ -21,11 +21,16 @@ async function loadVoucherCheckQueue() {
       return;
     }
     feed.innerHTML = data.vouchers.map(v => tvcRenderCard(v)).join("");
+    data.vouchers.forEach(v => tvcRecalcTotals(v.voucherId));
   } catch (e) { feed.innerHTML = `<p style="color:var(--warn);">${escapeHtml(e.message)}</p>`; }
 }
 
 function tvcRenderCard(v) {
   const lines = v.lines || [];
+  const colBorder = "border-left:2px solid var(--border);";
+  const cell = "padding:4px 6px; line-height:1.25; font-size:0.82rem; color:#000; text-align:center; vertical-align:middle; word-wrap:break-word; overflow-wrap:break-word;";
+  const headCell = "padding:4px 6px; line-height:1.25; text-align:center; font-size:0.82rem; text-transform:uppercase; color:var(--muted); vertical-align:middle;";
+  const amtCell = "padding:4px 6px; line-height:1.25; font-size:0.95rem; font-weight:700; color:#000; text-align:center; vertical-align:middle;";
   const rows = lines.map(l => {
     const bills = (l.bills && l.bills.length > 0) ? l.bills : (l.billUrl ? [{ fileName: l.billFileName, url: l.billUrl }] : []);
     const billCell = bills.length > 0
@@ -35,17 +40,24 @@ function tvcRenderCard(v) {
         : `<span style="color:var(--muted);">— no bill required —</span>`;
     const typeLabel = l.expenseType === 'Local Conveyance' && l.conveyanceMode ? `Local Conveyance (${escapeHtml(l.conveyanceMode)})`
       : l.expenseType === 'Others' && l.otherText ? `Others (${escapeHtml(l.otherText)})` : escapeHtml(l.expenseType);
-    return `<tr style="border-bottom:1px solid var(--border);" data-line-id="${l.lineId}">
-      <td style="padding:7px;">${l.srNo}</td>
-      <td style="padding:7px;">${formatDateDMY(l.expenseDate)}</td>
-      <td style="padding:7px;">${typeLabel}</td>
-      <td style="padding:7px; width:14%; overflow-wrap:anywhere;">${billCell}</td>
-      <td style="padding:7px; text-align:right;">${formatINRComma(l.amount)}</td>
-      <td style="padding:7px 7px 7px 20px; width:26%; color:var(--muted);">${l.description ? escapeHtml(l.description) : '—'}</td>
-      <td style="padding:7px;"><input type="number" class="tvc-actual-input" data-line-id="${l.lineId}" value="${trimNum(l.amount)}" min="0"
-            style="width:100px; padding:5px; border:1px solid var(--border); border-radius:4px; text-align:right;"
-            oninput="tvcRecalcTotals(${v.voucherId})"></td>
-      <td style="padding:7px; text-align:center;"><input type="checkbox" class="tvc-checked-input" data-line-id="${l.lineId}"></td>
+    return `<tr style="border-bottom:2px solid var(--border);" data-line-id="${l.lineId}">
+      <td style="${cell}">${l.srNo}</td>
+      <td style="${cell} ${colBorder}">${formatOrdinalDate(l.expenseDate)}</td>
+      <td style="${cell} ${colBorder}">${typeLabel}</td>
+      <td style="${cell} ${colBorder}; white-space:nowrap;">${billCell}</td>
+      <td style="${amtCell} ${colBorder}">${formatINRComma(l.amount)}</td>
+      <td style="${cell} ${colBorder}; color:var(--muted);">${l.description ? escapeHtml(l.description) : '—'}</td>
+      <td style="${cell} ${colBorder}">
+        <input type="number" class="tvc-actual-input" data-line-id="${l.lineId}"
+              data-cap="${l.capAmount != null ? l.capAmount : l.amount}"
+              value="${trimNum(l.capAmount != null ? l.capAmount : l.amount)}" min="0"
+              style="width:80px; padding:3px 5px; border:1px solid var(--border); border-radius:4px; text-align:right; font-size:0.9rem; font-weight:700; line-height:1.2;"
+              oninput="tvcRecalcTotals(${v.voucherId}); tvcCheckOverLimit(${l.lineId})">
+        ${l.overLimitFlag ? `<div class="tvc-overlimit-badge" style="color:#b91c1c; font-size:0.68rem; font-weight:700; line-height:1.2; margin-top:1px;">Over limit by ${formatINRComma(l.overLimitAmount)}</div>` : ''}
+        <textarea class="tvc-reason-input" data-line-id="${l.lineId}" placeholder="Reason for exceeding limit"
+              style="display:none; width:100%; box-sizing:border-box; margin:2px auto 0; text-align:center; font-size:0.7rem; padding:3px; border:1px solid var(--border); border-radius:4px;"></textarea>
+      </td>
+      <td style="${cell} ${colBorder}"><input type="checkbox" class="tvc-checked-input" data-line-id="${l.lineId}"></td>
     </tr>`;
   }).join("");
 
@@ -57,7 +69,7 @@ function tvcRenderCard(v) {
     foodTotalsByDate[l.expenseDate] = (foodTotalsByDate[l.expenseDate] || 0) + (Number(l.amount) || 0);
   });
   const dailyFoodTotalsLine = Object.keys(foodTotalsByDate).sort().map(date =>
-    `<div>Daily Total Food for ${formatDateDMY(date)}: <strong>${formatINRComma(foodTotalsByDate[date])}</strong></div>`
+    `<div>Daily Total Food for ${formatOrdinalDate(date)}: <strong>${formatINRComma(foodTotalsByDate[date])}</strong></div>`
   ).join("");
 
   // Same pattern, for Local Conveyance.
@@ -66,7 +78,7 @@ function tvcRenderCard(v) {
     conveyanceTotalsByDate[l.expenseDate] = (conveyanceTotalsByDate[l.expenseDate] || 0) + (Number(l.amount) || 0);
   });
   const dailyConveyanceTotalsLine = Object.keys(conveyanceTotalsByDate).sort().map(date =>
-    `<div>Daily Total Local Conveyance for ${formatDateDMY(date)}: <strong>${formatINRComma(conveyanceTotalsByDate[date])}</strong></div>`
+    `<div>Daily Total Local Conveyance for ${formatOrdinalDate(date)}: <strong>${formatINRComma(conveyanceTotalsByDate[date])}</strong></div>`
   ).join("");
 
   const peopleLine = (v.additionalPeople || []).length
@@ -84,23 +96,29 @@ function tvcRenderCard(v) {
               <span style="margin-left:8px; font-weight:700;">${escapeHtml(v.employeeName)}</span>
               <span style="color:var(--muted); font-size:0.8rem; margin-left:6px;">${escapeHtml(v.departmentName || '—')}</span>
             </div>
-            <span style="background:#cbd5e1; color:#1e293b; font-weight:700; font-size:0.8rem; padding:3px 8px;">Submitted: ${formatDateDMY(v.submittedDate)}</span>
+            <span style="background:#cbd5e1; color:#1e293b; font-weight:700; font-size:0.8rem; padding:3px 8px;">Submitted: ${formatOrdinalDate(v.submittedDate)}</span>
           </div>
           <div style="font-size:0.85rem; color:var(--muted); margin-top:6px;">
             ${escapeHtml(v.purposeOfVisit === 'Others' ? v.purposeOtherText : v.purposeOfVisit)} · ${escapeHtml(v.placeOfVisit)} ·
-            ${formatDateDMY(v.visitStartDate)} to ${formatDateDMY(v.visitEndDate)} · Total Claimed: ${formatINRComma(v.totalAmount)}
+            ${formatOrdinalDate(v.visitStartDate)} to ${formatOrdinalDate(v.visitEndDate)} · Total Claimed: ${formatINRComma(v.totalAmount)}
           </div>
           ${peopleLine}${serviceReportLine}
         </div>
       </div>
       <div style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;">
+        ${tvcRenderTicketPicker(v)}
         <div style="overflow-x:auto;">
-          <table style="width:100%; border-collapse:collapse; font-size:0.82rem;">
-            <thead><tr style="background:var(--highlight-bg); text-align:left;">
-              <th style="padding:7px;">Sr No</th><th style="padding:7px;">Date</th><th style="padding:7px;">Type</th>
-              <th style="padding:7px; width:14%;">Uploaded Bill</th><th style="padding:7px; text-align:right;">Amount</th>
-              <th style="padding:7px 7px 7px 20px; width:26%;">Description</th>
-              <th style="padding:7px;">Actual Amount</th><th style="padding:7px;">Bill Checked?</th>
+          <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
+            <colgroup>
+              <col style="width:4%;"><col style="width:8%;"><col style="width:8%;">
+              <col style="width:28%;"><col style="width:9%;"><col style="width:18%;">
+              <col style="width:15%;"><col style="width:10%;">
+            </colgroup>
+            <thead><tr style="background:var(--highlight-bg); border-bottom:2px solid var(--border);">
+              <th style="${headCell}">Sr No</th><th style="${headCell} ${colBorder}">Date</th><th style="${headCell} ${colBorder}">Type</th>
+              <th style="${headCell} ${colBorder}">Uploaded Bill</th><th style="${headCell} ${colBorder}">Voucher Amount</th>
+              <th style="${headCell} ${colBorder}">Description</th>
+              <th style="${headCell} ${colBorder}">Actual Amount</th><th style="${headCell} ${colBorder}">Bill Checked?</th>
             </tr></thead>
             <tbody>${rows}</tbody>
           </table>
@@ -113,6 +131,95 @@ function tvcRenderCard(v) {
         </div>
       </div>
     </div>`;
+}
+
+// Company-Paid Travel & Hotel Bookings — this employee's Unactioned
+// bookings, sorted by travel/stay date (server order), with the ones
+// overlapping this voucher's own visit window visually flagged.
+// Checkboxes (not radio) — a voucher may link several bookings
+// (outbound/return tickets, or a ticket plus a hotel, booked
+// separately). No blocking validation: employee-claimed Travel lines and
+// company-paid bookings can legitimately coexist on one voucher.
+function tvcRenderTicketPicker(v) {
+  const candidates = v.linkableCompanyPaidBookings || [];
+  if (candidates.length === 0) return "";
+  // CSS Grid, not flex/label — a checkbox+flex-content+price row built
+  // with <label>/bare <span> here was collapsing the middle column to a
+  // sliver in production (root cause never pinned down); grid with an
+  // explicit minmax(0,1fr) track can't do that, so it's rebuilt on that
+  // instead of chasing the original layout further.
+  const renderRow = (t) => {
+    const isHotel = t.bookingType === 'Hotel';
+    const dateCell = isHotel
+      ? `${formatOrdinalDate(t.departDate)} → ${formatOrdinalDate(t.returnDate)}`
+      : (t.tripType === 'Round Trip' && t.returnDate
+          ? `${formatOrdinalDate(t.departDate)} → ${formatOrdinalDate(t.returnDate)}` : formatOrdinalDate(t.departDate));
+    const overlapBadge = t.overlapsVisit
+      ? `<div style="display:inline-block; background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:10px; font-size:0.72rem; font-weight:700;">Matches visit dates</div>`
+      : `<div style="display:inline-block; background:#f1f5f9; color:var(--muted); padding:2px 8px; border-radius:10px; font-size:0.72rem;">Outside visit window</div>`;
+    const titleLine = isHotel
+      ? `Hotel: ${escapeHtml(t.hotelName || t.hotelCity)}, ${escapeHtml(t.hotelCity)}${t.nights ? ` · ${t.nights} night${t.nights === 1 ? '' : 's'}` : ''}`
+      : `${escapeHtml(t.modeOfTravel)}: ${escapeHtml(t.fromCity)} → ${escapeHtml(t.toCity)}`;
+    // Booked for the primary employee by default; if it was booked for
+    // one of this voucher's Additional People instead, say so — a
+    // co-traveller's booking can now be claimed here too.
+    const forBadge = t.employeeName && t.employeeName !== v.employeeName
+      ? `<span style="color:var(--brand); font-weight:700;">For ${escapeHtml(t.employeeName)}</span>` : null;
+    const metaBits = [dateCell, t.pnrNumber ? `${isHotel ? 'Ref' : 'PNR'}: ${escapeHtml(t.pnrNumber)}` : null, forBadge].filter(Boolean).join(' · ');
+    return `<div class="tvc-ticket-row" onclick="tvcToggleTicketRow(event, ${t.travellerId})"
+        style="display:grid; grid-template-columns:24px minmax(0,1fr) auto; align-items:center; column-gap:12px;
+               padding:10px 12px; border:1px solid ${t.overlapsVisit ? '#86efac' : 'var(--border)'}; border-radius:6px;
+               margin-bottom:8px; cursor:pointer; background:${t.overlapsVisit ? '#f0fdf4' : '#fff'};">
+      <input type="checkbox" class="tvc-ticket-input" data-traveller-id="${t.travellerId}" onclick="event.stopPropagation();" style="width:16px; height:16px; margin:0;">
+      <div style="min-width:0;">
+        <div style="font-weight:700; overflow-wrap:break-word;">${titleLine}</div>
+        <div style="color:var(--muted); font-size:0.82rem; margin-top:2px;">${metaBits}</div>
+        <div style="margin-top:4px;">${overlapBadge}</div>
+      </div>
+      <div style="font-weight:700; white-space:nowrap;">${formatINRComma(t.price)}</div>
+    </div>`;
+  };
+  // Two columns, Travel left / Hotel right — cleaner and more
+  // height-efficient than one long stacked list once both types are
+  // present. Either column is simply omitted (not an empty placeholder)
+  // when there's nothing of that type.
+  const travelRows = candidates.filter(t => t.bookingType !== 'Hotel').map(renderRow).join("");
+  const hotelRows = candidates.filter(t => t.bookingType === 'Hotel').map(renderRow).join("");
+  const column = (label, rows) => rows ? `
+    <div style="flex:1; min-width:0;">
+      <div style="font-weight:700; font-size:0.8rem; color:var(--muted); text-transform:uppercase; margin-bottom:6px;">${label}</div>
+      ${rows}
+    </div>` : '';
+  return `
+    <div style="margin-bottom:14px; padding:12px; background:var(--highlight-bg); border-radius:var(--radius);">
+      <div style="font-weight:700; margin-bottom:8px;">Company-Paid Travel &amp; Hotel Bookings</div>
+      <div style="font-size:0.8rem; color:var(--muted); margin-bottom:8px; font-style:italic;">
+        Recorded on the voucher for the record. Not added to Total Actual Amount and not paid to the employee.
+      </div>
+      <div style="display:flex; gap:16px; flex-wrap:wrap;">
+        ${column('Travel', travelRows)}${column('Hotel', hotelRows)}
+      </div>
+    </div>`;
+}
+
+// Clicking anywhere on a ticket row toggles its checkbox — the checkbox
+// itself already stops propagation so this doesn't double-toggle.
+function tvcToggleTicketRow(event, travellerId) {
+  const cb = document.querySelector(`.tvc-ticket-input[data-traveller-id="${travellerId}"]`);
+  if (cb) cb.checked = !cb.checked;
+}
+
+// Position-based daily expense limit (migration 167) — shows/hides the
+// per-row reason box live as the checker edits Actual, comparing against
+// this row's FIXED cap (data-cap, computed server-side from the claimed
+// amount at queue-fetch time — never recomputed client-side).
+function tvcCheckOverLimit(lineId) {
+  const input = document.querySelector(`.tvc-actual-input[data-line-id="${lineId}"]`);
+  const reasonBox = document.querySelector(`.tvc-reason-input[data-line-id="${lineId}"]`);
+  if (!input || !reasonBox) return;
+  const cap = Number(input.dataset.cap);
+  const val = Number(input.value) || 0;
+  reasonBox.style.display = val > cap ? "block" : "none";
 }
 
 function tvcRecalcTotals(voucherId) {
@@ -134,21 +241,35 @@ function tvcRecalcTotals(voucherId) {
 async function submitTourVoucherCheck(voucherId) {
   const card = document.getElementById(`tvc-card-${voucherId}`);
   const rows = [...card.querySelectorAll("tbody tr")];
-  const lines = rows.map(tr => ({
-    lineId: Number(tr.dataset.lineId),
-    actualAmount: parseFloat(tr.querySelector(".tvc-actual-input").value),
-    billChecked: tr.querySelector(".tvc-checked-input").checked,
-  }));
+  const lines = rows.map(tr => {
+    const actualInput = tr.querySelector(".tvc-actual-input");
+    const reasonInput = tr.querySelector(".tvc-reason-input");
+    return {
+      lineId: Number(tr.dataset.lineId),
+      actualAmount: parseFloat(actualInput.value),
+      billChecked: tr.querySelector(".tvc-checked-input").checked,
+      overLimitReason: reasonInput ? reasonInput.value.trim() : "",
+      _cap: Number(actualInput.dataset.cap),
+    };
+  });
   if (lines.some(l => !l.billChecked)) {
     return showTourFeedback("Every line's Bill Checked box must be ticked before you can submit.", "error");
   }
   if (lines.some(l => isNaN(l.actualAmount) || l.actualAmount < 0)) {
     return showTourFeedback("Every line needs a valid non-negative Actual Amount.", "error");
   }
+  // Position-based daily expense limit — client-side pre-check, mirrors
+  // (does not replace) the authoritative server-side check.
+  if (lines.some(l => l.actualAmount > l._cap && !l.overLimitReason)) {
+    return showTourFeedback("One or more lines exceed their position-based daily limit cap — a reason is required before this voucher can be submitted.", "error");
+  }
+  const linesToSend = lines.map(({ _cap, ...l }) => l);
+
+  const travellerIds = [...card.querySelectorAll(".tvc-ticket-input:checked")].map(cb => Number(cb.dataset.travellerId));
 
   showBlockingOverlay("Submitting check...");
   try {
-    const data = await apFetch({ action: "checkTourVoucher", voucherId, lines });
+    const data = await apFetch({ action: "checkTourVoucher", voucherId, lines: linesToSend, travellerIds });
     hideBlockingOverlay();
     if (data.success) {
       const pdfLine = data.pdfUrl

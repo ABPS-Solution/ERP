@@ -53,6 +53,21 @@ function formatDateDMY(value) {
   return `${get('day')}-${get('month')}-${get('year')}`;
 }
 
+// Ordinal display date ("4th Sep 2026") — ported from Portal's
+// shared/format.js, used throughout the Accounts Tour Expense /
+// Travel-Hotel Booking screens ported from there.
+function formatOrdinalDate(value) {
+  if (!value) return '';
+  const d = value instanceof Date ? value : new Date(value);
+  if (isNaN(d.getTime())) return '';
+  const day = d.getDate();
+  const suffix = (day % 10 === 1 && day !== 11) ? 'st'
+    : (day % 10 === 2 && day !== 12) ? 'nd'
+    : (day % 10 === 3 && day !== 13) ? 'rd' : 'th';
+  const month = d.toLocaleString('en-US', { month: 'short' });
+  return `${day}${suffix} ${month} ${d.getFullYear()}`;
+}
+
 // ═══════════════════════════════════════════════════════
 // DATE INPUT FORMAT ENHANCER — force DD/MM/YYYY display
 // ═══════════════════════════════════════════════════════

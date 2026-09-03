@@ -1,10 +1,10 @@
-// accounts/voucher-search.js — "Search Vouchers" toggle.
+// accounts/voucher-search.js — "Search Vouchers" toggle (renamed from
+// "Search Tour Expense Vouchers" 25 Aug 2026).
 // Read-only: filters + two balance-bucket lists + a Checked-only total.
 // Has its own inner Expense/Advance toggle — same filters (Employee,
 // Department, Date range, Place) apply to both, but Purpose/Type/Status
 // only make sense for Expense Vouchers (accounts.tour_vouchers), not a
-// plain Advance payment record (accounts.tour_advances). Ported from
-// ABPS Portal (31 Aug 2026).
+// plain Advance payment record (accounts.tour_advances).
 
 let tvsSearchMode = "expense"; // "expense" | "advance"
 let tvsCachedCompanies = [];
@@ -14,7 +14,7 @@ let tvsSelectedEmployeeName = "";
 
 // Employee Name filter — same clipped-dropdown-safe typeahead pattern as
 // advance-vouchers.js's Employee Name field (CLAUDE.md's "Clipped-dropdown
-// fix pattern"), replacing the old plain <select>.
+// fix pattern"), replacing the old plain <select> (30 Aug 2026).
 function tvsHandleEmployeeSearch(query) {
   const dd = document.getElementById("tvs-emp-dropdown");
   tvsSelectedEmployeeId = null;
@@ -125,11 +125,16 @@ async function initializeVoucherSearchPanel() {
             style="padding:8px; border:1px solid var(--border); border-radius:6px; min-width:140px;"
             oninput="tvsHandlePlaceSearch(this.value)">
           <div id="tvs-place-dropdown" style="display:none; position:fixed; background:#fff; border:1.5px solid var(--brand); border-radius:4px; z-index:9999; max-height:220px; overflow-y:auto; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div></div>
-        <div><label class="field-label">Date From</label>
+        <div><label class="field-label" id="tvs-label-from">Date From</label>
           <input type="date" id="tvs-f-from" style="padding:8px; border:1px solid var(--border); border-radius:6px;"></div>
-        <div><label class="field-label">Date To</label>
+        <div><label class="field-label" id="tvs-label-to">Date To</label>
           <input type="date" id="tvs-f-to" style="padding:8px; border:1px solid var(--border); border-radius:6px;"></div>
         <button class="nav-btn-styled" style="margin-left:auto;" onclick="runTourVoucherSearch()">Search</button>
+      </div>
+      <div id="tvs-overlimit-row" style="margin-top:12px;">
+        <label style="display:flex; align-items:center; gap:6px; white-space:nowrap; width:fit-content;">
+          <input type="checkbox" id="tvs-f-overlimit"> Over Limit Only
+        </label>
       </div>
     </div>
 
@@ -159,7 +164,13 @@ function tvsSetSearchMode(mode) {
   document.getElementById("tvs-mode-advance").style.background = mode === "advance" ? "var(--brand)" : "#e2e8f0";
   document.getElementById("tvs-mode-advance").style.color = mode === "advance" ? "#fff" : "#334155";
   document.getElementById("tvs-expense-only-filters").style.display = mode === "expense" ? "contents" : "none";
+  document.getElementById("tvs-overlimit-row").style.display = mode === "expense" ? "block" : "none";
   document.getElementById("tvs-advance-only-filters").style.display = mode === "advance" ? "contents" : "none";
+  // The shared date-range filter means "Visit Date" in Expense mode
+  // (filters visit_start_date/visit_end_date) but "Paid Date" in Advance
+  // mode (filters paid_date) — same inputs, different backend meaning.
+  document.getElementById("tvs-label-from").textContent = mode === "advance" ? "Paid Date From" : "Date From";
+  document.getElementById("tvs-label-to").textContent = mode === "advance" ? "Paid Date To" : "Date To";
   runTourVoucherSearch();
 }
 
@@ -170,7 +181,7 @@ function tvsBuildSearchLabel() {
   const deptLabel = document.getElementById("tvs-f-dept").value || "All";
   const from = document.getElementById("tvs-f-from").value;
   const to = document.getElementById("tvs-f-to").value;
-  const dateRangeLabel = (from || to) ? `${from ? formatDateDMY(from) : '…'} to ${to ? formatDateDMY(to) : '…'}` : "All";
+  const dateRangeLabel = (from || to) ? `${from ? formatOrdinalDate(from) : '…'} to ${to ? formatOrdinalDate(to) : '…'}` : "All";
   let html = `<span style="color:#000;">Searching for</span>` +
     `<br><span style="color:#000;">Mode:</span> ${val(tvsSearchMode === "expense" ? "Expense Vouchers" : "Advance Vouchers")}`;
   if (tvsSearchMode === "expense") {
@@ -230,7 +241,7 @@ async function runTourVoucherSearch() {
         resultsEl.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted); background:var(--highlight-bg); border-radius:var(--radius);">No advances match this filter.</div>`;
         return;
       }
-      resultsEl.innerHTML = data.advances.map(a => tvsRenderAdvanceCard(a)).join("");
+      resultsEl.innerHTML = tvsRenderAdvanceTable(data.advances);
       await tvsRefreshBalanceBuckets();
       return;
     }
@@ -240,6 +251,7 @@ async function runTourVoucherSearch() {
       purposeOfVisit: document.getElementById("tvs-f-purpose").value || null,
       expenseType: document.getElementById("tvs-f-type").value || null,
       status: document.getElementById("tvs-f-status").value || null,
+      overLimitOnly: document.getElementById("tvs-f-overlimit").checked || null,
     };
     const data = await apFetch({ action: "searchTourVouchers", ...expenseFilters });
     if (!data.success) { resultsEl.innerHTML = `<p style="color:var(--warn);">${escapeHtml(data.error)}</p>`; return; }
@@ -248,7 +260,10 @@ async function runTourVoucherSearch() {
       ${tvsRenderBucket("Balance over ₹10,000", data.employeesOver10k, "#b91c1c")}
       ${tvsRenderBucket("Balance -₹10,000 or under", data.employeesUnder10k, "#15803d")}`;
 
-    document.getElementById("tvs-total").textContent = `Total Voucher Amount (Checked, Actual): ${formatINRComma(data.totalCheckedActual)}`;
+    document.getElementById("tvs-total").innerHTML =
+      `Total Voucher Amount (Checked, Actual): ${formatINRComma(data.totalCheckedActual)}` +
+      `&nbsp;&nbsp;|&nbsp;&nbsp;Company-Paid (Checked): ${formatINRComma(data.totalCompanyPaid || 0)}` +
+      `&nbsp;&nbsp;|&nbsp;&nbsp;Over Limit Amount: ${formatINRComma(data.overLimitAmount || 0)}`;
 
     if (data.vouchers.length === 0) {
       resultsEl.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted); background:var(--highlight-bg); border-radius:var(--radius);">No vouchers match this filter.</div>`;
@@ -280,24 +295,39 @@ function tvsRenderBucket(title, employees, color) {
     <div style="font-weight:700; margin-bottom:6px; font-size:0.85rem;">${title}</div>${rows}</div>`;
 }
 
-function tvsRenderAdvanceCard(a) {
+// "2nd Sep 2026" style — day-of-month with ordinal suffix, short month
+// name, full year. Local to this file; no shared helper for this exists
+// yet elsewhere in abps-frontend.
+// Same bordered/wrapping table shape as marketing/tasks-followups.js's
+// task table — left border between columns, values wrap instead of
+// truncating (so a row grows taller rather than clipping text), every
+// header and value centered both ways.
+function tvsRenderAdvanceTable(advances) {
+  const colBorder = "border-left:2px solid var(--border);";
+  const cell = "padding:8px 6px; font-size:0.85rem; color:#000; text-align:center; vertical-align:middle; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap;";
+  const rows = advances.map(a => `
+    <tr style="border-bottom:2px solid var(--border);">
+      <td style="${cell} font-weight:700;">${escapeHtml(a.employeeName)}</td>
+      <td style="${cell} ${colBorder}">${escapeHtml(a.departmentName || '—')}</td>
+      <td style="${cell} ${colBorder}">${escapeHtml(a.placeOfVisit || '—')}</td>
+      <td style="${cell} ${colBorder}">${escapeHtml(a.purposeOfVisit || '—')}</td>
+      <td style="${cell} ${colBorder}">${a.remarks ? escapeHtml(a.remarks) : '—'}</td>
+      <td style="${cell} ${colBorder} font-weight:700;">${formatINRComma(a.amount)}</td>
+      <td style="${cell} ${colBorder}">${formatOrdinalDate(a.paidDate)}</td>
+      <td style="${cell} ${colBorder}">${a.createdBy ? escapeHtml(a.createdBy) : '—'}</td>
+    </tr>`).join("");
+  const th = "padding:8px 6px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted); vertical-align:middle;";
   return `
-    <div class="contact-summary-card-parent">
-      <div class="contact-summary-title-info" style="width:100%;">
-        <div style="display:flex; justify-content:space-between; width:100%; align-items:center; flex-wrap:wrap; gap:8px;">
-          <div>
-            <span style="font-weight:700;">${escapeHtml(a.employeeName)}</span>
-            <span style="color:var(--muted); font-size:0.8rem; margin-left:6px;">${escapeHtml(a.departmentName || '—')}</span>
-          </div>
-          <span style="background:var(--brand); color:#fff; font-weight:700; font-size:0.85rem; padding:3px 10px; border-radius:3px;">${formatINRComma(a.amount)}</span>
-        </div>
-        <div style="font-size:0.85rem; color:var(--muted); margin-top:6px;">
-          ${escapeHtml(a.placeOfVisit || '—')}${a.purposeOfVisit ? ' · ' + escapeHtml(a.purposeOfVisit) : ''} ·
-          Start ${formatDateDMY(a.startDate)}${a.estimatedDays ? ` · ${a.estimatedDays} day(s)` : ''} ·
-          Paid ${formatDateDMY(a.paidDate)}${a.createdBy ? ' by ' + escapeHtml(a.createdBy) : ''}
-        </div>
-        ${a.remarks ? `<div style="font-size:0.8rem; color:var(--muted); margin-top:4px;">Remarks: ${escapeHtml(a.remarks)}</div>` : ''}
-      </div>
+    <div style="overflow-x:auto;">
+      <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
+        <thead><tr style="background:var(--highlight-bg); border-bottom:2px solid var(--border);">
+          <th style="${th}">Emp Name</th><th style="${th} ${colBorder}">Department</th>
+          <th style="${th} ${colBorder}">Company of Visit</th><th style="${th} ${colBorder}">Purpose of Visit</th>
+          <th style="${th} ${colBorder}">Remarks</th><th style="${th} ${colBorder}">Advance Amount</th>
+          <th style="${th} ${colBorder}">Paid on Date</th><th style="${th} ${colBorder}">Paid by</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
     </div>`;
 }
 
@@ -308,39 +338,98 @@ function tvsRenderCard(v) {
   // accepts a Checked voucher, same guard as the backend. The voucher's
   // claimed total_amount is never editable here, only each line's Actual.
   // A plain number input, no Edit/Save buttons — saves automatically on
-  // blur (onchange) if the value actually changed.
+  // blur (onchange) if the value actually changed (31 Aug 2026, replacing
+  // an earlier click-to-edit/Save-Cancel affordance).
   const canEditActual = v.status === 'Checked';
+  const isAdminUser = localStorage.getItem("erpIsUserAdminGlobal") === "true"; // gates Delete Voucher only — Link/Unlink are not admin-gated
+  const colBorder = "border-left:2px solid var(--border);";
+  const cell = "padding:4px 6px; line-height:1.25; font-size:0.82rem; color:#000; text-align:center; vertical-align:middle; word-wrap:break-word; overflow-wrap:break-word;";
+  const amtCell = "padding:4px 6px; line-height:1.25; font-size:0.95rem; font-weight:700; color:#000; text-align:center; vertical-align:middle;";
   const rows = lines.map(l => {
     const bills = (l.bills && l.bills.length > 0) ? l.bills : (l.billUrl ? [{ fileName: l.billFileName, url: l.billUrl }] : []);
     const billCell = bills.length > 0
       ? bills.map(b => `<a href="${driveLink(b.url)}" target="_blank" rel="noopener">${escapeHtml(b.fileName || 'View')}</a>`).join("<br>")
       : l.noBillReason ? `<span style="font-style:italic;">Reason: ${escapeHtml(l.noBillReason)}</span>` : "—";
     const rawActual = Number(l.actualAmount) || 0;
+    const rawCap = l.capAmount != null ? Number(l.capAmount) : null;
+    const startsOverCap = rawCap !== null && rawActual > rawCap;
     const actualCell = canEditActual
-      ? `<input type="number" id="tvs-actual-input-${l.lineId}" value="${rawActual}" min="0" step="0.01"
-           style="width:80px; padding:2px 4px; font-size:0.78rem; text-align:right;" onclick="event.stopPropagation();"
+      ? `<input type="number" id="tvs-actual-input-${l.lineId}" data-cap="${l.capAmount != null ? l.capAmount : ''}" value="${rawActual}" min="0" step="0.01"
+           style="width:80px; padding:3px 5px; border:1px solid var(--border); border-radius:4px; text-align:right; font-size:0.9rem; font-weight:700;" onclick="event.stopPropagation();"
+           oninput="event.stopPropagation(); tvsCheckOverLimit(${l.lineId})"
            onchange="event.stopPropagation(); tvsSaveLineActual(${v.voucherId}, ${l.lineId}, ${rawActual})">
-         <span id="tvs-actual-err-${l.lineId}" style="color:#b91c1c; font-size:0.62rem; display:block;"></span>`
+         <span id="tvs-actual-err-${l.lineId}" style="color:#b91c1c; font-size:0.62rem; display:block;"></span>
+         <textarea id="tvs-reason-input-${l.lineId}" placeholder="Reason for exceeding limit" onclick="event.stopPropagation();"
+           onchange="event.stopPropagation(); tvsSubmitLineActualWithReason(${v.voucherId}, ${l.lineId}, ${rawActual})"
+           style="display:${startsOverCap ? 'block' : 'none'}; width:100%; box-sizing:border-box; margin:2px auto 0; text-align:center; font-size:0.7rem; padding:3px; border:1px solid var(--border); border-radius:4px;">${escapeHtml(l.overLimitReason || '')}</textarea>`
       : (l.actualAmount !== null && l.actualAmount !== undefined ? formatINRComma(l.actualAmount) : '—');
-    return `<tr style="border-bottom:1px solid var(--border);">
-      <td style="padding:6px;">${l.srNo}</td><td style="padding:6px;">${formatDateDMY(l.expenseDate)}</td>
-      <td style="padding:6px;">${escapeHtml(l.expenseType)}${l.conveyanceMode ? ' (' + escapeHtml(l.conveyanceMode) + ')' : ''}</td>
-      <td style="padding:6px; text-align:right;">${formatINRComma(l.amount)}</td>
-      <td style="padding:6px; color:var(--muted);">${l.description ? escapeHtml(l.description) : '—'}</td>
-      <td style="padding:6px; text-align:right;">${actualCell}</td>
-      <td style="padding:6px;">${billCell}</td>
+    // Position-based daily expense limit (migration 167) — over_limit_flag
+    // reflects whether the ORIGINAL CLAIM triggered a cap; over_limit_amount
+    // is the realized excess actually paid, which can be 0 even when flagged.
+    const overLimitBadge = l.overLimitFlag
+      ? `<span style="color:#b91c1c; font-weight:700; font-size:0.68rem; display:block;">${Number(l.overLimitAmount) > 0 ? `Over by ${formatINRComma(l.overLimitAmount)}` : 'Was capped'}${l.overLimitReason ? ' — ' + escapeHtml(l.overLimitReason) : ''}</span>`
+      : '';
+    return `<tr style="border-bottom:2px solid var(--border);">
+      <td style="${cell}">${l.srNo}</td><td style="${cell} ${colBorder}">${formatOrdinalDate(l.expenseDate)}</td>
+      <td style="${cell} ${colBorder}">${escapeHtml(l.expenseType)}${l.conveyanceMode ? ' (' + escapeHtml(l.conveyanceMode) + ')' : ''}</td>
+      <td style="${amtCell} ${colBorder}">${formatINRComma(l.amount)}</td>
+      <td style="${cell} ${colBorder}; color:var(--muted);">${l.description ? escapeHtml(l.description) : '—'}</td>
+      <td style="${cell} ${colBorder}">${actualCell}${overLimitBadge}</td>
+      <td style="${cell} ${colBorder}; white-space:nowrap;">${billCell}</td>
     </tr>`;
   }).join("");
   const statusColor = v.status === 'Checked' ? '#15803d' : '#b45309';
   // Claimed/Actual summary sums straight off `lines` rather than
   // v.totalAmount/v.totalActualAmount — when a Type filter is active the
   // backend already trims `lines` down to just the matching type, so this
-  // keeps the card header consistent with what the expanded table shows.
+  // keeps the card header consistent with what the expanded table shows
+  // (a mixed-type voucher's header no longer says "Claimed 50,000" while
+  // the table underneath only lists a 10,000 Travel line).
   const cardClaimed = lines.reduce((s, l) => s + (Number(l.amount) || 0), 0);
   const anyActualSet = lines.some(l => l.actualAmount !== null && l.actualAmount !== undefined);
   const cardActual = lines.reduce((s, l) => s + (Number(l.actualAmount) || 0), 0);
   const pdfLine = v.pdfUrl
     ? `<div style="font-size:0.78rem; margin-top:4px;">Voucher PDF (v${v.pdfVersion || 1}): <a href="${driveLink(v.pdfUrl)}" target="_blank" rel="noopener">Download</a></div>` : '';
+
+  // Company-Paid Travel & Hotel — read-only, clearly tagged, never folded
+  // into Claimed/Actual. Link/Unlink is NOT admin-gated (explicit
+  // decision) — anyone with perm_tour_expense can do either, from either
+  // an Unchecked or already-Checked voucher (both re-checked server-side
+  // regardless). Always rendered, even with nothing linked yet, so the
+  // "+ Link" affordance is always reachable.
+  const linkedBookings = v.linkedCompanyPaidBookings || [];
+  const linkedRows = linkedBookings.map(t => {
+    const isHotel = t.bookingType === 'Hotel';
+    const dateCell = isHotel
+      ? `${formatOrdinalDate(t.departDate)} → ${formatOrdinalDate(t.returnDate)}`
+      : (t.tripType === 'Round Trip' && t.returnDate
+          ? `${formatOrdinalDate(t.departDate)} → ${formatOrdinalDate(t.returnDate)}` : formatOrdinalDate(t.departDate));
+    const cancelledTag = t.ticketStatus === 'Cancelled' ? `<span style="color:#b91c1c; font-weight:700; margin-left:6px;">Cancelled</span>` : '';
+    const invoiceLink = t.invoiceUrl ? ` · <a href="${driveLink(t.invoiceUrl)}" target="_blank" rel="noopener">Invoice</a>` : '';
+    const unlinkBtn = `<button class="nav-btn-styled" onclick="event.stopPropagation(); tvsUnlinkTicket(${v.voucherId}, ${t.travellerId})" style="padding:3px 10px; font-size:0.72rem; margin-left:8px; background:#fee2e2; color:#b91c1c;">Unlink</button>`;
+    // Claimable from an Additional Person's own booking too — tag whose
+    // booking it is whenever that's not the voucher's own primary
+    // employee.
+    const forTag = t.travellerEmployeeName && t.travellerEmployeeName !== v.employeeName
+      ? ` · <span style="color:var(--brand);">for ${escapeHtml(t.travellerEmployeeName)}</span>` : '';
+    const label = isHotel
+      ? `<b>Hotel</b>: ${escapeHtml(t.hotelName || t.hotelCity)}, ${escapeHtml(t.hotelCity)} · ${dateCell}${forTag}`
+      : `<b>${escapeHtml(t.modeOfTravel)}</b>: ${escapeHtml(t.fromCity)} → ${escapeHtml(t.toCity)} · ${dateCell}${forTag}`;
+    return `<div style="display:flex; justify-content:space-between; align-items:center; padding:4px 0; font-size:0.9rem;">
+      <span>${label}${invoiceLink}${cancelledTag}</span>
+      <span style="font-weight:700;">${formatINRComma(t.price)}${unlinkBtn}</span>
+    </div>`;
+  }).join("");
+  const ticketsBlock = `
+    <div style="margin-top:12px; padding:10px; background:var(--highlight-bg); border-radius:var(--radius);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <div style="font-weight:700; font-size:0.92rem;">Company-Paid</div>
+        <button class="nav-btn-styled" onclick="event.stopPropagation(); tvsToggleLinkPicker(${v.voucherId})" id="tvs-link-toggle-${v.voucherId}" style="padding:3px 10px; font-size:0.72rem;">+ Link</button>
+      </div>
+      ${linkedRows || `<div style="color:var(--muted); font-size:0.85rem;">No company-paid bookings linked.</div>`}
+      <div id="tvs-link-picker-${v.voucherId}" style="display:none; margin-top:10px; padding-top:10px; border-top:1px dashed var(--border);"></div>
+    </div>`;
+
   return `
     <div class="contact-summary-card-parent">
       <div class="contact-summary-header-row" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display==='block'?'none':'block'" style="cursor:pointer; width:100%;">
@@ -350,37 +439,150 @@ function tvsRenderCard(v) {
               <span style="background:var(--brand); color:#fff; padding:3px 8px; font-weight:700;">${escapeHtml(v.voucherNumber)}</span>
               <span style="margin-left:8px; font-weight:700;">${escapeHtml(v.employeeName)}</span>
             </div>
-            <span style="background:${statusColor}; color:#fff; font-weight:700; font-size:0.75rem; padding:3px 8px; border-radius:3px;">${v.status}</span>
+            <span style="display:flex; align-items:center; gap:8px;">
+              <span style="background:${statusColor}; color:#fff; font-weight:700; font-size:0.75rem; padding:3px 8px; border-radius:3px;">${v.status}</span>
+              ${isAdminUser && v.status === 'Unchecked' ? `<button class="nav-btn-styled" onclick="event.stopPropagation(); tvsDeleteVoucher(${v.voucherId})" style="padding:3px 10px; font-size:0.72rem; background:#fee2e2; color:#b91c1c;">Delete</button>` : ''}
+            </span>
           </div>
           <div style="font-size:0.85rem; color:var(--muted); margin-top:6px;">
             ${escapeHtml(v.departmentName || '—')} · ${escapeHtml(v.purposeOfVisit)} · ${escapeHtml(v.placeOfVisit)} ·
-            ${formatDateDMY(v.visitStartDate)}–${formatDateDMY(v.visitEndDate)} ·
+            ${formatOrdinalDate(v.visitStartDate)}–${formatOrdinalDate(v.visitEndDate)} ·
             Claimed ${formatINRComma(cardClaimed)}${anyActualSet ? ' · Actual ' + formatINRComma(cardActual) : ''}
           </div>
           ${pdfLine}
         </div>
       </div>
-      <div style="display:none; padding-top:12px; border-top:1px dashed var(--border); margin-top:10px; overflow-x:auto;">
-        <table style="width:100%; border-collapse:collapse; font-size:0.82rem;">
-          <thead><tr style="background:var(--highlight-bg); text-align:left;">
-            <th style="padding:6px;">Sr No</th><th style="padding:6px;">Date</th><th style="padding:6px;">Type</th>
-            <th style="padding:6px; text-align:right;">Amount</th><th style="padding:6px;">Description</th><th style="padding:6px; text-align:right;">Actual</th><th style="padding:6px;">Bill</th>
-          </tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
+      <div style="display:none; padding-top:12px; border-top:1px dashed var(--border); margin-top:10px;">
+        <div style="overflow-x:auto;">
+          <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
+            <colgroup>
+              <col style="width:6%;"><col style="width:10%;"><col style="width:14%;">
+              <col style="width:12%;"><col style="width:22%;"><col style="width:14%;"><col style="width:22%;">
+            </colgroup>
+            <thead><tr style="background:var(--highlight-bg); border-bottom:2px solid var(--border);">
+              <th style="padding:4px 6px; line-height:1.25; text-align:center; font-size:0.82rem; text-transform:uppercase; color:var(--muted);">Sr No</th>
+              <th style="padding:4px 6px; line-height:1.25; text-align:center; font-size:0.82rem; text-transform:uppercase; color:var(--muted); ${colBorder}">Date</th>
+              <th style="padding:4px 6px; line-height:1.25; text-align:center; font-size:0.82rem; text-transform:uppercase; color:var(--muted); ${colBorder}">Type</th>
+              <th style="padding:4px 6px; line-height:1.25; text-align:center; font-size:0.82rem; text-transform:uppercase; color:var(--muted); ${colBorder}">Voucher Amount</th>
+              <th style="padding:4px 6px; line-height:1.25; text-align:center; font-size:0.82rem; text-transform:uppercase; color:var(--muted); ${colBorder}">Description</th>
+              <th style="padding:4px 6px; line-height:1.25; text-align:center; font-size:0.82rem; text-transform:uppercase; color:var(--muted); ${colBorder}">Actual Amount</th>
+              <th style="padding:4px 6px; line-height:1.25; text-align:center; font-size:0.82rem; text-transform:uppercase; color:var(--muted); ${colBorder}">Bill</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+        ${ticketsBlock}
       </div>
     </div>`;
 }
 
-// Per-line Actual Amount correction (Search Vouchers). Plain number input
-// that saves automatically on blur if the value actually changed. The
-// voucher's claimed total_amount is never edited here; only this one
-// line's Actual changes, and reviseTourVoucherActualAmount re-derives the
-// voucher's total_actual_amount as the sum of every line, re-applies the
-// balance delta, and regenerates the voucher PDF at the next version.
+// Admin-only, Unchecked-only — for the "employee made a mistake, needs
+// to resubmit" case (wrong date, wrong doc, etc.). Re-checked server-side
+// regardless of what the button's own visibility already enforces.
+async function tvsDeleteVoucher(voucherId) {
+  const reason = prompt("Reason for deleting this voucher (optional):") || null;
+  if (!confirm("Permanently delete this Unchecked voucher? This cannot be undone — the employee will need to resubmit.")) return;
+  showBlockingOverlay("Deleting voucher...");
+  try {
+    const data = await apFetch({ action: "deleteTourVoucher", voucherId, reason });
+    hideBlockingOverlay();
+    if (!data.success) { alert(data.error); return; }
+    runTourVoucherSearch();
+  } catch (e) { hideBlockingOverlay(); alert("Network error: " + e.message); }
+}
+
+async function tvsUnlinkTicket(voucherId, travellerId) {
+  if (!confirm("Unlink this travel ticket from the voucher? This regenerates the voucher PDF.")) return;
+  showBlockingOverlay("Unlinking travel ticket...");
+  try {
+    const data = await apFetch({ action: "unlinkTravelTicketFromVoucher", voucherId, travellerId });
+    hideBlockingOverlay();
+    if (!data.success) { alert(data.error); return; }
+    runTourVoucherSearch();
+  } catch (e) { hideBlockingOverlay(); alert("Network error: " + e.message); }
+}
+
+// Lazy-loaded picker for linking an Unactioned travel/hotel booking (made
+// for the voucher's primary employee OR any Additional Person on it) to
+// this voucher — same candidate shape/eligibility as the Check Voucher
+// queue's picker, just offered again here for a voucher already searched
+// up. Toggled open/closed; only fetches once per open.
+async function tvsToggleLinkPicker(voucherId) {
+  const box = document.getElementById(`tvs-link-picker-${voucherId}`);
+  if (!box) return;
+  if (box.style.display === "block") { box.style.display = "none"; return; }
+  box.style.display = "block";
+  box.innerHTML = `<div style="color:var(--muted); font-size:0.85rem;">Loading...</div>`;
+  try {
+    const data = await apFetch({ action: "fetchLinkableCompanyPaidBookings", voucherId });
+    if (!data.success) { box.innerHTML = `<p style="color:var(--warn); font-size:0.85rem;">${escapeHtml(data.error)}</p>`; return; }
+    if (data.bookings.length === 0) {
+      box.innerHTML = `<div style="color:var(--muted); font-size:0.85rem;">No Unactioned bookings available to link.</div>`;
+      return;
+    }
+    box.innerHTML = data.bookings.map(t => {
+      const isHotel = t.bookingType === 'Hotel';
+      const dateCell = isHotel
+        ? `${formatOrdinalDate(t.departDate)} → ${formatOrdinalDate(t.returnDate)}`
+        : (t.tripType === 'Round Trip' && t.returnDate
+            ? `${formatOrdinalDate(t.departDate)} → ${formatOrdinalDate(t.returnDate)}` : formatOrdinalDate(t.departDate));
+      const overlapBadge = t.overlapsVisit
+        ? `<span style="color:#15803d; font-weight:700; font-size:0.72rem;">Matches visit dates</span>`
+        : `<span style="color:var(--muted); font-size:0.72rem;">Outside visit window</span>`;
+      const label = isHotel
+        ? `<b>Hotel</b>: ${escapeHtml(t.hotelName || t.hotelCity)}, ${escapeHtml(t.hotelCity)}${t.nights ? ` · ${t.nights} night${t.nights === 1 ? '' : 's'}` : ''}`
+        : `<b>${escapeHtml(t.modeOfTravel)}</b>: ${escapeHtml(t.fromCity)} → ${escapeHtml(t.toCity)}`;
+      return `<div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:6px 0; font-size:0.85rem; border-top:1px solid var(--border);">
+        <span>${label} · ${dateCell} · for ${escapeHtml(t.employeeName)} · ${overlapBadge}</span>
+        <span style="white-space:nowrap;">${formatINRComma(t.price)}
+          <button class="nav-btn-styled" onclick="event.stopPropagation(); tvsLinkBooking(${voucherId}, ${t.travellerId})" style="padding:3px 10px; font-size:0.72rem; margin-left:8px;">Link</button>
+        </span>
+      </div>`;
+    }).join("");
+  } catch (e) { box.innerHTML = `<p style="color:var(--warn); font-size:0.85rem;">Network error: ${escapeHtml(e.message)}</p>`; }
+}
+
+async function tvsLinkBooking(voucherId, travellerId) {
+  showBlockingOverlay("Linking booking...");
+  try {
+    const data = await apFetch({ action: "linkCompanyPaidBooking", voucherId, travellerId });
+    hideBlockingOverlay();
+    if (!data.success) { alert(data.error); return; }
+    runTourVoucherSearch();
+  } catch (e) { hideBlockingOverlay(); alert("Network error: " + e.message); }
+}
+
+// Per-line Actual Amount correction (Search Vouchers, revised 31 Aug 2026
+// three times over the course of the day — voucher-total-level -> per-line
+// with Edit/Save/Cancel buttons -> this final form, a plain number input
+// that saves automatically on blur if the value actually changed, no
+// buttons at all). The voucher's claimed total_amount is never edited
+// here; only this one line's Actual changes, and
+// reviseTourVoucherActualAmount re-derives the voucher's total_actual_amount
+// as the sum of every line, re-applies the balance delta, and regenerates
+// the voucher PDF at the next version.
+// Shows/hides the inline reason box live as the value is edited — same
+// pattern as voucher-check.js's tvcCheckOverLimit, replacing an earlier
+// prompt()-based dialog.
+function tvsCheckOverLimit(lineId) {
+  const input = document.getElementById(`tvs-actual-input-${lineId}`);
+  const reasonBox = document.getElementById(`tvs-reason-input-${lineId}`);
+  if (!input || !reasonBox) return;
+  const cap = input.dataset.cap !== '' ? Number(input.dataset.cap) : null;
+  const val = Number(input.value) || 0;
+  reasonBox.style.display = (cap !== null && val > cap) ? "block" : "none";
+}
+
+// Triggered by the Actual input's onchange (blur). When the new value is
+// over cap and the reason box is still empty, this deliberately does NOT
+// revert the typed value or submit — it just leaves the reason box open
+// so the user can tab into it and type without losing what they entered.
+// tvsSubmitLineActual (below, wired to the reason box's own onchange)
+// does the actual submit once a reason exists.
 async function tvsSaveLineActual(voucherId, lineId, previousValue) {
   const input = document.getElementById(`tvs-actual-input-${lineId}`);
   const errEl = document.getElementById(`tvs-actual-err-${lineId}`);
+  const reasonBox = document.getElementById(`tvs-reason-input-${lineId}`);
   const newActualAmount = Number(input.value);
   if (isNaN(newActualAmount) || newActualAmount < 0) {
     if (errEl) errEl.textContent = "Enter a valid non-negative amount.";
@@ -388,10 +590,48 @@ async function tvsSaveLineActual(voucherId, lineId, previousValue) {
     return;
   }
   if (newActualAmount === previousValue) return; // unchanged on blur — nothing to save
+
+  const cap = input.dataset.cap !== '' ? Number(input.dataset.cap) : null;
+  if (cap !== null && newActualAmount > cap && !(reasonBox && reasonBox.value.trim())) {
+    if (errEl) errEl.textContent = "A reason is required to exceed the limit — type it below.";
+    if (reasonBox) { reasonBox.style.display = "block"; reasonBox.focus(); }
+    return;
+  }
+
+  await tvsSubmitLineActual(voucherId, lineId, previousValue);
+}
+
+// Fires on the reason box's own onchange (blur) — completes the save
+// once a reason has been typed for an over-cap value still sitting in
+// the Actual input.
+async function tvsSubmitLineActualWithReason(voucherId, lineId, previousValue) {
+  const reasonBox = document.getElementById(`tvs-reason-input-${lineId}`);
+  if (!reasonBox || !reasonBox.value.trim()) return;
+  await tvsSubmitLineActual(voucherId, lineId, previousValue);
+}
+
+async function tvsSubmitLineActual(voucherId, lineId, previousValue) {
+  const input = document.getElementById(`tvs-actual-input-${lineId}`);
+  const errEl = document.getElementById(`tvs-actual-err-${lineId}`);
+  const reasonBox = document.getElementById(`tvs-reason-input-${lineId}`);
+  const newActualAmount = Number(input.value);
+  if (newActualAmount === previousValue) return; // already saved / unchanged
+
+  // Position-based daily expense limit (migration 167) — the line's cap
+  // was persisted at Check time; if this revision pushes Actual above it,
+  // a reason is required inline in the row's own reason box, same rule
+  // checkTourVoucher enforces.
+  const cap = input.dataset.cap !== '' ? Number(input.dataset.cap) : null;
+  let overLimitReason;
+  if (cap !== null && newActualAmount > cap) {
+    overLimitReason = reasonBox ? reasonBox.value.trim() : '';
+    if (!overLimitReason) return; // caller (tvsSaveLineActual) already surfaced the prompt to fill it in
+  }
+
   if (errEl) errEl.textContent = "";
   input.disabled = true;
   try {
-    const data = await apFetch({ action: "reviseTourVoucherActualAmount", voucherId, lineId, newActualAmount });
+    const data = await apFetch({ action: "reviseTourVoucherActualAmount", voucherId, lineId, newActualAmount, overLimitReason });
     if (!data.success) {
       input.disabled = false;
       input.value = previousValue;

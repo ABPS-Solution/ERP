@@ -110,9 +110,9 @@ window.addEventListener("unhandledrejection", function(event) {
 // ── Session bootstrap globals ───────────────────────────────────────────
 let globalPersonnelKeyLookupCache = [];
 let appActiveOperatorIdentityString = "";
-// Only the 4 camelCase keys erp-backend/lib/permMap.js actually sends —
+// Only the camelCase keys erp-backend/lib/permMap.js actually sends —
 // see mapPermissionsForFrontend there. Nothing else exists on this object.
-let userPermissions = { itemCodeAccess: false, tourExpense: false, cashExpenses: false, securityLoginAccess: false };
+let userPermissions = { itemCodeAccess: false, tourExpense: false, cashExpenses: false, travelTickets: false, viewAccountsDashboard: false, securityLoginAccess: false };
 
 window.scrollTo(0, 0);
 document.documentElement.scrollTop = 0;
