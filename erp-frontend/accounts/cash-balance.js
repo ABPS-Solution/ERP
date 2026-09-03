@@ -9,7 +9,6 @@
 async function initializeCashBalancePanel() {
   const panel = document.getElementById("ce-panel-balance");
   panel.innerHTML = `
-    <div id="cb-range-flag"></div>
     <div style="display:flex; gap:16px; margin-bottom:20px; flex-wrap:wrap;">
       <div style="flex:1; min-width:200px; background:var(--highlight-bg); padding:16px; border-radius:var(--radius);">
         <div style="font-size:0.8rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Current Cash Balance</div>
@@ -58,7 +57,6 @@ async function loadCashUpiBalance() {
     if (data.success) {
       document.getElementById("cb-cash-balance").textContent = formatINRComma(data.cashBalance);
       document.getElementById("cb-upi-balance").textContent = formatINRComma(data.upiBalance);
-      renderCashBoxRangeFlag(document.getElementById("cb-range-flag"), data.cashBalance, data.upiBalance);
       refreshCashExpenseShellRangeFlag(data.cashBalance, data.upiBalance);
     }
   } catch (e) { console.error("fetchCashUpiBalance failed:", e.message); }
