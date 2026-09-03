@@ -13,11 +13,52 @@
 
 let activeLoginMode = null;
 
+// ── Device-secret backup cookie (3 Sep 2026) ─────────────────────────────
+// Real-world report: a user's PC kept losing PIN-login enrollment
+// overnight — erpAbpsPcDeviceSecret gone from localStorage on reload,
+// while every Portal key on the SAME origin (including Portal's own
+// long-lived device secret) stayed intact, and live testing in the same
+// browser session proved this file's own code correctly writes and
+// preserves the key through enroll/reload/login/logout. No app-code cause
+// was found after two full passes — something on that machine (most
+// likely browser/AV cleanup tooling) is clearing localStorage for this
+// less-frequently-visited origin-path specifically. Rather than keep
+// chasing an external cause, the device secret now also gets a long-lived
+// (5-year) cookie backup, and getErpDeviceSecret() below self-heals
+// localStorage from it automatically whenever localStorage comes back
+// empty but the cookie is still there — cookies and localStorage aren't
+// always cleared by the same mechanism, so this hedges against whatever
+// is happening without needing to identify it.
+function setErpDeviceSecretCookie(secret) {
+  const expires = new Date(Date.now() + 5 * 365 * 24 * 3600 * 1000).toUTCString();
+  document.cookie = `erpDeviceSecretBackup=${encodeURIComponent(secret)}; expires=${expires}; path=/; SameSite=Lax`;
+}
+function getErpDeviceSecretCookie() {
+  const m = document.cookie.match(/(?:^|; )erpDeviceSecretBackup=([^;]*)/);
+  return m ? decodeURIComponent(m[1]) : null;
+}
+// The one place anything should read the device secret from now on —
+// checks localStorage first (unchanged fast path), falls back to the
+// cookie backup, and if the cookie is the only place it survived, quietly
+// restores localStorage from it so every other read site (which still
+// just reads localStorage directly, e.g. inside apFetch calls elsewhere)
+// sees it too.
+function getErpDeviceSecret() {
+  const fromLs = localStorage.getItem("erpAbpsPcDeviceSecret");
+  if (fromLs) return fromLs;
+  const fromCookie = getErpDeviceSecretCookie();
+  if (fromCookie) {
+    localStorage.setItem("erpAbpsPcDeviceSecret", fromCookie);
+    return fromCookie;
+  }
+  return null;
+}
+
 // Called from initializeLoginScreen() (shared/apFetch.js) every time the
 // login screen is (re)shown, so the default mode always reflects this
 // browser's current enrollment state.
 function renderPinLoginUiForThisDevice() {
-  const hasDevice = !!localStorage.getItem("erpAbpsPcDeviceSecret");
+  const hasDevice = !!getErpDeviceSecret();
   selectLoginMode(hasDevice ? 'pin' : 'enroll');
 }
 
@@ -44,7 +85,7 @@ function selectLoginMode(mode) {
   if (googleSection) googleSection.style.display = (mode === 'google') ? 'block' : 'none';
 
   if (mode === 'pin') {
-    const hasDevice = !!localStorage.getItem("erpAbpsPcDeviceSecret");
+    const hasDevice = !!getErpDeviceSecret();
     document.getElementById('pin-login-not-registered-notice').style.display = hasDevice ? 'none' : 'block';
     document.getElementById('pin-login-input-wrap').style.display = hasDevice ? 'flex' : 'none';
     const pinInput = document.getElementById('pin-login-pin-input');
@@ -91,7 +132,7 @@ async function submitPinLoginAttempt() {
   const engineerSelect = document.getElementById("app-auth-active-engineer-identity");
   const pinInput = document.getElementById("pin-login-pin-input");
   const feedback = document.getElementById("pin-login-feedback");
-  const deviceSecret = localStorage.getItem("erpAbpsPcDeviceSecret");
+  const deviceSecret = getErpDeviceSecret();
 
   const showFeedback = (msg, isError) => {
     if (!feedback) return;
@@ -187,6 +228,7 @@ async function submitDeviceEnrollmentCode() {
 
     if (data.success) {
       localStorage.setItem("erpAbpsPcDeviceSecret", data.deviceSecret);
+      setErpDeviceSecretCookie(data.deviceSecret);
       showFeedback(`✅ This device is set up as "${data.deviceLabel}". Reloading...`, false);
       setTimeout(() => window.location.reload(), 1200);
     } else {
