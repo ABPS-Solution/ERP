@@ -110,13 +110,11 @@ function svciShowFeedback(msg, isError) {
   fb.innerHTML = msg;
 }
 
-// e.g. "10 Aug 2026" — distinct from fmtPODate's DD/MM/YYYY table style,
+// e.g. "10th Aug 2026" — distinct from fmtPODate's DD/MM/YYYY table style,
 // used only for the "Searching for..." label and the PDF header text.
+// Delegates to the shared ordinal date helper (shared/format.js).
 function svciFmtDisplayDate(isoOrDateStr) {
-  if (!isoOrDateStr) return "";
-  const dt = new Date(isoOrDateStr);
-  if (isNaN(dt.getTime())) return "";
-  return `${String(dt.getDate()).padStart(2,'0')} ${dt.toLocaleString('en-US',{month:'short'})} ${dt.getFullYear()}`;
+  return formatOrdinalDate(isoOrDateStr);
 }
 
 async function searchVendorCostingInfoUI() {

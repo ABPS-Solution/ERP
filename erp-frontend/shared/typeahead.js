@@ -65,8 +65,7 @@ async function initializeCreateBOQPanel() {
   const _g = id => document.getElementById(id);
 
   if (isFirstVisit) {
-    const today = new Date().toLocaleDateString('en-GB');
-    const dateEl = _g("cboq-date"); if (dateEl) dateEl.value = today;
+    const dateEl = _g("cboq-date"); if (dateEl) dateEl.value = formatOrdinalDate(new Date());
 
     cboqMaterialRows = [];
     cboqSpecFiles    = [];

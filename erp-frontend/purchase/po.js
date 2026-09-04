@@ -237,13 +237,11 @@ function srchpoShowFeedback(msg, isError) {
   fb.innerHTML = msg;
 }
 
-// e.g. "10 Aug 2026" — same display convention as Search Vendor Costing
-// Information's own svciFmtDisplayDate.
+// e.g. "10th Aug 2026" — same display convention as Search Vendor Costing
+// Information's own svciFmtDisplayDate. Delegates to the shared ordinal
+// date helper (shared/format.js) instead of hand-rolling.
 function srchpoFmtDisplayDate(isoOrDateStr) {
-  if (!isoOrDateStr) return "";
-  const dt = new Date(isoOrDateStr);
-  if (isNaN(dt.getTime())) return "";
-  return `${String(dt.getDate()).padStart(2,'0')} ${dt.toLocaleString('en-US',{month:'short'})} ${dt.getFullYear()}`;
+  return formatOrdinalDate(isoOrDateStr);
 }
 
 // searchRMPOMatrixUI — the single Search button behind every field on this

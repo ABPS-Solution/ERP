@@ -73,16 +73,39 @@ function formatDateDMY(value) {
 // Ordinal display date ("4th Sep 2026") — ported from Portal's
 // shared/format.js, used throughout the Accounts Tour Expense /
 // Travel-Hotel Booking screens ported from there.
-function formatOrdinalDate(value) {
-  if (!value) return '';
-  const d = value instanceof Date ? value : new Date(value);
-  if (isNaN(d.getTime())) return '';
-  const day = d.getDate();
-  const suffix = (day % 10 === 1 && day !== 11) ? 'st'
+// A bare "YYYY-MM-DD" is parsed as that literal calendar date (not shifted
+// by the browser's local timezone) — everything else falls back to a plain
+// `new Date(value)` parse.
+function _ordinalDateParse(value) {
+  if (value instanceof Date) return value;
+  const s = String(value);
+  const dateOnlyMatch = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (dateOnlyMatch) {
+    const [, yyyy, mm, dd] = dateOnlyMatch;
+    return new Date(+yyyy, +mm - 1, +dd);
+  }
+  return new Date(s);
+}
+function _ordinalSuffix(day) {
+  return (day % 10 === 1 && day !== 11) ? 'st'
     : (day % 10 === 2 && day !== 12) ? 'nd'
     : (day % 10 === 3 && day !== 13) ? 'rd' : 'th';
+}
+function formatOrdinalDate(value) {
+  if (!value) return '';
+  const d = _ordinalDateParse(value);
+  if (isNaN(d.getTime())) return '';
+  const day = d.getDate();
   const month = d.toLocaleString('en-US', { month: 'short' });
-  return `${day}${suffix} ${month} ${d.getFullYear()}`;
+  return `${day}${_ordinalSuffix(day)} ${month} ${d.getFullYear()}`;
+}
+function formatOrdinalDateTime(value) {
+  if (!value) return '';
+  const d = _ordinalDateParse(value);
+  if (isNaN(d.getTime())) return '';
+  const datePart = formatOrdinalDate(d);
+  const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  return `${datePart}, ${time}`;
 }
 
 // ═══════════════════════════════════════════════════════
