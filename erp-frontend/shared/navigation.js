@@ -18,7 +18,36 @@
 // content (accounts/*.js, design/item-codes.js, project/security-admin.js)
 // is later, separate work per the task this file was built for.
 
-const DEPT_TAB_KEYS = ['accounts', 'design', 'admin'];
+// checkStorePRNRevisionReminder / checkPurchasePORevisionReminder — ported
+// from Portal's shared/navigation.js. Both are called from
+// purchase/revise-po.js's navigateToPurchaseWorkspacePanel on every
+// navigation into the Purchase enclosure; without them defined at all the
+// call would throw a ReferenceError (unlike a missing DOM id, which the
+// rest of that function already guards against). Both degrade gracefully
+// on their own (try/catch, no-op if the banner elements aren't in the DOM,
+// and if erp-backend doesn't yet implement the underlying action the
+// catch just leaves the banner hidden) — no ERP-specific adaptation
+// needed beyond that.
+async function checkStorePRNRevisionReminder() {
+  const banners = document.querySelectorAll(".store-prn-revision-reminder-banner-el");
+  if (!banners.length) return;
+  try {
+    const data = await apFetch({ action: "checkBOQsNeedingPRNRevisionCount" });
+    const show = data.success && data.count > 0;
+    banners.forEach(b => { b.style.display = show ? "block" : "none"; });
+  } catch (e) { /* non-critical — leave banner state as-is on network error */ }
+}
+
+async function checkPurchasePORevisionReminder() {
+  const banner = document.getElementById("purchase-po-revision-reminder-banner");
+  if (!banner) return;
+  try {
+    const data = await apFetch({ action: "checkPRNsNeedingPORevisionCount" });
+    banner.style.display = (data.success && data.count > 0) ? "block" : "none";
+  } catch (e) { /* non-critical — leave banner state as-is on network error */ }
+}
+
+const DEPT_TAB_KEYS = ['accounts', 'design', 'purchase', 'admin'];
 const DEPT_TAB_STORAGE_KEY = 'erpActiveDeptTab';
 // Same reasoning as Portal's deptTabVisibleKeys: selectDepartmentTab must
 // consult which departments are actually permission-visible (set once per
@@ -42,6 +71,46 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canItemCode = userPermissionsObject.itemCodeAccess === true;
   const canSecurity  = userPermissionsObject.securityLoginAccess === true;
 
+  // ── Design (BOQ + Catalog & Drawings), ported from Portal's
+  // shared/navigation.js — same camelCase permission keys, same card ids
+  // (mod-design-*), same "sole gate" note on itemCodeAccess (26 Aug 2026
+  // Portal decision — this card has no composite OR fallback here either).
+  const canCreateBOQ = userPermissionsObject.createBOQ === true;
+  const canAuthorizeBOQ = userPermissionsObject.authorizeBOQ === true;
+  const canUpdateBOQ = userPermissionsObject.updateBOQ === true;
+  const canAuthorizeBOQUpdate = userPermissionsObject.authorizeBOQUpdate === true;
+  const canUploadDrawings = userPermissionsObject.uploadDrawings === true;
+  const canViewDesignDashboard = userPermissionsObject.viewDesignDashboard === true;
+
+  if (document.getElementById("mod-design-create-boq"))   document.getElementById("mod-design-create-boq").style.display   = canCreateBOQ ? "block" : "none";
+  if (document.getElementById("mod-design-auth-boq"))     document.getElementById("mod-design-auth-boq").style.display     = canAuthorizeBOQ ? "block" : "none";
+  if (document.getElementById("mod-design-update-boq"))   document.getElementById("mod-design-update-boq").style.display   = canUpdateBOQ ? "block" : "none";
+  if (document.getElementById("mod-design-auth-boq-upd")) document.getElementById("mod-design-auth-boq-upd").style.display = canAuthorizeBOQUpdate ? "block" : "none";
+  if (document.getElementById("mod-design-upload-drawings")) document.getElementById("mod-design-upload-drawings").style.display = canUploadDrawings ? "block" : "none";
+
+  // ── Purchase, ported from Portal's shared/navigation.js — same
+  // camelCase permission keys, same card ids (mod-purchase-*/mod-*-rm-po*).
+  const canCreatePO = userPermissionsObject.createRMPurchaseOrder === true;
+  const canAuthorizePO = userPermissionsObject.authorizeRMPurchaseOrder === true;
+  const canPPSTracking = userPermissionsObject.ppsTracking === true;
+  const canReviseRMPO = userPermissionsObject.reviseRMPO === true;
+  const canAuthorizeRMPORevision = userPermissionsObject.authorizeRMPORevision === true;
+  const canSearchRMPO = userPermissionsObject.searchRMPO === true;
+  const canSearchVendorCostingInfo = userPermissionsObject.searchVendorCostingInfo === true;
+  const canViewMaterialListPurchase = userPermissionsObject.materialListForPurchase === true;
+  const canViewRejectedMaterial = userPermissionsObject.rejectedMaterial === true;
+  const canViewPurchaseDashboard = userPermissionsObject.viewPurchaseDashboard === true;
+
+  if (document.getElementById("mod-purchase-material-list")) document.getElementById("mod-purchase-material-list").style.display = canViewMaterialListPurchase ? "block" : "none";
+  if (document.getElementById("mod-purchase-create-po"))     document.getElementById("mod-purchase-create-po").style.display     = canCreatePO ? "block" : "none";
+  if (document.getElementById("mod-purchase-authorize-po"))  document.getElementById("mod-purchase-authorize-po").style.display  = canAuthorizePO ? "block" : "none";
+  if (document.getElementById("mod-purchase-pps-tracking"))  document.getElementById("mod-purchase-pps-tracking").style.display  = canPPSTracking ? "block" : "none";
+  if (document.getElementById("mod-purchase-rejected-material")) document.getElementById("mod-purchase-rejected-material").style.display = canViewRejectedMaterial ? "block" : "none";
+  if (document.getElementById("mod-revise-rm-po")) document.getElementById("mod-revise-rm-po").style.display = canReviseRMPO ? "block" : "none";
+  if (document.getElementById("mod-authorize-rm-po-revision")) document.getElementById("mod-authorize-rm-po-revision").style.display = canAuthorizeRMPORevision ? "block" : "none";
+  if (document.getElementById("mod-search-rm-po")) document.getElementById("mod-search-rm-po").style.display = canSearchRMPO ? "block" : "none";
+  if (document.getElementById("mod-search-vendor-costing-info")) document.getElementById("mod-search-vendor-costing-info").style.display = canSearchVendorCostingInfo ? "block" : "none";
+
   if (document.getElementById("mod-tourexpense"))  document.getElementById("mod-tourexpense").style.display  = canTourExpense  ? "block" : "none";
   if (document.getElementById("mod-cashexpenses")) document.getElementById("mod-cashexpenses").style.display = canCashExpenses ? "block" : "none";
   if (document.getElementById("mod-traveltickets")) document.getElementById("mod-traveltickets").style.display = canTravelTickets ? "block" : "none";
@@ -49,10 +118,24 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-itemcode"))     document.getElementById("mod-itemcode").style.display     = canItemCode     ? "block" : "none";
   if (document.getElementById("mod-security"))     document.getElementById("mod-security").style.display     = canSecurity     ? "block" : "none";
 
+  // Dashboard-wrapper pills (show entire pill wrapper, not just a plain card)
+  // — same shape as Portal's own dashMap loop.
+  const dashMap = {
+    "mod-design-dashboard-wrapper":   canViewDesignDashboard,
+    "mod-purchase-dashboard-wrapper": canViewPurchaseDashboard,
+  };
+  Object.keys(dashMap).forEach(function(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.display = dashMap[id] ? "" : "none";
+  });
+
   const accountsBlock = document.getElementById("dashboard-accounts-department-header-block");
   if (accountsBlock) accountsBlock.style.display = (canTourExpense || canCashExpenses || canTravelTickets || canViewAccountsDashboard) ? "block" : "none";
   const designBlock = document.getElementById("dashboard-design-department-header-block");
-  if (designBlock) designBlock.style.display = canItemCode ? "block" : "none";
+  if (designBlock) designBlock.style.display = (canItemCode || canCreateBOQ || canAuthorizeBOQ || canUpdateBOQ || canAuthorizeBOQUpdate || canUploadDrawings) ? "block" : "none";
+  const purchaseBlock = document.getElementById("dashboard-purchase-department-header-block");
+  if (purchaseBlock) purchaseBlock.style.display = (canViewMaterialListPurchase || canViewRejectedMaterial || canCreatePO || canAuthorizePO || canPPSTracking || canSearchVendorCostingInfo || canReviseRMPO || canAuthorizeRMPORevision || canSearchRMPO || canViewPurchaseDashboard) ? "block" : "none";
   const adminBlock = document.getElementById("dashboard-admin-department-header-block");
   if (adminBlock) adminBlock.style.display = canSecurity ? "block" : "none";
 
@@ -121,8 +204,27 @@ function handleDepartmentTabClick(key) {
 // dashboard-view hides, the target canvas-module-* panel shows. Unchanged
 // by the department-grouping revision above — a tile still opens its own
 // single full-screen panel regardless of which department tab it lives under.
+// Design's 6 canvas ids that navigateToDesignWorkspacePanel routes between
+// once its own "master enclosure panel" is shown — same shape as Portal's
+// switchActiveDashboardModule, which forwards every design-* targetSectionId
+// to navigateToDesignWorkspacePanel(targetCanvasModuleId) rather than
+// showing the canvas directly here. Design is NOT gated on itemcode's plain
+// canvas-module-itemcode id (ERP's own pre-existing screen, left as its own
+// direct panel — see design/design-dashboard.js's header comment) — only
+// the 5 newly-ported BOQ/Drawings panels use this router.
+const DESIGN_WORKSPACE_TARGET_IDS = [
+  'design-create-boq', 'design-auth-boq', 'design-update-boq',
+  'design-auth-boq-upd', 'design-upload-drawings'
+];
+
 function switchActiveDashboardModule(targetSectionId) {
   window.scrollTo(0, 0);
+
+  if (DESIGN_WORKSPACE_TARGET_IDS.includes(targetSectionId) && typeof navigateToDesignWorkspacePanel === "function") {
+    navigateToDesignWorkspacePanel(targetSectionId);
+    return;
+  }
+
   document.getElementById("dashboard-view").style.display = "none";
   document.querySelectorAll('[id^="canvas-module-"]').forEach(p => p.style.display = "none");
 

@@ -347,9 +347,53 @@
       <div class="dept-header">
         <div class="dept-bar" style="background:#2563eb;"></div>
         <span class="dept-name">Design Department</span>
+        <div id="mod-design-dashboard-wrapper" style="display:none;">
+          <button class="dept-dash-pill" id="mod-design-dashboard" onclick="navigateToDesignDashboard()" style="background:#eff6ff; color:#2563eb;">📊 Dashboard</button>
+        </div>
       </div>
+      <div class="sec-label">Bill of Quantity</div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-design-create-boq"   onclick="switchActiveDashboardModule('design-create-boq')"><span class="mc-label">Create Bill of Quantity</span></div>
+        <div class="menu-card" id="mod-design-auth-boq"     onclick="switchActiveDashboardModule('design-auth-boq')"><span class="mc-label">Authorize Bill of Quantity</span></div>
+        <div class="menu-card" id="mod-design-update-boq"   onclick="switchActiveDashboardModule('design-update-boq')"><span class="mc-label">Revise Bill of Quantity</span></div>
+        <div class="menu-card" id="mod-design-auth-boq-upd" onclick="switchActiveDashboardModule('design-auth-boq-upd')"><span class="mc-label">Authorize Bill of Quantity Revision</span></div>
+      </div>
+      <div class="sec-label">Catalog & Drawings</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-itemcode" onclick="switchActiveDashboardModule('itemcode')"><span class="mc-label">Add / Check Item Code</span></div>
+        <div class="menu-card" id="mod-design-upload-drawings" onclick="switchActiveDashboardModule('design-upload-drawings')"><span class="mc-label">Upload Drawings</span></div>
+      </div>
+    </div>
+
+    <!-- ── PURCHASE ─────────────────────────────────────────────────────── -->
+    <div id="dashboard-purchase-department-header-block" class="dept-block" style="display:none; --dept-accent:#7c3aed;">
+      <div class="dept-header">
+        <div class="dept-bar" style="background:#7c3aed;"></div>
+        <span class="dept-name">Purchase Department</span>
+        <div id="mod-purchase-dashboard-wrapper" style="display:none;">
+          <button class="dept-dash-pill" id="mod-purchase-dashboard" onclick="navigateToPurchaseDashboard()" style="background:#f5f3ff; color:#7c3aed;">📊 Dashboard</button>
+        </div>
+      </div>
+      <div class="sec-label">PO Creation</div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-purchase-material-list" onclick="navigateToPurchaseWorkspacePanel('purchase-material-list')"><span class="mc-label">List of Material to Raise Purchase Order</span></div>
+        <div class="menu-card" id="mod-purchase-create-po"  onclick="navigateToPurchaseWorkspacePanel('purchase-create-po')"><span class="mc-label">Create Raw Material Purchase Order</span></div>
+        <div class="menu-card" id="mod-purchase-authorize-po"  onclick="navigateToPurchaseWorkspacePanel('purchase-authorize-po')"><span class="mc-label">Authorize Raw Material Purchase Order</span></div>
+      </div>
+      <div class="sec-label">PO Revision</div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-revise-rm-po" onclick="navigateToPurchaseWorkspacePanel('purchase-revise-po')"><span class="mc-label">Revise Raw Material Purchase Order</span></div>
+        <div class="menu-card" id="mod-authorize-rm-po-revision" onclick="navigateToPurchaseWorkspacePanel('purchase-authorize-po-revision')"><span class="mc-label">Authorize Raw Material Purchase Order Revision</span></div>
+      </div>
+      <div class="sec-label">Tracking & Search</div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-purchase-pps-tracking" onclick="navigateToPurchaseWorkspacePanel('purchase-pps-tracking')"><span class="mc-label">PPS Tracking</span></div>
+        <div class="menu-card" id="mod-search-rm-po" onclick="navigateToPurchaseWorkspacePanel('purchase-search-po')"><span class="mc-label">Search Raw Material Purchase Order</span></div>
+        <div class="menu-card" id="mod-search-vendor-costing-info" onclick="navigateToPurchaseWorkspacePanel('purchase-vendor-costing')"><span class="mc-label">Search Vendor Costing Information</span></div>
+      </div>
+      <div class="sec-label">Store Inward Rejected & Missing Material</div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-purchase-rejected-material" onclick="navigateToPurchaseWorkspacePanel('purchase-rejected-material')"><span class="mc-label">Store Inward Rejected & Missing Material</span></div>
       </div>
     </div>
 
@@ -840,6 +884,864 @@
     </div>
   </div>
 
+  <!-- ═══ DESIGN: BOQ + Upload Drawings workspace panels (ported from ABPS Portal 4 Sep 2026) ═══ -->
+  <div id="module-design-workspace-enclosure-panel" class="workspace-panel" style="display: none; padding: 12px 10px;">
+    <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
+      <div></div>
+      <button class="nav-btn-styled" onclick="exitDesignWorkspacePanelBackToMenu()">Return to Main Dashboard</button>
+    </div>
+
+    <!-- CREATE BOQ -->
+    <div id="canvas-module-design-create-boq" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Create Bill of Quantity</h2>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:20px;">Fill in the BOQ details and add material rows. Submit when complete and it will go for Authorization.</p>
+      <div id="create-boq-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+
+      <!-- Import Existing BOQ -->
+      <div id="cboq-import-section" style="background:#f5f3ff; border:1px solid #ddd6fe; border-radius:var(--radius); padding:16px; margin-bottom:16px;">
+        <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#6d28d9; margin-bottom:8px; letter-spacing:0.5px;">Import an Existing BOQ (Optional)</div>
+        <p style="font-size:0.8rem; color:var(--muted); margin-bottom:10px;">Select a finalized BOQ for a similar product to pre-fill the material rows below, instead of starting from scratch.</p>
+        <div style="display:grid; grid-template-columns:2fr 2fr 2fr auto; gap:10px; align-items:end;">
+          <div style="position:relative;">
+            <label class="field-label" style="margin-top:0;">Search Product Name + Rating *</label>
+            <textarea id="cboq-import-product-search" rows="1" placeholder="Type to search product name..." autocomplete="off"
+              oninput="handleCBOQImportProductSearch(this.value); this.style.height='auto'; this.style.height=this.scrollHeight+'px';"
+              style="padding:7px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; resize:none; overflow:hidden; font-family:inherit; line-height:1.3; box-sizing:border-box;"></textarea>
+            <div id="cboq-import-product-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 var(--radius) var(--radius); max-height:200px; overflow-y:auto; z-index:100; box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
+          </div>
+          <div>
+            <label class="field-label" style="margin-top:0;">Description of Material</label>
+            <select id="cboq-import-description-select" disabled onchange="handleCBOQImportDescriptionChange(this.value)" style="padding:7px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; background:#f1f5f9; color:var(--muted);">
+              <option value="">— Select Product First —</option>
+            </select>
+          </div>
+          <div style="position:relative;">
+            <label class="field-label" style="margin-top:0;">Project ID *</label>
+            <textarea id="cboq-import-project-search" disabled placeholder="Select Product First" autocomplete="off" rows="1"
+              oninput="handleCBOQImportProjectSearch(this.value); autoGrowTextField(this);" onfocus="autoGrowTextField(this)"
+              style="padding:7px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; background:#f1f5f9; color:var(--muted); box-sizing:border-box; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; font-family:inherit; line-height:1.3;"></textarea>
+            <div id="cboq-import-project-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 var(--radius) var(--radius); max-height:200px; overflow-y:auto; z-index:100; box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
+          </div>
+          <button class="nav-btn-styled" id="cboq-import-btn" disabled onclick="importCBOQFromExisting()" style="background:#6d28d9; color:#fff; padding:9px 18px; font-weight:700; opacity:0.5; cursor:not-allowed;">Import BOQ</button>
+        </div>
+      </div>
+      <div id="cboq-import-banner" style="display:none; background:#f0fdf4; border-left:4px solid #16a34a; color:#15803d; padding:10px 14px; border-radius:var(--radius); margin-bottom:16px; font-size:0.85rem; font-weight:600;"></div>
+
+      <!-- Header Fields -->
+      <div id="cboq-form-body">
+        <div id="cboq-pending-products-banner" style="display:none; background:#fffbeb; border-left:4px solid #f59e0b; color:#92400e; padding:10px 14px; border-radius:var(--radius); margin-bottom:16px; font-size:0.85rem; font-weight:600;"></div>
+        <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:16px;">
+          <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px; letter-spacing:0.5px;">BOQ Header Information</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+            <div>
+              <label class="field-label" style="margin-top:0;">Project ID or Customer Name *</label>
+              <div style="position:relative;">
+                <input type="text" id="cboq-project-id-ta-input" placeholder="Type Project ID or Customer Name..." autocomplete="off"
+                  oninput="handleSharedProjectTypeaheadInput(this.value, 'cboq-project-id-ta-input', 'cboq-project-id-ta-dropdown')"
+                  onchange="handleCBOQProjectChange(this.value)"
+                  style="width:100%; padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);" />
+                <div id="cboq-project-id-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+              </div>
+            </div>
+            <div>
+              <label class="field-label" style="margin-top:0;">Customer Name</label>
+              <textarea id="cboq-customer-name" readonly rows="1" style="padding:9px; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed; border-radius:var(--radius); width:100%; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; box-sizing:border-box; border:1.5px solid var(--border); font-size:1rem;" placeholder="Auto-filled from Project ID"></textarea>
+            </div>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+            <div>
+              <label class="field-label" style="margin-top:0;">Product Name *</label>
+              <div style="position:relative;">
+                <textarea id="cboq-product-search" rows="1" disabled readonly placeholder="Select Project First" autocomplete="off"
+                  onclick="showCBOQProductDropdown()"
+                  style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box; cursor:pointer; background:#fff; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; font-family:inherit; font-size:inherit; min-height:38px;"></textarea>
+                <div id="cboq-product-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+              </div>
+              <input type="hidden" id="cboq-product-name" />
+              <input type="hidden" id="cboq-product-itemcode" />
+              <input type="hidden" id="cboq-source-po-line-id" />
+            </div>
+            <div>
+              <label class="field-label" style="margin-top:0;">Product Rating</label>
+              <textarea id="cboq-product-rating" readonly rows="1" style="padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius); width:100%; resize:none; overflow:hidden; font-family:inherit; font-size:inherit; line-height:1.4; display:block; min-height:38px; border:1.5px solid var(--border);" placeholder="Auto-filled from Product Name"></textarea>
+            </div>
+          </div>
+          <div style="display:grid; grid-template-columns:2fr 1fr; gap:14px; margin-bottom:14px;">
+            <div style="position:relative;">
+              <label class="field-label" style="margin-top:0;">Description of Material (optional)</label>
+              <textarea id="cboq-desc-input" rows="1" placeholder="Type to search or create a description..." autocomplete="off"
+                oninput="handleMaterialDescriptionTypeaheadInput(this.value, 'cboq-desc-input', 'cboq-desc-dropdown', 'cboq-description-id'); autoGrowTextField(this);"
+                onkeydown="if(event.key==='Enter') event.preventDefault();"
+                style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; font-family:inherit; font-size:inherit; min-height:38px;"></textarea>
+              <div id="cboq-desc-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:200px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+              <input type="hidden" id="cboq-description-id" />
+            </div>
+            <div>
+              <label class="field-label" style="margin-top:0;">Make</label>
+              <input type="text" id="cboq-header-make" readonly style="padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius); width:100%; box-sizing:border-box;" placeholder="Auto-filled from Product Name" />
+            </div>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:14px;">
+            <div>
+              <label class="field-label" style="margin-top:0;">Current Manufacturing Clearance Quantity (No. of Sets) *</label>
+              <input type="number" id="cboq-order-qty" min="1" value="" readonly oninput="updateCBOQTotals()" style="padding:9px; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed; border-radius:var(--radius);" placeholder="Auto-filled from Product Name" />
+            </div>
+            <div>
+              <label class="field-label" style="margin-top:0;">Date</label>
+              <input type="text" id="cboq-date" readonly style="padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
+            </div>
+            <div>
+              <label class="field-label" style="margin-top:0;">Department *</label>
+              <select id="cboq-department" disabled onchange="handleCBOQDepartmentChange(this.value)" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);">
+                <option value="">— Select —</option>
+                <option value="Reactor">Reactor</option>
+                <option value="Capacitor">Capacitor</option>
+                <option value="Panel">Panel</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+      <!-- Material Rows -->
+      <div style="margin-bottom:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <span style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); letter-spacing:0.5px;">Material Rows *</span>
+          <button class="nav-btn-styled" id="cboq-add-row-btn" disabled onclick="addCBOQMaterialRow()" style="background:var(--accent); padding:5px 14px; font-size:0.78rem; opacity:0.5; cursor:not-allowed;">+ Add Row</button>
+        </div>
+        <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
+          <table class="store-basket-data-table" style="width:100%; min-width:900px; border-collapse:collapse; overflow:visible;">
+            <thead>
+              <tr style="background:#f8fafc;">
+                <th style="width:40px; text-align:center; padding:8px; font-size:0.7rem;">Sr No</th>
+                <th style="width:90px; padding:8px; font-size:0.7rem;">Type of Store *</th>
+                <th style="width:380px; padding:8px; font-size:0.7rem;">Material Name *</th>
+                <th style="width:65px; padding:8px; font-size:0.7rem;">Item Code</th>
+                <th style="width:80px; padding:8px; font-size:0.7rem; text-align:center;">Qty / Set *</th>
+                <th style="width:65px; padding:8px; font-size:0.7rem; text-align:center;">Unit</th>
+                <th style="width:90px; padding:8px; font-size:0.7rem; text-align:center;">Design Rate / Qty *</th>
+                <th style="width:90px; padding:8px; font-size:0.7rem; text-align:center;">Total Material Cost / Set</th>
+                <th style="width:40px; padding:8px; font-size:0.7rem; text-align:center;">Del</th>
+              </tr>
+            </thead>
+            <tbody id="cboq-material-rows-body">
+              <tr id="cboq-empty-row">
+                <td colspan="9" style="text-align:center; padding:20px; color:var(--muted); font-size:0.82rem;">No material rows added yet. Click "+ Add Row" to begin.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div style="background:#f0fdf4; border:1.5px solid #86efac; border-radius:var(--radius); padding:14px; margin-bottom:16px; display:flex; justify-content:flex-end; gap:32px;">
+        <div style="text-align:right;">
+          <div style="font-size:0.68rem; font-weight:700; text-transform:uppercase; color:var(--muted);">Total BOQ Cost Per Set</div>
+          <div id="cboq-total-per-set" style="font-size:1.1rem; font-weight:800; color:var(--accent);">₹0.00</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:0.68rem; font-weight:700; text-transform:uppercase; color:var(--muted);">Total BOQ Cost</div>
+          <div id="cboq-total-cost" style="font-size:1.1rem; font-weight:800; color:var(--accent);">₹0.00</div>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--border); padding-top:14px;">
+        <button class="nav-btn-styled" onclick="resetCreateBOQForm()" style="background:#718096;">Clear BOQ</button>
+        <button class="nav-btn-styled" id="cboq-submit-btn" disabled onclick="submitCreateBOQ()" style="background:var(--accent); padding:8px 24px; font-weight:700; opacity:0.5; cursor:not-allowed;">Submit BOQ for Authorization</button>
+      </div>
+      </div> <!-- end cboq-form-body -->
+    </div>
+
+    <!-- AUTHORIZE BOQ -->
+    <div id="canvas-module-design-auth-boq" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Authorize Bill of Quantity</h2>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Click a pending BOQ to review, edit if needed, and authorize.</p>
+      <div id="auth-boq-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+
+      <div id="auth-boq-queue-cards-feed" style="display: flex; flex-direction: column; gap: 14px;"></div>
+    </div>
+
+    <!-- UPDATE BOQ -->
+    <div id="canvas-module-design-update-boq" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Revise Bill of Quantity</h2>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Select a Project ID, then select the BOQ to update. Changes will go for re-authorization.</p>
+      <div id="update-boq-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+
+      <div id="update-boq-selector-zone" style="display:grid; grid-template-columns:1fr 2fr; gap:14px; margin-bottom:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
+        <div>
+          <label class="field-label" style="margin-top:0; color:var(--brand);">Project ID or Customer Name *</label>
+          <div style="position:relative;">
+            <input type="text" id="update-boq-project-ta-input" placeholder="Type Project ID or Customer Name..." autocomplete="off"
+              oninput="handleSharedProjectTypeaheadInput(this.value, 'update-boq-project-ta-input', 'update-boq-project-ta-dropdown')"
+              onchange="loadAuthorizedBOQsForProject(this.value)"
+              style="width:100%; padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);" />
+            <div id="update-boq-project-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          </div>
+        </div>
+        <div>
+          <label class="field-label" style="margin-top:0; color:var(--brand);">Select BOQ *</label>
+          <select id="update-boq-select" onchange="loadBOQForUpdate(this.value)" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);" disabled>
+            <option value="">— Select Project First —</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="update-boq-form" style="display:none;">
+        <!-- rendered by JS -->
+      </div>
+    </div>
+
+    <!-- AUTHORIZE BOQ UPDATE -->
+    <div id="canvas-module-design-auth-boq-upd" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Authorize Bill of Quantity Revision</h2>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Click a pending BOQ update to review changes, edit if needed, then authorize.</p>
+      <div id="auth-boq-upd-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+
+      <div id="auth-boq-upd-queue-cards-feed" style="display: flex; flex-direction: column; gap: 14px;"></div>
+    </div>
+
+    <!-- UPLOAD DRAWINGS -->
+    <div id="canvas-module-design-upload-drawings" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Upload Drawings</h2>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Select a Project ID, then upload drawing documents. Multiple uploads possible.</p>
+      <div id="upload-drawings-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+
+      <div style="margin-bottom:16px;">
+        <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
+          <label class="field-label" style="margin-top:0; color:var(--brand);">Project ID or Customer Name *</label>
+          <div style="position:relative;">
+            <input type="text" id="upload-drawings-project-ta-input" placeholder="Type Project ID or Customer Name..." autocomplete="off"
+              oninput="handleSharedProjectTypeaheadInput(this.value, 'upload-drawings-project-ta-input', 'upload-drawings-project-ta-dropdown')"
+              onchange="handleUploadDrawingsProjectChange(this.value)"
+              style="width:100%; padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); margin-top:4px;" />
+            <div id="upload-drawings-project-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="upload-drawings-existing-list" style="display:none; margin-bottom:16px;">
+        <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:10px; letter-spacing:0.5px;">Already Uploaded Documents</div>
+        <div id="upload-drawings-list-mount" style="display:flex; flex-direction:column; gap:6px;"></div>
+      </div>
+
+      <div id="upload-drawings-upload-zone" style="display:none; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
+        <label class="field-label" style="margin-top:0; color:var(--brand);">Upload Drawing Document</label>
+        <div class="card-box" id="upload-drawings-dropzone" onclick="document.getElementById('upload-drawings-input').click()" style="padding:20px; border:2px dashed var(--border); font-size:0.85rem; margin-top:6px; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+          📎 Click to select a drawing document
+        </div>
+        <input type="file" id="upload-drawings-input" hidden onchange="handleUploadDrawingsFileSelection(this)" />
+        <div style="display:flex; justify-content:flex-end; margin-top:12px;">
+          <button class="nav-btn-styled" id="upload-drawings-submit-btn" onclick="submitUploadDrawing()" style="background:var(--accent); padding:8px 24px; font-weight:700;">Upload Document</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══ DESIGN DASHBOARD (ported from ABPS Portal 4 Sep 2026) ═══ -->
+    <div id="canvas-module-design-dashboard" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
+
+      <!-- DASHBOARD BODY -->
+      <div id="dd-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
+
+        <!-- ROW 1: 5 Stat Cards -->
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Design Work Overdue in Project Timeline</div>
+            <div class="dd-stat-val" id="dd-s-overdue" style="color:#b91c1c;">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Pending BOQ Authorizations</div>
+            <div class="dd-stat-val" id="dd-s-pending" style="color:#b45309;">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Pending BOQ Revision Authorizations</div>
+            <div class="dd-stat-val" id="dd-s-pendingrevisions" style="color:#b45309;">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">New Item Codes Added</div>
+            <div class="dd-stat-val" id="dd-s-itemcodes">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Drawings Uploaded</div>
+            <div class="dd-stat-val" id="dd-s-drawingsuploaded">—</div>
+          </div>
+        </div>
+
+        <!-- ROW 2: Throughput/Averages -->
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">BOQs Authorized</div>
+            <div class="dd-stat-val" id="dd-s-authorized" style="color:#15803d;">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">BOQs Revised</div>
+            <div class="dd-stat-val" id="dd-s-revised">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Average Drawing Turnaround (Sent → Approved)</div>
+            <div class="dd-stat-val" id="dd-s-drawingturnaround">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Average BOQs per Active Project</div>
+            <div class="dd-stat-val" id="dd-s-avgboqs">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">BOQ Revision Rate</div>
+            <div class="dd-stat-val" id="dd-s-revrate">—</div>
+            <div class="dd-stat-sub">via Revise BOQ, not auto-cascades</div>
+          </div>
+        </div>
+
+        <!-- ROW 3: MFC-cleared-awaiting-BOQ table + Charts -->
+        <div style="display:grid; grid-template-columns:1.2fr 1fr 1fr; gap:10px; flex:0 0 26%;">
+          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; min-height:0; height:100%;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px; flex-shrink:0;">
+              <div class="dd-card-title" style="margin:0;">Products Cleared at MFC, Still Awaiting a BOQ</div>
+              <span id="dd-mfcawaiting-count" style="font-size:0.62rem; font-weight:700; background:#fee2e2; color:#b91c1c; padding:1px 6px; border-radius:8px;"></span>
+            </div>
+            <div style="overflow-y:auto; flex:1;">
+              <table style="width:100%; border-collapse:collapse; font-size:0.72rem;">
+                <thead><tr style="color:var(--muted); font-size:0.65rem; position:sticky; top:0; background:var(--card);">
+                  <th style="text-align:left; padding:2px 4px; font-weight:700;">Project</th>
+                  <th style="text-align:left; padding:2px 4px; font-weight:700;">Product</th>
+                  <th style="text-align:center; padding:2px 4px; font-weight:700;">MFC Date</th>
+                </tr></thead>
+                <tbody id="dd-mfcawaiting-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; justify-content:center;">
+            <div class="dd-card-title">BOQs by Department</div>
+            <canvas id="dd-chart-dept" style="max-height:130px;"></canvas>
+          </div>
+          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; justify-content:center;">
+            <div class="dd-card-title">Version Distribution</div>
+            <canvas id="dd-chart-version" style="max-height:90px;"></canvas>
+          </div>
+        </div>
+
+        <!-- ROW 4: Design work Due Today / Overdue, from Project Timeline -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; flex:1; min-height:0;">
+          <div class="dd-stat-card" style="display:flex; flex-direction:column; min-height:0;">
+            <div class="dd-card-title" style="margin-bottom:8px;">Due Today (Active projects, Project Timeline)</div>
+            <div style="flex:1; min-height:0; overflow-y:auto;">
+              <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
+                <thead>
+                  <tr style="text-align:left; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--card);">
+                    <th style="padding:4px;">Project</th>
+                    <th style="padding:4px;">Item</th>
+                  </tr>
+                </thead>
+                <tbody id="dd-duetoday-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="dd-stat-card" style="display:flex; flex-direction:column; min-height:0;">
+            <div class="dd-card-title" style="margin-bottom:8px;">Overdue (Active projects, Project Timeline)</div>
+            <div style="flex:1; min-height:0; overflow-y:auto;">
+              <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
+                <thead>
+                  <tr style="text-align:left; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--card);">
+                    <th style="padding:4px;">Project</th>
+                    <th style="padding:4px;">Item</th>
+                    <th style="padding:4px; text-align:right;">Days Late</th>
+                  </tr>
+                </thead>
+                <tbody id="dd-overdue-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- end dd-body -->
+    </div>
+
+  <!-- ═══ PURCHASE: workspace panels (ported from ABPS Portal 4 Sep 2026) ═══ -->
+  <div id="module-purchase-workspace-enclosure-panel" class="workspace-panel" style="display: none; padding: 12px 10px;">
+    <div class="navigation-action-header-row" style="margin-bottom: 15px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px;">
+      <div id="purchase-top-bar-left" style="grid-column:1; display:flex; align-items:center; gap:10px;">
+        <button class="nav-btn-styled" id="material-list-sync-btn" onclick="loadMaterialListForPurchase()" style="display:none; background:var(--brand); padding:6px 16px; font-size:0.78rem;">🔄 Refresh</button>
+      </div>
+      <span id="purchase-top-bar-title" style="grid-column:2; display:none; font-size:1rem; font-weight:700; color:var(--text); text-align:center; white-space:nowrap;">List of Material to Raise Purchase Order</span>
+      <button class="nav-btn-styled" onclick="exitPurchaseWorkspacePanelBackToMenu()" style="grid-column:3; justify-self:end;">Return to Main Dashboard</button>
+    </div>
+
+    <div id="purchase-po-revision-reminder-banner" style="display:none; margin-bottom:14px; padding:10px 14px; background:#fef3c7; border-left:4px solid #f59e0b; color:#78350f; border-radius:var(--radius); font-size:0.85rem; font-weight:700;">⚠️ A PRN has been revised — check the <strong>Revise PO</strong> section to see if a Purchase Order needs revising.</div>
+
+    <!-- Create/Revise/Authorize PRN are Store-department screens hosted in this
+         Purchase enclosure for historical UI-grouping reasons — they need the
+         same "BOQ revised, check Revise PRN" reminder Store's own screens show,
+         not the Purchase-only "check Revise PO" banner above. Toggled together
+         with store-prn-revision-reminder-banner via the shared class. -->
+    <div id="purchase-enclosure-prn-revision-reminder-banner" class="store-prn-revision-reminder-banner-el" style="display:none; margin-bottom:14px; padding:10px 14px; background:#fef3c7; border-left:4px solid #f59e0b; color:#78350f; border-radius:var(--radius); font-size:0.85rem; font-weight:700;">⚠️ A BOQ has been revised — check the <strong>Revise PRN</strong> section to see if a PRN needs revising.</div>
+
+    <!-- PRN CANVAS -->
+    <div id="canvas-module-purchase-prn" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Create Purchase Request Note (PRN)</h2>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Select a Project and an authorized BOQ to view or create a Purchase Request Note.</p>
+      <div id="prn-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+      <div id="prn-success-zone" style="display:none;"></div>
+
+      <div id="prn-needqueue-zone" style="margin-bottom:16px;"></div>
+
+      <div id="prn-body-zone" style="display:grid; grid-template-columns:1fr 2fr; gap:14px; margin-bottom:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
+        <div>
+          <label class="field-label" style="margin-top:0; color:var(--brand);">Project ID or Customer Name *</label>
+          <div style="position:relative;">
+            <input type="text" id="prn-project-select-ta-input" placeholder="Type Project ID or Customer Name..." autocomplete="off"
+              oninput="handleSharedProjectTypeaheadInput(this.value, 'prn-project-select-ta-input', 'prn-project-select-ta-dropdown')"
+              onchange="handlePRNProjectChange(this.value)"
+              style="width:100%; padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);" />
+            <div id="prn-project-select-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          </div>
+        </div>
+        <div>
+          <label class="field-label" style="margin-top:0; color:var(--brand);">Select Authorized BOQ *</label>
+          <select id="prn-boq-select" onchange="handlePRNBOQChange(this.value)" disabled style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); opacity:0.5; cursor:not-allowed;">
+            <option value="">— Select Project First —</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="prn-none-found-zone" style="display:none; margin-bottom:16px;"></div>
+
+        <div id="prn-create-zone" style="display:none;"></div>
+
+        <div id="prn-details-zone" style="display:none;">
+          <div id="prn-cards-feed" style="display:flex; flex-direction:column; gap:12px; margin-bottom:16px;"></div>
+            <div id="prn-bottom-action-bar" style="display:none; justify-content:flex-end; align-items:center; gap:12px; margin-bottom:16px;">
+              <span id="prn-boq-updated-badge" style="display:none; background:#fef3c7; border:1px solid #f59e0b; color:#92400e; font-size:0.75rem; font-weight:700; padding:4px 10px; border-radius:4px;"></span>
+              <button class="nav-btn-styled" id="prn-create-new-btn" onclick="event.stopPropagation(); startNewPRNCreation();" style="background:var(--brand); padding:7px 18px; font-weight:700; font-size:0.82rem;">+ Create New PRN for this BOQ</button>
+            </div>
+          </div>
+      </div>
+
+    <!-- MATERIAL LIST CANVAS -->
+    <div id="canvas-module-purchase-create-po" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Create Raw Material Purchase Order</h2>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Fill in the PO details and add material rows. Tag each material with the PRN using this Material. Submit when complete and it will go for Authorization.</p>
+      <div id="create-po-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+      <div id="create-po-body"></div>
+    </div>
+
+    <div id="canvas-module-purchase-authorize-prn" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 id="aprn-panel-title" class="panel-title">Authorize Purchase Request Note (PRN)</h2>
+      <p id="aprn-panel-subtitle" style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Review each pending PRN, adjust Store Quantity if needed, then authorize or reject.</p>
+      <div id="aprn-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+      <div id="aprn-cards-feed" style="display:flex; flex-direction:column; gap:12px;"></div>
+    </div>
+
+    <div id="canvas-module-purchase-authorize-po" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Authorize Raw Material Purchase Order</h2>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Review pending Purchase Orders. On authorization, the PO PDF is generated and saved, and the order is finalized.</p>
+      <div id="authorize-po-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+      <div id="authorize-po-body"></div>
+    </div>
+
+    <div id="canvas-module-purchase-revise-prn" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Revise Purchase Request Note (PRN)</h2>
+      <div id="rprn-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+
+      <div id="rprn-tabs-bar" style="display:flex; gap:0; margin-bottom:16px; border-bottom:2px solid var(--border);">
+        <button id="rprn-tab-queue" onclick="switchRevisePRNTab('queue')" style="padding:10px 20px; border:none; background:none; cursor:pointer; font-weight:800; font-size:0.85rem; color:var(--brand); border-bottom:3px solid var(--brand); margin-bottom:-2px;">BOQ Revisions Needing PRN Revision</button>
+        <button id="rprn-tab-other" onclick="switchRevisePRNTab('other')" style="padding:10px 20px; border:none; background:none; cursor:pointer; font-weight:700; font-size:0.85rem; color:var(--muted); border-bottom:3px solid transparent; margin-bottom:-2px;">Other PRN Revisions</button>
+      </div>
+
+      <div id="rprn-queue-section">
+        <div id="rprn-delta-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+        <div id="rprn-queue-feed" style="display:flex; flex-direction:column; gap:12px; margin-bottom:16px;"></div>
+        <div id="rprn-delta-zone"></div>
+      </div>
+
+      <div id="rprn-other-section" style="display:none;">
+        <div id="rprn-selector-row" style="display:grid; grid-template-columns:1fr 2fr; gap:12px; align-items:end; margin-bottom:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
+          <div>
+            <label class="field-label" style="margin-top:0; color:var(--brand);">Project ID or Customer Name *</label>
+            <div style="position:relative;">
+              <input type="text" id="rprn-project-select-ta-input" placeholder="Type Project ID or Customer Name..." autocomplete="off"
+                oninput="handleSharedProjectTypeaheadInput(this.value, 'rprn-project-select-ta-input', 'rprn-project-select-ta-dropdown')"
+                onchange="loadRevisePRNList()"
+                style="width:100%; padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);" />
+              <div id="rprn-project-select-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+            </div>
+          </div>
+          <div>
+            <label class="field-label" style="margin-top:0; color:var(--brand);">Select PRN *</label>
+            <select id="rprn-prn-select" onchange="loadPRNForRevision()" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;"><option value="">— Select a project first —</option></select>
+          </div>
+        </div>
+        <div id="rprn-body"></div>
+      </div>
+    </div>
+
+    <div id="canvas-module-purchase-authorize-po-revision" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Authorize Raw Material Purchase Order Revision</h2>
+      <div id="apor-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+      <div id="apor-cards-feed" style="display:flex; flex-direction:column; gap:14px;"></div>
+    </div>
+
+    <div id="canvas-module-purchase-revise-po" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Revise Raw Material Purchase Order</h2>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Revise a PO whose PRN requirements have changed, or search any authorized PO to revise it.</p>
+      <div id="rpo-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+
+      <div id="rpo-tabs-and-lists">
+      <div style="display:flex; gap:0; margin-bottom:16px; border-bottom:2px solid var(--border);">
+        <button id="rpo-tab-queue" onclick="switchRevisePOTab('queue')" style="padding:10px 20px; border:none; background:none; cursor:pointer; font-weight:800; font-size:0.85rem; color:var(--brand); border-bottom:3px solid var(--brand); margin-bottom:-2px;">PRN Revisions Needing PO Revision</button>
+        <button id="rpo-tab-other" onclick="switchRevisePOTab('other')" style="padding:10px 20px; border:none; background:none; cursor:pointer; font-weight:700; font-size:0.85rem; color:var(--muted); border-bottom:3px solid transparent; margin-bottom:-2px;">Other PO Revisions</button>
+      </div>
+
+      <div id="rpo-queue-section">
+        <div id="rpo-queue-feed" style="display:flex; flex-direction:column; gap:12px;"></div>
+      </div>
+
+      <div id="rpo-other-section" style="display:none;">
+        <div style="display:flex; gap:20px; margin-bottom:10px; flex-wrap:nowrap;">
+          <label style="display:flex; align-items:center; gap:6px; font-size:0.82rem; font-weight:700; cursor:pointer; white-space:nowrap; flex-shrink:0;">
+            <input type="radio" name="rpo-other-search-mode" value="po" checked onchange="switchRPOOtherSearchMode('po')"> Search by PO Number
+          </label>
+          <label style="display:flex; align-items:center; gap:6px; font-size:0.82rem; font-weight:700; cursor:pointer; white-space:nowrap; flex-shrink:0;">
+            <input type="radio" name="rpo-other-search-mode" value="vendor" onchange="switchRPOOtherSearchMode('vendor')"> Search by Vendor Name
+          </label>
+        </div>
+        <div style="display:flex; gap:10px; align-items:end; margin-bottom:12px;">
+          <div style="flex:1; position:relative;">
+            <label class="field-label" id="rpo-other-search-label-field" style="margin-top:0; color:var(--brand);">PO Number</label>
+            <input type="text" id="rpo-other-search-input" placeholder="e.g. PO_26-27_00001" autocomplete="off"
+              oninput="handleRPOOtherSearchInput(this.value)"
+              onkeydown="if(event.key==='Enter')searchPOsForRevisionUI()"
+              style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box;">
+            <div id="rpo-other-search-dd" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:220px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          </div>
+          <button class="nav-btn-styled" onclick="searchPOsForRevisionUI()" style="background:var(--accent); color:#fff; font-weight:700; padding:9px 20px;">Search</button>
+        </div>
+        <div id="rpo-other-search-label" style="display:none; font-weight:700; margin-bottom:12px; font-size:0.85rem; line-height:1.7;"></div>
+        <div id="rpo-search-feed" style="display:flex; flex-direction:column; gap:12px;"></div>
+      </div>
+      </div>
+
+      <div id="rpo-detail-zone" style="margin-top:18px;"></div>
+    </div>
+
+    <div id="canvas-module-purchase-pps-tracking" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">PPS Tracking</h2>
+      <div id="pps-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+
+      <div id="pps-needqueue-zone" style="margin-bottom:16px;"></div>
+
+      <div id="pps-selector-row" style="display:grid; grid-template-columns:1fr 2fr; gap:12px; align-items:end; margin-bottom:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
+        <div>
+          <label class="field-label" style="margin-top:0; color:var(--brand);">Project ID or Customer Name *</label>
+          <div style="position:relative;">
+            <input type="text" id="pps-project-select-ta-input" placeholder="Type Project ID or Customer Name..." autocomplete="off"
+              oninput="handleSharedProjectTypeaheadInput(this.value, 'pps-project-select-ta-input', 'pps-project-select-ta-dropdown')"
+              onchange="loadPPSPRNList()"
+              style="width:100%; padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);" />
+            <div id="pps-project-select-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          </div>
+        </div>
+        <div>
+          <label class="field-label" style="margin-top:0; color:var(--brand);">Select PRN *</label>
+          <select id="pps-prn-select" onchange="loadPPSForPRN()" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;"><option value="">— Select a project first —</option></select>
+        </div>
+      </div>
+      <div id="pps-prn-header" style="display:none; margin-bottom:10px; font-size:0.85rem;"></div>
+      <div id="pps-results-body"></div>
+    </div>
+
+    <div id="canvas-module-purchase-search-po" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Search Raw Material Purchase Order</h2>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Look up any Authorized Purchase Order by any combination of PO Number, material, Project ID, and date range — every field is optional. For vendor rate/costing lookups, use Search Vendor Costing Information instead.</p>
+      <div id="srchpo-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+
+      <div style="display:flex; gap:14px; margin-bottom:18px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px; align-items:start;">
+        <div id="srchpo-po-field" style="position:relative; width:10%;">
+          <label class="field-label" style="margin-top:0; color:var(--brand);">PO Number</label>
+          <div id="srchpo-po-locked" class="srchpo-locked-box" onclick="srchpoReopenField('srchpo-po-input','srchpo-po-locked')" style="display:none; justify-content:space-between; align-items:center; gap:6px; cursor:pointer; font-size:0.85rem; font-weight:600; padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); background:#f8fafc; min-height:38px; box-sizing:border-box; word-break:break-word; white-space:normal;"><span class="srchpo-locked-text"></span><span style="font-size:0.62rem; font-weight:700; color:var(--muted); white-space:nowrap; flex-shrink:0;">✎</span></div>
+          <input type="text" id="srchpo-po-input" placeholder="e.g. PO_26-27_00001" autocomplete="off" oninput="handleSrchPOPoInput(this.value)" onblur="srchpoLockField('srchpo-po-input','srchpo-po-locked', this.value.trim())" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box;">
+          <div id="srchpo-po-dd" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:220px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+        </div>
+        <div style="position:relative; width:16%;">
+          <label class="field-label" style="margin-top:0; color:var(--brand);">Vendor Name</label>
+          <div id="srchpo-vendor-locked" class="srchpo-locked-box" onclick="srchpoReopenField('srchpo-vendor-input','srchpo-vendor-locked')" style="display:none; justify-content:space-between; align-items:center; gap:6px; cursor:pointer; font-size:0.85rem; font-weight:600; padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); background:#f8fafc; min-height:38px; box-sizing:border-box; word-break:break-word; white-space:normal;"><span class="srchpo-locked-text"></span><span style="font-size:0.62rem; font-weight:700; color:var(--muted); white-space:nowrap; flex-shrink:0;">✎</span></div>
+          <input type="text" id="srchpo-vendor-input" placeholder="Start typing vendor name..." autocomplete="off" oninput="handleSrchPOVendorInput(this.value)" onblur="srchpoLockField('srchpo-vendor-input','srchpo-vendor-locked', window.srchpoSelectedVendorName || this.value.trim())" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box;">
+          <div id="srchpo-vendor-dd" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:220px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+        </div>
+        <div style="position:relative; width:30%;">
+          <label class="field-label" style="margin-top:0; color:var(--brand);">Material Name</label>
+          <div id="srchpo-material-locked" class="srchpo-locked-box" onclick="srchpoReopenField('srchpo-material-input','srchpo-material-locked')" style="display:none; justify-content:space-between; align-items:center; gap:6px; cursor:pointer; font-size:0.85rem; font-weight:600; padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); background:#f8fafc; min-height:38px; box-sizing:border-box; word-break:break-word; white-space:normal;"><span class="srchpo-locked-text"></span><span style="font-size:0.62rem; font-weight:700; color:var(--muted); white-space:nowrap; flex-shrink:0;">✎</span></div>
+          <input type="text" id="srchpo-material-input" placeholder="Start typing material name..." autocomplete="off" oninput="handleSrchPOMaterialInput(this.value)" onblur="srchpoLockField('srchpo-material-input','srchpo-material-locked', window.srchpoSelectedItemCode ? this.value.trim() : '')" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box;">
+          <div id="srchpo-material-dd" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:220px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+        </div>
+        <div style="position:relative; width:24%;">
+          <label class="field-label" style="margin-top:0; color:var(--brand);">Project ID</label>
+          <div id="srchpo-project-locked" class="srchpo-locked-box" onclick="srchpoReopenField('srchpo-project-input','srchpo-project-locked')" style="display:none; justify-content:space-between; align-items:center; gap:6px; cursor:pointer; font-size:0.85rem; font-weight:600; padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); background:#f8fafc; min-height:38px; box-sizing:border-box; word-break:break-word; white-space:normal;"><span class="srchpo-locked-text"></span><span style="font-size:0.62rem; font-weight:700; color:var(--muted); white-space:nowrap; flex-shrink:0;">✎</span></div>
+          <input type="text" id="srchpo-project-input" placeholder="Start typing Project ID..." autocomplete="off" oninput="handleSrchPOProjectInput(this.value)" onblur="srchpoLockField('srchpo-project-input','srchpo-project-locked', this.value.trim())" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box;">
+          <div id="srchpo-project-dd" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:220px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+        </div>
+        <div style="width:10%;">
+          <label class="field-label" style="margin-top:0; color:var(--brand);">Date Range From</label>
+          <input type="date" id="srchpo-date-from" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box;">
+        </div>
+        <div style="width:10%;">
+          <label class="field-label" style="margin-top:0; color:var(--brand);">Date Range To</label>
+          <input type="date" id="srchpo-date-to" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box;">
+        </div>
+      </div>
+      <button class="nav-btn-styled" onclick="searchRMPOMatrixUI()" style="background:var(--accent); color:#fff; font-weight:700; padding:9px 22px; margin-bottom:18px;">Search</button>
+      <button class="nav-btn-styled" onclick="initializeSearchRMPOPanel()" style="background:#e2e8f0; color:#334155; font-weight:700; padding:9px 22px; margin-bottom:18px; margin-left:8px;">Reset</button>
+
+      <div id="srchpo-search-label" style="display:none; font-weight:700; margin-bottom:10px; font-size:0.9rem; line-height:1.7;"></div>
+      <div id="srchpo-results" style="display:flex; flex-direction:column; gap:12px;"></div>
+    </div>
+
+    <div id="canvas-module-purchase-vendor-costing" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Search Vendor Costing Information</h2>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Compare Rate / Qty and delivery across every Authorized Purchase Order for a material, optionally narrowed to one vendor, within a date range (based on each PO's last revision date, or its creation date if never revised).</p>
+      <div id="svci-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+
+      <div style="display:flex; gap:14px; margin-bottom:18px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px; align-items:start;">
+        <div style="position:relative; width:40%;">
+          <label class="field-label" style="margin-top:0; color:var(--brand);">Material Name *</label>
+          <textarea rows="1" id="svci-material-input" placeholder="Start typing material name..." autocomplete="off"
+            oninput="handleSVCIMaterialInput(this.value); this.style.height='auto'; this.style.height=this.scrollHeight+'px';"
+            style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box; resize:none; overflow:hidden; font-family:inherit; font-size:0.85rem; line-height:1.3;"></textarea>
+          <div id="svci-material-dd" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:220px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+        </div>
+        <div style="position:relative; width:30%;">
+          <label class="field-label" style="margin-top:0; color:var(--brand);">Vendor Name (optional)</label>
+          <input type="text" id="svci-vendor-input" placeholder="Start typing vendor name... (leave blank for All Vendors)" autocomplete="off" oninput="handleSVCIVendorInput(this.value)" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box;">
+          <div id="svci-vendor-dd" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:220px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+        </div>
+        <div style="width:15%;">
+          <label class="field-label" style="margin-top:0; color:var(--brand);">Date Range From *</label>
+          <input type="date" id="svci-date-from" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box;">
+        </div>
+        <div style="width:15%;">
+          <label class="field-label" style="margin-top:0; color:var(--brand);">Date Range To *</label>
+          <input type="date" id="svci-date-to" style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box;">
+        </div>
+      </div>
+      <button class="nav-btn-styled" onclick="searchVendorCostingInfoUI()" style="background:var(--accent); color:#fff; font-weight:700; padding:9px 22px; margin-bottom:18px;">Search</button>
+      <button class="nav-btn-styled" onclick="initializeSearchVendorCostingInfoPanel()" style="background:#e2e8f0; color:#334155; font-weight:700; padding:9px 22px; margin-bottom:18px; margin-left:8px;">Reset</button>
+
+      <div id="svci-search-label" style="display:none; font-weight:700; color:var(--brand); margin-bottom:10px; font-size:0.9rem; line-height:1.7;"></div>
+      <div id="svci-results"></div>
+    </div>
+
+    <div id="canvas-module-purchase-rejected-material" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Store Inward Rejected &amp; Missing Material</h2>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">
+        Review Q/A-rejected material from Store and decide the action.
+        Once actioned, a GRN moves from Pending Action to Action in Progress.
+      </p>
+      <div id="rejected-material-feedback-banner" style="display:none; padding:12px; font-size:0.88rem; font-weight:700; border-radius:var(--radius); margin-bottom:12px; border-left:4px solid;"></div>
+      <div id="rejected-material-cards-feed" style="display:flex; flex-direction:column; gap:14px;"></div>
+    </div>
+
+    <div id="canvas-module-purchase-material-list" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Live view of all materials needed across active PRNs. Items with Still To Order Quantity = 0 are hidden automatically.</p>
+      <div id="material-list-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+
+      <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:12px; margin-bottom:16px;">
+        <div style="display:flex; align-items:flex-end; gap:12px; flex-wrap:wrap;">
+          <button class="nav-btn-styled" id="material-list-all-projects-btn" onclick="selectMaterialListAllProjects()" style="padding:9px 18px; white-space:nowrap;">All Active Projects</button>
+          <div style="flex:1; min-width:240px; position:relative;">
+            <label class="field-label" style="margin-top:0;">Project ID or Customer Name *</label>
+            <input type="text" id="material-list-project-ta-input" placeholder="Type Project ID or Customer Name..." autocomplete="off"
+              oninput="handleSharedProjectTypeaheadInput(this.value, 'material-list-project-ta-input', 'material-list-project-ta-dropdown')"
+              style="width:100%; padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); box-sizing:border-box;" />
+            <div id="material-list-project-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          </div>
+          <button class="nav-btn-styled" onclick="searchMaterialListByProject()" style="background:var(--brand); padding:9px 18px;">Search</button>
+        </div>
+        <div id="material-list-scope-label" style="margin-top:12px; font-size:0.85rem; color:var(--text);"></div>
+        <div id="material-list-hidden-note" style="display:none; margin-top:8px; font-size:0.8rem; color:var(--muted); font-style:italic;"></div>
+      </div>
+
+      <div id="material-list-results-zone" style="display:flex; flex-direction:column; gap:12px;"></div>
+    </div>
+    <div id="canvas-module-purchase-upload-rm-po" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Upload Raw Material Purchase Order</h2>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Upload a Raw Material PO. AI will extract line items and match them to your Item Code catalog.</p>
+      <div id="rm-po-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+
+      <div id="rm-po-upload-zone">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;"></div>
+
+        <div class="card-box" id="rm-po-file-dropzone" onclick="document.getElementById('rm-po-file-input').click()" style="padding:40px; border:2px dashed var(--brand); font-weight:700; color:var(--brand); margin-bottom:16px; display:flex; align-items:center; justify-content:center;">
+          📄 Select Raw Material Purchase Order (PDF or Image)
+        </div>
+        <input type="file" id="rm-po-file-input" accept="image/*,application/pdf" hidden onchange="handleRMPOFileSelection(this)" />
+        <button class="btn btn-ai" id="rm-po-parse-btn" onclick="parseRawMaterialPOWithAI()">Process PO with AI</button>
+      </div>
+
+      <div id="rm-po-verification-zone" style="display:none; margin-top:16px; border-top:1px dashed var(--border); padding-top:16px;">
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:16px;">
+          <div><label class="field-label">Vendor Name</label><input type="text" id="rm-po-vendor-name" readonly style="padding:6px; background:#f1f5f9; color:var(--brand); font-weight:700;" /></div>
+          <div><label class="field-label">PO Number</label><input type="text" id="rm-po-number" style="padding:6px; background:#f1f5f9;" /></div>
+          <div><label class="field-label">Order Date</label><input type="text" id="rm-po-order-date" style="padding:6px; background:#f1f5f9;" /></div>
+          <div><label class="field-label">Delivery Date *</label><input type="text" id="rm-po-delivery-date" style="padding:6px; background:#f1f5f9;" /></div>
+          <div><label class="field-label">Grand Total (₹)</label><input type="text" id="rm-po-grand-total" style="padding:6px; background:#f1f5f9;" /></div>
+        </div>
+
+        <div style="overflow:visible; border:1px solid var(--border); border-radius:var(--radius); margin-bottom:16px;">
+          <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:900px;">
+            <thead>
+              <tr style="background:#f8fafc;">
+                <th style="padding:8px; font-size:0.72rem; width:140px; text-align:center;">Item Code *</th>
+                <th style="padding:8px; font-size:0.72rem; width:260px; text-align:left;">Invoice Material Description</th>
+                <th style="padding:8px; font-size:0.72rem; width:200px; text-align:left;">Standard Material Name *</th>
+                <th style="padding:8px; font-size:0.72rem; text-align:center; width:80px;">Qty</th>
+                <th style="padding:8px; font-size:0.72rem; text-align:center; width:70px;">Unit</th>
+                <th style="padding:8px; font-size:0.72rem; text-align:right; width:100px;">Rate / Qty</th>
+                <th style="padding:8px; font-size:0.72rem; text-align:right; width:130px;">Total Amount (₹)</th>
+              </tr>
+            </thead>
+            <tbody id="rm-po-verification-table-body"></tbody>
+          </table>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px;">
+          <button class="nav-btn-styled" onclick="resetRMPOUploadState()" style="background:#718096;">Cancel</button>
+          <button class="nav-btn-styled" id="rm-po-submit-btn" onclick="commitRawMaterialPOToBackend()" style="background:var(--accent); padding:8px 24px; font-weight:700;">Submit Purchase Order</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PURCHASE DASHBOARD (ported from ABPS Portal 4 Sep 2026) ═══ -->
+    <div id="canvas-module-purchase-dashboard" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
+
+      <!-- BODY -->
+      <div id="pd-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
+
+        <!-- ROW 1: PRN coverage / scheduling / rejection health -->
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">PRNs With No Materials Assigned in a PO</div>
+            <div class="dd-stat-val" id="pd-s-noassign" style="color:#b91c1c;">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">PRNs With Partial Materials Assigned in a PO</div>
+            <div class="dd-stat-val" id="pd-s-partassign" style="color:#b45309;">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">PRNs with Unscheduled Delivery Date</div>
+            <div class="dd-stat-val" id="pd-s-unsched" style="color:#b91c1c;">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">PRNs with Partially Scheduled Delivery Date</div>
+            <div class="dd-stat-val" id="pd-s-partsched" style="color:#b45309;">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Unactioned GRNs with Missing/Rejected Material</div>
+            <div class="dd-stat-val" id="pd-s-grns" style="color:#b91c1c;">—</div>
+          </div>
+        </div>
+
+        <!-- ROW 2: PO lifecycle throughput -->
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Pending PO Authorizations</div>
+            <div class="dd-stat-val" id="pd-s-pendingpo" style="color:#b45309;">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Pending PO Revision Authorizations</div>
+            <div class="dd-stat-val" id="pd-s-pendingporev" style="color:#b45309;">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">RM POs Created</div>
+            <div class="dd-stat-val" id="pd-s-pos">—</div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">Item Codes Currently On Order</div>
+            <div style="display:flex; align-items:baseline; gap:4px;">
+              <div class="dd-stat-val" id="pd-s-matcov" style="color:var(--brand);">—</div>
+              <div class="dd-stat-sub" id="pd-s-matcov-total" style="font-size:0.75rem;"></div>
+            </div>
+          </div>
+          <div class="dd-stat-card">
+            <div class="dd-stat-label">On-Time Delivery Rate</div>
+            <div class="dd-stat-val" id="pd-s-ontime" style="color:#15803d;">—</div>
+          </div>
+        </div>
+
+        <!-- ROW 3: Charts -->
+        <div style="display:grid; grid-template-columns:1.2fr 1fr 1fr; gap:10px; flex:0 0 26%;">
+          <div class="dd-card" style="padding:8px 10px;">
+            <div class="dd-card-title">RM POs Created Over Time</div>
+            <canvas id="pd-chart-po-trend" style="max-height:130px;"></canvas>
+          </div>
+          <div class="dd-card" style="padding:8px 10px;">
+            <div class="dd-card-title">Purchase Order Delivery Timeline</div>
+            <canvas id="pd-chart-delivery" style="max-height:130px;"></canvas>
+          </div>
+          <div class="dd-card" style="padding:8px 10px;">
+            <div class="dd-card-title">Average Delivery Delay by Vendor</div>
+            <canvas id="pd-chart-vendor-delay" style="max-height:130px;"></canvas>
+          </div>
+        </div>
+
+        <!-- ROW 4: Due Today / Overdue (Purchase's own Project Timeline
+             trunk nodes) + Overdue Purchase Orders -- 3 equal columns -->
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; flex:1; min-height:0;">
+
+          <div class="dd-stat-card" style="display:flex; flex-direction:column; min-height:0;">
+            <div class="dd-card-title" style="margin-bottom:8px;">Due Today (Active projects, Project Timeline)</div>
+            <div style="flex:1; min-height:0; overflow-y:auto;">
+              <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
+                <thead>
+                  <tr style="text-align:left; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--card);">
+                    <th style="padding:4px;">Project</th>
+                    <th style="padding:4px;">Step</th>
+                  </tr>
+                </thead>
+                <tbody id="pd-duetoday-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="dd-stat-card" style="display:flex; flex-direction:column; min-height:0;">
+            <div class="dd-card-title" style="margin-bottom:8px;">Overdue (Active projects, Project Timeline)</div>
+            <div style="flex:1; min-height:0; overflow-y:auto;">
+              <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
+                <thead>
+                  <tr style="text-align:left; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--card);">
+                    <th style="padding:4px;">Project</th>
+                    <th style="padding:4px;">Step</th>
+                    <th style="padding:4px; text-align:right;">Days Late</th>
+                  </tr>
+                </thead>
+                <tbody id="pd-timeline-overdue-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Overdue POs -->
+          <div class="dd-card" style="padding:10px 12px; display:flex; flex-direction:column; min-height:0; height:100%;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-shrink:0;">
+              <div class="dd-card-title" style="margin:0;">🔴 Overdue Purchase Orders</div>
+              <span id="pd-overdue-count" style="font-size:0.68rem; font-weight:700; background:#fee2e2; color:#b91c1c; padding:1px 7px; border-radius:8px;"></span>
+            </div>
+            <div style="overflow-y:auto; flex:1;">
+              <table style="width:100%; border-collapse:collapse; font-size:0.72rem;">
+                <thead><tr style="color:var(--muted); font-size:0.67rem; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--card);">
+                  <th style="text-align:left; padding:3px 5px;">PO ID</th>
+                  <th style="text-align:left; padding:3px 5px;">Vendor</th>
+                  <th style="text-align:center; padding:3px 5px;">Delivery Date</th>
+                  <th style="text-align:center; padding:3px 5px;">Days Overdue</th>
+                  <th style="text-align:right; padding:3px 5px;">Value (₹)</th>
+                </tr></thead>
+                <tbody id="pd-overdue-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+
   <!-- Full 8-tab Security & Login Access screen (1 Sep 2026), ported from
        ABPS Portal's canvas-module-security-admin. Logic in
        project/security-admin.js; init entry point is
@@ -1017,6 +1919,19 @@
 <script src="accounts/accounts-dashboard.js"></script>
 <script src="design/item-code-format.js"></script>
 <script src="design/item-codes.js"></script>
+<script src="design/material-descriptions.js"></script>
+<script src="design/create-boq.js"></script>
+<script src="design/authorize-boq.js"></script>
+<script src="design/update-boq.js"></script>
+<script src="design/upload-drawings.js"></script>
+<script src="design/design-dashboard.js"></script>
+<script src="store/revise-prn.js"></script>
+<script src="purchase/po.js"></script>
+<script src="purchase/vendor-costing.js"></script>
+<script src="purchase/revise-po.js"></script>
+<script src="purchase/pps-tracking.js"></script>
+<script src="purchase/material-list.js"></script>
+<script src="purchase/purchase-dashboard.js"></script>
 <script src="project/security-admin.js"></script>
 </body>
 </html>
