@@ -187,9 +187,17 @@ function selectDepartmentTab(key) {
 // first (the user may be deep inside a canvas-module-* screen, where
 // dashboard-view itself is hidden), then switches to the clicked department.
 function handleDepartmentTabClick(key) {
-  document.querySelectorAll('[id^="canvas-module-"]').forEach(p => p.style.display = 'none');
   const workspaceContainer = document.getElementById('module-workspace-container');
   if (workspaceContainer) workspaceContainer.style.display = 'none';
+  // Enclosure panels (module-design-workspace-enclosure-panel,
+  // module-purchase-workspace-enclosure-panel, ...) don't match
+  // [id^="canvas-module-"], so without this line they stay visible forever
+  // once shown — e.g. after opening Create BOQ, switching department tabs
+  // left its enclosure (and the leftover "Return to Main Dashboard" header
+  // row inside it) rendering below the newly-shown dashboard tile grid.
+  // Matches Portal's handleDepartmentTabClick exactly.
+  document.querySelectorAll('[id$="-workspace-enclosure-panel"]').forEach(p => p.style.display = 'none');
+  document.querySelectorAll('[id^="canvas-module-"]').forEach(p => p.style.display = 'none');
 
   if (typeof enforceDynamicModuleRoleGateways === 'function' && typeof userPermissions !== 'undefined') {
     enforceDynamicModuleRoleGateways(userPermissions);
@@ -243,6 +251,7 @@ function switchActiveDashboardModule(targetSectionId) {
 
 function returnToDashboard() {
   document.querySelectorAll('[id^="canvas-module-"]').forEach(p => p.style.display = "none");
+  document.querySelectorAll('[id$="-workspace-enclosure-panel"]').forEach(p => p.style.display = "none");
   const mwc = document.getElementById("module-workspace-container");
   if (mwc) mwc.style.display = "none";
   document.getElementById("dashboard-view").style.display = "flex";
