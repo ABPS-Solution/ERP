@@ -78,6 +78,25 @@
   @media(max-width:400px) {
     .dashboard-grid { grid-template-columns: 1fr; }
   }
+  /* Full-screen dashboards (Accounts/Design/Purchase) build their stat-tile
+     rows as a hardcoded 5-column grid inside a fixed-percentage-height flex
+     row — fine on a large monitor, but on a smaller/narrower laptop screen
+     (1366px-class and below is common in this office) 5 tiles squeeze too
+     narrow for their own label text to fit. Wraps to fewer columns instead,
+     and switches that row to a natural height once it does, so wrapped
+     tiles get the vertical room they need rather than being clipped by the
+     row's own fixed flex-basis. */
+  .dash-stat-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; flex: 0 0 11%; min-height: 0; }
+  @media(max-width:1400px) {
+    .dash-stat-row { grid-template-columns: repeat(3, 1fr); flex: 0 0 auto; }
+  }
+  @media(max-width:900px) {
+    .dash-stat-row { grid-template-columns: repeat(2, 1fr); }
+  }
+  .dash-chart-row-3 { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 10px; flex: 0 0 26%; min-height: 0; }
+  @media(max-width:1200px) {
+    .dash-chart-row-3 { grid-template-columns: 1fr; flex: 0 0 auto; }
+  }
   .menu-card { background: var(--card); border: 1.5px solid var(--border); padding: 0 20px; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 0.95rem; height: 84px; display:flex; align-items:center; justify-content:center; gap:12px; box-shadow:0 1px 2px rgba(0,0,0,0.04); transition:box-shadow 0.15s, border-color 0.15s, transform 0.15s; position:relative; overflow:hidden; }
   .menu-card::before { content:''; position:absolute; top:0; left:0; right:0; height:4px; background:var(--dept-accent, var(--brand)); border-radius:10px 10px 0 0; }
   .menu-card:hover { box-shadow:0 4px 14px rgba(0,0,0,0.1); border-color:var(--dept-accent, var(--brand)); transform:translateY(-2px); }
@@ -541,9 +560,9 @@
 
   <!-- Accounts Dashboard — ported from Portal's canvas-module-accounts-dashboard -->
   <div id="canvas-module-accounts-dashboard" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
-    <div id="ad-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
+    <div id="ad-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; min-height:calc(100vh - 100px); box-sizing:border-box; overflow-y:auto; overflow-x:hidden;">
 
-      <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
+      <div class="dash-stat-row">
         <div class="dd-stat-card">
           <div class="dd-stat-label">Unactioned Travel / Hotel Tickets</div>
           <div class="dd-stat-val" id="ad-s-unactioned" style="color:#b45309;">—</div>
@@ -570,7 +589,7 @@
         </div>
       </div>
 
-      <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
+      <div class="dash-stat-row">
         <div class="dd-stat-card">
           <div class="dd-stat-label">Tour Vouchers Checked</div>
           <div class="dd-stat-val" id="ad-s-vouchers" style="color:#15803d;">—</div>
@@ -595,7 +614,7 @@
         </div>
       </div>
 
-      <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
+      <div class="dash-stat-row">
         <div class="dd-stat-card">
           <div class="dd-stat-label">Open Daily Cash/UPI Advances</div>
           <div class="dd-stat-val" id="ad-s-openadv" style="color:#b45309;">—</div>
@@ -1141,10 +1160,10 @@
     <div id="canvas-module-design-dashboard" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
 
       <!-- DASHBOARD BODY -->
-      <div id="dd-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
+      <div id="dd-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; min-height:calc(100vh - 100px); box-sizing:border-box; overflow-y:auto; overflow-x:hidden;">
 
         <!-- ROW 1: 5 Stat Cards -->
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
+        <div class="dash-stat-row">
           <div class="dd-stat-card">
             <div class="dd-stat-label">Design Work Overdue in Project Timeline</div>
             <div class="dd-stat-val" id="dd-s-overdue" style="color:#b91c1c;">—</div>
@@ -1168,7 +1187,7 @@
         </div>
 
         <!-- ROW 2: Throughput/Averages -->
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
+        <div class="dash-stat-row">
           <div class="dd-stat-card">
             <div class="dd-stat-label">BOQs Authorized</div>
             <div class="dd-stat-val" id="dd-s-authorized" style="color:#15803d;">—</div>
@@ -1193,7 +1212,7 @@
         </div>
 
         <!-- ROW 3: MFC-cleared-awaiting-BOQ table + Charts -->
-        <div style="display:grid; grid-template-columns:1.2fr 1fr 1fr; gap:10px; flex:0 0 26%;">
+        <div class="dash-chart-row-3">
           <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; min-height:0; height:100%;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px; flex-shrink:0;">
               <div class="dd-card-title" style="margin:0;">Products Cleared at MFC, Still Awaiting a BOQ</div>
@@ -1577,7 +1596,7 @@
       </div>
 
       <div id="rm-po-verification-zone" style="display:none; margin-top:16px; border-top:1px dashed var(--border); padding-top:16px;">
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:16px;">
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:10px; margin-bottom:16px;">
           <div><label class="field-label">Vendor Name</label><input type="text" id="rm-po-vendor-name" readonly style="padding:6px; background:#f1f5f9; color:var(--brand); font-weight:700;" /></div>
           <div><label class="field-label">PO Number</label><input type="text" id="rm-po-number" style="padding:6px; background:#f1f5f9;" /></div>
           <div><label class="field-label">Order Date</label><input type="text" id="rm-po-order-date" style="padding:6px; background:#f1f5f9;" /></div>
@@ -1614,10 +1633,10 @@
     <div id="canvas-module-purchase-dashboard" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
 
       <!-- BODY -->
-      <div id="pd-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
+      <div id="pd-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; min-height:calc(100vh - 100px); box-sizing:border-box; overflow-y:auto; overflow-x:hidden;">
 
         <!-- ROW 1: PRN coverage / scheduling / rejection health -->
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
+        <div class="dash-stat-row">
           <div class="dd-stat-card">
             <div class="dd-stat-label">PRNs With No Materials Assigned in a PO</div>
             <div class="dd-stat-val" id="pd-s-noassign" style="color:#b91c1c;">—</div>
@@ -1641,7 +1660,7 @@
         </div>
 
         <!-- ROW 2: PO lifecycle throughput -->
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 11%;">
+        <div class="dash-stat-row">
           <div class="dd-stat-card">
             <div class="dd-stat-label">Pending PO Authorizations</div>
             <div class="dd-stat-val" id="pd-s-pendingpo" style="color:#b45309;">—</div>
@@ -1668,7 +1687,7 @@
         </div>
 
         <!-- ROW 3: Charts -->
-        <div style="display:grid; grid-template-columns:1.2fr 1fr 1fr; gap:10px; flex:0 0 26%;">
+        <div class="dash-chart-row-3">
           <div class="dd-card" style="padding:8px 10px;">
             <div class="dd-card-title">RM POs Created Over Time</div>
             <canvas id="pd-chart-po-trend" style="max-height:130px;"></canvas>
