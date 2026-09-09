@@ -82,17 +82,72 @@ function adSetPeriod(btn) {
   adLoadDashboard();
 }
 
+// 9 Sep 2026: replaced the old single-input-with-mutated-.type approach
+// (which left the browser's native date-picker chrome visually stuck on
+// top of the wrong widget whenever the type flipped — the exact bug
+// Portal's 7 dashboards hit and fixed the same way earlier this week) with
+// dedicated, always-present controls per granularity, toggled via the
+// `hidden` attribute instead of ever touching `.type`. Also switched
+// Month/Quarter/Year from typed/native-picker input to pick-from-options
+// <select>s, and renamed "Week" (pick one day, snapped to its Mon-Sun
+// week) to "Date Range" (two real date inputs, no snapping) — ported from
+// Portal's shared marketing/marketing-dashboard.js helpers, kept local
+// here since ERP only has this one dashboard so far.
+const AD_CUSTOM_TYPE_SUFFIX = {
+  customday: "day", customrange: "range", custommonth: "month",
+  customquarter: "quarter", customyear: "year",
+};
+let adYearSelectsPopulated = false;
+function adPopulateYearSelects() {
+  if (adYearSelectsPopulated) return;
+  adYearSelectsPopulated = true;
+  const now = new Date();
+  const curCalYear = now.getFullYear();
+  const curFY = now.getMonth() >= 3 ? curCalYear : curCalYear - 1; // FY starts April (month index 3)
+  const calYears = []; for (let y = curCalYear; y >= curCalYear - 5; y--) calYears.push(y);
+  const fyYears = []; for (let y = curFY; y >= curFY - 5; y--) fyYears.push(y);
+  document.querySelectorAll(".dash-cal-year-select").forEach(sel => {
+    sel.innerHTML = calYears.map(y => `<option value="${y}">${y}</option>`).join("");
+  });
+  document.querySelectorAll(".dash-fy-year-select").forEach(sel => {
+    sel.innerHTML = fyYears.map(y => `<option value="${y}">${y}-${String((y + 1) % 100).padStart(2, "0")}</option>`).join("");
+  });
+}
+adPopulateYearSelects();
+
 function adCustomTypeChange() {
-  adCurrentCustomType = document.getElementById("ad-custom-type").value;
-  const v = document.getElementById("ad-custom-val");
-  if (adCurrentCustomType === "custommonth") v.type = "month";
-  else if (adCurrentCustomType === "customquarter") { v.type = "text"; v.placeholder = "e.g. 2025-Q2"; }
-  else if (adCurrentCustomType === "customyear") { v.type = "number"; v.placeholder = "e.g. 2025"; }
-  else v.type = "date";
+  const type = document.getElementById("ad-custom-type").value;
+  adCurrentCustomType = type;
+  const activeSuffix = AD_CUSTOM_TYPE_SUFFIX[type];
+  Object.values(AD_CUSTOM_TYPE_SUFFIX).forEach(suf => {
+    const el = document.getElementById(`ad-custom-val-${suf}`);
+    if (el) el.hidden = (suf !== activeSuffix);
+  });
+}
+
+function adReadCustomVal() {
+  const type = document.getElementById("ad-custom-type").value;
+  if (type === "customrange") {
+    const s = document.getElementById("ad-custom-val-range-start").value.trim();
+    const e = document.getElementById("ad-custom-val-range-end").value.trim();
+    return (s && e) ? `${s}_${e}` : "";
+  }
+  if (type === "custommonth") {
+    const y = document.getElementById("ad-custom-val-month-year").value;
+    const m = document.getElementById("ad-custom-val-month-month").value;
+    return (y && m) ? `${y}-${String(m).padStart(2, "0")}` : "";
+  }
+  if (type === "customquarter") {
+    const y = document.getElementById("ad-custom-val-quarter-year").value;
+    const q = document.getElementById("ad-custom-val-quarter-q").value;
+    return (y && q) ? `${y}-Q${q}` : "";
+  }
+  const el = document.getElementById(`ad-custom-val-${AD_CUSTOM_TYPE_SUFFIX[type]}`);
+  return el ? el.value.trim() : "";
 }
 
 function adLoadCustom() {
-  const val = document.getElementById("ad-custom-val").value.trim();
+  const val = adReadCustomVal();
   if (!val) return alert("Please enter a value for the custom period.");
   adCurrentPeriod = adCurrentCustomType;
   adLoadDashboard(val);
