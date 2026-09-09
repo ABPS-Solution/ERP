@@ -130,6 +130,9 @@ function adCustomTypeChange() {
 
 function adReadCustomVal() {
   const type = document.getElementById("ad-custom-type").value;
+  if (type === "customday") {
+    return document.getElementById("ad-custom-val-day-input").value.trim();
+  }
   if (type === "customrange") {
     const s = document.getElementById("ad-custom-val-range-start").value.trim();
     const e = document.getElementById("ad-custom-val-range-end").value.trim();
