@@ -178,6 +178,26 @@ async function syncPlatformPersonnelDropdownOptionsList() {
 
       nameSelect.innerHTML = '<option value="">— Choose Department First —</option>';
       nameSelect.disabled = true;
+      // Reset the pyramid buttons' visual state to match the reset above —
+      // rebuilding deptSelect's <option>s resets its .value to "", but
+      // nothing previously touched the buttons' own .active class, so a
+      // department clicked before an earlier logout stayed visually
+      // highlighted (and Name stayed correctly blank) even though nothing
+      // was actually selected any more (found 10 Sep 2026, same bug as
+      // Portal's abps-frontend/shared/apFetch.js).
+      document.querySelectorAll(".login-dept-btn").forEach(btn => btn.classList.remove("active"));
+
+      // Restore this device's remembered Department + Name — see
+      // completeSuccessfulLogin's own comment. erpRememberedLoginDept/Name
+      // are NOT in ERP_LOCAL_STORAGE_KEYS, so clearAppLocalStorageKeepingDeviceKeys
+      // never wipes them, same treatment as erpAbpsPcDeviceSecret.
+      const rememberedDept = localStorage.getItem("erpRememberedLoginDept");
+      const rememberedName = localStorage.getItem("erpRememberedLoginName");
+      if (rememberedDept && data.departmentsList.includes(rememberedDept)) {
+        selectLoginDeptButton(rememberedDept);
+        const names = (window._personnelTree && window._personnelTree[rememberedDept]) || [];
+        if (rememberedName && names.includes(rememberedName)) nameSelect.value = rememberedName;
+      }
     } else {
       deptSelect.innerHTML = '<option value="">Error syncing department parameters</option>';
     }
@@ -218,6 +238,16 @@ function initializeLoginScreen() {
 // path). isUserAdminGlobal comes straight from the server's real
 // perm_admin flag (data.isAdmin).
 function completeSuccessfulLogin(data, activeOperatorDisplayName, isUserAdminGlobal) {
+  // Remember Department + Name for next time on this device (10 Sep 2026)
+  // — read the login screen's own DOM before showAppView() below swaps it
+  // away. Saved on real success only, not on every click, so a wrong
+  // Department/Name never gets remembered. Deliberately unprefixed-list
+  // (erpRememberedLoginDept/Name are not in ERP_LOCAL_STORAGE_KEYS) so
+  // they survive clearAppLocalStorageKeepingDeviceKeys the same way
+  // erpAbpsPcDeviceSecret/erpDeviceToken already do.
+  const deptAtLogin = document.getElementById("app-auth-active-department-identity")?.value;
+  if (deptAtLogin) localStorage.setItem("erpRememberedLoginDept", deptAtLogin);
+  if (activeOperatorDisplayName) localStorage.setItem("erpRememberedLoginName", activeOperatorDisplayName);
   localStorage.setItem("erpSessionToken",  data.sessionToken);
   localStorage.setItem("erpSessionExpiry", data.expires);
   localStorage.setItem("erpSessionUser",   data.personKey);
