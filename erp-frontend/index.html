@@ -207,7 +207,13 @@
   .dd-period-btn { font-size:0.68rem; font-weight:700; padding:3px 8px; border:1.5px solid var(--border); border-radius:4px; cursor:pointer; background:var(--card); color:var(--text); transition:all 0.15s; }
   .dd-period-btn.active { background:var(--brand); color:#fff; border-color:var(--brand); }
   .dd-period-btn:hover:not(.active) { border-color:var(--brand); color:var(--brand); }
-  .dd-stat-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px; display:flex; flex-direction:column; gap:4px; justify-content:center; min-height:100px; box-sizing:border-box; }
+  .dd-stat-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:10px 14px; display:flex; flex-direction:column; gap:3px; justify-content:center; height:auto; min-height:80px; box-sizing:border-box; overflow:visible; }
+  /* Row1/Row2 stat tiles are tinted by whether the period selector actually
+     changes the number: .stat-live tiles read the current live backlog/
+     snapshot, .stat-period tiles are computed FROM the selected date range —
+     same convention as Portal's abps-frontend/index.html, ported here. */
+  .dd-stat-card.stat-live   { background:#fee2e2; border-color:#fca5a5; }
+  .dd-stat-card.stat-period { background:#dcfce7; border-color:#86efac; }
   .dd-stat-label { font-size:0.7rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; }
   .dd-stat-val { font-size:1.7rem; font-weight:800; color:var(--text); line-height:1.2; }
   .dd-stat-sub { font-size:0.7rem; color:var(--muted); }
@@ -459,18 +465,20 @@
        accounts/accounts-dashboard.js's own header comment for why this is
        trimmed vs. Portal's 5-dashboard generalized version. -->
   <div id="dashboard-global-toolbar" style="display:none; background:var(--card); border-bottom:1px solid var(--border); position:fixed; top:0; left:0; right:0; z-index:1000; box-shadow:0 2px 6px rgba(0,0,0,0.08);">
-    <div style="display:flex; justify-content:space-between; align-items:center; padding:18px 14px; position:relative;">
-      <div id="ad-period-btns" style="display:flex; gap:4px; flex-wrap:nowrap;">
-        <button class="dd-period-btn active" data-period="today" onclick="adSetPeriod(this)">Today</button>
-        <button class="dd-period-btn" data-period="yesterday" onclick="adSetPeriod(this)">Yesterday</button>
-        <button class="dd-period-btn" data-period="thisweek" onclick="adSetPeriod(this)">This Week</button>
-        <button class="dd-period-btn" data-period="thismonth" onclick="adSetPeriod(this)">This Month</button>
-        <button class="dd-period-btn" data-period="thisquarter" onclick="adSetPeriod(this)">This Quarter</button>
-        <button class="dd-period-btn" data-period="thisyear" onclick="adSetPeriod(this)">This Year</button>
-        <button class="dd-period-btn" data-period="custom" onclick="adSetPeriod(this)">Custom ▾</button>
+    <div style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:10px; padding:18px 14px;">
+      <div id="dash-global-period-groups" style="min-width:0; overflow-x:auto;">
+        <div id="ad-period-btns" style="display:flex; gap:4px; flex-wrap:nowrap;">
+          <button class="dd-period-btn active" data-period="today" onclick="adSetPeriod(this)">Today</button>
+          <button class="dd-period-btn" data-period="yesterday" onclick="adSetPeriod(this)">Yesterday</button>
+          <button class="dd-period-btn" data-period="thisweek" onclick="adSetPeriod(this)">This Week</button>
+          <button class="dd-period-btn" data-period="thismonth" onclick="adSetPeriod(this)">This Month</button>
+          <button class="dd-period-btn" data-period="thisquarter" onclick="adSetPeriod(this)">This Quarter</button>
+          <button class="dd-period-btn" data-period="thisyear" onclick="adSetPeriod(this)">This Year</button>
+          <button class="dd-period-btn" data-period="custom" onclick="adSetPeriod(this)">Custom ▾</button>
+        </div>
       </div>
-      <span id="dash-global-title" style="font-size:1.35rem; font-weight:800; color:var(--text); position:absolute; left:50%; transform:translateX(-50%);"></span>
-      <button class="nav-btn-styled" onclick="dashboardGlobalReturnClick()" style="font-size:0.75rem;">Return to Main Dashboard</button>
+      <span id="dash-global-title" style="text-align:center; font-size:1.35rem; font-weight:800; color:var(--text); white-space:nowrap;"></span>
+      <button class="nav-btn-styled" onclick="dashboardGlobalReturnClick()" style="justify-self:end; font-size:0.75rem;">Return to Main Dashboard</button>
     </div>
     <div id="ad-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc; flex-wrap:nowrap; overflow-x:auto;">
       <span style="font-size:0.72rem; font-weight:700; color:var(--muted); flex:none; white-space:nowrap;">Select:</span>
@@ -592,51 +600,51 @@
     <div id="ad-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; min-height:calc(100vh - 100px); box-sizing:border-box; overflow-y:auto; overflow-x:hidden;">
 
       <div class="dash-stat-row">
-        <div class="dd-stat-card">
+        <div class="dd-stat-card stat-live">
           <div class="dd-stat-label">Unactioned Travel / Hotel Tickets</div>
           <div class="dd-stat-val" id="ad-s-unactioned" style="color:#b45309;">—</div>
           <div class="dd-stat-sub" id="ad-s-unactioned-sub"></div>
         </div>
-        <div class="dd-stat-card">
+        <div class="dd-stat-card stat-period">
           <div class="dd-stat-label">Company-Paid Travel / Hotel</div>
           <div class="dd-stat-val" id="ad-s-travelpaid">—</div>
           <div class="dd-stat-sub" id="ad-s-travelpaid-sub"></div>
         </div>
-        <div class="dd-stat-card">
+        <div class="dd-stat-card stat-period">
           <div class="dd-stat-label">Tour Advances Paid</div>
           <div class="dd-stat-val" id="ad-s-advpaid">—</div>
           <div class="dd-stat-sub" id="ad-s-advpaid-sub"></div>
         </div>
-        <div class="dd-stat-card">
+        <div class="dd-stat-card stat-live">
           <div class="dd-stat-label">Unchecked Tour Vouchers</div>
           <div class="dd-stat-val" id="ad-s-unchecked" style="color:#b91c1c;">—</div>
           <div class="dd-stat-sub" id="ad-s-unchecked-sub"></div>
         </div>
-        <div class="dd-stat-card">
+        <div class="dd-stat-card stat-period">
           <div class="dd-stat-label">Avg Tour Voucher Check Time</div>
           <div class="dd-stat-val" id="ad-s-checktime">—</div>
         </div>
       </div>
 
       <div class="dash-stat-row">
-        <div class="dd-stat-card">
+        <div class="dd-stat-card stat-period">
           <div class="dd-stat-label">Tour Vouchers Checked</div>
           <div class="dd-stat-val" id="ad-s-vouchers" style="color:#15803d;">—</div>
         </div>
-        <div class="dd-stat-card">
+        <div class="dd-stat-card stat-period">
           <div class="dd-stat-label">Tour Expense Paid</div>
           <div class="dd-stat-val" id="ad-s-tourpaid">—</div>
         </div>
-        <div class="dd-stat-card">
+        <div class="dd-stat-card stat-period">
           <div class="dd-stat-label">Tour Claimed vs Paid Difference %</div>
           <div class="dd-stat-val" id="ad-s-variance">—</div>
         </div>
-        <div class="dd-stat-card">
+        <div class="dd-stat-card stat-period">
           <div class="dd-stat-label">Tour Over-Limit Amount</div>
           <div class="dd-stat-val" id="ad-s-overlimit" style="color:#b45309;">—</div>
           <div class="dd-stat-sub" id="ad-s-overlimit-sub"></div>
         </div>
-        <div class="dd-stat-card">
+        <div class="dd-stat-card stat-live">
           <div class="dd-stat-label">Total Balance of Tour Employees</div>
           <div class="dd-stat-val" id="ad-s-outstanding" style="color:var(--brand);">—</div>
           <div class="dd-stat-sub" id="ad-s-outstanding-sub"></div>
@@ -644,26 +652,26 @@
       </div>
 
       <div class="dash-stat-row">
-        <div class="dd-stat-card">
+        <div class="dd-stat-card stat-live">
           <div class="dd-stat-label">Open Daily Cash/UPI Advances</div>
           <div class="dd-stat-val" id="ad-s-openadv" style="color:#b45309;">—</div>
           <div class="dd-stat-sub" id="ad-s-openadv-sub"></div>
         </div>
-        <div class="dd-stat-card">
+        <div class="dd-stat-card stat-live">
           <div class="dd-stat-label">Daily Cash + UPI Box Balance</div>
           <div class="dd-stat-val" id="ad-s-cashbox">—</div>
           <div class="dd-stat-sub" id="ad-s-cashbox-sub"></div>
         </div>
-        <div class="dd-stat-card">
+        <div class="dd-stat-card stat-period">
           <div class="dd-stat-label">Daily Cash Box Top-Ups</div>
           <div class="dd-stat-val" id="ad-s-topups" style="color:#15803d;">—</div>
         </div>
-        <div class="dd-stat-card">
+        <div class="dd-stat-card stat-period">
           <div class="dd-stat-label">Daily Cash/UPI/Online Expenses Spent</div>
           <div class="dd-stat-val" id="ad-s-dailyspent">—</div>
           <div class="dd-stat-sub" id="ad-s-dailyspent-sub"></div>
         </div>
-        <div class="dd-stat-card">
+        <div class="dd-stat-card stat-period">
           <div class="dd-stat-label">Total Expense (Tour + Daily + Travel/Hotel)</div>
           <div class="dd-stat-val" id="ad-s-totalexp" style="color:var(--brand);">—</div>
         </div>
