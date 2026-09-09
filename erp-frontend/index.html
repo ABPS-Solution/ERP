@@ -455,7 +455,7 @@
       <span id="dash-global-title" style="font-size:1.35rem; font-weight:800; color:var(--text); position:absolute; left:50%; transform:translateX(-50%);"></span>
       <button class="nav-btn-styled" onclick="dashboardGlobalReturnClick()" style="font-size:0.75rem;">Return to Main Dashboard</button>
     </div>
-    <div id="ad-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc; flex-wrap:wrap;">
+    <div id="ad-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc; flex-wrap:nowrap; overflow-x:auto;">
       <span style="font-size:0.72rem; font-weight:700; color:var(--muted);">Select:</span>
       <select id="ad-custom-type" onchange="adCustomTypeChange()" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;">
         <option value="customday">Day</option><option value="customrange">Date Range</option><option value="custommonth">Month</option>
