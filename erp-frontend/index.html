@@ -1627,7 +1627,13 @@
           <div><label class="field-label">Grand Total (₹)</label><input type="text" id="rm-po-grand-total" style="padding:6px; background:#f1f5f9;" /></div>
         </div>
 
-        <div style="overflow:visible; border:1px solid var(--border); border-radius:var(--radius); margin-bottom:16px;">
+        <!-- overflow-x:auto, matching Portal's own copy of this screen: the
+             table below is min-width:900px, so without a scrolling wrapper
+             its right-hand columns (Rate / Qty, Total Amount) are simply
+             unreachable on any viewport under ~950px — body is
+             overflow-x:hidden, so there is no page-level scroll to fall
+             back on. The port had dropped this to overflow:visible. -->
+        <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius); margin-bottom:16px;">
           <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:900px;">
             <thead>
               <tr style="background:#f8fafc;">
