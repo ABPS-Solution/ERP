@@ -87,22 +87,38 @@
      tiles get the vertical room they need rather than being clipped by the
      row's own fixed flex-basis. */
   .dash-stat-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; flex: 0 0 11%; min-height: 0; }
+  /* iPad landscape (roughly 1024-1366px) used to hit the ≤1400/≤1200
+     breakpoints below and fully stack (3-col stats, 1-col charts) — far
+     more vertical scrolling than the PC layout for the same content
+     (same fix as Portal's abps-frontend/index.html, same date). Keep
+     iPad landscape closer to desktop (4-col stats, 2-col charts) instead
+     of collapsing early; phones still degrade further at ≤640px. */
   @media(max-width:1400px) {
-    .dash-stat-row { grid-template-columns: repeat(3, 1fr); flex: 0 0 auto; }
+    .dash-stat-row { grid-template-columns: repeat(4, 1fr); flex: 0 0 auto; }
   }
   @media(max-width:900px) {
+    .dash-stat-row { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media(max-width:640px) {
     .dash-stat-row { grid-template-columns: repeat(2, 1fr); }
   }
   .dash-chart-row-3 { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 10px; flex: 0 0 26%; min-height: 0; }
   @media(max-width:1200px) {
-    .dash-chart-row-3 { grid-template-columns: 1fr; flex: 0 0 auto; }
+    .dash-chart-row-3 { grid-template-columns: repeat(2, 1fr); flex: 0 0 auto; }
+  }
+  @media(max-width:640px) {
+    .dash-chart-row-3 { grid-template-columns: 1fr; }
   }
   /* Accounts Dashboard has no panel row, so its chart row (unlike Design's/
      Purchase's, which sit under a table row and take a fixed 26%) needs to
      fill the remaining space with equal-width columns instead. */
   #canvas-module-accounts-dashboard .dash-chart-row-3 { grid-template-columns: 1fr 1fr 1fr; flex: 1; min-height: 300px; }
   @media (max-width:1200px) {
-    #canvas-module-accounts-dashboard .dash-chart-row-3 { grid-template-columns: 1fr !important; flex: 0 0 auto !important; min-height: 0 !important; }
+    #canvas-module-accounts-dashboard .dash-chart-row-3 { grid-template-columns: repeat(2, 1fr) !important; flex: 0 0 auto !important; min-height: 0 !important; }
+    #canvas-module-accounts-dashboard .dash-chart-row-3 .dd-card { min-height: 230px; }
+  }
+  @media (max-width:640px) {
+    #canvas-module-accounts-dashboard .dash-chart-row-3 { grid-template-columns: 1fr !important; }
     #canvas-module-accounts-dashboard .dash-chart-row-3 .dd-card { min-height: 260px; }
   }
   .menu-card { background: var(--card); border: 1.5px solid var(--border); padding: 0 20px; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 0.95rem; height: 84px; display:flex; align-items:center; justify-content:center; gap:12px; box-shadow:0 1px 2px rgba(0,0,0,0.04); transition:box-shadow 0.15s, border-color 0.15s, transform 0.15s; position:relative; overflow:hidden; }
