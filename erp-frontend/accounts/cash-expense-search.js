@@ -179,15 +179,24 @@ async function runCashExpenseSearch() {
         <td style="${cell} ${colBorder}">${typeLabel}</td>
         <td style="${cell} ${colBorder}"><span style="background:${modeColor}; color:#fff; font-weight:700; font-size:0.75rem; padding:3px 8px; border-radius:3px;">${x.paymentMode}</span></td>
         <td style="${cell} ${colBorder}">${actualCell}</td>
+        <td style="${cell} ${colBorder}">${escapeHtml(x.remark || '—')}</td>
         ${deleteCell}
       </tr>`;
     }).join("");
+    // Column widths (11 Sep 2026, ported from Portal same day) —
+    // Date/Voucher ID/Payment Mode/Actions narrowed, the freed space
+    // going to the new Remark column.
+    const colgroupHtml = isAdminUser
+      ? `<col style="width:7%;"><col style="width:8%;"><col style="width:14%;"><col style="width:11%;"><col style="width:14%;"><col style="width:8%;"><col style="width:11%;"><col style="width:20%;"><col style="width:7%;">`
+      : `<col style="width:7%;"><col style="width:8%;"><col style="width:14%;"><col style="width:11%;"><col style="width:14%;"><col style="width:8%;"><col style="width:11%;"><col style="width:27%;">`;
     resultsEl.innerHTML = `
       <div style="overflow-x:auto;">
         <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
+          <colgroup>${colgroupHtml}</colgroup>
           <thead><tr style="background:var(--highlight-bg); border-bottom:2px solid var(--border);">
             <th style="${th}">Date</th><th style="${th} ${colBorder}">Voucher ID</th><th style="${th} ${colBorder}">Employee</th><th style="${th} ${colBorder}">Department</th>
             <th style="${th} ${colBorder}">Type</th><th style="${th} ${colBorder}">Payment Mode</th><th style="${th} ${colBorder}">Actual Amount</th>
+            <th style="${th} ${colBorder}">Remark</th>
             ${isAdminUser ? `<th style="${th} ${colBorder}">Actions</th>` : ''}
           </tr></thead>
           <tbody>${rows}</tbody>

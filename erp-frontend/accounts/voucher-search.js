@@ -257,7 +257,7 @@ async function runTourVoucherSearch() {
     if (!data.success) { resultsEl.innerHTML = `<p style="color:var(--warn);">${escapeHtml(data.error)}</p>`; return; }
 
     document.getElementById("tvs-balance-buckets").innerHTML = `
-      ${tvsRenderBucket("Balance over ₹10,000", data.employeesOver10k, "#b91c1c")}
+      ${tvsRenderBucket("Balance ₹10,000 or over", data.employeesOver10k, "#b91c1c")}
       ${tvsRenderBucket("Balance -₹10,000 or under", data.employeesUnder10k, "#15803d")}`;
 
     document.getElementById("tvs-total").innerHTML =
@@ -282,7 +282,7 @@ async function tvsRefreshBalanceBuckets() {
     const data = await apFetch({ action: "searchTourVouchers" });
     if (!data.success) return;
     document.getElementById("tvs-balance-buckets").innerHTML = `
-      ${tvsRenderBucket("Balance over ₹10,000", data.employeesOver10k, "#b91c1c")}
+      ${tvsRenderBucket("Balance ₹10,000 or over", data.employeesOver10k, "#b91c1c")}
       ${tvsRenderBucket("Balance -₹10,000 or under", data.employeesUnder10k, "#15803d")}`;
   } catch (e) { /* non-fatal — buckets just stay empty */ }
 }
