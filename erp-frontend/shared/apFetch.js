@@ -448,6 +448,19 @@ function selectCompanySearchTypeahead(companyValue, inputId = "lookup-module-com
   }
 }
 
+// Department selection no longer drives a "Prepared By" picker -- that
+// field was removed (Prepared By is now silently set to the logged-in
+// operator's name at submit time, not chosen from a select). This
+// handler is now a no-op, kept only because the <select> in index.html
+// still has onchange="handleCBOQDepartmentChange(this.value)" wired to
+// it. It used to reach into #cboq-prepared-by directly with no
+// null-check, which threw on every Department change once that element
+// was removed -- surfaced to users as a misleading "Network error"
+// banner via the global unhandledrejection handler.
+function handleCBOQDepartmentChange(department) {
+  // Intentionally empty.
+}
+
 document.addEventListener("click", (e) => {
   document.querySelectorAll(".company-typeahead-dd").forEach((dd) => {
     const inputId = dd.dataset.inputId || "lookup-module-company-dropdown";
