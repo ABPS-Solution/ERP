@@ -41,7 +41,7 @@ function renderPstatOnePps(elId, prn, ppsData) {
     const poLines = pos.length === 0 ? `<div style="color:var(--muted); font-size:0.78rem;">No PO allocations yet.</div>` : pos.map(po => `
       <div style="font-size:0.78rem; padding:2px 0; border-top:1px dashed #f1f5f9;">
         <strong>${po.poNo}</strong> | Vendor: ${po.vendorName || "—"} | Ordered: ${fmtQty(po.orderedQty)} | Received: ${fmtQty(po.receivedQty)}
-        | Expected: ${formatDateDMY(po.expectedDelivery) || "—"} | ${po.actualDelivery ? `Delivered: ${formatDateDMY(po.actualDelivery)}` : "Not delivered"}
+        | Expected: ${formatOrdinalDate(po.expectedDelivery) || "—"} | ${po.actualDelivery ? `Delivered: ${formatOrdinalDate(po.actualDelivery)}` : "Not delivered"}
         | Link Status: ${po.linkStatus || "—"}
         ${po.actionPlan ? `<div style="color:#0369a1; margin-top:2px;">Action Plan: ${po.actionPlan}</div>` : ""}
       </div>`).join("");
@@ -69,8 +69,8 @@ function renderPstatOnePps(elId, prn, ppsData) {
 }
 
 async function initializePPSTrackingPanel() {
-  const prnSel = document.getElementById("pps-prn-select");
-  if (prnSel) prnSel.innerHTML = `<option value="">— Select a project first —</option>`;
+  genericDropdownReset("pps-prn-select", "— Select a project first —");
+  genericDropdownSetDisabled("pps-prn-select", true);
   const header = document.getElementById("pps-prn-header");
   if (header) header.style.display = "none";
   // Previously left the typed Project ID and any prior search results
@@ -95,7 +95,7 @@ async function initializePPSTrackingPanel() {
   const queueZone = document.getElementById("pps-needqueue-zone");
   if (queueZone) queueZone.style.display = "block";
   try {
-    const data = await apFetch({ action: "pullLiveActiveProjectCodes", statusFilter: "Active" });
+    const data = await fetchWithStaleCache({ action: "pullLiveActiveProjectCodes", statusFilter: "Active" });
     // The typeahead input filters/renders from these two globals itself
     // (handleSharedProjectTypeaheadInput) — no <select> to populate here.
     window.sharedActiveProjectCodes = data.success ? (data.projects || []) : [];
@@ -138,15 +138,15 @@ function ppsRenderNeedQueueList(title, items, emptyMessage) {
   if (items.length === 0) {
     return `<div style="padding:10px 14px; margin-bottom:10px; background:#f0fff4; border:1px solid #86efac; border-radius:var(--radius); color:#15803d; font-size:0.8rem; font-weight:600;">${emptyMessage}</div>`;
   }
-  const rows = items.map(item => {
+  const rowHtml = item => {
     const hint = (item.totalItems > 0)
       ? `<div style="font-size:0.85rem; font-weight:600; color:var(--muted); margin-top:2px;">${item.scheduledItems} of ${item.totalItems} items scheduled</div>`
       : "";
     return `
-      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:8px 12px; border-bottom:1px solid #f1f5f9;">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:8px 12px 8px 22px; border-bottom:1px solid #f1f5f9;">
         <div style="min-width:0;">
           <span style="font-family:monospace; font-weight:700; font-size:0.8rem; color:var(--brand);">${item.prnId}</span>
-          <div style="font-size:0.76rem; color:var(--muted); margin-top:2px;">${item.customerName || item.projectId} <strong> | </strong>  ${item.productName || ""}${item.productRating ? " " + item.productRating : ""}</div>
+          <div style="font-size:0.76rem; color:var(--muted); margin-top:2px;">${item.productName || ""}${item.productRating ? " " + item.productRating : ""}</div>
           ${hint}
         </div>
         <button class="nav-btn-styled" style="background:var(--brand); padding:6px 14px; font-size:0.76rem; font-weight:700; flex-shrink:0;"
@@ -154,14 +154,31 @@ function ppsRenderNeedQueueList(title, items, emptyMessage) {
           Action →
         </button>
       </div>`;
-  }).join("");
+  };
+
+  // Sub-grouped by Project ID (11 Sep 2026, explicit request) — same
+  // grouping as store/create-prn.js's own queue.
+  const groups = [];
+  const groupByProject = new Map();
+  items.forEach(item => {
+    let g = groupByProject.get(item.projectId);
+    if (!g) { g = { projectId: item.projectId, customerName: item.customerName || item.projectId, items: [] }; groupByProject.set(item.projectId, g); groups.push(g); }
+    g.items.push(item);
+  });
+  const groupsHtml = groups.map(g => `
+    <div style="padding:6px 12px; background:#fef9ec; border-bottom:1px solid #f1f5f9; border-top:1px solid #f1f5f9;">
+      <span style="font-family:monospace; font-weight:700; font-size:0.74rem; color:#92400e;">${escapeHtml(g.projectId)}</span>
+      <span style="font-size:0.74rem; color:#92400e;"> — ${escapeHtml(g.customerName)}</span>
+      <span style="font-size:0.68rem; color:#b45309; font-weight:700;"> (${g.items.length})</span>
+    </div>
+    ${g.items.map(rowHtml).join("")}`).join("");
 
   return `
     <div style="background:#fffbeb; border:1.5px solid #f59e0b; border-radius:var(--radius); overflow:hidden; margin-bottom:12px;">
       <div style="padding:10px 14px; font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#b45309; letter-spacing:0.5px; background:#fef3c7;">
         ${title} (${items.length})
       </div>
-      ${rows}
+      ${groupsHtml}
     </div>`;
 }
 
@@ -180,7 +197,9 @@ async function jumpToPPSFromQueue(projectId, prnId, btn) {
     projDrop.value = projectId;
     await loadPPSPRNList();
     if (prnSel) {
-      prnSel.value = prnId;
+      const cached = (window.ppsPrnListCache || {})[prnId];
+      const label = cached ? `${cached.productName || ""}${cached.productRating ? " " + cached.productRating : ""} | ${cached.department || "—"}${cached.version > 1 ? ` (v${cached.version})` : ""}` : prnId;
+      genericDropdownSelect("pps-prn-select", prnId, label, null);
       await loadPPSForPRN();
     }
     const selectorRow = document.getElementById("pps-selector-row");
@@ -192,27 +211,31 @@ async function jumpToPPSFromQueue(projectId, prnId, btn) {
 
 async function loadPPSPRNList() {
   const projectId = document.getElementById("pps-project-select-ta-input").value;
-  const prnSel = document.getElementById("pps-prn-select");
   const body = document.getElementById("pps-results-body");
   const header = document.getElementById("pps-prn-header");
   body.innerHTML = "";
   if (header) header.style.display = "none";
-  if (!projectId) { prnSel.innerHTML = `<option value="">— Select a project first —</option>`; return; }
+  if (!projectId) { genericDropdownReset("pps-prn-select", "— Select a project first —"); genericDropdownSetDisabled("pps-prn-select", true); return; }
 
-  prnSel.innerHTML = `<option value="">Loading…</option>`;
+  genericDropdownReset("pps-prn-select", "Loading…");
+  genericDropdownSetDisabled("pps-prn-select", true);
   try {
     const data = await apFetch({ action: "fetchPRNsByProjectAndStatus", projectId });
     const prns = (data.success ? (data.prns || []) : []);
     window.ppsPrnListCache = {};
     prns.forEach(p => { window.ppsPrnListCache[p.prnId] = p; });
     if (prns.length === 0) {
-      prnSel.innerHTML = `<option value="">No PRNs for this project</option>`;
+      genericDropdownReset("pps-prn-select", "No PRNs for this project");
       return;
     }
-    prnSel.innerHTML = `<option value="">— Select PRN —</option>` +
-      prns.map(p => `<option value="${p.prnId.replace(/"/g,'&quot;')}">${p.productName || ""}${p.productRating ? " " + p.productRating : ""} | ${p.department || "—"}${p.version > 1 ? ` (v${p.version})` : ""}</option>`).join("");
+    genericDropdownSetDisabled("pps-prn-select", false);
+    genericDropdownReset("pps-prn-select", "— Select PRN —");
+    genericDropdownPopulate("pps-prn-select", prns.map(p => ({
+      value: p.prnId,
+      label: `${p.productName || ""}${p.productRating ? " " + p.productRating : ""} | ${p.department || "—"}${p.version > 1 ? ` (v${p.version})` : ""}`
+    })), loadPPSForPRN);
   } catch (e) {
-    prnSel.innerHTML = `<option value="">Failed to load PRNs</option>`;
+    genericDropdownReset("pps-prn-select", "Failed to load PRNs");
   }
 }
 
@@ -263,14 +286,21 @@ async function loadPPSForPRN() {
       const orderedOnPO = pos.reduce((s, po) => s + (Number(po.orderedQty) || 0), 0);
       const receivedOnPO = pos.reduce((s, po) => s + (Number(po.receivedQty) || 0), 0);
       const pct = orderedOnPO > 0 ? Math.min(100, (receivedOnPO / orderedOnPO) * 100) : 0;
-      // Status reads received/ordered — a purchase quantity of 0 means the
-      // line is fully covered from store and has nothing to wait for.
-      const statusCell = purchaseNeeded <= 0
+      // Status reads received/ordered. A PO's own receipt history takes
+      // priority over the current purchase quantity — a line's
+      // purchaseQty can drop to 0 AFTER a PO was already raised and fully
+      // received (e.g. Material Requirement Date staleness resolving
+      // itself once store stock covers the remainder), which must still
+      // read "All Received" against the PO that actually happened, not
+      // "From store" (which means no PO was ever needed at all).
+      const statusCell = orderedOnPO > 0
+        ? (receivedOnPO >= orderedOnPO
+            ? `<span style="font-size:0.72rem; font-weight:700; color:#15803d; background:#dcfce7; padding:2px 8px; border-radius:4px;">All Received</span>`
+            : `<div style="font-weight:800; font-family:monospace; font-size:0.98rem; color:#b45309;">${fmt(receivedOnPO)} / ${fmt(orderedOnPO)}</div>
+               <div style="height:4px; background:#e2e8f0; border-radius:2px; margin-top:4px; overflow:hidden;"><div style="height:100%; width:${pct}%; background:#f59e0b;"></div></div>`)
+        : purchaseNeeded <= 0
         ? `<span style="font-size:0.72rem; font-weight:700; color:#15803d; background:#dcfce7; padding:2px 8px; border-radius:4px;">From store</span>`
-        : orderedOnPO <= 0
-        ? `<span style="font-size:0.72rem; font-weight:700; color:#b91c1c; background:#fee2e2; padding:2px 8px; border-radius:4px;">Not yet ordered</span>`
-        : `<div style="font-weight:800; font-family:monospace; font-size:0.98rem; color:${receivedOnPO >= orderedOnPO ? "#15803d" : "#b45309"};">${fmt(receivedOnPO)} / ${fmt(orderedOnPO)}</div>
-           <div style="height:4px; background:#e2e8f0; border-radius:2px; margin-top:4px; overflow:hidden;"><div style="height:100%; width:${pct}%; background:${receivedOnPO >= orderedOnPO ? "#15803d" : "#f59e0b"};"></div></div>`;
+        : `<span style="font-size:0.72rem; font-weight:700; color:#b91c1c; background:#fee2e2; padding:2px 8px; border-radius:4px;">Not yet ordered</span>`;
 
       const poCell = pos.length === 0
         ? (Number(m.stillToOrder) > 0
@@ -311,7 +341,7 @@ async function loadPPSForPRN() {
       const reqDates = m.requirementDates || [];
       const reqDateCell = reqDates.length === 0
         ? `<span style="color:var(--muted); font-size:0.75rem;">—</span>`
-        : reqDates.map(r => `<div style="font-size:0.92rem; font-weight:700;">${fmt(r.qty)} on ${formatDateDMY(r.date)}</div>`).join("");
+        : reqDates.map(r => `<div style="font-size:0.92rem; font-weight:700;">${fmt(r.qty)} on ${formatOrdinalDate(r.date)}</div>`).join("");
 
       return `
         <tr style="border-bottom:1px solid #e2e8f0;">
@@ -515,13 +545,13 @@ async function savePPSDeliverySchedule(prnId, btn) {
       // renders it as its own separate, monospace, word-wrapped block
       // rather than plain text; this success message follows that
       // convention instead of "for PRN <id>." in one line.
-      // PPS Document (11 Sep 2026, ported from Portal same day) — one
-      // Drive link per PO this save touched (usually just one; a save
-      // can span several PRNs on different POs). A save that regenerated
-      // no document (e.g. the regeneration itself failed server-side,
-      // logged but non-fatal) simply shows no link for that PO rather
-      // than an error — the schedule save itself already succeeded and
-      // must not appear to have failed over a best-effort document.
+      // PPS Document (11 Sep 2026) — one Drive link per PO this save
+      // touched (usually just one; a save can span several PRNs on
+      // different POs). A save that regenerated no document (e.g. the
+      // regeneration itself failed server-side, logged but non-fatal)
+      // simply shows no link for that PO rather than an error — the
+      // schedule save itself already succeeded and must not appear to
+      // have failed over a best-effort document.
       const docUrls = data.docUrls || {};
       const docLinksHtml = Object.entries(docUrls).map(([poNo, url]) => `
         <a href="${driveLink(url)}" target="_blank" style="display:inline-block; margin-top:8px; margin-right:10px; background:#fff; color:var(--brand); border:1.5px solid var(--brand); padding:7px 18px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; text-decoration:none;">📄 View PPS Document — ${poNo}</a>`).join("");
@@ -562,12 +592,14 @@ function formatTime12h(value) {
 
 function formatDateTimeDMY(value) {
   if (!value) return "";
-  return `${formatDateDMY(value)}, ${formatTime12h(value)}`;
+  // formatOrdinalDateTime, not formatDateDMY+formatTime12h — house
+  // convention since 7 Sep 2026 is "8th Sep 2026", not DD/MM/YYYY.
+  return formatOrdinalDateTime(value);
 }
 
 function fmtPODate(raw) {
   if (!raw) return "";
-  return formatDateDMY(raw);
+  return formatOrdinalDate(raw);
 }
 
 function isoFromPODate(raw) {

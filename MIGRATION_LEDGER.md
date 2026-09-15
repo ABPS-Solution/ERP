@@ -631,10 +631,392 @@ and the Design Dashboard's new route was never called against real data.
 
 ## Batch 5 — Purchase
 
-**Status: not started**
+**Status: ported, committed locally, NOT pushed/deployed — and NOT
+click-tested.** No live login was attempted in this session, so every claim
+below rests on static verification (byte-level diff against Portal, `node
+--check`, runtime `require()` of every touched module, a full `server.js`
+boot, a route-collision sweep, an action→route resolution sweep, the
+frontend checklist, and a mechanical CSS/markup parity audit) — not on a
+real browser.
 
-`routes/purchase.js` (49), `purchase/*.js` (6), `store/create-prn.js` +
-`revise-prn.js`. 10 screens + dashboard.
+`routes/purchase.js` (49 routes), `purchase/*.js` (6), `store/create-prn.js`
++ `revise-prn.js`, plus three NEW **partial** files and one new dashboard
+route. 10 screens + dashboard.
+
+### Method note — re-diff/repair, same as Batch 4
+
+Purchase already had code from the 4 Sep 2026 pre-migration port. Nothing in
+it was trusted: `routes/purchase.js` and all 6 `purchase/*.js` were diffed
+line-by-line against Portal's CURRENT code (whitespace/CRLF normalised
+first, since ERP is LF and Portal is CRLF — the raw diff looked like
+thousands of changed lines and was actually 6–63 real ones per file). The
+end state is now:
+
+- `routes/purchase.js` — **byte-identical to Portal's** (verified by an
+  empty unified diff).
+- `lib/prnSync.js`, `lib/materialRequirementDates.js` — **byte-identical to
+  Portal's**.
+- `purchase/pps-tracking.js`, `purchase/vendor-costing.js`,
+  `store/create-prn.js` — **byte-identical to Portal's**.
+- `purchase/material-list.js` (3), `purchase/po.js` (6),
+  `purchase/revise-po.js` (10), `store/revise-prn.js` (12),
+  `purchase/purchase-dashboard.js` (88) — Portal's current code plus a
+  short, enumerated list of deliberate ERP adaptations (below).
+- The `canvas-module-purchase-dashboard` markup block is **byte-identical
+  to Portal's**.
+
+### Real bugs / gaps found and fixed
+
+**Backend — `routes/purchase.js` (all were stale-vs-Portal)**
+
+1. **★★ `authorizePurchaseOrder` could let two PO lines jointly over-order
+   the same PRN+item.** ERP still had the pre-aggregation version: it
+   validated each allocation individually against the same stale
+   `still_to_order_quantity`, so two lines on one PO targeting the same
+   `(prnId, itemCode)` (a legitimate split across two rate/discount rows)
+   both passed. Replaced with Portal's `aggByKey` version, which sums every
+   allocation per key *before* the `FOR UPDATE` check.
+2. **★★ Three `syncLiveRow` calls were firing INSIDE their transaction** —
+   `commitPurchaseOrderDraft` (`raw_material_purchase_orders`),
+   `authorizePurchaseOrder` (`vendor_performance`), and
+   `submitReserveStockChanges` (`stock_reservations`, per-iteration). This
+   is exactly Portal's own 15 Sep 2026 landmine: `syncLiveRow` reads via a
+   separate pool connection and cannot see an uncommitted row, so its own
+   SELECT found nothing and silently pushed no sheet update. Now collected
+   and flushed after `withTransaction` resolves, per Portal.
+3. **`getCurrentFinancialYearLabel` used the container's clock, not IST** —
+   on Cloud Run (UTC) every PO created in the ~5.5h window each 31 Mar night
+   IST would have been stamped with the outgoing FY. Portal's IST-aware
+   version ported.
+4. **The PO PDF's Drive folder name (`fmtDate`) had the same UTC bug** — a
+   PO authorized between IST midnight and 05:30 filed under the previous
+   day's folder.
+5. **`safeErrorMessage` was not used anywhere in this file** — all 45 error
+   responses returned a raw `err.message`, leaking Postgres SQLSTATE detail.
+   Swept; deliberate business-error messages still pass through unchanged,
+   exactly as in Portal.
+
+**Backend — libs**
+
+6. **`lib/prnSync.js` was missing `FOR UPDATE OF m` on both borrow-donor
+   queries** (`findAndBorrowForShortfall`'s later-set and cross-BOQ donor
+   scans). Without the row lock, two concurrent shortfall borrows can pick
+   the same donor `job_card_materials` row and both succeed.
+7. **★★ `lib/materialRequirementDates.js` was missing Portal's 5 Sep 2026
+   `mli.purchase_quantity > 1e-9` guard.** This matters a lot here:
+   `prnNeedsRequirementDatesFragment` is the HARD GATE on
+   `fetchMaterialListForPurchase` and Create PO's project picker. Without
+   the guard, a GRN arriving and covering a line fully from store drops that
+   line's purchase quantity to 0, which the old version read as "changed →
+   stale", permanently hiding the whole PRN from Purchase even though every
+   line showed "Fully covered from store — no date needed".
+8. **`lib/analyticsLog.js` didn't export `recordStageEventOnClient`**, so
+   `prnSync.js` carried its own inline no-op stub (and `routes/purchase.js`
+   carried a second one). Both call shapes now live in the one module —
+   which also means a future real analytics port is a one-file change. (The
+   `analytics` schema's 7 tables DO exist in ERP from Batch 0; nothing reads
+   them, so these stay no-ops deliberately — flagged below.)
+9. **★★ `lib/liveSync.js` dropped Portal's `groupColumn` sibling re-push
+   entirely.** All three `groupColumn` tables in ERP's registry
+   (`prn_line_items`, `raw_material_po_line_items`, `bill_of_quantity`)
+   compute a per-group Sr No that shifts for every sibling when one row is
+   added or deleted — without the re-push, those three sheets' Sr No column
+   drifts out of step with the DB on every insert. Ported for both
+   `syncLiveRow` and `removeLiveRow`, keeping ERP's own 3-arg signature (ERP
+   has no `force`/tier gate and its poller passes `awaitable` third — that
+   difference is deliberate and untouched).
+10. **★★ None of Purchase's 8 tables were in `lib/sheetChangePoller.js`'s
+    `REAL_TABLE_TO_REGISTRY_KEY`** — despite all 8 having had `TABLE_REGISTRY`
+    entries AND a live `trg_sheet_sync` trigger since the 4 Sep 2026 port. Every
+    row they queued hit the "no sheet mapping" branch and was silently
+    discarded. Identical to Batch 4's Design finding; the registry and this
+    map remain two separate lists nothing cross-checks. All 8 mapped
+    (`po_delivery_schedule` deliberately absent, as in Portal — it has no
+    trigger).
+
+**Backend — routes that were missing entirely**
+
+11. **`fetchPurchaseDashboardData` did not exist in ERP** — the Purchase
+    Dashboard's data fetch was a guaranteed 404. Ported verbatim from
+    Portal's `routes/dashboards.js` along with its two helpers
+    (`fetchPurchaseTimelineDueOverdue`, `computeExpectedDeliveryTimeline`)
+    and the `PURCHASE_TIMELINE_ITEM_PRIORITY`/`_LABELS` constants; all three
+    verified byte-identical to Portal after insertion.
+    `computePurchaseMilestonesForProjects` was already exported from ERP's
+    `routes/timeline.js` (Batch 3), so no circular-import risk — confirmed
+    by a real `require()`.
+12. **`routes/store.js` did not exist** — the three
+    `perm_store_inward_rejected` routes
+    (`searchVendorNamesForRejectedMaterial`, `fetchRejectedMaterialQueue`,
+    `commitRejectedMaterialAction`) live in Portal's `routes/store.js` but
+    drive a screen that renders inside PURCHASE's workspace. Created as an
+    explicitly-flagged **partial file** (see "Partial files" below) rather
+    than relocating them, so Batch 6 can overwrite it wholesale.
+    `fetchLiveMaterialStock` was added to it too — every PRN screen polls it
+    on a `setInterval`.
+13. **`routes/production.js` did not exist** —
+    `checkPRNsNeedingRequirementDatesCount` drives Purchase's Material List
+    "N hidden" note. Same partial-file treatment. Kept deliberately ungated,
+    exactly as in Portal (badge count, no row data — Portal's own 3 Sep 2026
+    audit flagged this and then correctly reversed itself).
+
+**Backend — permission wiring (the 7-place rule)**
+
+14. **Two permissions were missing from ALL 5 code places**:
+    `perm_store_inward_rejected` and `perm_purchase_dashboard`. Both columns
+    have existed on `admin_db.users` since ERP's founding, but neither was
+    in `auth.js`'s `requireSession` SELECT (so `requirePermission` could
+    never see them → guaranteed 403), `permMap.js` (so
+    `shared/navigation.js`'s already-correct `rejectedMaterial` /
+    `viewPurchaseDashboard` checks were always `undefined`, hiding both
+    tiles), `permissionCatalog.js` (so neither could ever be granted from
+    the Permissions Matrix), `sheetsRegistry.js`, or `sheetsPull.js`.
+15. **The other 8 Purchase permissions were missing from 2 of the 7
+    places** — no entry in `sheetsRegistry.js`'s users query or
+    `sheetsPull.js`'s `USER_PERM_HEADERS`, so they were invisible on the
+    Users sheet and un-editable from it. Exactly Batch 4's Design finding.
+    Added with Portal's exact header text.
+16. **`perm_live_rm_stock` / `_fg_stock` / `_spare_stock` wired across all
+    5 places too, early.** These are Store-department (Batch 6) permissions,
+    but `fetchLiveMaterialStock` is gated on them in Portal and every PRN
+    screen polls it — without a catalog entry they could only have been
+    granted by direct SQL, so every PRN screen's live-stock column would
+    have 403'd silently for everyone. Labels/rows/headers copied from
+    Portal.
+
+**Frontend**
+
+17. **★★★ Seven live-stock poller functions were genuinely missing** —
+    `refreshRPRNDeltaLiveStock`, `refreshRevisePRNLiveStock`,
+    `updateRevisePRNRow`, `refreshAPRNLiveStock`, `updateAPRNRow`,
+    `refreshPRNCreateLiveStock`, `updatePRNDecreaseRowPurchaseQty`. They
+    live in Portal's `store/live-stock.js` and are called on a
+    `setInterval` from `create-prn.js`/`revise-prn.js`, so every PRN
+    screen's live-stock column threw on its first poll. **This is the same
+    class of gap that bit the 4 Sep 2026 port** (`shared/typeahead.js` held
+    Create BOQ's own init function) — a per-department file list cannot see
+    a shared file another department quietly owns. Found by a mechanical
+    "every function called, defined anywhere?" sweep, not by reading.
+18. **`store/create-prn.js` had never been ported at all** (the 4 Sep port
+    explicitly skipped it). Nine of its functions were already referenced by
+    ERP's existing markup/JS and were plain `undefined`, so **Create PRN and
+    Authorize PRN were dead screens, and Create PO's "Allocate to PRNs"
+    picker (`openCPOAllocationPicker`) was dead too**. Ported verbatim.
+19. **`buildMaterialDisplayLabel` was missing from `shared/format.js`** —
+    `create-prn.js` calls it for the PRN header product label. Ported from
+    Portal's own `shared/format.js`.
+20. **`exitCanvasToCardView` was referenced but defined nowhere** — a
+    **pre-existing Batch 2 bug**, not a Purchase one: `index.html`,
+    `marketing/companies.js` and `marketing/leads.js` all wire "Back to
+    Search" to it. Portal defines it at the top of `store/qa.js`, so it came
+    across with that file and those buttons now work.
+21. **★★ `purchase-dashboard.js` called the pre-Batch-2 2-arg
+    `showDashboardGlobalToolbar`** — the exact break Batch 4 fixed on the
+    Design Dashboard and explicitly flagged here. The Return button did
+    nothing and no period buttons rendered. Fixed to the 3-arg form, and the
+    now-stale comment explaining the "2-arg ERP convention" corrected.
+22. **★★★ The Custom period selector mutated an `<input>`'s `type` at
+    runtime** (`date`→`month`→`text`→`number`) — Portal's 8–9 Sep 2026
+    landmine (ghosted native date-picker under a text placeholder).
+    Rewritten to five dedicated inputs toggled with the `hidden` attribute,
+    using ERP's per-dashboard prefixed convention
+    (`PD_CUSTOM_TYPE_SUFFIX`/`pdCustomTypeChange`/`pdReadCustomVal`) to
+    match `md`/`dd`/`adm`/`ad`, rather than importing Portal's shared
+    `dashCustomTypeChange`, which ERP doesn't have.
+23. **All four Chart.js configs were missing `maintainAspectRatio:false`** —
+    the other half of the same Portal fix. Corrected, and the whole
+    `pd-body` markup replaced with Portal's (which carries the
+    `position:relative` canvas wrappers, the `dd-stat-row`/`dd-chart-row`/
+    `dd-detail-row` structure, and the `stat-live`/`stat-period` tinting ERP
+    had none of).
+24. **The Purchase Dashboard's stat tiles had drifted**: ERP used
+    `dash-stat-row` with a `pd-s-matcov` "materials covered" pair that
+    Portal replaced with `pd-s-actioninprogress` (Action-in-Progress GRNs).
+    The dashboard JS and markup now agree with the backend's actual
+    response shape.
+25. **`pd-period-btns` and `pd-custom-zone` did not exist in `index.html`
+    at all**, even though `purchase-dashboard.js` read `#pd-custom-type`.
+    Both added to the shared `dashboard-global-toolbar`, mirroring `dd-`.
+26. **`revise-po.js` was missing Portal's blanket `.workspace-panel`
+    sweep** in `navigateToPurchaseWorkspacePanel` — reaching Purchase
+    directly from a Design/Store/Project canvas (without Return to Main
+    Dashboard first) left that panel visible underneath. Ported, keeping
+    ERP's guarded `getElementById` for the two enclosure panels.
+27. **`data-allow-negative="true"` was missing from all three Round Off
+    inputs** (Create PO, Revise PO, Approve PO Revision) — `shared/ui.js`'s
+    number-input guard blocks negatives unless a field opts in, so a
+    negative round-off was silently unenterable.
+28. **Stale `isExp`/`isExp2` variable names** in `revise-po.js`'s Approve PO
+    Revision card — left over from before migration 155's Local/Import
+    rename. The comparisons were already correct (`=== 'Import'`); Portal
+    renamed them 6 Sep 2026 and ERP hadn't.
+29. **The 11 Sep 2026 Description-of-Material auto-fill was missing** —
+    `selectCPOMaterial` (`po.js`) now sets
+    `row.additionalDescription = combinedName` on material selection.
+30. **Stale date-formatting convention throughout** — `formatDateDMY` /
+    hand-rolled `"10 Aug 2026"` helpers instead of the house-wide
+    `formatOrdinalDate` / `formatOrdinalDateTime` (7 Sep 2026) across
+    `po.js`, `revise-po.js`, `pps-tracking.js`, `vendor-costing.js`,
+    `purchase-dashboard.js`.
+31. **`apFetch` instead of `fetchWithStaleCache`** on 4
+    `pullLiveActiveProjectCodes` feeds (po.js ×2, pps-tracking.js,
+    revise-prn.js) — all near-static dropdown lists, exactly what that
+    helper exists for. It already existed in ERP.
+32. **PPS Tracking and Revise PRN's "Select PRN" were still native
+    `<select>`s** — Portal moved both to the generic wrapping dropdown
+    (`shared/ui.js`'s `genericDropdown*`, 5 Sep 2026) because a PRN label is
+    long enough to truncate and a native `<select>` cannot wrap. Both the
+    `index.html` markup and all the JS call sites converted; the widget
+    already existed in ERP.
+33. **PPS Tracking's work queues and the "All Received" status fix were
+    missing** — ERP still had the flat (ungrouped-by-project) queue
+    renderer, and the status cell that reads "From store" for a line whose
+    purchase quantity dropped to 0 *after* a PO was already raised and fully
+    received. Both are Portal's current behaviour; file is now
+    byte-identical.
+34. **★★ `project/security-admin.js` silently shadowed PPS Tracking's date
+    helpers.** It defined `formatTime12h`/`formatDateTimeDMY` under Portal's
+    own bare names, on the (previously true) assumption ERP had no Purchase
+    module. `pps-tracking.js` declares both too, and security-admin.js loads
+    LAST — so its DD/MM/YYYY versions would have won globally and handed PPS
+    Tracking the wrong format. Two same-named `function` declarations are
+    not a fatal `SyntaxError` the way two top-level `let`s are, so this had
+    no symptom beyond wrong-looking dates. Renamed to `saFormatTime12h` /
+    `saFormatDateTimeDMY` (behaviour for that screen unchanged) rather than
+    diverging `pps-tracking.js` from Portal.
+
+### Partial files (a deliberate, flagged pattern — read before Batch 6/7)
+
+Three Store/Production-owned files were needed by Purchase's own screens.
+Rather than relocating their contents (which would guarantee a duplicate
+route path / duplicate function declaration when Batch 6 or 7 copies
+Portal's real file), each was created **at Portal's own file path,
+containing only the extracted block, with a loud header** saying so:
+
+| File | Contains | Owner batch |
+|---|---|---|
+| `erp-backend/routes/store.js` | the 3 `perm_store_inward_rejected` routes + `fetchLiveMaterialStock` + `ABPS_REPAIR_ACTIONS` | Batch 6 |
+| `erp-backend/routes/production.js` | `checkPRNsNeedingRequirementDatesCount` only | Batch 7 |
+| `erp-frontend/store/qa.js` | the Store Inward Rejected & Missing Material screen + `exitCanvasToCardView` | Batch 6 |
+| `erp-frontend/store/live-stock.js` | the 7 PRN live-stock pollers (Portal lines 1070–1403) | Batch 6 |
+
+**Batch 6 / Batch 7: none of these mean "Store/Production is already partly
+done."** Replace each with Portal's full file and confirm the extracted
+block comes across unchanged.
+
+### ERP adaptations kept (the complete list)
+
+- `material-list.js` — `erp_ml_section_*` localStorage prefix (3 sites).
+- `po.js` — `erp_abps_cpo_draft_v1`, `erpIsUserAdminGlobal`,
+  `erpSessionToken`.
+- `store/qa.js` — `erpIsUserAdminGlobal`.
+- `purchase-dashboard.js` — `erpPtlTodayOverride`; ERP's per-dashboard
+  custom-period convention; ERP's 3-arg `showDashboardGlobalToolbar`; and
+  ERP's own `navigateToPurchaseDashboard` /
+  `exitPurchaseWorkspacePanelBackToMenu` (Portal keeps these in
+  `marketing/marketing-dashboard.js` and `production/production-dashboard.js`).
+- `revise-po.js` — guarded `getElementById` for the two enclosure panels.
+- `store/revise-prn.js` — the `md*` dashboard globals stay OUT (they live in
+  `marketing/marketing-dashboard.js` here; see Batch 2 bug #3).
+- `routes/purchase.js` + `lib/prnSync.js` — `recordStageEvent` /
+  `recordStageEventOnClient` resolve to `lib/analyticsLog.js`'s no-op stubs.
+
+**No new localStorage keys were introduced**, so nothing needed adding to
+`ERP_LOCAL_STORAGE_KEYS`.
+
+### CSS / markup parity audit
+
+Mechanical audit: every class referenced by Portal's Purchase `index.html`
+sections (workspace enclosure, dashboard canvas, Upload RM PO) AND by all 8
+Purchase/PRN JS files AND by the two extracted Store blocks — static
+`class="..."`, JS template strings, `className =`, `classList.*` — checked
+against ERP's `<style>` block, comparing rule *bodies*, not just presence.
+**70 classes referenced; zero styled in Portal but missing in ERP.** (45 of
+the 70 have no CSS rule in *either* system — they are pure JS selector
+hooks.) The Design/Marketing/Project style-block repairs from earlier
+batches had already covered everything Purchase needs.
+
+Markup structure diffed block-for-block:
+- **Purchase workspace enclosure** (all 13 canvases): the only two
+  differences were the Select PRN dropdowns (item 32 above). Now matching.
+- **Purchase Dashboard canvas**: ERP's 130-line block replaced with Portal's
+  127-line block; now **byte-identical**, verified by a zero-output diff.
+- **Store Inward Rejected & Missing Material panel**: already identical to
+  Portal's; no change needed.
+- **Upload RM PO panel**: ERP's `overflow-x:auto` wrapper fix (10 Sep 2026)
+  is present and correct; left alone.
+
+### Verification actually performed
+
+- Byte-level diff of `routes/purchase.js`, `lib/prnSync.js`,
+  `lib/materialRequirementDates.js` vs Portal — all empty.
+- `node --check` on every backend file touched and every `.js` under
+  `erp-frontend` — clean.
+- Runtime `require()` of every touched backend module + two full
+  `server.js` boots — clean (no circular import, no missing export).
+- Zero duplicate route paths across all `erp-backend/routes/*.js`.
+- **All 47 distinct `apFetch` actions** used by the Purchase/PRN screens
+  resolve to a real backend route (this sweep is what surfaced items 12, 13
+  and 16).
+- Mechanical "called but defined nowhere" sweep across all 10
+  Purchase/PRN/Store-partial frontend files plus every `on*=` handler in
+  `index.html` (this is what surfaced items 17, 19, 20).
+- Zero duplicate top-level `let`/`const`, zero duplicate `function` names,
+  zero duplicate DOM ids, every `<script src>` resolves.
+- Navigation sweeps confirmed to reach every Purchase panel: all match
+  `[id$="-workspace-enclosure-panel"]` or `[id^="canvas-module-"]`, and all
+  10 menu-card ids exist and are gated.
+- 7-place permission table re-checked for all 13 columns — all green.
+- `PURCHASE_ROOT_FOLDER_ID`, `RAW_MATERIAL_PO_FOLDER_ID`,
+  `PPS_DRIVE_FOLDER_ID`, `GCS_BUCKET_NAME`, `PDFSHIFT_API_KEY_1..4`
+  confirmed **set live** on the `erp-backend` Cloud Run service (queried
+  directly, not assumed). `SPREADSHEET_IDS.PURCHASE` is registered and all 9
+  Purchase `TABLE_REGISTRY` entries were verified identical to Portal's
+  (meta AND query text).
+- The PPS Document feature (migration 194, ported 11 Sep 2026) re-verified
+  rather than re-ported: `regeneratePPSDocument` is now byte-identical to
+  Portal's, and its env var is live.
+
+**NOT verified: anything requiring a running browser.** No screen was
+opened, no PRN was created/authorized/revised, no PO was drafted,
+authorized or revised, no delivery schedule was saved, no PDF was
+generated, and neither `fetchPurchaseDashboardData` nor the rejected-material
+routes were ever called against real data.
+
+### Flagged for human follow-up (deliberately NOT touched)
+
+- **`handleCBOQDepartmentChange` is referenced by `index.html`
+  (`#cboq-department`'s `onchange`) but defined nowhere in `erp-frontend`.**
+  Portal keeps it in `shared/apFetch.js`. This is a **pre-existing Batch 4
+  (Design) gap** surfaced by this batch's dependency sweep, not a Purchase
+  one — Create BOQ's department dropdown currently throws on change. Left
+  for Design's owner to confirm intended behaviour before porting.
+- **`lib/analyticsLog.js` is still a no-op stub** even though Batch 0
+  created all 7 `analytics` tables. Both `recordStageEvent` and
+  `recordStageEventOnClient` now live there, so making it real is a
+  one-file change whenever that's wanted.
+- **`lib/sheetChangePoller.js`'s map and `TABLE_REGISTRY` remain two
+  independent lists with no cross-check.** This has now caused the same
+  silent-discard bug twice (Design in Batch 4, Purchase here). A tiny
+  startup assertion — "every registry entry whose real table has a
+  `trg_sheet_sync` trigger must appear in the poller map" — would end the
+  class.
+- **`erp_abps_cpo_draft_v1` and `erp_ml_section_*` are not in
+  `ERP_LOCAL_STORAGE_KEYS`**, so they survive an explicit logout. This
+  matches Portal's own behaviour for the same two features (its
+  `abps_cpo_draft_v1` isn't swept either), so it was left alone rather than
+  silently diverging — but it does technically sit outside CLAUDE.md §3's
+  "register every key" rule.
+- **`purchase.po_delivery_schedule` has no `trg_sheet_sync` trigger** in
+  either system, so its rows never reach the Sheet. Same in Portal; noted
+  only so it isn't mistaken for a porting omission.
+- **`syncLiveRow` is called for several tables with no `TABLE_REGISTRY`
+  entry** (`projects`, `job_card_materials`, `raw_material_store`,
+  `spare_store`, `stock_reservations`). These no-op silently by design, so
+  nothing breaks — but those rows never reach a sheet. Store/Production
+  batches' concern, same as Batch 4 flagged.
+- **A Cloud Scheduler job for `/internal/retryPendingBoqPdfs` still does not
+  exist on ERP** (carried forward from Batch 4, unchanged).
 
 ## Batch 6 — Store
 

@@ -2,6 +2,25 @@
 // are generic display/date helpers, not department-specific, so nothing
 // here needed trimming for ERP's 3-section scope.
 
+// buildMaterialDisplayLabel — added 16 Sep 2026 (Batch 5, Purchase).
+// store/create-prn.js calls it and it was genuinely missing from ERP,
+// so the PRN header product label threw. Portal keeps it here too.
+// Client-side mirror of routes/design.js's buildMaterialDisplayLabel — same
+// "Name - Rating - Description of Material - Make: X" convention, Make
+// only appended when it actually has a value. Used anywhere a screen needs
+// to build this label itself instead of getting a ready-made displayLabel
+// back from the server.
+function buildMaterialDisplayLabel(materialName, rating, descriptionOfMaterial, make) {
+  const parts = [(materialName || "").toString().trim()];
+  const r = (rating || "").toString().trim();
+  if (r) parts.push(r);
+  const d = (descriptionOfMaterial || "").toString().trim();
+  if (d) parts.push(d);
+  const m = (make || "").toString().trim();
+  if (m) parts.push(`Make: ${m}`);
+  return parts.join(" - ");
+}
+
 // boqRowMaterialDisplayText — added 4 Sep 2026 alongside the Design
 // department mirror. In Portal this lives in shared/format.js.
 function boqRowMaterialDisplayText(row) {

@@ -36,12 +36,12 @@ async function loadRPRNQueueTab() {
       return;
     }
     queue.forEach(item => { window.rprnQueueMeta[item.boqId] = item; });
-    feed.innerHTML = queue.map(item => `
+    const cardHtml = item => `
       <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:8px 12px; background:#fffbeb; border:1.5px solid #f59e0b; border-radius:var(--radius);">
         <div style="min-width:0; padding:6px 0;">
           <span style="font-size:0.68rem; font-weight:800; background:#fef3c7; color:#b45309; padding:2px 7px; border-radius:4px; margin-right:8px;">Revised</span>
           <span style="font-family:monospace; font-weight:700; font-size:0.8rem; color:var(--brand);">${item.boqId}</span>
-          <div style="font-size:0.76rem; color:var(--muted); margin-top:2px;">${item.customerName || item.projectId} — ${item.productName || ""} ${item.productRating || ""}</div>
+          <div style="font-size:0.76rem; color:var(--muted); margin-top:2px;">${item.productName || ""} ${item.productRating || ""}</div>
         </div>
         <div style="display:flex; align-items:center; gap:12px; flex-shrink:0;">
           <span style="font-size:0.72rem; color:#78350f; max-width:300px; line-height:1.35;">The BOQ linked to this PRN was revised, which may have increased or decreased quantities for some materials. Revise the PRN to match.</span>
@@ -50,7 +50,22 @@ async function loadRPRNQueueTab() {
             Revise PRN →
           </button>
         </div>
-      </div>`).join("");
+      </div>`;
+    // Sub-grouped by Project ID (11 Sep 2026, explicit request) — same
+    // grouping as store/create-prn.js's "New" queue and Material
+    // Requirement Date's own queues.
+    const groups = [];
+    const groupByProject = new Map();
+    queue.forEach(item => {
+      let g = groupByProject.get(item.projectId);
+      if (!g) { g = { projectId: item.projectId, customerName: item.customerName || item.projectId, items: [] }; groupByProject.set(item.projectId, g); groups.push(g); }
+      g.items.push(item);
+    });
+    feed.innerHTML = groups.map(g => `
+      <div style="padding:4px 4px 2px; font-weight:700; font-size:0.78rem; color:var(--muted);">
+        <span style="font-family:monospace; color:var(--text);">${escapeHtml(g.projectId)}</span> — ${escapeHtml(g.customerName)} <span style="font-weight:700; color:#b45309;">(${g.items.length})</span>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;">${g.items.map(cardHtml).join("")}</div>`).join("");
   } catch (e) {
     feed.innerHTML = `<div style="color:var(--warn); padding:12px;">Network error: ${e.message}</div>`;
   }
@@ -126,7 +141,7 @@ function renderRPRNDeltaTable() {
           <input type="checkbox" class="rprn-delta-checked" data-idx="${idx}" style="width:20px; height:20px; cursor:pointer; accent-color:#9333ea;" />
         </td>
         <td style="padding:8px; text-align:center;">
-          <input type="number" min="0" max="${storeCap}" value="${Number.isInteger(autoStoreQty) ? autoStoreQty : autoStoreQty.toFixed(2)}"
+          <input type="number" min="0" max="${storeCap}" value="${formatQtyTrimmed(autoStoreQty)}"
             class="rprn-delta-storeqty rprn-delta-decrease-storeqty" data-idx="${idx}" data-total-covered="${totalCovered}" data-buffered-req="${bufferedReq}" data-deferred="${item.deferred ? '1' : '0'}"
             oninput="updateRPRNDeltaDecreaseRowPurchaseQty(${idx}, this)"
             style="width:90px; text-align:center; font-weight:700; padding:5px; border:1.5px solid var(--brand); border-radius:3px; font-size:0.88rem;" />
@@ -298,14 +313,15 @@ async function submitRPRNDelta() {
 
 async function initializeRevisePRNOtherTab() {
   document.getElementById("rprn-body").innerHTML = "";
-  document.getElementById("rprn-prn-select").innerHTML = `<option value="">— Select a project first —</option>`;
+  genericDropdownReset("rprn-prn-select", "— Select a project first —");
+  genericDropdownSetDisabled("rprn-prn-select", true);
   document.getElementById("rprn-selector-row").style.display = "grid";
   const sel = document.getElementById("rprn-project-select-ta-input");
   sel.value = "";
   const selDropList = document.getElementById("rprn-project-select-ta-dropdown");
   if (selDropList) selDropList.style.display = "none";
   try {
-    const data = await apFetch({ action: "pullLiveActiveProjectCodes", statusFilter: "Active" });
+    const data = await fetchWithStaleCache({ action: "pullLiveActiveProjectCodes", statusFilter: "Active" });
     window.sharedActiveProjectCodes = data.success ? (data.projects || []) : [];
     window.sharedProjectMeta = data.success ? (data.projectMeta || {}) : {};
   } catch (e) {
@@ -316,21 +332,27 @@ async function initializeRevisePRNOtherTab() {
 
 async function loadRevisePRNList() {
   const projectId = document.getElementById("rprn-project-select-ta-input").value;
-  const prnSel = document.getElementById("rprn-prn-select");
   document.getElementById("rprn-body").innerHTML = "";
-  if (!projectId) { prnSel.innerHTML = `<option value="">— Select a project first —</option>`; return; }
-  prnSel.innerHTML = `<option value="">Loading…</option>`;
+  if (!projectId) { genericDropdownReset("rprn-prn-select", "— Select a project first —"); genericDropdownSetDisabled("rprn-prn-select", true); return; }
+  genericDropdownReset("rprn-prn-select", "Loading…");
+  genericDropdownSetDisabled("rprn-prn-select", true);
   try {
     // Only "Pending" PRNs — a Completed PRN has nothing left to procure,
     // so there is no split left to change.
     const data = await apFetch({ action: "fetchPRNsByProjectAndStatus", projectId, prnStatus: "Pending" });
     const prns = (data.success ? (data.prns || []) : []);
     window.rprnOtherListMeta = Object.fromEntries(prns.map(p => [p.prnId, p]));
-    prnSel.innerHTML = prns.length === 0
-      ? `<option value="">No open PRNs for this project</option>`
-      : `<option value="">— Select PRN —</option>` + prns.map(p =>
-          `<option value="${p.prnId.replace(/"/g,'&quot;')}">${p.productName || ""}${p.productRating ? " " + p.productRating : ""} | ${p.department || "—"}${p.version > 1 ? ` (v${p.version})` : ""}${p.revisionPending ? " — REVISION PENDING AUTHORIZATION" : ""}</option>`).join("");
-  } catch (e) { prnSel.innerHTML = `<option value="">Failed to load PRNs</option>`; }
+    if (prns.length === 0) {
+      genericDropdownReset("rprn-prn-select", "No open PRNs for this project");
+      return;
+    }
+    genericDropdownSetDisabled("rprn-prn-select", false);
+    genericDropdownReset("rprn-prn-select", "— Select PRN —");
+    genericDropdownPopulate("rprn-prn-select", prns.map(p => ({
+      value: p.prnId,
+      label: `${p.productName || ""}${p.productRating ? " " + p.productRating : ""} | ${p.department || "—"}${p.version > 1 ? ` (v${p.version})` : ""}${p.revisionPending ? " — REVISION PENDING AUTHORIZATION" : ""}`
+    })), loadPRNForRevision);
+  } catch (e) { genericDropdownReset("rprn-prn-select", "Failed to load PRNs"); }
 }
 
 async function loadPRNForRevision() {
@@ -500,16 +522,9 @@ let ddCurrentPeriod = "today";
 let ddCurrentCustomType = "customday";
 let ddChartDept = null, ddChartVersion = null, ddChartTrend = null;
 // mdChartFunnel/mdChartPotential/mdChartVertical/mdCurrentPeriod/
-// mdCurrentCustomType used to be declared here too, mirroring Portal's own
-// (equally misplaced) copy in its store/revise-prn.js. Removed 15 Sep 2026
-// on the mistaken assumption they were dead leftovers from the 4 Sep 2026
-// Design/Purchase port — they weren't: Marketing Dashboard's real code
-// (marketing/marketing-dashboard.js) reads/writes them but has never
-// declared them anywhere, relying entirely on this file's declaration
-// existing (Portal's own load-order-dependent global-sharing accident).
-// Deleting them with no replacement broke the live dashboard
-// ("mdCurrentPeriod is not defined") the moment it was opened. Re-fixed
-// the same day: the real declaration now lives in
-// marketing/marketing-dashboard.js itself, where it's actually used —
-// don't add a second copy here.
+// mdCurrentCustomType are declared here in Portal (an artifact of its own
+// 4 Sep 2026 automated file split). In ERP they live in their real owner,
+// marketing/marketing-dashboard.js — see MIGRATION_LEDGER.md Batch 2's
+// bug #3. Do NOT reintroduce them here: two top-level `let`s with the
+// same name in two files is a fatal SyntaxError that kills the whole app.
 

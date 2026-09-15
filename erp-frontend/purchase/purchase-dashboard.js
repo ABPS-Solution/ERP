@@ -23,17 +23,56 @@ function pdSetPeriod(btn) {
   pdLoadDashboard();
 }
 
+// Custom-period selector. Portal keeps these as shared
+// dashCustomTypeChange/dashReadCustomVal helpers (marketing/
+// marketing-dashboard.js); ERP's convention is a per-dashboard prefixed
+// copy (mdCustomTypeChange, ddCustomTypeChange, admCustomTypeChange,
+// adCustomTypeChange) — followed here for consistency with the four
+// dashboards already live in this app. Five dedicated inputs toggled via
+// the `hidden` attribute, never a runtime `type` mutation (Portal's
+// 8-9 Sep 2026 landmine: mutating an <input>'s type leaves native
+// rendering artifacts).
+const PD_CUSTOM_TYPE_SUFFIX = {
+  customday: "day", customrange: "range", custommonth: "month",
+  customquarter: "quarter", customyear: "year",
+};
+
 function pdCustomTypeChange() {
-  pdCurrentCustomType = document.getElementById("pd-custom-type").value;
-  const v = document.getElementById("pd-custom-val");
-  if (pdCurrentCustomType === "custommonth") v.type = "month";
-  else if (pdCurrentCustomType === "customquarter") { v.type = "text"; v.placeholder = "e.g. 2025-Q2"; }
-  else if (pdCurrentCustomType === "customyear") { v.type = "number"; v.placeholder = "e.g. 2025"; }
-  else v.type = "date";
+  const type = document.getElementById("pd-custom-type").value;
+  pdCurrentCustomType = type;
+  const activeSuffix = PD_CUSTOM_TYPE_SUFFIX[type];
+  Object.values(PD_CUSTOM_TYPE_SUFFIX).forEach(suf => {
+    const el = document.getElementById(`pd-custom-val-${suf}`);
+    if (el) el.hidden = (suf !== activeSuffix);
+  });
+}
+
+function pdReadCustomVal() {
+  const type = document.getElementById("pd-custom-type").value;
+  if (type === "customday") {
+    return document.getElementById("pd-custom-val-day-input").value.trim();
+  }
+  if (type === "customrange") {
+    const s = document.getElementById("pd-custom-val-range-start").value.trim();
+    const e = document.getElementById("pd-custom-val-range-end").value.trim();
+    return (s && e) ? `${s}_${e}` : "";
+  }
+  if (type === "custommonth") {
+    const y = document.getElementById("pd-custom-val-month-year").value;
+    const m = document.getElementById("pd-custom-val-month-month").value;
+    return (y && m) ? `${y}-${String(m).padStart(2, "0")}` : "";
+  }
+  if (type === "customquarter") {
+    const y = document.getElementById("pd-custom-val-quarter-year").value;
+    const q = document.getElementById("pd-custom-val-quarter-q").value;
+    return (y && q) ? `${y}-Q${q}` : "";
+  }
+  const el = document.getElementById(`pd-custom-val-${PD_CUSTOM_TYPE_SUFFIX[type]}`);
+  return el ? el.value.trim() : "";
 }
 
 function pdLoadCustom() {
-  const val = document.getElementById("pd-custom-val").value.trim();
+  const val = pdReadCustomVal();
   if (!val) return alert("Please enter a value for the custom period.");
   pdCurrentPeriod = pdCurrentCustomType;
   pdLoadDashboard(val);
@@ -82,9 +121,8 @@ function pdRenderDashboard(data) {
   document.getElementById("pd-s-pendingpo").textContent    = stats.pendingPOAuthorizations;
   document.getElementById("pd-s-pendingporev").textContent = stats.pendingPORevisionAuthorizations;
   document.getElementById("pd-s-pos").textContent          = stats.totalPOs;
-  document.getElementById("pd-s-matcov").textContent       = stats.materialsCovered;
-  document.getElementById("pd-s-matcov-total").textContent = "/ " + stats.materialsTotal + " needing purchase";
   document.getElementById("pd-s-ontime").textContent       = pdFormatPct(stats.onTimeDeliveryRate);
+  document.getElementById("pd-s-actioninprogress").textContent = stats.actionInProgressUnresolvedRows;
 
   // Chart 1 — RM POs Created Over Time. A single-day period (Today,
   // Yesterday, or a 1-day custom range) buckets to exactly one point —
@@ -94,7 +132,7 @@ function pdRenderDashboard(data) {
   if (pdChartPoTrend) pdChartPoTrend.destroy();
   const ctx1 = document.getElementById("pd-chart-po-trend").getContext("2d");
   if (poTrend.length === 0) {
-    pdChartPoTrend = new Chart(ctx1, { type:"line", data:{ labels:["No data"], datasets:[{ data:[0], borderColor:"#f1f5f9" }] }, options:{ plugins:{ legend:{ display:false } } } });
+    pdChartPoTrend = new Chart(ctx1, { type:"line", data:{ labels:["No data"], datasets:[{ data:[0], borderColor:"#f1f5f9" }] }, options:{ maintainAspectRatio:false, plugins:{ legend:{ display:false } } } });
   } else if (poTrend.length === 1) {
     pdChartPoTrend = new Chart(ctx1, {
       type: "bar",
@@ -103,7 +141,7 @@ function pdRenderDashboard(data) {
         datasets: [{ label: "RM POs Created", data: poTrend.map(t => t.count), backgroundColor: "rgba(37,99,235,0.75)", borderRadius: 4, barThickness: 40 }]
       },
       options: {
-        responsive: true, plugins: { legend: { display:false } },
+        responsive: true, maintainAspectRatio: false, plugins: { legend: { display:false } },
         scales: { x: { grid: { display:false }, ticks: { font: { size:9 } } },
                   y: { ticks: { stepSize:1 }, grid: { color:"#f1f5f9" } } }
       }
@@ -120,7 +158,7 @@ function pdRenderDashboard(data) {
         }]
       },
       options: {
-        responsive: true, plugins: { legend: { display:false } },
+        responsive: true, maintainAspectRatio: false, plugins: { legend: { display:false } },
         scales: { x: { grid: { display:false }, ticks: { font: { size:9 } } },
                   y: { ticks: { stepSize:1 }, grid: { color:"#f1f5f9" } } }
       }
@@ -149,6 +187,7 @@ function pdRenderDashboard(data) {
     },
     options: {
       responsive: true,
+      maintainAspectRatio: false,
       plugins: { legend: { display: false } },
       scales: {
         y: { ticks: { stepSize:1 }, grid: { color:"#f1f5f9" } },
@@ -161,7 +200,7 @@ function pdRenderDashboard(data) {
   if (pdChartVendorDelay) pdChartVendorDelay.destroy();
   const ctx3 = document.getElementById("pd-chart-vendor-delay").getContext("2d");
   if (vendorDelay.length === 0) {
-    pdChartVendorDelay = new Chart(ctx3, { type:"bar", data:{ labels:["No late deliveries"], datasets:[{ data:[0], backgroundColor:"#f1f5f9" }] }, options:{ plugins:{ legend:{ display:false } } } });
+    pdChartVendorDelay = new Chart(ctx3, { type:"bar", data:{ labels:["No late deliveries"], datasets:[{ data:[0], backgroundColor:"#f1f5f9" }] }, options:{ maintainAspectRatio:false, plugins:{ legend:{ display:false } } } });
   } else {
     pdChartVendorDelay = new Chart(ctx3, {
       type: "bar",
@@ -170,7 +209,7 @@ function pdRenderDashboard(data) {
         datasets: [{ label:"Avg Days Late", data: vendorDelay.map(v => v.avgDaysLate), backgroundColor:"rgba(239,68,68,0.7)", borderRadius:3 }]
       },
       options: {
-        indexAxis: "y", responsive: true,
+        indexAxis: "y", responsive: true, maintainAspectRatio: false,
         plugins: { legend: { display:false } },
         scales: { x: { grid: { color:"#f1f5f9" } }, y: { grid: { display:false }, ticks: { font: { size:9 } } } }
       }
@@ -209,7 +248,7 @@ function pdRenderDashboard(data) {
         return `<tr style="border-bottom:1px solid #f1f5f9; background:${rowBg};">
           <td style="padding:4px 5px; font-family:monospace; font-size:0.68rem; font-weight:700;">${po.poId}</td>
           <td style="padding:4px 5px; font-size:0.7rem;">${po.vendor}</td>
-          <td style="padding:4px 5px; text-align:center; font-size:0.68rem;">${formatDateDMY(po.deliveryDate)}</td>
+          <td style="padding:4px 5px; text-align:center; font-size:0.68rem;">${formatOrdinalDate(po.deliveryDate)}</td>
           <td style="padding:4px 5px; text-align:center;"><span style="font-size:0.62rem; font-weight:700; padding:1px 6px; border-radius:8px; background:${overdueBg}; color:${overdueColor};">${po.daysOverdue}d</span></td>
           <td style="padding:4px 5px; text-align:right; font-family:monospace; font-size:0.7rem;">${fmtNum(po.grand)}</td>
         </tr>`;
@@ -223,12 +262,13 @@ function pdRenderDashboard(data) {
 // navigateToPurchaseDashboard — in Portal this lives in
 // marketing/marketing-dashboard.js (a cross-department function, since
 // Marketing's own dashboard tile also links to Purchase Dashboard).
-// ERP has no marketing department at all, so it's placed here instead —
-// the only file that owns anything Purchase-dashboard-shaped. Adapted to
-// ERP's simpler dashboard-toolbar convention (2-arg showDashboardGlobalToolbar,
-// no ddShowAllWorkspaceEnclosures/module-workspace-enclosure-panel concept —
-// see navigateToAccountsDashboard in accounts/accounts-dashboard.js for the
-// same shape ERP already uses).
+// ERP keeps it here instead — the file that owns everything
+// Purchase-dashboard-shaped. Uses ERP's shared 3-arg
+// showDashboardGlobalToolbar(title, periodBtnsId, returnFn) — it was
+// still calling the pre-Batch-2 2-arg form until Batch 5 (16 Sep 2026),
+// which made the Return button dead and rendered no period buttons
+// (the same break Batch 4 fixed on the Design Dashboard and flagged
+// here). See navigateToDesignDashboard for the matching shape.
 // exitPurchaseWorkspacePanelBackToMenu — in Portal this lives in
 // production/production-dashboard.js (another cross-department placement,
 // same reasoning as navigateToPurchaseDashboard above). production-dashboard.js
@@ -252,7 +292,6 @@ function navigateToPurchaseDashboard() {
   document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
   const c = document.getElementById("canvas-module-purchase-dashboard");
   if (c) c.style.display = "block";
-  showDashboardGlobalToolbar("Purchase Dashboard", pdReturnToMain);
+  showDashboardGlobalToolbar("Purchase Dashboard", "pd-period-btns", pdReturnToMain);
   if (typeof pdLoadDashboard === "function") pdLoadDashboard();
 }
-

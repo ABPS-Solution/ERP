@@ -803,6 +803,15 @@
           <button class="dd-period-btn" data-period="thisyear" onclick="ddSetPeriod(this)">This Year</button>
           <button class="dd-period-btn" data-period="custom" onclick="ddSetPeriod(this)">Custom ▾</button>
         </div>
+        <div id="pd-period-btns" style="display:none; gap:4px; flex-wrap:nowrap;">
+          <button class="dd-period-btn active" data-period="today" onclick="pdSetPeriod(this)">Today</button>
+          <button class="dd-period-btn" data-period="yesterday" onclick="pdSetPeriod(this)">Yesterday</button>
+          <button class="dd-period-btn" data-period="thisweek" onclick="pdSetPeriod(this)">This Week</button>
+          <button class="dd-period-btn" data-period="thismonth" onclick="pdSetPeriod(this)">This Month</button>
+          <button class="dd-period-btn" data-period="thisquarter" onclick="pdSetPeriod(this)">This Quarter</button>
+          <button class="dd-period-btn" data-period="thisyear" onclick="pdSetPeriod(this)">This Year</button>
+          <button class="dd-period-btn" data-period="custom" onclick="pdSetPeriod(this)">Custom ▾</button>
+        </div>
       </div>
       <span id="dash-global-title" style="text-align:center; font-size:1.35rem; font-weight:800; color:var(--text); white-space:nowrap;"></span>
       <button class="nav-btn-styled" onclick="dashboardGlobalReturnClick()" style="justify-self:end; font-size:0.75rem;">Return to Main Dashboard</button>
@@ -858,6 +867,19 @@
       <span id="dd-custom-val-quarter" hidden style="flex:none; white-space:nowrap;"><select id="dd-custom-val-quarter-year" class="dash-fy-year-select" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:80px;"></select><select id="dd-custom-val-quarter-q" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:110px; margin-left:4px;"><option value="1">Q1 (Apr-Jun)</option><option value="2">Q2 (Jul-Sep)</option><option value="3">Q3 (Oct-Dec)</option><option value="4">Q4 (Jan-Mar)</option></select></span>
       <select id="dd-custom-val-year" class="dash-fy-year-select" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:90px;" hidden></select>
       <button onclick="ddLoadCustom()" style="font-size:0.72rem; background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; cursor:pointer; font-weight:700; flex:none; white-space:nowrap;">Go</button>
+    </div>
+    <div id="pd-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc; flex-wrap:nowrap; overflow-x:auto;">
+      <span style="font-size:0.72rem; font-weight:700; color:var(--muted); flex:none; white-space:nowrap;">Select:</span>
+      <select id="pd-custom-type" onchange="pdCustomTypeChange()" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:120px;">
+        <option value="customday">Day</option><option value="customrange">Date Range</option><option value="custommonth">Month</option>
+        <option value="customquarter">Quarter</option><option value="customyear">Year</option>
+      </select>
+      <span id="pd-custom-val-day" style="flex:none; white-space:nowrap;"><span style="display:inline-block; flex:none; width:130px;"><input id="pd-custom-val-day-input" type="date" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:100%;" /></span></span>
+      <span id="pd-custom-val-range" hidden style="flex:none; white-space:nowrap;"><span style="display:inline-block; flex:none; width:130px;"><input id="pd-custom-val-range-start" type="date" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:100%;" /></span><span style="font-size:0.72rem; color:var(--muted); margin:0 4px; flex:none;">to</span><span style="display:inline-block; flex:none; width:130px;"><input id="pd-custom-val-range-end" type="date" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:100%;" /></span></span>
+      <span id="pd-custom-val-month" hidden style="flex:none; white-space:nowrap;"><select id="pd-custom-val-month-year" class="dash-cal-year-select" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:80px;"></select><select id="pd-custom-val-month-month" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:70px; margin-left:4px;"><option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option><option value="4">Apr</option><option value="5">May</option><option value="6">Jun</option><option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option><option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option></select></span>
+      <span id="pd-custom-val-quarter" hidden style="flex:none; white-space:nowrap;"><select id="pd-custom-val-quarter-year" class="dash-fy-year-select" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:80px;"></select><select id="pd-custom-val-quarter-q" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:110px; margin-left:4px;"><option value="1">Q1 (Apr-Jun)</option><option value="2">Q2 (Jul-Sep)</option><option value="3">Q3 (Oct-Dec)</option><option value="4">Q4 (Jan-Mar)</option></select></span>
+      <select id="pd-custom-val-year" class="dash-fy-year-select" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:90px;" hidden></select>
+      <button onclick="pdLoadCustom()" style="font-size:0.72rem; background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; cursor:pointer; font-weight:700; flex:none; white-space:nowrap;">Go</button>
     </div>
   </div>
 
@@ -2491,9 +2513,15 @@
               <div id="rprn-project-select-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
             </div>
           </div>
-          <div>
+          <div style="position:relative;">
             <label class="field-label" style="margin-top:0; color:var(--brand);">Select PRN *</label>
-            <select id="rprn-prn-select" onchange="loadPRNForRevision()" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;"><option value="">— Select a project first —</option></select>
+            <input type="hidden" id="rprn-prn-select" value="" />
+            <div id="rprn-prn-select-display" class="gwd-display" data-disabled="1" onclick="toggleGenericDropdown('rprn-prn-select')"
+              style="display:flex; justify-content:space-between; align-items:flex-start; gap:6px; min-height:40px; padding:9px 10px; border:1.5px solid var(--border); border-radius:var(--radius); background:#f1f5f9; color:var(--muted); cursor:not-allowed; opacity:0.5; font-weight:600; line-height:1.35;">
+              <span id="rprn-prn-select-display-text" style="white-space:normal; word-break:break-word;">— Select a project first —</span>
+              <span style="flex-shrink:0; margin-top:2px;">▾</span>
+            </div>
+            <div id="rprn-prn-select-list" class="gwd-list" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:260px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
           </div>
         </div>
         <div id="rprn-body"></div>
@@ -2566,9 +2594,15 @@
             <div id="pps-project-select-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
           </div>
         </div>
-        <div>
+        <div style="position:relative;">
           <label class="field-label" style="margin-top:0; color:var(--brand);">Select PRN *</label>
-          <select id="pps-prn-select" onchange="loadPPSForPRN()" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;"><option value="">— Select a project first —</option></select>
+          <input type="hidden" id="pps-prn-select" value="" />
+          <div id="pps-prn-select-display" class="gwd-display" data-disabled="1" onclick="toggleGenericDropdown('pps-prn-select')"
+            style="display:flex; justify-content:space-between; align-items:flex-start; gap:6px; min-height:40px; padding:9px 10px; border:1.5px solid var(--border); border-radius:var(--radius); background:#f1f5f9; color:var(--muted); cursor:not-allowed; opacity:0.5; font-weight:600; line-height:1.35;">
+            <span id="pps-prn-select-display-text" style="white-space:normal; word-break:break-word;">— Select a project first —</span>
+            <span style="flex-shrink:0; margin-top:2px;">▾</span>
+          </div>
+          <div id="pps-prn-select-list" class="gwd-list" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:260px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
         </div>
       </div>
       <div id="pps-prn-header" style="display:none; margin-bottom:10px; font-size:0.85rem;"></div>
@@ -2746,78 +2780,75 @@
     <div id="canvas-module-purchase-dashboard" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
 
       <!-- BODY -->
-      <div id="pd-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; min-height:calc(100vh - 100px); box-sizing:border-box; overflow-y:auto; overflow-x:hidden;">
+      <div id="pd-body" class="dd-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
 
         <!-- ROW 1: PRN coverage / scheduling / rejection health -->
-        <div class="dash-stat-row">
-          <div class="dd-stat-card">
+        <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
+          <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">PRNs With No Materials Assigned in a PO</div>
             <div class="dd-stat-val" id="pd-s-noassign" style="color:#b91c1c;">—</div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">PRNs With Partial Materials Assigned in a PO</div>
             <div class="dd-stat-val" id="pd-s-partassign" style="color:#b45309;">—</div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">PRNs with Unscheduled Delivery Date</div>
             <div class="dd-stat-val" id="pd-s-unsched" style="color:#b91c1c;">—</div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">PRNs with Partially Scheduled Delivery Date</div>
             <div class="dd-stat-val" id="pd-s-partsched" style="color:#b45309;">—</div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Unactioned GRNs with Missing/Rejected Material</div>
             <div class="dd-stat-val" id="pd-s-grns" style="color:#b91c1c;">—</div>
           </div>
         </div>
 
         <!-- ROW 2: PO lifecycle throughput -->
-        <div class="dash-stat-row">
-          <div class="dd-stat-card">
+        <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
+          <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Pending PO Authorizations</div>
             <div class="dd-stat-val" id="pd-s-pendingpo" style="color:#b45309;">—</div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Pending PO Revision Authorizations</div>
             <div class="dd-stat-val" id="pd-s-pendingporev" style="color:#b45309;">—</div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">RM POs Created</div>
             <div class="dd-stat-val" id="pd-s-pos">—</div>
           </div>
-          <div class="dd-stat-card">
-            <div class="dd-stat-label">Item Codes Currently On Order</div>
-            <div style="display:flex; align-items:baseline; gap:4px;">
-              <div class="dd-stat-val" id="pd-s-matcov" style="color:var(--brand);">—</div>
-              <div class="dd-stat-sub" id="pd-s-matcov-total" style="font-size:0.75rem;"></div>
-            </div>
-          </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">On-Time Delivery Rate</div>
             <div class="dd-stat-val" id="pd-s-ontime" style="color:#15803d;">—</div>
+          </div>
+          <div class="dd-stat-card stat-live">
+            <div class="dd-stat-label">Action in Progress GRNs with Missing/Rejected Material</div>
+            <div class="dd-stat-val" id="pd-s-actioninprogress" style="color:var(--warn);">—</div>
           </div>
         </div>
 
         <!-- ROW 3: Charts -->
-        <div class="dash-chart-row-3">
-          <div class="dd-card" style="padding:8px 10px;">
+        <div class="dd-chart-row" style="display:grid; grid-template-columns:1.2fr 1fr 1fr; gap:10px; flex:0 0 230px; min-height:0;">
+          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column;">
             <div class="dd-card-title">RM POs Created Over Time</div>
-            <canvas id="pd-chart-po-trend" style="max-height:130px;"></canvas>
+            <div style="flex:1; min-height:0; position:relative;"><canvas id="pd-chart-po-trend" style="position:absolute; width:100%; height:100%;"></canvas></div>
           </div>
-          <div class="dd-card" style="padding:8px 10px;">
+          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column;">
             <div class="dd-card-title">Purchase Order Delivery Timeline</div>
-            <canvas id="pd-chart-delivery" style="max-height:130px;"></canvas>
+            <div style="flex:1; min-height:0; position:relative;"><canvas id="pd-chart-delivery" style="position:absolute; width:100%; height:100%;"></canvas></div>
           </div>
-          <div class="dd-card" style="padding:8px 10px;">
+          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column;">
             <div class="dd-card-title">Average Delivery Delay by Vendor</div>
-            <canvas id="pd-chart-vendor-delay" style="max-height:130px;"></canvas>
+            <div style="flex:1; min-height:0; position:relative;"><canvas id="pd-chart-vendor-delay" style="position:absolute; width:100%; height:100%;"></canvas></div>
           </div>
         </div>
 
         <!-- ROW 4: Due Today / Overdue (Purchase's own Project Timeline
              trunk nodes) + Overdue Purchase Orders -- 3 equal columns -->
-        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; flex:1; min-height:0;">
+        <div class="dd-detail-row" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; flex:1; min-height:0;">
 
           <div class="dd-stat-card" style="display:flex; flex-direction:column; min-height:0;">
             <div class="dd-card-title" style="margin-bottom:8px;">Due Today (Active projects, Project Timeline)</div>
@@ -3456,7 +3487,10 @@
 <script src="design/update-boq.js"></script>
 <script src="design/upload-drawings.js"></script>
 <script src="design/design-dashboard.js"></script>
+<script src="store/create-prn.js"></script>
 <script src="store/revise-prn.js"></script>
+<script src="store/qa.js"></script>
+<script src="store/live-stock.js"></script>
 <script src="purchase/po.js"></script>
 <script src="purchase/vendor-costing.js"></script>
 <script src="purchase/revise-po.js"></script>

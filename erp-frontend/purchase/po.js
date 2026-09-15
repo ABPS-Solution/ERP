@@ -18,7 +18,7 @@ async function initializeAuthorizePOPanel() {
             <span style="background:var(--accent); color:#fff; font-weight:700; padding:3px 10px; font-family:monospace;">${po.poNumber}</span>
             <span style="margin-left:8px; font-weight:700;">${po.vendorName}</span>
           </div>
-          <div style="font-size:0.85rem; color:var(--muted);">${fmtPODate(po.orderDate)} &nbsp;|&nbsp; Grand Total: <strong style="color:var(--brand);">${fmt(po.grandTotal)}</strong> &nbsp;|&nbsp; Prepared by ${po.preparedBy}</div>
+          <div style="font-size:0.85rem; color:var(--muted);">${formatOrdinalDate(po.orderDate)} &nbsp;|&nbsp; Grand Total: <strong style="color:var(--brand);">${fmt(po.grandTotal)}</strong> &nbsp;|&nbsp; Prepared by ${po.preparedBy}</div>
         </div>
         <div id="po-auth-expand-${po.poNumber}" style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;"></div>
       </div>`).join("");
@@ -95,7 +95,7 @@ async function initializeSearchRMPOPanel() {
   if (lbl) lbl.style.display = "none";
   loadItemCodeCatalogIntoCache();
   try {
-    const data = await apFetch({ action: "pullLiveActiveProjectCodes", statusFilter: "Active" });
+    const data = await fetchWithStaleCache({ action: "pullLiveActiveProjectCodes", statusFilter: "Active" });
     window.srchpoActiveProjects = (data.success ? (data.projects || []) : []);
   } catch(e) { window.srchpoActiveProjects = []; }
 }
@@ -237,11 +237,13 @@ function srchpoShowFeedback(msg, isError) {
   fb.innerHTML = msg;
 }
 
-// e.g. "10th Aug 2026" — same display convention as Search Vendor Costing
-// Information's own svciFmtDisplayDate. Delegates to the shared ordinal
-// date helper (shared/format.js) instead of hand-rolling.
+// e.g. "10 Aug 2026" — same display convention as Search Vendor Costing
+// Information's own svciFmtDisplayDate.
 function srchpoFmtDisplayDate(isoOrDateStr) {
-  return formatOrdinalDate(isoOrDateStr);
+  if (!isoOrDateStr) return "";
+  const dt = new Date(isoOrDateStr);
+  if (isNaN(dt.getTime())) return "";
+  return `${String(dt.getDate()).padStart(2,'0')} ${dt.toLocaleString('en-US',{month:'short'})} ${dt.getFullYear()}`;
 }
 
 // searchRMPOMatrixUI — the single Search button behind every field on this
@@ -279,7 +281,7 @@ async function searchRMPOMatrixUI() {
   const esc = (s) => (s || "").toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const black = (s) => `<span style="color:#000;">${s}</span>`;
   const val = (s) => `<span style="color:var(--brand);">${esc(s)}</span>`;
-  const dateRangeDisplay = dateFrom ? `${srchpoFmtDisplayDate(dateFrom)} to ${srchpoFmtDisplayDate(dateTo)}` : "All Dates";
+  const dateRangeDisplay = dateFrom ? `${formatOrdinalDate(dateFrom)} to ${formatOrdinalDate(dateTo)}` : "All Dates";
   lbl.innerHTML = `${black("Searching for")}<br>`
     + `${black("PO Number :")} ${val(poNumberQuery || "All POs")}<br>`
     + `${black("Vendor Name:")} ${val(vendorName || "All Vendors")}<br>`
@@ -318,7 +320,7 @@ function renderSrchPOResultsAsPOCards(list) {
           <span style="margin-left:8px; font-weight:700;">${po.vendorName}</span>
           ${po.revisionNumber ? `<span style="margin-left:8px; font-size:0.72rem; color:var(--muted);">V${po.revisionNumber}</span>` : ""}
         </div>
-        <div style="font-size:0.85rem; color:var(--muted);">${fmtPODate(po.orderDate)} &nbsp;|&nbsp; Grand Total: <strong style="color:var(--brand);">${fmt(po.grandTotal)}</strong></div>
+        <div style="font-size:0.85rem; color:var(--muted);">${formatOrdinalDate(po.orderDate)} &nbsp;|&nbsp; Grand Total: <strong style="color:var(--brand);">${fmt(po.grandTotal)}</strong></div>
       </div>
       <div id="srchpo-expand-${po.poNo}" style="display:none; padding-top:14px; border-top:1px dashed var(--border); margin-top:12px;"></div>
     </div>`).join("");
@@ -384,8 +386,8 @@ function renderRMPOViewOnlyDetail(po, lineItems) {
       <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:14px;">
         ${field("Vendor Name", po.vendorName)}
         ${field("Supplier Offer No", po.supplierRef)}
-        ${field("Order Date", fmtPODate(po.orderDate))}
-        ${field("Delivery Date", fmtPODate(po.deliveryDate))}
+        ${field("Order Date", formatOrdinalDate(po.orderDate))}
+        ${field("Delivery Date", formatOrdinalDate(po.deliveryDate))}
         ${field("Prepared By", po.preparedBy)}
         ${field("Authorized By", po.authorizedBy)}
         ${field("Revision Number", po.revisionNumber || 0)}
@@ -490,7 +492,7 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
 
   const [vendorRes, projRes] = await Promise.allSettled([
     apFetch({ action: "fetchVendorList" }),
-    apFetch({ action: "pullLiveActiveProjectCodes", statusFilter: "Active" })
+    fetchWithStaleCache({ action: "pullLiveActiveProjectCodes", statusFilter: "Active" })
   ]);
   if (isStale()) return;
   loadItemCodeCatalogIntoCache();
@@ -562,7 +564,7 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
           <div><label class="field-label" style="margin-top:0;">Packing<span id="cpo-pkg-gst-note"> (including GST)</span></label><input type="number" id="cpo-packing" placeholder="0" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
           <div><label class="field-label" style="margin-top:0;">Freight<span id="cpo-frt-gst-note"> (including GST)</span></label><input type="number" id="cpo-freight" placeholder="0" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
           <div><label class="field-label" style="margin-top:0;">Other<span id="cpo-oth-gst-note"> (including GST)</span></label><input type="number" id="cpo-other" placeholder="0" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
-          <div><label class="field-label" style="margin-top:0;">Round Off</label><input type="number" id="cpo-roundoff" placeholder="0" step="any" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+          <div><label class="field-label" style="margin-top:0;">Round Off</label><input type="number" id="cpo-roundoff" placeholder="0" step="any" data-allow-negative="true" oninput="recalcCPOTotals()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
         </div>
       </div>
       <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px;">
@@ -908,6 +910,10 @@ function selectCPOMaterial(rowId, itemCode, combinedName, unitType) {
   row.allocations = []; // old allocations were tied to the previous item code
   row._allocationTouched = false;
   row.designRatePerQuantity = null; // was derived from the old item code's allocated PRNs
+  // Description of Material defaults to the selected Material Name (11 Sep
+  // 2026, explicit request) — still a free-text field the operator can
+  // edit afterward, this just saves retyping the obvious starting point.
+  row.additionalDescription = combinedName;
   document.getElementById(`cpo-desc-dd-${rowId}`).style.display = "none";
   renderCPOMaterialRows();
   persistCPODraft();

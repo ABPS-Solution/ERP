@@ -32,26 +32,36 @@
 //      actually returns means every permission the backend sends is always
 //      shown, under a label built from its own department string, with no
 //      guessed key that can drift out of sync.
-//   4. formatDateTimeDMY/formatTime12h (used by Login Log / Trusted
+//   4. saFormatDateTimeDMY/saFormatTime12h (used by Login Log / Trusted
 //      Devices) don't exist in ERP's shared/format.js — Portal's copies
-//      live in purchase/pps-tracking.js, a file that has no ERP
-//      equivalent (no Purchase module here). Defined locally below instead
-//      of introducing a whole new shared file for two small date helpers.
+//      live in purchase/pps-tracking.js. They WERE defined here under
+//      Portal's own bare names (formatDateTimeDMY/formatTime12h) on the
+//      assumption ERP had no Purchase module. Batch 5 (16 Sep 2026)
+//      ported Purchase, so pps-tracking.js now declares both names too —
+//      and since this file loads LAST, its copies silently won globally,
+//      which would have handed PPS Tracking the DD/MM/YYYY versions in
+//      place of Portal's own (formatOrdinalDateTime, the house
+//      convention since 7 Sep 2026). Two `function` declarations of the
+//      same name are not a fatal SyntaxError the way two top-level
+//      `let`s are — they just silently shadow — so this had no visible
+//      symptom beyond wrong-looking dates. Renamed with an `sa` prefix
+//      here (behaviour for this screen unchanged) rather than touching
+//      pps-tracking.js, which must stay byte-identical to Portal's.
 // ═══════════════════════════════════════════════════════════════════════
 let saAllUsers = [];
 let saAllPinUsers = [];
 let saAllLoginLogEntries = [];
 
-// formatTime12h/formatDateTimeDMY — see adaptation note 4 above.
-function formatTime12h(value) {
+// saFormatTime12h/saFormatDateTimeDMY — see adaptation note 4 above.
+function saFormatTime12h(value) {
   if (!value) return "";
   const d = new Date(value);
   if (isNaN(d.getTime())) return "";
   return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
 }
-function formatDateTimeDMY(value) {
+function saFormatDateTimeDMY(value) {
   if (!value) return "";
-  return `${formatDateDMY(value)}, ${formatTime12h(value)}`;
+  return `${formatDateDMY(value)}, ${saFormatTime12h(value)}`;
 }
 
 async function initializeSecurityAdminPanel() {
@@ -340,7 +350,7 @@ function renderLoginLog() {
   const filtered = saAllLoginLogEntries.filter(l => !q || (l.user_name || "").toLowerCase().includes(q));
   tbody.innerHTML = filtered.map(l => `
       <tr style="border-top:1px solid var(--border); ${l.allowed ? '' : 'background:#fef2f2;'}">
-        <td style="padding:8px; white-space:nowrap;">${formatDateTimeDMY(l.created_at)}</td>
+        <td style="padding:8px; white-space:nowrap;">${saFormatDateTimeDMY(l.created_at)}</td>
         <td style="padding:8px;">${l.user_name || '—'}</td>
         <td style="padding:8px; font-family:monospace;">${l.ip || '—'}</td>
         <td style="padding:8px; font-weight:700; color:${l.allowed ? '#16a34a' : '#dc2626'};">${l.allowed ? 'Allowed' : 'Blocked'}</td>
@@ -381,7 +391,7 @@ function renderOutageModeStatus(settings) {
   if (active) {
     box.innerHTML = `
       <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
-        <div style="line-height:1.5;">⚠️ <strong>Outage Mode is ACTIVE</strong> — activated by ${escapeHtml(settings.outage_mode_activated_by || 'unknown')} at ${formatDateTimeDMY(settings.outage_mode_started_at)}, expires ${formatDateTimeDMY(settings.outage_mode_expires_at)}.</div>
+        <div style="line-height:1.5;">⚠️ <strong>Outage Mode is ACTIVE</strong> — activated by ${escapeHtml(settings.outage_mode_activated_by || 'unknown')} at ${saFormatDateTimeDMY(settings.outage_mode_started_at)}, expires ${saFormatDateTimeDMY(settings.outage_mode_expires_at)}.</div>
         <button class="nav-btn-styled" style="padding:6px 16px; font-size:0.8rem; flex-shrink:0; white-space:nowrap;" onclick="deactivateOutageModeNow()">Deactivate Now</button>
       </div>`;
     box.style.background = '#fef3c7'; box.style.borderLeftColor = '#f59e0b'; box.style.color = '#78350f';

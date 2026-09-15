@@ -27,11 +27,19 @@ function navigateToPurchaseWorkspacePanel(targetModuleId, extraArg = null) {
   }
   window.scrollTo(0, 0);
   setTimeout(() => window.scrollTo(0, 0), 50);
+  // Blanket sweep — same fix/reasoning as switchActiveDashboardModule's
+  // own copy of this line. The explicit list below never touched the
+  // Design enclosure panel or the Store/Production/etc standalone
+  // canvas-module-* panels, so reaching Purchase directly from one of
+  // those (without Return to Main Dashboard first) left it visible
+  // underneath.
+  document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
   document.getElementById("dashboard-view").style.display = "none";
   document.getElementById("module-workspace-container").style.display = "none";
-  // module-store-workspace-enclosure-panel doesn't exist in ERP (no Store
-  // department yet) — guarded, unlike Portal's unconditional access, so
-  // this doesn't throw when the element is absent.
+  // Guarded (unlike Portal's unconditional access) — Store/Design
+  // enclosure panels may not exist yet depending on which batches have
+  // landed; the blanket .workspace-panel sweep above already covers
+  // them when they do.
   const storeEnclosure = document.getElementById("module-store-workspace-enclosure-panel");
   if (storeEnclosure) storeEnclosure.style.display = "none";
   const designEnclosure = document.getElementById("module-design-workspace-enclosure-panel");
@@ -157,7 +165,7 @@ async function initializeRevisePOPanel() {
             <div style="flex:1; min-width:240px;">
               <div style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.9rem;">${po.poNo}${po.revisionNumber > 1 ? ` <span style="font-size:0.7rem; color:var(--muted);">(V${po.revisionNumber})</span>` : ""}</div>
               <div style="font-size:0.8rem; font-weight:600; margin-top:2px;">${po.vendorName || ""}</div>
-              <div style="font-size:0.72rem; color:var(--muted); margin-top:2px;">Ordered ${po.orderDate ? formatDateDMY(po.orderDate) : "—"} · Delivery ${po.deliveryDate ? formatDateDMY(po.deliveryDate) : "—"}</div>
+              <div style="font-size:0.72rem; color:var(--muted); margin-top:2px;">Ordered ${po.orderDate ? formatOrdinalDate(po.orderDate) : "—"} · Delivery ${po.deliveryDate ? formatOrdinalDate(po.deliveryDate) : "—"}</div>
             </div>
             <div style="display:flex; gap:8px; flex-shrink:0;">
               <button onclick="dismissPORevision('${po.poNo}')" style="padding:7px 14px; border:1px solid var(--border); background:#fff; border-radius:6px; cursor:pointer; font-weight:600; font-size:0.8rem;">No Revision Needed</button>
@@ -264,7 +272,7 @@ async function searchPOsForRevisionUI() {
         <div>
           <div style="font-family:monospace; font-weight:800; color:var(--brand);">${po.poNo}${po.revisionNumber > 1 ? ` <span style="font-size:0.7rem; color:var(--muted);">(V${po.revisionNumber})</span>` : ""}</div>
           <div style="font-size:0.8rem; font-weight:600;">${po.vendorName || ""}</div>
-          <div style="font-size:0.72rem; color:var(--muted);">Ordered ${po.orderDate ? formatDateDMY(po.orderDate) : "—"} · Delivery ${po.deliveryDate ? formatDateDMY(po.deliveryDate) : "—"}</div>
+          <div style="font-size:0.72rem; color:var(--muted);">Ordered ${po.orderDate ? formatOrdinalDate(po.orderDate) : "—"} · Delivery ${po.deliveryDate ? formatOrdinalDate(po.deliveryDate) : "—"}</div>
         </div>
         ${po.revisionPending
           ? `<span style="font-size:0.72rem; font-weight:700; color:#b45309; background:#fef3c7; padding:4px 10px; border-radius:4px;">Revision already pending</span>`
@@ -479,7 +487,7 @@ function renderPORevisionCard() {
             <div><label class="field-label" style="margin-top:0;">Packing<span id="rpo-pkg-gst-note" style="display:${po.tradeType === 'Import' ? 'none' : 'inline'};"> (including GST)</span></label><input type="number" id="rpo-packing" value="${Number(po.packing)||0}" oninput="updateRPOGrandTotal()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
             <div><label class="field-label" style="margin-top:0;">Freight<span id="rpo-frt-gst-note" style="display:${po.tradeType === 'Import' ? 'none' : 'inline'};"> (including GST)</span></label><input type="number" id="rpo-freight" value="${Number(po.freight)||0}" oninput="updateRPOGrandTotal()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
             <div><label class="field-label" style="margin-top:0;">Other<span id="rpo-oth-gst-note" style="display:${po.tradeType === 'Import' ? 'none' : 'inline'};"> (including GST)</span></label><input type="number" id="rpo-other" value="${Number(po.other)||0}" oninput="updateRPOGrandTotal()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
-            <div><label class="field-label" style="margin-top:0;">Round Off</label><input type="number" id="rpo-roundoff" value="${Number(po.roundOff)||0}" step="any" oninput="updateRPOGrandTotal()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+            <div><label class="field-label" style="margin-top:0;">Round Off</label><input type="number" id="rpo-roundoff" value="${Number(po.roundOff)||0}" step="any" data-allow-negative="true" oninput="updateRPOGrandTotal()" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
           </div>
         </div>
         <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px;">
@@ -923,7 +931,7 @@ async function initializeAuthorizePORevisionPanel() {
           <div>
             <div style="font-family:monospace; font-weight:800; color:var(--brand); font-size:0.95rem;">${r.poNo} <span style="font-size:0.7rem; color:var(--muted);">→ V${(Number(r.revisionNumber)||1) + 1}</span></div>
             <div style="font-size:0.82rem; font-weight:700;">${r.vendorName || ""}</div>
-            <div style="font-size:0.72rem; color:var(--muted); margin-top:2px;">Drafted by ${r.requestedBy || "—"} · ${r.requestedAt ? formatDateDMY(r.requestedAt) : ""}</div>
+            <div style="font-size:0.72rem; color:var(--muted); margin-top:2px;">Drafted by ${r.requestedBy || "—"} · ${r.requestedAt ? formatOrdinalDate(r.requestedAt) : ""}</div>
           </div>
           <div style="display:flex; align-items:center; gap:10px;">
             <span style="font-size:0.68rem; font-weight:800; padding:4px 10px; border-radius:4px; background:${r.revisionKind === "Cancellation" ? "#fee2e2" : "#fef3c7"}; color:${r.revisionKind === "Cancellation" ? "#7f1d1d" : "#78350f"};">${r.revisionKind === "Cancellation" ? "FULL CANCELLATION" : r.revisionKind.toUpperCase()}</span>
@@ -986,8 +994,8 @@ function renderAPORCard(r) {
   // material table itself: header fields, taxes/charges/terms, and the
   // resulting Sub Total / Grand Total movement.
   const bulletHtml = (f) => {
-    const curDisp = f.isDate ? formatDateDMY(f.cur) : (f.isText ? (f.cur || "—") : fmt(f.cur));
-    const revDisp = f.isDate ? formatDateDMY(f.rev) : (f.isText ? f.rev : fmt(f.rev));
+    const curDisp = f.isDate ? formatOrdinalDate(f.cur) : (f.isText ? (f.cur || "—") : fmt(f.cur));
+    const revDisp = f.isDate ? formatOrdinalDate(f.rev) : (f.isText ? f.rev : fmt(f.rev));
     return `<li><strong>${f.label}</strong>: ${curDisp} → <span style="font-weight:700; color:#b45309;">${revDisp}</span></li>`;
   };
   const changedField = (f) => {
@@ -1196,29 +1204,29 @@ function renderAPORCard(r) {
           ${(() => {
             const effTradeType = hc.tradeType != null ? hc.tradeType : (r.tradeType || 'Local');
             const effUsdRate = hc.usdRate != null ? hc.usdRate : (r.usdRate != null ? Number(r.usdRate) : '');
-            const isExp = effTradeType === 'Import';
+            const isImport = effTradeType === 'Import';
             return `
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
             <div><label class="field-label" style="margin-top:0;">Local / Import</label>
               <select id="apor-trade-type-${rid}" onchange="onAPORTradeTypeChange(${rid})" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;">
-                <option value="Local" ${!isExp ? 'selected' : ''}>Local</option>
-                <option value="Import" ${isExp ? 'selected' : ''}>Import</option>
+                <option value="Local" ${!isImport ? 'selected' : ''}>Local</option>
+                <option value="Import" ${isImport ? 'selected' : ''}>Import</option>
               </select>
             </div>
-            <div id="apor-usd-rate-wrap-${rid}" style="display:${isExp ? 'block' : 'none'};"><label class="field-label" style="margin-top:0;">INR to USD Rate</label><input type="number" min="0" step="0.01" id="apor-usd-rate-${rid}" value="${effUsdRate}" placeholder="e.g. 95.3" oninput="updateAPORGrandTotal(${rid})" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+            <div id="apor-usd-rate-wrap-${rid}" style="display:${isImport ? 'block' : 'none'};"><label class="field-label" style="margin-top:0;">INR to USD Rate</label><input type="number" min="0" step="0.01" id="apor-usd-rate-${rid}" value="${effUsdRate}" placeholder="e.g. 95.3" oninput="updateAPORGrandTotal(${rid})" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
           </div>
-          <div id="apor-gst-note-${rid}" style="display:${isExp ? 'block' : 'none'}; font-size:0.78rem; color:var(--muted); margin-bottom:8px;">No GST for Import POs.</div>
-          <div id="apor-gst-fields-${rid}" style="display:${isExp ? 'none' : 'grid'}; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:10px;">
+          <div id="apor-gst-note-${rid}" style="display:${isImport ? 'block' : 'none'}; font-size:0.78rem; color:var(--muted); margin-bottom:8px;">No GST for Import POs.</div>
+          <div id="apor-gst-fields-${rid}" style="display:${isImport ? 'none' : 'grid'}; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:10px;">
             <div><label class="field-label" style="margin-top:0;">CGST %</label><input type="number" min="0" id="apor-cgst-${rid}" value="${hc.cgstPercent != null ? hc.cgstPercent : (Number(r.cgstPercent)||0)}" oninput="updateAPORGrandTotal(${rid})" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
             <div><label class="field-label" style="margin-top:0;">SGST %</label><input type="number" min="0" id="apor-sgst-${rid}" value="${hc.sgstPercent != null ? hc.sgstPercent : (Number(r.sgstPercent)||0)}" oninput="updateAPORGrandTotal(${rid})" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
             <div><label class="field-label" style="margin-top:0;">IGST %</label><input type="number" min="0" id="apor-igst-${rid}" value="${hc.igstPercent != null ? hc.igstPercent : (Number(r.igstPercent)||0)}" oninput="updateAPORGrandTotal(${rid})" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
           </div>`; })()}
           <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
-            ${(() => { const isExp2 = (hc.tradeType != null ? hc.tradeType : (r.tradeType || 'Local')) === 'Import'; return `
-            <div><label class="field-label" style="margin-top:0;">Packing<span id="apor-pkg-gst-note-${rid}" style="display:${isExp2 ? 'none' : 'inline'};"> (including GST)</span></label><input type="number" id="apor-packing-${rid}" value="${hc.packing != null ? hc.packing : (Number(r.packing)||0)}" oninput="updateAPORGrandTotal(${rid})" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
-            <div><label class="field-label" style="margin-top:0;">Freight<span id="apor-frt-gst-note-${rid}" style="display:${isExp2 ? 'none' : 'inline'};"> (including GST)</span></label><input type="number" id="apor-freight-${rid}" value="${hc.freight != null ? hc.freight : (Number(r.freight)||0)}" oninput="updateAPORGrandTotal(${rid})" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
-            <div><label class="field-label" style="margin-top:0;">Other<span id="apor-oth-gst-note-${rid}" style="display:${isExp2 ? 'none' : 'inline'};"> (including GST)</span></label><input type="number" id="apor-other-${rid}" value="${hc.other != null ? hc.other : (Number(r.other)||0)}" oninput="updateAPORGrandTotal(${rid})" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>`; })()}
-            <div><label class="field-label" style="margin-top:0;">Round Off</label><input type="number" id="apor-roundoff-${rid}" value="${hc.roundOff != null ? hc.roundOff : (Number(r.roundOff)||0)}" step="any" oninput="updateAPORGrandTotal(${rid})" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+            ${(() => { const isImport2 = (hc.tradeType != null ? hc.tradeType : (r.tradeType || 'Local')) === 'Import'; return `
+            <div><label class="field-label" style="margin-top:0;">Packing<span id="apor-pkg-gst-note-${rid}" style="display:${isImport2 ? 'none' : 'inline'};"> (including GST)</span></label><input type="number" id="apor-packing-${rid}" value="${hc.packing != null ? hc.packing : (Number(r.packing)||0)}" oninput="updateAPORGrandTotal(${rid})" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+            <div><label class="field-label" style="margin-top:0;">Freight<span id="apor-frt-gst-note-${rid}" style="display:${isImport2 ? 'none' : 'inline'};"> (including GST)</span></label><input type="number" id="apor-freight-${rid}" value="${hc.freight != null ? hc.freight : (Number(r.freight)||0)}" oninput="updateAPORGrandTotal(${rid})" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
+            <div><label class="field-label" style="margin-top:0;">Other<span id="apor-oth-gst-note-${rid}" style="display:${isImport2 ? 'none' : 'inline'};"> (including GST)</span></label><input type="number" id="apor-other-${rid}" value="${hc.other != null ? hc.other : (Number(r.other)||0)}" oninput="updateAPORGrandTotal(${rid})" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>`; })()}
+            <div><label class="field-label" style="margin-top:0;">Round Off</label><input type="number" id="apor-roundoff-${rid}" value="${hc.roundOff != null ? hc.roundOff : (Number(r.roundOff)||0)}" step="any" data-allow-negative="true" oninput="updateAPORGrandTotal(${rid})" style="padding:7px; border:1px solid var(--border); border-radius:4px; width:100%;"></div>
           </div>
         </div>
         <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px;">
