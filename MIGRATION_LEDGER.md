@@ -273,11 +273,79 @@ other of Ashwin's 10 held Marketing permissions correctly shown.
 
 ## Batch 3 — Project core
 
-**Status: not started**
+**Status: click-tested, committed locally, NOT pushed/deployed** — real
+login (PIN, Ashwin Kumar/admin), all 6 permissions granted through the
+real Permissions Matrix UI (not SQL), all 6 screens opened and verified
+against the real DB, same localhost setup as Batch 2.
 
-`routes/projects.js` (34), `timeline.js` (12), `dailyTimeline.js`,
-`adminDashboard.js`. Manufacturing Clearance, Project Timeline, Daily
-Timeline, Project Status, Admin Dashboard.
+`routes/projects.js` (2552 lines, replaced the 60-line stub —
+`generateAbpsProjectId` merged in place), `routes/timeline.js` (1761),
+`routes/dailyTimeline.js` (68), `routes/adminDashboard.js` (36). Manufacturing
+Clearance, Project Timeline, Daily Timeline, Project Status, Project Invoice
+Generation (filed under Store → Dispatch, matching Portal's own current
+placement), Admin Dashboard (filed under the Project department header, per
+Portal's own placement).
+
+- **Backend libs ported**: `lib/ld.js`, `lib/businessDays.js`,
+  `lib/productionFlows.js`, `lib/dailyTimeline.js`, `lib/adminDashboard.js`,
+  `lib/materialLeadTime.js`, `lib/projectInvoicePdf.js`,
+  `lib/projectInvoiceTemplate.js`, `lib/projectReviewTemplate.js`,
+  `lib/marketingInvoiceSync.js`, `lib/productionPlanStepJc.js`. New stub
+  `routes/qaInspection.js` (exports `computeQaInspectionQueueRows` → `[]`) —
+  QA department itself is Batch 8, but `dailyTimeline.js`/`adminDashboard.js`
+  both import this function. `lib/drive.js` gained `renameFolder` (was
+  missing). `routes/design.js` and `routes/dashboards.js` both needed a few
+  more of their own already-existing functions exported (not new code, just
+  visibility) for `routes/projects.js`/`routes/adminDashboard.js` to import.
+- **Permissions, all 7 places**: `perm_manufacturing_clearance`,
+  `perm_project_status`, `perm_project_invoice_generation`,
+  `perm_project_timeline`, `perm_daily_timeline`, `perm_admin_dashboard` —
+  confirmed live on `admin_db.users` (Batch 0), wired through `auth.js`,
+  `permMap.js`, `sheetsRegistry.js`, `sheetsPull.js`, `permissionCatalog.js`
+  (+ `project`/`dashboard-project` `DEPARTMENT_META` rows).
+- **Frontend**: 6 files ported to `erp-frontend/project/`
+  (manufacturing-clearance.js 844 lines, project-timeline.js 2463,
+  daily-timeline.js 550, project-status.js 397, project-invoice.js 1536 —
+  filed under `project/` not `production/`, correcting Portal's own
+  misplacement, admin-dashboard.js 203 — rewritten to use ERP's own local
+  `adm`-prefixed custom-period pattern since Portal's shared
+  `dashCustomTypeChange`/`ddShowAllWorkspaceEnclosures` helpers don't exist
+  in ERP). `index.html` filled the empty `dashboard-project-department-
+  header-block`, added a Dispatch section to Store's block, inserted all 6
+  panels (~700 lines) + `.pstat-*` CSS + Admin Dashboard toolbar HTML,
+  added 6 script tags. `shared/navigation.js` gained the exit-back-to-menu
+  functions Portal declares centrally (not per-screen) + full permission
+  gating for all 6 cards. Real fix made during the port itself:
+  `project-status.js` had 4 misplaced duplicate exit-functions (Portal's
+  automated-split artifact) — removed, and its real
+  `initializeProjectStatusPanel`/`exitProjectStatusBackToMenu` added in
+  their correct owner file.
+
+### 1 real bug found and fixed during click-testing (15 Sep 2026)
+
+- **`lib/dailyTimeline.js`'s `gatherCustomerQueryItems()` crashed the WHOLE
+  Daily Timeline screen** — it queried `project.customer_queries`
+  unconditionally, a table deliberately excluded from this entire migration
+  (Customer Queries Received through Email is out of scope) and never
+  created by Batch 0. One rejected promise inside a `Promise.all` failed
+  the entire fetch with a 500. The route-file-level grep both porting
+  agents did for the Customer-Queries exclusion missed this because it's a
+  `lib/` file, not one of the 4 route files directly named in the
+  exclusion check. Fixed to return `[]` immediately — matches this whole
+  migration's documented exclusion, not a partial workaround.
+
+### Verified in the click-test
+
+All 6 screens (Manufacturing Clearance, Project Timeline, Daily Timeline,
+Project Status, Project Invoice Generation, Admin Dashboard) open cleanly
+with no console/server errors after the fix above. Admin Dashboard renders
+real live data (₹6,748 cash box balance, ₹57,000 tour advances outstanding)
+— confirms its cross-department queries work correctly even with zero
+Project-department data yet. Permission-driven dept-tab-bar confirmed
+correct: "Project" and "Store" tabs only appeared after their respective
+permissions were granted through the real UI and a fresh login (ERP bakes
+permissions into the login response, not a live re-fetch — a grant needs
+sign-out/sign-in to take effect, by design).
 
 ## Batch 4 — Design
 

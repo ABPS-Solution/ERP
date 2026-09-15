@@ -297,6 +297,28 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-search-rm-po")) document.getElementById("mod-search-rm-po").style.display = canSearchRMPO ? "block" : "none";
   if (document.getElementById("mod-search-vendor-costing-info")) document.getElementById("mod-search-vendor-costing-info").style.display = canSearchVendorCostingInfo ? "block" : "none";
 
+  // ── Project (15 Sep 2026, Batch 3) — ported from Portal's shared/
+  // navigation.js, same camelCase permission keys (erp-backend's
+  // lib/permMap.js keeps these deliberately un-renamed) and same card
+  // ids. Project Invoice Generation is Store->Dispatch in Portal (its
+  // backend permissionCatalog.js entry says so explicitly:
+  // department:'store', rowLabel:'Dispatch') — its tile lives in the
+  // Store department block below, not this one, and its own visibility
+  // is folded into the Store block's OR-gate accordingly.
+  const canManufacturingClearance = userPermissionsObject.manufacturingClearance === true;
+  const canProjectStatus = userPermissionsObject.projectStatus === true;
+  const canProjectInvoiceGeneration = userPermissionsObject.projectInvoiceGeneration === true;
+  const canProjectTimeline = userPermissionsObject.projectTimeline === true;
+  const canDailyTimeline = userPermissionsObject.dailyTimeline === true;
+  const canViewAdminDashboard = userPermissionsObject.viewAdminDashboard === true;
+
+  if (document.getElementById("mod-manufacturing-clearance")) document.getElementById("mod-manufacturing-clearance").style.display = canManufacturingClearance ? "block" : "none";
+  if (document.getElementById("mod-project-timeline")) document.getElementById("mod-project-timeline").style.display = canProjectTimeline ? "block" : "none";
+  if (document.getElementById("mod-daily-timeline")) document.getElementById("mod-daily-timeline").style.display = canDailyTimeline ? "block" : "none";
+  if (document.getElementById("mod-project-status")) document.getElementById("mod-project-status").style.display = canProjectStatus ? "block" : "none";
+  if (document.getElementById("mod-project-invoice")) document.getElementById("mod-project-invoice").style.display = canProjectInvoiceGeneration ? "block" : "none";
+  if (document.getElementById("mod-admin-dashboard-wrapper")) document.getElementById("mod-admin-dashboard-wrapper").style.display = canViewAdminDashboard ? "block" : "none";
+
   if (document.getElementById("mod-tourexpense"))  document.getElementById("mod-tourexpense").style.display  = canTourExpense  ? "block" : "none";
   if (document.getElementById("mod-cashexpenses")) document.getElementById("mod-cashexpenses").style.display = canCashExpenses ? "block" : "none";
   if (document.getElementById("mod-traveltickets")) document.getElementById("mod-traveltickets").style.display = canTravelTickets ? "block" : "none";
@@ -327,6 +349,14 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (adminBlock) adminBlock.style.display = canSecurity ? "block" : "none";
   const marketingBlock = document.getElementById("dashboard-marketing-department-header-block");
   if (marketingBlock) marketingBlock.style.display = (canEnterCard || canViewEmailLeads || canUploadCommissioning || canUploadPurchaseOrder || canSearchCompany || canSearchTasks || canSearchStatus || canSearchQual || canSearchCityState || canMeetingPreparation) ? "block" : "none";
+  const projectBlock = document.getElementById("dashboard-project-department-header-block");
+  if (projectBlock) projectBlock.style.display = (canManufacturingClearance || canProjectTimeline || canDailyTimeline || canProjectStatus || canViewAdminDashboard) ? "block" : "none";
+  // Store's own real content isn't built in ERP yet (Batch 1 scaffolding
+  // only) — Project Invoice Generation is the first real Store tile, so
+  // this block's visibility is keyed on it alone for now. Extend the OR
+  // list here, not a second gate, when Store's own screens land.
+  const storeBlock = document.getElementById("dashboard-store-department-header-block");
+  if (storeBlock) storeBlock.style.display = canProjectInvoiceGeneration ? "block" : "none";
 
   refreshDepartmentTabsBar();
 }
@@ -436,6 +466,16 @@ function switchActiveDashboardModule(targetSectionId) {
   if (targetSectionId === "cashexpenses" && typeof initializeCashExpensesPanel === "function") initializeCashExpensesPanel();
   if (targetSectionId === "traveltickets" && typeof initializeTravelTicketsPanel === "function") initializeTravelTicketsPanel();
   if (targetSectionId === "itemcode" && typeof initializeItemCodePanel === "function") initializeItemCodePanel();
+  // Project department (15 Sep 2026 port) — same init-on-open convention.
+  // project-invoice has no Store enclosure to nest inside here (Store
+  // isn't built in ERP yet), so it's a plain top-level panel like the
+  // other four, unlike Portal's own copy which nests it under
+  // module-store-workspace-enclosure-panel.
+  if (targetSectionId === "manufacturing-clearance" && typeof initializeManufacturingClearancePanel === "function") initializeManufacturingClearancePanel();
+  if (targetSectionId === "project-timeline" && typeof initializeProjectTimelinePanel === "function") initializeProjectTimelinePanel();
+  if (targetSectionId === "daily-timeline" && typeof initializeDailyTimelinePanel === "function") initializeDailyTimelinePanel();
+  if (targetSectionId === "project-status" && typeof initializeProjectStatusPanel === "function") initializeProjectStatusPanel();
+  if (targetSectionId === "project-invoice" && typeof initializePinvWorkspace === "function") initializePinvWorkspace();
 }
 
 function returnToDashboard() {
@@ -445,4 +485,23 @@ function returnToDashboard() {
   if (mwc) mwc.style.display = "none";
   document.getElementById("dashboard-view").style.display = "flex";
   window.scrollTo(0, 0);
+}
+
+// exitManufacturingClearanceBackToMenu/exitProjectTimelineBackToMenu —
+// ported verbatim from Portal's own shared/navigation.js (that's where
+// Portal itself declares these two, not per-screen — project-invoice.js's
+// own switchPinvMode/production-planning-style screens don't need this
+// shape since they route through switchActiveDashboardModule's generic
+// canvas-module-* sweep instead, but Manufacturing Clearance/Project
+// Timeline's own panel HTML calls these two by name).
+function exitManufacturingClearanceBackToMenu() {
+  document.getElementById("canvas-module-manufacturing-clearance").style.display = "none";
+  enforceDynamicModuleRoleGateways(userPermissions);
+  document.getElementById("dashboard-view").style.display = "flex";
+}
+
+function exitProjectTimelineBackToMenu() {
+  document.getElementById("canvas-module-project-timeline").style.display = "none";
+  enforceDynamicModuleRoleGateways(userPermissions);
+  document.getElementById("dashboard-view").style.display = "flex";
 }

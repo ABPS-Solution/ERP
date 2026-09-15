@@ -244,6 +244,99 @@
   .directory-btn-actions-block .nav-btn-styled { padding-top: 11px; padding-bottom: 11px; }
   @media(min-width: 800px) { .directory-btn-actions-block { width: auto; justify-content: flex-end; } }
 
+  /* ── Project Status swimlanes (.pstat-*) — scoped to canvas-module-project-status
+     only. Ported verbatim from Portal's index.html (15 Sep 2026, Batch 3). ── */
+  #canvas-module-project-status { --pstat-complete: var(--accent); --pstat-active: var(--brand); --pstat-pending: var(--muted); --pstat-attention: var(--warn); }
+
+  .pstat-header-band { background: linear-gradient(135deg, var(--highlight-bg), #ffffff); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; margin-bottom: 20px; box-shadow: 0 1px 2px rgba(16,24,40,.05); }
+  .pstat-header-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+  .pstat-header-id { font-size: 1.35rem; font-weight: 800; color: var(--brand-dk); }
+  .pstat-header-company { font-size: 1.02rem; font-weight: 600; color: var(--muted); text-align: right; }
+  .pstat-header-metrics { margin-top: 10px; font-size: 0.94rem; color: var(--muted); font-weight: 600; }
+  .pstat-header-metrics strong { color: var(--text); font-weight: 800; }
+  .pstat-header-metrics .pstat-metric-sep { margin: 0 8px; color: var(--border); }
+
+  .pstat-view-toggle { display: inline-flex; border: 1.5px solid var(--border); border-radius: 8px; overflow: hidden; margin-top: 12px; }
+  .pstat-view-toggle button { border: none; background: #fff; color: var(--muted); font-weight: 700; font-size: 0.78rem; padding: 7px 16px; cursor: pointer; transition: background 0.15s, color 0.15s; }
+  .pstat-view-toggle button.pstat-view-active { background: var(--brand); color: #fff; }
+  .pstat-view-toggle button:not(.pstat-view-active):hover { background: var(--highlight-bg); }
+
+  .pstat-lanes-container { background: #f7f9fc; border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+  .pstat-empty-state { text-align: center; padding: 40px 20px; color: var(--muted); font-size: 0.9rem; background: #fff; border: 1px solid var(--border); border-radius: 10px; }
+
+  .pstat-lane { background: #fff; border: 1px solid var(--border); border-left: 4px solid var(--pstat-pending); border-radius: 10px; padding: 16px 20px; box-shadow: 0 1px 2px rgba(16,24,40,.05); transition: box-shadow 0.15s ease; }
+  .pstat-lane:hover { box-shadow: 0 4px 16px rgba(16,24,40,.10); }
+  .pstat-lane[data-accent="complete"]  { border-left-color: var(--pstat-complete); }
+  .pstat-lane[data-accent="active"]    { border-left-color: var(--pstat-active); }
+  .pstat-lane[data-accent="attention"] { border-left-color: var(--pstat-attention); }
+
+  .pstat-lane-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+  .pstat-lane-title { font-weight: 800; font-size: 0.98rem; color: var(--text); }
+  .pstat-lane-title .pstat-lane-rating { color: var(--brand); font-weight: 700; margin-left: 6px; }
+  .pstat-lane-meta { font-size: 0.8rem; color: var(--muted); font-weight: 600; display: flex; align-items: center; gap: 10px; }
+  .pstat-lane-meta a { color: var(--brand); font-weight: 700; text-decoration: none; }
+  .pstat-lane-meta a:hover { text-decoration: underline; }
+  .pstat-lane-meta-strong { font-size: 0.92rem; font-weight: 800; color: var(--text); }
+
+  .pstat-stepper { display: flex; align-items: center; margin-bottom: 6px; }
+  .pstat-stepper-labels { display: flex; }
+  .pstat-stage { flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; min-width: 0; }
+  .pstat-connector { flex: 1; height: 2px; background: repeating-linear-gradient(to right, var(--border) 0 4px, transparent 4px 8px); }
+  .pstat-connector.pstat-connector-fill { background: var(--pstat-complete); }
+
+  .pstat-node { width: 22px; height: 22px; border-radius: 50%; border: 2.5px solid var(--pstat-pending); background: #fff; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: #fff; font-weight: 800; }
+  .pstat-node.pstat-node-complete  { background: var(--pstat-complete); border-color: var(--pstat-complete); }
+  .pstat-node.pstat-node-active    { background: #fff; border-color: var(--pstat-active); }
+  .pstat-node.pstat-node-active::after { content: ''; width: 10px; height: 10px; border-radius: 50%; background: var(--pstat-active); }
+  .pstat-node.pstat-node-attention { background: var(--pstat-attention); border-color: var(--pstat-attention); }
+
+  .pstat-stage-label { font-size: 0.74rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; color: var(--muted); margin-top: 8px; }
+  .pstat-stage-primary { font-size: 0.95rem; font-weight: 800; color: var(--text); margin-top: 2px; display: block; }
+  .pstat-stage-sub { font-size: 0.8rem; color: var(--muted); margin-top: 1px; }
+  .pstat-stage[data-state="attention"] .pstat-stage-primary { color: var(--pstat-attention); }
+  .pstat-stage-primary-link { font-weight: 500; color: var(--brand); text-decoration: none; }
+  .pstat-stage-primary-link:hover { text-decoration: underline; }
+
+  .pstat-lane-detail { margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--border); }
+  #pstat-results[data-view="summary"] .pstat-lane-detail { display: none; }
+
+  .pstat-detail-heading { font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; color: var(--brand); margin: 14px 0 8px; }
+  .pstat-detail-heading:first-child { margin-top: 0; }
+
+  .pstat-mat-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  .pstat-mat-table th { text-align: left; padding: 6px 8px; background: var(--highlight-bg); font-size: 0.68rem; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+  .pstat-mat-table td { padding: 7px 8px; border-bottom: 1px solid #f1f5f9; }
+  .pstat-progress-track { background: #e8edf3; border-radius: 6px; height: 8px; width: 100%; overflow: hidden; min-width: 80px; }
+  .pstat-progress-fill { height: 100%; border-radius: 6px; background: var(--pstat-complete); }
+  .pstat-progress-fill.pstat-progress-partial { background: var(--pstat-active); }
+  .pstat-progress-label { font-size: 0.72rem; font-weight: 700; color: var(--muted); white-space: nowrap; margin-left: 6px; }
+  .pstat-progress-cell { display: flex; align-items: center; }
+
+  .pstat-po-list { display: flex; flex-direction: column; gap: 8px; }
+  .pstat-po-card { background: #fafbfc; border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; font-size: 0.8rem; }
+  .pstat-po-row1 { display: flex; justify-content: space-between; align-items: center; font-weight: 700; }
+  .pstat-po-row2 { color: var(--muted); font-size: 0.75rem; margin-top: 3px; display: flex; justify-content: space-between; align-items: center; }
+  .pstat-po-chip { font-size: 0.68rem; font-weight: 800; padding: 2px 9px; border-radius: 10px; white-space: nowrap; }
+  .pstat-po-chip-ontime { background: #dcfce7; color: #15803d; }
+  .pstat-po-chip-pending { background: #f1f5f9; color: var(--muted); }
+  .pstat-po-chip-overdue { background: #fee2e2; color: #b91c1c; }
+
+  .pstat-jc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 10px; }
+  .pstat-jc-tile { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .pstat-jc-ring-wrap { position: relative; width: 44px; height: 44px; }
+  .pstat-jc-ring-wrap svg { position: absolute; top: 0; left: 0; }
+  .pstat-jc-ring-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.68rem; font-weight: 800; color: var(--brand); }
+  .pstat-jc-ring-label.pstat-jc-ring-done { color: var(--pstat-complete); font-size: 0.9rem; }
+  .pstat-jc-set-label { font-size: 0.72rem; font-weight: 700; color: var(--muted); }
+
+  .pstat-scroll-wrap { overflow-x: auto; }
+
+  @media (max-width: 900px) {
+    .pstat-stage-label, .pstat-stage-sub { display: none; }
+    .pstat-header-row { flex-direction: column; }
+    .pstat-header-company { text-align: left; }
+  }
+
 </style>
 
 </head>
@@ -441,11 +534,21 @@
       </div>
     </div>
 
-    <!-- ── PROJECT (Batch 1 scaffolding) ───────────────────────────────── -->
+    <!-- ── PROJECT (Batch 3, 15 Sep 2026) ──────────────────────────────── -->
     <div id="dashboard-project-department-header-block" class="dept-block" style="display:none; --dept-accent:#2563eb;">
       <div class="dept-header">
         <div class="dept-bar" style="background:#2563eb;"></div>
         <span class="dept-name">Project Department</span>
+        <div id="mod-admin-dashboard-wrapper" style="display:none;">
+          <button class="dept-dash-pill" id="mod-admin-dashboard" onclick="navigateToAdminDashboard()" style="background:#eff6ff; color:#2563eb;">📊 Admin Dashboard</button>
+        </div>
+      </div>
+      <div class="sec-label">Project Tracking</div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-manufacturing-clearance" onclick="switchActiveDashboardModule('manufacturing-clearance')"><span class="mc-label">Manufacturing Clearance</span></div>
+        <div class="menu-card" id="mod-project-timeline" onclick="switchActiveDashboardModule('project-timeline')"><span class="mc-label">Project Timeline</span></div>
+        <div class="menu-card" id="mod-daily-timeline" onclick="switchActiveDashboardModule('daily-timeline')"><span class="mc-label">Daily Timeline</span></div>
+        <div class="menu-card" id="mod-project-status" onclick="switchActiveDashboardModule('project-status')"><span class="mc-label">Project Status</span></div>
       </div>
     </div>
 
@@ -504,11 +607,20 @@
       </div>
     </div>
 
-    <!-- ── STORE (Batch 1 scaffolding) ──────────────────────────────────── -->
+    <!-- ── STORE (Batch 1 scaffolding; Dispatch section added Batch 3,
+         15 Sep 2026 — Project Invoice Generation lives here in Portal,
+         not under Project department: its backend permissionCatalog.js
+         entry says department:'store', rowLabel:'Dispatch' explicitly.
+         Store's other sections (Gate Entry/GRN/Live Stock/etc.) are still
+         unbuilt in ERP, so this is the block's only content for now. ── -->
     <div id="dashboard-store-department-header-block" class="dept-block" style="display:none; --dept-accent:#0369a1;">
       <div class="dept-header">
         <div class="dept-bar" style="background:#0369a1;"></div>
         <span class="dept-name">Store Department</span>
+      </div>
+      <div class="sec-label">Dispatch</div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-project-invoice" onclick="switchActiveDashboardModule('project-invoice')"><span class="mc-label">Project Invoice Generation</span></div>
       </div>
     </div>
 
@@ -565,6 +677,15 @@
           <button class="dd-period-btn" data-period="thisyear" onclick="mdSetPeriod(this)">This Year</button>
           <button class="dd-period-btn" data-period="custom" onclick="mdSetPeriod(this)">Custom ▾</button>
         </div>
+        <div id="adm-period-btns" style="display:none; gap:4px; flex-wrap:nowrap;">
+          <button class="dd-period-btn active" data-period="today" onclick="admSetPeriod(this)">Today</button>
+          <button class="dd-period-btn" data-period="yesterday" onclick="admSetPeriod(this)">Yesterday</button>
+          <button class="dd-period-btn" data-period="thisweek" onclick="admSetPeriod(this)">This Week</button>
+          <button class="dd-period-btn" data-period="thismonth" onclick="admSetPeriod(this)">This Month</button>
+          <button class="dd-period-btn" data-period="thisquarter" onclick="admSetPeriod(this)">This Quarter</button>
+          <button class="dd-period-btn" data-period="thisyear" onclick="admSetPeriod(this)">This Year</button>
+          <button class="dd-period-btn" data-period="custom" onclick="admSetPeriod(this)">Custom ▾</button>
+        </div>
       </div>
       <span id="dash-global-title" style="text-align:center; font-size:1.35rem; font-weight:800; color:var(--text); white-space:nowrap;"></span>
       <button class="nav-btn-styled" onclick="dashboardGlobalReturnClick()" style="justify-self:end; font-size:0.75rem;">Return to Main Dashboard</button>
@@ -594,6 +715,19 @@
       <span id="md-custom-val-quarter" hidden style="flex:none; white-space:nowrap;"><select id="md-custom-val-quarter-year" class="dash-fy-year-select" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:80px;"></select><select id="md-custom-val-quarter-q" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:110px; margin-left:4px;"><option value="1">Q1 (Apr-Jun)</option><option value="2">Q2 (Jul-Sep)</option><option value="3">Q3 (Oct-Dec)</option><option value="4">Q4 (Jan-Mar)</option></select></span>
       <select id="md-custom-val-year" class="dash-fy-year-select" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:90px;" hidden></select>
       <button onclick="mdLoadCustom()" style="font-size:0.72rem; background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; cursor:pointer; font-weight:700; flex:none; white-space:nowrap;">Go</button>
+    </div>
+    <div id="adm-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc; flex-wrap:nowrap; overflow-x:auto;">
+      <span style="font-size:0.72rem; font-weight:700; color:var(--muted); flex:none; white-space:nowrap;">Select:</span>
+      <select id="adm-custom-type" onchange="admCustomTypeChange()" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:120px;">
+        <option value="customday">Day</option><option value="customrange">Date Range</option><option value="custommonth">Month</option>
+        <option value="customquarter">Quarter</option><option value="customyear">Year</option>
+      </select>
+      <span id="adm-custom-val-day" style="flex:none; white-space:nowrap;"><span style="display:inline-block; flex:none; width:130px;"><input id="adm-custom-val-day-input" type="date" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:100%;" /></span></span>
+      <span id="adm-custom-val-range" hidden style="flex:none; white-space:nowrap;"><span style="display:inline-block; flex:none; width:130px;"><input id="adm-custom-val-range-start" type="date" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:100%;" /></span><span style="font-size:0.72rem; color:var(--muted); margin:0 4px; flex:none;">to</span><span style="display:inline-block; flex:none; width:130px;"><input id="adm-custom-val-range-end" type="date" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:100%;" /></span></span>
+      <span id="adm-custom-val-month" hidden style="flex:none; white-space:nowrap;"><select id="adm-custom-val-month-year" class="dash-cal-year-select" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:80px;"></select><select id="adm-custom-val-month-month" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:70px; margin-left:4px;"><option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option><option value="4">Apr</option><option value="5">May</option><option value="6">Jun</option><option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option><option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option></select></span>
+      <span id="adm-custom-val-quarter" hidden style="flex:none; white-space:nowrap;"><select id="adm-custom-val-quarter-year" class="dash-fy-year-select" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:80px;"></select><select id="adm-custom-val-quarter-q" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:110px; margin-left:4px;"><option value="1">Q1 (Apr-Jun)</option><option value="2">Q2 (Jul-Sep)</option><option value="3">Q3 (Oct-Dec)</option><option value="4">Q4 (Jan-Mar)</option></select></span>
+      <select id="adm-custom-val-year" class="dash-fy-year-select" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:90px;" hidden></select>
+      <button onclick="admLoadCustom()" style="font-size:0.72rem; background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; cursor:pointer; font-weight:700; flex:none; white-space:nowrap;">Go</button>
     </div>
   </div>
 
@@ -2607,6 +2741,373 @@
     </div>
 
 
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       PROJECT DEPARTMENT (Batch 3, 15 Sep 2026) — ported from Portal's
+       project/manufacturing-clearance.js, project-timeline.js,
+       daily-timeline.js, project-status.js, and production/project-invoice.js
+       (misplaced in Portal under production/ — placed correctly under
+       project/ here, matching its real department; see Portal's own
+       "grep the real declaration site, don't assume by filename"
+       convention this follows). Admin Dashboard's own canvas is kept
+       here too, grouped with its four sibling Project screens, since
+       it's this department's own dashboard.
+       ═══════════════════════════════════════════════════════════════ -->
+
+  <div id="canvas-module-manufacturing-clearance" class="workspace-panel" style="display:none;">
+    <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
+      <div></div>
+      <button class="nav-btn-styled" onclick="exitManufacturingClearanceBackToMenu()">Return to Main Dashboard</button>
+    </div>
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+    <h2 class="panel-title">Manufacturing Clearance</h2>
+    <p style="font-size:0.82rem; color:var(--muted); margin-bottom:14px;">
+      New projects start Inactive and stay invisible to every other department until cleared here.
+    </p>
+    <div style="display:flex; gap:14px; margin-bottom:16px;">
+      <button id="mc-pill-active" class="nav-btn-styled" onclick="switchMcStatus('Active')" style="flex:1; padding:11px 16px;">Active Projects</button>
+      <button id="mc-pill-inactive" class="nav-btn-styled" onclick="switchMcStatus('Inactive')" style="flex:1; padding:11px 16px;">Inactive Projects</button>
+      <button id="mc-pill-completed" class="nav-btn-styled" onclick="switchMcStatus('Completed')" style="flex:1; padding:11px 16px;">Completed Projects</button>
+    </div>
+    <table id="mc-list-table" style="width:100%; border-collapse:collapse; table-layout:fixed; font-size:0.85rem;">
+      <colgroup>
+        <col style="width:20%;" /><col style="width:13%;" /><col style="width:46%;" /><col style="width:14%;" /><col style="width:7%;" />
+      </colgroup>
+      <thead><tr style="background:var(--highlight-bg); text-align:left;">
+        <th style="padding:8px;">Project ID</th><th style="padding:8px;">Company Name</th>
+        <th style="padding:8px;">Order Product Description</th>
+        <th style="padding:8px;">Tentative Delivery Date</th><th style="padding:8px;">Action</th>
+      </tr></thead>
+      <tbody id="mc-list-body"></tbody>
+    </table>
+    <div id="mc-active-cards-container" style="display:none;"></div>
+    </div>
+  </div>
+
+  <div id="canvas-module-project-timeline" class="workspace-panel" style="display:none;">
+    <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
+      <div id="ptl-header-left"></div>
+      <button class="nav-btn-styled" onclick="exitProjectTimelineBackToMenu()">Return to Main Dashboard</button>
+    </div>
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+    <h2 class="panel-title">Project Timeline</h2>
+    <div id="ptl-mount"></div>
+    </div>
+  </div>
+
+  <div id="canvas-module-daily-timeline" class="workspace-panel" style="display:none;">
+    <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
+      <div id="dtl-header-left"></div>
+      <button class="nav-btn-styled" onclick="exitDailyTimelineBackToMenu()">Return to Main Dashboard</button>
+    </div>
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+    <h2 class="panel-title">Daily Timeline</h2>
+    <div id="dtl-mount"></div>
+    </div>
+  </div>
+
+  <div id="canvas-module-project-status" class="workspace-panel" style="display:none;">
+    <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
+      <div></div>
+      <button class="nav-btn-styled" onclick="exitProjectStatusBackToMenu()">Return to Main Dashboard</button>
+    </div>
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+    <h2 class="panel-title">Project Status</h2>
+    <div style="display:flex; gap:10px; align-items:flex-end; margin-bottom:20px; position:relative;">
+      <div style="flex:1; position:relative;">
+        <label class="field-label" style="margin-top:0;">Project ID or Customer Name *</label>
+        <input type="text" id="pstat-project-input" placeholder="Type Project ID..." autocomplete="off"
+          oninput="handlePstatProjectInput(this.value)" onkeydown="if(event.key==='Enter')runProjectStatusSearch()"
+          style="width:100%; padding:9px; border:1.5px solid var(--border); border-radius:var(--radius);" />
+        <div id="pstat-project-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+      </div>
+      <button class="nav-btn-styled" style="background:var(--accent); padding:9px 20px; font-weight:700;" onclick="runProjectStatusSearch()">Search</button>
+    </div>
+    <div id="pstat-results" data-view="summary" style="display:none;">
+      <div class="pstat-header-band">
+        <div class="pstat-header-row">
+          <div>
+            <div class="pstat-header-id" id="pstat-header-id"></div>
+          </div>
+          <div class="pstat-header-company" id="pstat-header-company"></div>
+        </div>
+        <div class="pstat-header-metrics" id="pstat-header-metrics"></div>
+        <div class="pstat-view-toggle">
+          <button type="button" id="pstat-view-btn-summary" class="pstat-view-active" onclick="setPstatView('summary')">Summary</button>
+          <button type="button" id="pstat-view-btn-detail" onclick="setPstatView('detail')">Full Detail</button>
+        </div>
+      </div>
+      <div class="pstat-lanes-container" id="pstat-lanes-container"></div>
+    </div>
+    </div>
+  </div>
+
+  <!-- Project Invoice Generation — a plain top-level panel here, unlike
+       Portal's copy which nests it inside module-store-workspace-
+       enclosure-panel (Store's own enclosure doesn't exist in ERP yet).
+       Gets its own header row + Return button instead. -->
+  <div id="canvas-module-project-invoice" class="workspace-panel" style="display:none;">
+    <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
+      <div></div>
+      <button class="nav-btn-styled" onclick="returnToDashboard()">Return to Main Dashboard</button>
+    </div>
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Project Invoice Generation</h2>
+      <div id="pinv-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+
+      <div style="display:flex; gap:10px; margin-bottom:18px;">
+        <button class="nav-btn-styled" id="pinv-mode-generate-btn" onclick="switchPinvMode('generate')" style="background:var(--accent); font-weight:700; padding:9px 20px;">Generate Invoice</button>
+        <button class="nav-btn-styled" id="pinv-mode-revise-btn" onclick="switchPinvMode('revise')" style="background:#718096; font-weight:700; padding:9px 20px;">Revise Invoice</button>
+      </div>
+
+      <div id="pinv-generate-mode">
+      <div id="pinv-select-zone">
+        <label class="field-label" style="margin-top:0;">Project ID *</label>
+        <select id="pinv-project-select" onchange="handlePinvProjectChange(this.value)" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
+          <option value="">— Select Project ID —</option>
+        </select>
+      </div>
+
+      <div id="pinv-detail-zone" style="display:none; margin-top:20px;">
+        <div id="pinv-blockers" style="display:none; margin-bottom:16px;"></div>
+        <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:0.85rem; margin-bottom:16px; min-width:760px;">
+          <thead><tr style="background:var(--highlight-bg); text-align:left;">
+            <th style="padding:8px;">Product</th><th style="padding:8px; text-align:center;">Ordered Qty</th>
+            <th style="padding:8px; text-align:center;">Total QA-Passed Job Cards</th>
+            <th style="padding:8px; text-align:center;">Already Invoiced</th><th style="padding:8px; text-align:center;">Ready to Invoice</th>
+            <th style="padding:8px; text-align:center;">Qty to Bill Now</th>
+          </tr></thead>
+          <tbody id="pinv-jc-body"></tbody>
+        </table>
+        </div>
+        <div id="pinv-invoice-form-zone" style="display:none;"></div>
+
+        <div id="pinv-documents-zone" style="display:none; background:#fffbeb; border:1.5px solid #f59e0b; border-radius:var(--radius); padding:14px; margin-top:16px;">
+          <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#b45309; margin-bottom:12px; letter-spacing:0.5px;">Invoice Documents</div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+            <div>
+              <label class="field-label" style="margin-top:0;">Packing List * <span style="color:#b91c1c;">(required)</span></label>
+              <div class="card-box" id="pinv-doc-packingList-dropzone" onclick="document.getElementById('pinv-doc-packingList-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                📎 Click to attach Packing List
+              </div>
+              <input type="file" id="pinv-doc-packingList-input" multiple hidden onchange="handlePinvFileSelectionMulti(this, 'packingList')" />
+              <div id="pinv-doc-packingList-filelist"></div>
+            </div>
+            <div>
+              <label class="field-label" style="margin-top:0;">Delivery Challan * <span style="color:#b91c1c;">(required)</span></label>
+              <div class="card-box" id="pinv-doc-deliveryChallan-dropzone" onclick="document.getElementById('pinv-doc-deliveryChallan-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                📎 Click to attach Delivery Challan
+              </div>
+              <input type="file" id="pinv-doc-deliveryChallan-input" multiple hidden onchange="handlePinvFileSelectionMulti(this, 'deliveryChallan')" />
+              <div id="pinv-doc-deliveryChallan-filelist"></div>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:14px;">
+            <div>
+              <label class="field-label" style="margin-top:0;">Warranty Card * <span style="color:#b91c1c;">(required)</span></label>
+              <div class="card-box" id="pinv-doc-warrantyCard-dropzone" onclick="document.getElementById('pinv-doc-warrantyCard-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                📎 Click to attach Warranty Card
+              </div>
+              <input type="file" id="pinv-doc-warrantyCard-input" multiple hidden onchange="handlePinvFileSelectionMulti(this, 'warrantyCard')" />
+              <div id="pinv-doc-warrantyCard-filelist"></div>
+            </div>
+            <div>
+              <label class="field-label" style="margin-top:0;">History Card * <span style="color:#b91c1c;">(required)</span></label>
+              <div class="card-box" id="pinv-doc-historyCard-dropzone" onclick="document.getElementById('pinv-doc-historyCard-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                📎 Click to attach History Card
+              </div>
+              <input type="file" id="pinv-doc-historyCard-input" multiple hidden onchange="handlePinvFileSelectionMulti(this, 'historyCard')" />
+              <div id="pinv-doc-historyCard-filelist"></div>
+            </div>
+            <div>
+              <label class="field-label" style="margin-top:0;">Images of Products Loaded in Truck * <span style="color:#b91c1c;">(required)</span></label>
+              <div class="card-box" id="pinv-doc-truckLoadedImages-dropzone" onclick="document.getElementById('pinv-doc-truckLoadedImages-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                📎 Click to attach Images of Products Loaded in Truck
+              </div>
+              <input type="file" id="pinv-doc-truckLoadedImages-input" multiple hidden onchange="handlePinvFileSelectionMulti(this, 'truckLoadedImages')" />
+              <div id="pinv-doc-truckLoadedImages-filelist"></div>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:14px;">
+            <div>
+              <label class="field-label" style="margin-top:0;">LR Copy</label>
+              <div class="card-box" id="pinv-doc-lrCopy-dropzone" onclick="document.getElementById('pinv-doc-lrCopy-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                📎 Click to attach LR Copy
+              </div>
+              <input type="file" id="pinv-doc-lrCopy-input" multiple hidden onchange="handlePinvFileSelectionMulti(this, 'lrCopy')" />
+              <div id="pinv-doc-lrCopy-filelist"></div>
+            </div>
+            <div>
+              <label class="field-label" style="margin-top:0;">MD cc</label>
+              <div class="card-box" id="pinv-doc-mdcc-dropzone" onclick="document.getElementById('pinv-doc-mdcc-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                📎 Click to attach MD cc
+              </div>
+              <input type="file" id="pinv-doc-mdcc-input" multiple hidden onchange="handlePinvFileSelectionMulti(this, 'mdcc')" />
+              <div id="pinv-doc-mdcc-filelist"></div>
+            </div>
+            <div>
+              <label class="field-label" style="margin-top:0;">Inspection Clearance</label>
+              <div class="card-box" id="pinv-doc-inspectionClearance-dropzone" onclick="document.getElementById('pinv-doc-inspectionClearance-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                📎 Click to attach Inspection Clearance
+              </div>
+              <input type="file" id="pinv-doc-inspectionClearance-input" multiple hidden onchange="handlePinvFileSelectionMulti(this, 'inspectionClearance')" />
+              <div id="pinv-doc-inspectionClearance-filelist"></div>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr; gap:14px; margin-bottom:14px;">
+            <div>
+              <label class="field-label" style="margin-top:0;">Serial Number Confirmation Sheet * <span style="color:#b91c1c;">(required)</span></label>
+              <div class="card-box" id="pinv-doc-serialNumberConfirmationSheet-dropzone" onclick="document.getElementById('pinv-doc-serialNumberConfirmationSheet-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                📎 Click to attach Serial Number Confirmation Sheet
+              </div>
+              <input type="file" id="pinv-doc-serialNumberConfirmationSheet-input" multiple hidden onchange="handlePinvFileSelectionMulti(this, 'serialNumberConfirmationSheet')" />
+              <div id="pinv-doc-serialNumberConfirmationSheet-filelist"></div>
+            </div>
+          </div>
+
+          <div>
+            <label class="field-label" style="margin-top:0;">Payment Received Confirmation *</label>
+            <select id="pinv-payment-received" onchange="persistPinvDraft()" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); max-width:260px;">
+              <option value="No">No</option>
+              <option value="Yes">Yes</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="pinv-generate-zone" style="display:none; flex-direction:column; align-items:flex-end; gap:6px; margin-top:16px;">
+          <div id="pinv-generate-reason" style="font-size:0.78rem; color:#b45309; font-weight:600; text-align:right;"></div>
+          <div style="display:flex; gap:10px; justify-content:flex-end;">
+            <button class="nav-btn-styled" onclick="clearPinvForm()" style="background:#718096; padding:10px 20px; font-weight:700;">Clear Invoice</button>
+            <button class="nav-btn-styled" id="pinv-generate-partial-btn" disabled style="background:var(--accent); padding:10px 24px; font-weight:700; opacity:0.5; cursor:not-allowed;" onclick="openPinvConfirmModal('partial')">Generate Partial Invoice</button>
+            <button class="nav-btn-styled" id="pinv-generate-final-btn" disabled style="background:#15803d; padding:10px 24px; font-weight:700; opacity:0.5; cursor:not-allowed;" onclick="openPinvConfirmModal('final')">Generate Final Invoice</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="pinv-success-zone" style="display:none; margin-top:20px;"></div>
+      </div>
+
+      <div id="pinv-revise-mode" style="display:none;">
+        <div id="pinv-revise-select-zone" style="position:relative;">
+          <label class="field-label" style="margin-top:0;">Project ID or Customer Name *</label>
+          <input type="text" id="pinv-revise-ta-input" autocomplete="off" placeholder="Type Project ID or Customer Name..."
+            oninput="handlePinvReviseTypeaheadInput(this.value)" onfocus="handlePinvReviseTypeaheadInput(this.value)"
+            style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;" />
+          <div id="pinv-revise-ta-dropdown" style="display:none; position:absolute; z-index:50; background:#fff; border:1px solid var(--border); border-radius:var(--radius); max-height:240px; overflow-y:auto; width:100%; box-shadow:0 4px 14px rgba(0,0,0,0.08);"></div>
+          <div style="font-size:0.78rem; color:var(--muted); margin-top:6px;">Projects with at least one generated invoice (Partial or Final) appear here.</div>
+        </div>
+
+        <div id="pinv-revise-detail-zone" style="display:none; margin-top:20px;">
+          <div id="pinv-revise-history-zone" style="margin-bottom:16px;"></div>
+          <div id="pinv-revise-invoice-form-zone"></div>
+          <div id="pinv-revise-generate-btn-wrap" style="display:none; text-align:right; margin-top:16px;">
+            <button class="nav-btn-styled" style="background:var(--accent); padding:10px 24px; font-weight:700;" onclick="openPinvReviseConfirmModal()">Generate Revised Invoice Doc</button>
+          </div>
+        </div>
+
+        <div id="pinv-revise-success-zone" style="display:none; margin-top:20px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="pinv-confirm-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:var(--radius); padding:24px; max-width:420px; width:90%; box-shadow:0 10px 40px rgba(0,0,0,0.2);">
+      <h3 id="pinv-confirm-title" style="margin:0 0 10px; color:var(--brand);">Confirm Invoice Generation</h3>
+      <p id="pinv-confirm-warning" style="font-size:0.85rem; color:var(--muted); margin-bottom:10px;"></p>
+      <p style="font-size:0.85rem; color:var(--muted); margin-bottom:14px;">Type the Project ID <strong id="pinv-confirm-target"></strong> to confirm.</p>
+      <input type="text" id="pinv-confirm-input" style="width:100%; padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); margin-bottom:14px;" oninput="handlePinvConfirmInput()" />
+      <div style="display:flex; justify-content:flex-end; gap:10px;">
+        <button class="nav-btn-styled" style="background:#718096;" onclick="closePinvConfirmModal()">Cancel</button>
+        <button class="nav-btn-styled" id="pinv-confirm-submit-btn" disabled style="background:var(--accent); opacity:0.5; cursor:not-allowed;" onclick="submitPinvGeneration()">Generate Invoice Doc</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="pinv-revise-confirm-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:var(--radius); padding:24px; max-width:420px; width:90%; box-shadow:0 10px 40px rgba(0,0,0,0.2);">
+      <h3 style="margin:0 0 10px; color:var(--brand);">Confirm Invoice Revision</h3>
+      <p style="font-size:0.85rem; color:var(--muted); margin-bottom:14px;">This will generate a new Project Invoice PDF for <strong id="pinv-revise-confirm-target"></strong> and update the project's saved invoice link. Project status, PRNs, and stock are not affected. Type the Project ID to confirm.</p>
+      <input type="text" id="pinv-revise-confirm-input" style="width:100%; padding:9px; border:1.5px solid var(--border); border-radius:var(--radius); margin-bottom:14px;" oninput="handlePinvReviseConfirmInput()" />
+      <div style="display:flex; justify-content:flex-end; gap:10px;">
+        <button class="nav-btn-styled" style="background:#718096;" onclick="closePinvReviseConfirmModal()">Cancel</button>
+        <button class="nav-btn-styled" id="pinv-revise-confirm-submit-btn" disabled style="background:var(--accent); opacity:0.5; cursor:not-allowed;" onclick="submitPinvRevision()">Generate Revised Invoice Doc</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Dashboard — grouped with its 5 sibling Project screens here
+       rather than near canvas-module-purchase-dashboard, since it's this
+       department's own dashboard. Its Custom-period toolbar HTML
+       (adm-period-btns/adm-custom-zone) lives in #dashboard-global-toolbar
+       alongside every other dashboard's, not here. -->
+  <div id="canvas-module-admin-dashboard" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
+    <div id="adm-body" class="dd-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
+
+      <!-- ROW 1: Live — stock value, on-order value, LD exposure, late POs -->
+      <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
+        <div class="dd-stat-card stat-live">
+          <div class="dd-stat-label">RM + Spare Store Value</div>
+          <div class="dd-stat-val" id="adm-s-stockrm">—</div>
+          <div class="dd-stat-sub">approx., last purchase rate</div>
+        </div>
+        <div class="dd-stat-card stat-live">
+          <div class="dd-stat-label">FG Store Value (In Store)</div>
+          <div class="dd-stat-val" id="adm-s-stockfg">—</div>
+          <div class="dd-stat-sub">approx., design-costed</div>
+        </div>
+        <div class="dd-stat-card stat-live">
+          <div class="dd-stat-label">Total On-Order RM PO Amount</div>
+          <div class="dd-stat-val" id="adm-s-onorder">—</div>
+        </div>
+        <div class="dd-stat-card stat-live">
+          <div class="dd-stat-label">Total LD Exposure (At Risk)</div>
+          <div class="dd-stat-val" id="adm-s-ldexposure" style="color:#b91c1c;">—</div>
+          <div class="dd-stat-sub" id="adm-s-ldexposure-sub"></div>
+        </div>
+        <div class="dd-stat-card stat-live">
+          <div class="dd-stat-label">Late RM POs (Outstanding Value)</div>
+          <div class="dd-stat-val" id="adm-s-latepo" style="color:#b91c1c;">—</div>
+          <div class="dd-stat-sub" id="adm-s-latepo-sub"></div>
+        </div>
+      </div>
+
+      <!-- ROW 2: PO order/delivery value (period) + cash position (live) -->
+      <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; flex:0 0 80px; min-height:0;">
+        <div class="dd-stat-card stat-period">
+          <div class="dd-stat-label">Total PO Order Value</div>
+          <div class="dd-stat-val" id="adm-s-poorder">—</div>
+          <div class="dd-stat-sub" id="adm-s-poorder-sub"></div>
+        </div>
+        <div class="dd-stat-card stat-period">
+          <div class="dd-stat-label">Total Delivered RM PO Amount</div>
+          <div class="dd-stat-val" id="adm-s-delivered" style="color:#15803d;">—</div>
+        </div>
+        <div class="dd-stat-card stat-live">
+          <div class="dd-stat-label">Daily Cash + UPI Box Balance</div>
+          <div class="dd-stat-val" id="adm-s-cashbox">—</div>
+        </div>
+        <div class="dd-stat-card stat-live">
+          <div class="dd-stat-label">Tour Advances Outstanding</div>
+          <div class="dd-stat-val" id="adm-s-advances" style="color:#b45309;">—</div>
+        </div>
+      </div>
+
+      <!-- ROW 3: Chart -->
+      <div class="dd-chart-row" style="display:grid; grid-template-columns:1fr; gap:10px; flex:1; min-height:230px;">
+        <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column;">
+          <div class="dd-card-title">RM PO Order Value Over Time</div>
+          <div style="flex:1; min-height:0; position:relative;"><canvas id="adm-chart-po-trend" style="position:absolute; width:100%; height:100%;"></canvas></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
   <!-- Full 8-tab Security & Login Access screen (1 Sep 2026), ported from
        ABPS Portal's canvas-module-security-admin. Logic in
        project/security-admin.js; init entry point is
@@ -2828,5 +3329,11 @@
 <script src="purchase/material-list.js"></script>
 <script src="purchase/purchase-dashboard.js"></script>
 <script src="project/security-admin.js"></script>
+<script src="project/manufacturing-clearance.js"></script>
+<script src="project/project-timeline.js"></script>
+<script src="project/daily-timeline.js"></script>
+<script src="project/project-status.js"></script>
+<script src="project/project-invoice.js"></script>
+<script src="project/admin-dashboard.js"></script>
 </body>
 </html>

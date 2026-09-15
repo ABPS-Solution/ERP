@@ -20,6 +20,15 @@ const ERP_LOCAL_STORAGE_KEYS = [
   // localStorage.clear() there too (session-expiry / logout), so this is
   // cleared on the same paths, not preserved like a device secret.
   "erpActiveEmailLeadsCache",
+  // erpPtlTodayOverride (15 Sep 2026, Project department port) — Project
+  // Timeline's own admin-only, client-side-only "today" override; several
+  // dashboards (admin-dashboard.js, design/purchase dashboards) also read
+  // this same key so a test scenario built on the Timeline screen stays
+  // consistent everywhere. erpPinvDraftV1 is Project Invoice Generation's
+  // in-progress-invoice draft (Portal's own abps_pinv_draft_v1, renamed
+  // to this app's convention) — cleared on logout like every other key
+  // here, not preserved like a device secret.
+  "erpPtlTodayOverride", "erpPinvDraftV1",
 ];
 
 // clearAppLocalStorageKeepingDeviceKeys — a bare localStorage.clear() must
