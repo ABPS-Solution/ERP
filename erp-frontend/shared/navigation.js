@@ -47,7 +47,12 @@ async function checkPurchasePORevisionReminder() {
   } catch (e) { /* non-critical — leave banner state as-is on network error */ }
 }
 
-const DEPT_TAB_KEYS = ['accounts', 'design', 'purchase', 'admin'];
+// marketing/project/store/qa/production added 15 Sep 2026 (Batch 1
+// scaffolding) — each has an empty dashboard-*-department-header-block in
+// index.html but no enforceDynamicModuleRoleGateways visibility logic yet,
+// so refreshDepartmentTabsBar's own block-display check keeps all 5 tabs
+// hidden until the batch that owns that department adds real gating.
+const DEPT_TAB_KEYS = ['accounts', 'design', 'purchase', 'admin', 'marketing', 'project', 'store', 'qa', 'production'];
 const DEPT_TAB_STORAGE_KEY = 'erpActiveDeptTab';
 // Same reasoning as Portal's deptTabVisibleKeys: selectDepartmentTab must
 // consult which departments are actually permission-visible (set once per

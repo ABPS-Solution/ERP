@@ -370,8 +370,24 @@
   <div id="dept-tabs-bar" class="dept-tabs-bar" style="display:none;">
     <span class="dept-tabs-label">Departments</span>
     <button class="dept-tab" id="dept-tab-admin" data-accent="#7c3aed" onclick="handleDepartmentTabClick('admin')">Admin</button>
+    <!-- Marketing/Project/Design/Purchase/Store/QA/Production order and
+         accent colors match Portal's own dept-tabs-bar exactly (Portal has
+         no separate "Admin" tab — Security & Login Access lives under its
+         Project tab there; ERP keeps Admin as its own tab, a deliberate
+         31 Aug 2026 adaptation, left as-is). Batch 1 (15 Sep 2026) adds
+         these 5 tabs + their empty dept-blocks as pure scaffolding — each
+         stays invisible (block starts display:none, nothing in
+         enforceDynamicModuleRoleGateways sets it yet) until the batch that
+         owns that department wires its own permission-gated visibility and
+         menu cards. Do not add menu cards here directly; add them in the
+         matching dept-block below when that department's batch runs. -->
+    <button class="dept-tab" id="dept-tab-marketing" data-accent="#be185d" onclick="handleDepartmentTabClick('marketing')" style="display:none;">Marketing</button>
+    <button class="dept-tab" id="dept-tab-project" data-accent="#2563eb" onclick="handleDepartmentTabClick('project')" style="display:none;">Project</button>
     <button class="dept-tab" id="dept-tab-design" data-accent="#2563eb" onclick="handleDepartmentTabClick('design')">Design</button>
     <button class="dept-tab" id="dept-tab-purchase" data-accent="#7c3aed" onclick="handleDepartmentTabClick('purchase')">Purchase</button>
+    <button class="dept-tab" id="dept-tab-store" data-accent="#0369a1" onclick="handleDepartmentTabClick('store')" style="display:none;">Store</button>
+    <button class="dept-tab" id="dept-tab-qa" data-accent="#dc2626" onclick="handleDepartmentTabClick('qa')" style="display:none;">Quality Assurance</button>
+    <button class="dept-tab" id="dept-tab-production" data-accent="#b45309" onclick="handleDepartmentTabClick('production')" style="display:none;">Production</button>
     <button class="dept-tab" id="dept-tab-accounts" data-accent="#0f766e" onclick="handleDepartmentTabClick('accounts')">Accounts</button>
   </div>
 
@@ -390,6 +406,24 @@
         <div class="menu-card" id="mod-traveltickets" onclick="switchActiveDashboardModule('traveltickets'); initializeTravelTicketsPanel();"><span class="mc-label">Travel Ticket / Hotel Booking</span></div>
         <div class="menu-card" id="mod-tourexpense" onclick="switchActiveDashboardModule('tourexpense'); initializeTourExpensePanel();"><span class="mc-label">Tour Expense Tracker</span></div>
         <div class="menu-card" id="mod-cashexpenses" onclick="switchActiveDashboardModule('cashexpenses'); initializeCashExpensesPanel();"><span class="mc-label">Daily Cash / UPI / Online Expenses</span></div>
+      </div>
+    </div>
+
+    <!-- ── MARKETING (Batch 1 scaffolding, 15 Sep 2026 — empty until the
+         Marketing batch adds menu cards + its own enforceDynamicModuleRoleGateways
+         gating; do not remove this block, add cards inside it) ──────────── -->
+    <div id="dashboard-marketing-department-header-block" class="dept-block" style="display:none; --dept-accent:#be185d;">
+      <div class="dept-header">
+        <div class="dept-bar" style="background:#be185d;"></div>
+        <span class="dept-name">Marketing Department</span>
+      </div>
+    </div>
+
+    <!-- ── PROJECT (Batch 1 scaffolding) ───────────────────────────────── -->
+    <div id="dashboard-project-department-header-block" class="dept-block" style="display:none; --dept-accent:#2563eb;">
+      <div class="dept-header">
+        <div class="dept-bar" style="background:#2563eb;"></div>
+        <span class="dept-name">Project Department</span>
       </div>
     </div>
 
@@ -445,6 +479,30 @@
       <div class="sec-label">Store Inward Rejected & Missing Material</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-purchase-rejected-material" onclick="navigateToPurchaseWorkspacePanel('purchase-rejected-material')"><span class="mc-label">Store Inward Rejected & Missing Material</span></div>
+      </div>
+    </div>
+
+    <!-- ── STORE (Batch 1 scaffolding) ──────────────────────────────────── -->
+    <div id="dashboard-store-department-header-block" class="dept-block" style="display:none; --dept-accent:#0369a1;">
+      <div class="dept-header">
+        <div class="dept-bar" style="background:#0369a1;"></div>
+        <span class="dept-name">Store Department</span>
+      </div>
+    </div>
+
+    <!-- ── QUALITY ASSURANCE (Batch 1 scaffolding) ─────────────────────── -->
+    <div id="dashboard-qa-department-header-block" class="dept-block" style="display:none; --dept-accent:#dc2626;">
+      <div class="dept-header">
+        <div class="dept-bar" style="background:#dc2626;"></div>
+        <span class="dept-name">Quality Assurance Department</span>
+      </div>
+    </div>
+
+    <!-- ── PRODUCTION (Batch 1 scaffolding) ────────────────────────────── -->
+    <div id="dashboard-production-department-header-block" class="dept-block" style="display:none; --dept-accent:#b45309;">
+      <div class="dept-header">
+        <div class="dept-bar" style="background:#b45309;"></div>
+        <span class="dept-name">Production Department</span>
       </div>
     </div>
 
