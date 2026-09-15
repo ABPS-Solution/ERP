@@ -12,7 +12,7 @@
 async function ensureSharedProjectTypeaheadData(forceRefresh = false) {
   if (window._sharedProjectTypeaheadLoaded && !forceRefresh) return;
   try {
-    const data = await apFetch({ action: "pullLiveActiveProjectCodes" });
+    const data = await fetchWithStaleCache({ action: "pullLiveActiveProjectCodes" });
     window.sharedActiveProjectCodes = data.projects || [];
     window.sharedProjectMeta = data.projectMeta || {};
     window._sharedProjectTypeaheadLoaded = true;
@@ -94,10 +94,27 @@ async function initializeCreateBOQPanel() {
   const previouslySelectedProject = isFirstVisit ? "" : projDrop.value;
   if (isFirstVisit) projDrop.innerHTML = '<option value="">Loading projects...</option>';
 
+  // Draft autosave (shared/drafts.js). The material rows live in the
+  // cboqMaterialRows array rather than the DOM, so they're passed as the
+  // extra state a field scan can't see. Offered only on a first visit —
+  // on a return visit the in-memory form is still populated (the
+  // isFirstVisit gate above), so a restore prompt would be noise.
+  if (typeof abpsDraftAttach === "function") {
+    abpsDraftAttach("createBOQ", "cboq-form-body", () => cboqMaterialRows);
+    if (isFirstVisit) {
+      abpsDraftOfferRestore("createBOQ", "cboq-form-body", (rows) => {
+        cboqMaterialRows = Array.isArray(rows) ? rows : [];
+        renderCBOQMaterialRows();
+        updateCBOQTotals();
+      }, { hasFileUploads: true });
+    }
+  }
+
+  // Load Project IDs + item code catalog + personnel all in parallel
   const [projResult, , personnelResult, importListResult] = await Promise.allSettled([
-    apFetch({ action: "pullLiveActiveProjectCodes" }),
+    fetchWithStaleCache({ action: "pullLiveActiveProjectCodes" }),
     loadItemCodeCatalogIntoCache(),
-    apFetch({ action: "getStoreOperatorsList" }),
+    fetchWithStaleCache({ action: "getStoreOperatorsList" }),
     apFetch({ action: "fetchBOQsForImport" })
   ]);
 

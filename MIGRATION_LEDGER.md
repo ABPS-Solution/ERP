@@ -349,9 +349,285 @@ sign-out/sign-in to take effect, by design).
 
 ## Batch 4 — Design
 
-**Status: not started**
+**Status: ported, committed locally, NOT pushed/deployed — and NOT
+click-tested.** No live login was attempted in this session, so every
+claim below rests on static verification (per-function diff against
+Portal, `node -c`, runtime `require()` of every touched module, a full
+`server.js` boot, the frontend checklist) — not on a real browser.
 
-`routes/design.js` (31), `design/*.js` (8 files). 6 screens + dashboard.
+`routes/design.js` (20 BOQ/drawings routes here + 10 item-code routes in
+the pre-existing `routes/itemCodes.js` = Portal's 31, +1 new). 6 screens
++ dashboard.
+
+### Method note — this was a re-diff/repair, not a fresh port
+
+Design already had code from the 4 Sep 2026 pre-migration port. Rather
+than trust it, every function in `routes/design.js` and every
+`design/*.js` file was mechanically split and diffed against Portal's
+CURRENT code with comments stripped. That found **24 functions with real
+(non-comment) divergence** out of ~50. All are now reconciled: a
+re-run of the same diff shows Portal's `routes/design.js` and ERP's
+matching function-for-function, and 5 of the 8 `design/*.js` files are
+now byte-identical to Portal.
+
+### Real bugs / gaps found and fixed
+
+**Backend — `routes/design.js`**
+
+1. **★★★ The 13 Sep 2026 "Drive/PDFShift I/O out of `withTransaction`"
+   rework (Portal §100.1) had never reached ERP.** `submitBOQAuthorize`
+   still generated both BOQ PDFs, uploaded them to Drive, and created a
+   Drive folder per Job Card **inside the authorization transaction** —
+   holding a DB connection open across several external API calls, and
+   (worse) rolling the entire authorization back if any of it failed.
+   Reworked to Portal's current shape: the transaction commits first,
+   then `regenerateBoqPdfs` runs post-commit with `pdfPending` as the
+   degraded-response signal, and Job Card folders are best-effort
+   non-fatal.
+2. **`retryPendingBoqPdfs` did not exist** — the sweep that makes
+   `pdf_url IS NULL` a real retry signal. Added the function, the
+   admin-only `POST /retryPendingBoqPdfs`, and
+   `POST /internal/retryPendingBoqPdfs` in `routes/sheetsInternal.js`
+   (Cloud-Scheduler-callable; required lazily so this pre-`requireSession`
+   router doesn't pull the Design module into startup). **A Cloud
+   Scheduler job for it still needs creating by hand** — same as Portal's
+   own, see follow-ups below.
+3. **★★ `applyBoqRevision` still had the 5→3→5 Job Card bug** Portal
+   fixed 7 Sep 2026. The create/decrease branches were `if/else` keyed on
+   `currentMaxSet`, which counts `'Excess/Orphaned'` cards — so raising an
+   order quantity back to a previously-higher number produced **no Job
+   Cards at all** for the revived sets, leaving the project with fewer
+   producible Job Cards than units ordered. Replaced with Portal's
+   independent-branches version that revives an orphaned set and creates
+   only genuinely-absent set numbers.
+4. **`createBOQDraft` had no duplicate guard.** Portal refuses a second
+   BOQ whose `material_rows` are identical to an existing
+   `'Pending Authorization'` BOQ for the same product (double-click /
+   retry-after-timeout). ERP silently minted a new `variant_seq` instead.
+5. **`regenerateBoqPdfs` skipped the Cloud Storage secondary copy** —
+   both `uploadPdf` calls were missing, so every revision's PDFs existed
+   only in Drive.
+6. **`checkGeminiRateLimit` was never called** from either AI path
+   (`searchItemCodeSemantic`, `createMaterialDescription`) even though
+   ERP's `lib/gemini.js` exports it and `admin_db.gemini_call_log` exists.
+   Both call sites added.
+7. **`safeErrorMessage` was not used anywhere in this file** — all 19
+   error responses returned a raw `err.message`, leaking Postgres
+   SQLSTATE detail to the client. Swept; deliberate business-error
+   messages pass through unchanged, exactly as in Portal.
+8. **`resolveAllowedBoqProducts.pendingNames` returned bare product
+   names**, not Portal's `"Name - Rating"` — so two ratings of the same
+   product were indistinguishable in the "BOQs pending for:" list.
+
+**Backend — dashboard + wiring**
+
+9. **`fetchDesignDashboardData` did not exist in ERP at all** — the
+   Design Dashboard's data fetch was a guaranteed 404. Ported verbatim
+   from Portal's `routes/dashboards.js` along with its
+   `fetchDesignTimelineDueOverdue` helper and the two label/priority
+   constants. Verified no circular import (`dashboards.js` → `timeline.js`
+   → nothing back) by actually loading both at runtime. Every table it
+   touches (`design.boq_drafts`, `boq_update_requests`, `item_codes`,
+   `project.projects`, `customer_po_line_items`, `admin_db.audit_log`)
+   already exists in `erp`.
+10. **7-place permission rule: 6 of Design's 7 permissions were missing
+    from 2 of the 7 places.** `perm_create_boq` / `perm_authorize_boq` /
+    `perm_update_boq` / `perm_authorize_boq_update` /
+    `perm_upload_drawings` / `perm_design_dashboard` had no entry in
+    `lib/sheetsRegistry.js`'s users query or `lib/sheetsPull.js`'s
+    `USER_PERM_HEADERS` (only `perm_item_code_access` did) — so they were
+    invisible on the Users sheet and un-editable from it. Added to both,
+    with Portal's exact header text. The other 5 places were already
+    correct.
+11. **`design.boq_drafts` / `design.bill_of_quantity` were missing from
+    `lib/sheetChangePoller.js`'s `REAL_TABLE_TO_REGISTRY_KEY`** despite
+    having had `TABLE_REGISTRY` entries since 4 Sep 2026 — so any
+    `trg_sheet_sync` row they queued hit the "no sheet mapping" branch and
+    was silently discarded. This is the exact 15 Sep 2026 Portal landmine
+    (registry tier list and poller map are two separate lists that nothing
+    cross-checks). Both mapped; Portal maps the same two.
+
+**Frontend**
+
+12. **★★★ `showDashboardGlobalToolbar` call was broken — a regression
+    introduced by Batch 2, not by the 4 Sep port.** Batch 2 generalized
+    the signature to `(title, periodBtnsId, returnFn)` but never updated
+    the two pre-existing callers. `design-dashboard.js` still passed
+    `("Design Dashboard", exitDesignWorkspacePanelBackToMenu)`, so the
+    exit function was being used as a DOM id and `returnFn` was
+    `undefined` — **the Design Dashboard's Return button did nothing and
+    no period buttons rendered**. Fixed. (`purchase-dashboard.js` has the
+    identical break — left for Batch 5, see follow-ups.)
+13. **The Design Dashboard's period toolbar did not exist in
+    `index.html` at all** — no `dd-period-btns`, no `dd-custom-zone`, even
+    though `design-dashboard.js` read `#dd-custom-type` / `#dd-custom-val`.
+    Both added.
+14. **★★★ The Custom period selector mutated an `<input>`'s `type` at
+    runtime** (`date`→`month`→`text`→`number`) — the exact pattern
+    Portal's 8-9 Sep 2026 landmine documents as leaving native rendering
+    artifacts (a ghosted date-picker under a text placeholder). Rewritten
+    to five dedicated inputs toggled with the `hidden` attribute, using
+    ERP's own per-dashboard prefixed convention (`ddCustomTypeChange` /
+    `ddReadCustomVal` / `DD_CUSTOM_TYPE_SUFFIX`), matching the `md`/`adm`/
+    `ad` dashboards already live here rather than importing Portal's
+    shared `dashCustomTypeChange`, which ERP doesn't have.
+15. **Both Chart.js configs were missing `maintainAspectRatio:false`**
+    and the canvases had no `position:relative; min-height:0` wrapper —
+    the other half of the same Portal fix. Corrected via the dashboard
+    markup replacement (below) plus the JS options.
+16. **Design Dashboard stat rows had drifted structurally**: ERP had
+    5+5 tiles using `dash-stat-row`, Portal has 4+6 using `dd-stat-row` /
+    `dd-chart-row` / `dd-detail-row`, with `stat-live` / `stat-period`
+    tinting (Portal's 6 Sep 2026 live-vs-period-filtered visual cue) on
+    every tile — ERP had none of it. Two tile labels also differed.
+    ERP's entire `dd-body` block was replaced with Portal's 113 lines
+    verbatim; the two are now byte-identical.
+17. **`ddSetPeriod` de-activated every dashboard's period buttons**
+    (`.dd-period-btn` unscoped) instead of only Design's. Scoped to
+    `#dd-period-btns` per Portal.
+18. **Stale shared-helper usage across the BOQ screens**: `formatDateDMY`
+    / `formatDateTimeDMY` instead of the house-wide `formatOrdinalDate` /
+    `formatOrdinalDateTime` convention (7 Sep 2026) in 5 places;
+    hand-rolled `style.height = scrollHeight` instead of
+    `autoGrowTextField` / `autoGrowAllIn` in 6 places; `apFetch` instead
+    of `fetchWithStaleCache` on 5 near-static dropdown feeds; `step="0.01"`
+    instead of `step="1"` on 3 Design Rate inputs. All of these helpers
+    already existed in ERP — they just weren't being used.
+19. **Select BOQ was still a native `<select>`** on Revise BOQ. Portal
+    moved it to the generic wrapping dropdown (`shared/ui.js`'s
+    `genericDropdown*`, 5 Sep 2026) because a BOQ label is long enough to
+    be truncated and a native `<select>` cannot wrap its options. Both the
+    `index.html` markup and `update-boq.js`'s 7 call sites converted;
+    `shared/ui.js` already had the widget.
+20. **`cboq-product-rating` had lost `white-space:pre-wrap;
+    word-break:break-word;` and `box-sizing:border-box`** — a long
+    auto-filled rating would not wrap correctly in its auto-growing
+    textarea.
+21. **`input.boq-center-num { text-align: center !important; }` was
+    missing from ERP's `<style>` block** — the one CSS rule the Design
+    screens reference that ERP did not define, so every numeric BOQ cell
+    rendered left-aligned instead of centred. Copied verbatim.
+22. **`shared/drafts.js` did not exist** (Batch 1 deferred it here
+    explicitly). Ported, with the one mandatory ERP adaptation: the
+    localStorage key prefix is `erpAbpsDraft:`, not Portal's `abpsDraft:`
+    (CLAUDE.md §3 — same origin as Portal). `clearAppLocalStorageKeepingDeviceKeys`
+    gained Portal's `{ keepDrafts }` option and a prefix sweep, so drafts
+    survive an involuntary session expiry but are cleared on explicit
+    logout, exactly as in Portal; the three involuntary call sites now
+    pass `keepDrafts: true`, `executeLogout` deliberately does not.
+    Wired into Create BOQ via `shared/typeahead.js` (`abpsDraftAttach` /
+    `abpsDraftOfferRestore`) and `resetCreateBOQForm`'s `abpsDraftClear`.
+
+### CSS / markup parity audit
+
+Ran a mechanical audit: every class referenced by Portal's Design
+`index.html` sections AND by all 8 `design/*.js` files (static
+`class="..."`, JS template strings, `classList.*`, `className =`), checked
+against ERP's `<style>` block. **30 classes referenced; exactly one was
+missing** (`boq-center-num`, item 21 above) — the rest were already
+covered by the Marketing/Project style-block repair earlier in this
+session. Rule bodies were compared, not just presence.
+
+Markup structure was diffed block-for-block, not spot-checked:
+- **Design workspace enclosure** (all 5 BOQ/Drawings canvases): now
+  **byte-identical** to Portal's, verified by a zero-output `diff` of the
+  253-line block.
+- **Design Dashboard canvas**: now **byte-identical** to Portal's 113-line
+  block.
+- `lib/itemCodeFormat.js` (server) and `design/item-code-format.js`
+  (client preview mirror) were already **logic-identical** to Portal —
+  only a reflowed comment differs. The template engine, all five
+  placeholder kinds, and every auto-calc (mH→ohm, Total kVAr, Reactor
+  kVAr + BIL lookup, APFC Rated Current, and the Fiber Glass Tie Rod
+  structural match) are in sync. No changes needed.
+
+**One deliberate non-change**: ERP's base `.dd-stat-card` rule is
+`height:auto; min-height:80px; overflow:visible` where Portal's is
+`height:100%; overflow:hidden`. Aligning it to Portal would re-break
+Marketing/Accounts, whose chart cards sit in ERP-only `dash-stat-row` /
+`dash-chart-row-3` rows rather than Portal's `dd-stat-row`. Design's own
+markup now uses Portal's `dd-*` row classes, whose rules ARE identical in
+both, so Design renders identically without touching the shared base.
+
+### Add / Check Item Code — drift audit only (per the standing decision)
+
+Audited, not rewritten. `routes/itemCodes.js` holds all 10 item-code
+routes with **zero path collision** against `routes/design.js` (verified
+globally across all route files). Function-level diff of
+`design/item-codes.js` shows the only Portal functions absent are
+Store-department helpers (`handleSENameSearch`,
+`selectStoreEntryItemCodeMatch`, `reopenSEMaterialSearch`,
+`selectSENameMatch` — Batch 6), a Project split artifact
+(`exitProjectStatusBackToMenu`), and `navigateToDesignWorkspacePanel`
+(deliberately relocated to `design-dashboard.js` in ERP, documented in
+that file's header). The item-code AI feature
+(`normalizeItemCodeText` / `checkItemCodeNearDuplicate` /
+`ITEM_CODE_HOUSE_STYLE`) is present and intact. **No changes made.**
+
+### Verification actually performed
+
+- Per-function diff of `routes/design.js` vs Portal, comments stripped —
+  now clean except the 11 item-code functions that live in
+  `routes/itemCodes.js` by design.
+- `node -c` on every backend file touched and every `.js` under
+  `erp-frontend` — clean.
+- Runtime `require()` of all 7 touched backend modules + a full
+  `server.js` boot — clean (no circular import, no missing export).
+- Zero duplicate top-level `let`/`const` across `erp-frontend`.
+- Every `<script src>` in `index.html` resolves to a real file.
+- Zero duplicate DOM ids in `index.html`.
+- Zero duplicate route paths across all `erp-backend/routes/*.js`.
+- Navigation sweeps confirmed to cover every Design panel id (all match
+  `canvas-module-design-*` / `*-workspace-enclosure-panel` AND carry
+  `class="workspace-panel"`, so all three sweep selectors reach them).
+- `DESIGN_ROOT_FOLDER_ID`, `PRODUCTION_DRIVE_FOLDER_ID` and
+  `GCS_BUCKET_NAME` confirmed **set live** on the `erp-backend` Cloud Run
+  service (queried directly, not assumed). No new Drive folder or
+  spreadsheet is needed for this batch — the DESIGN spreadsheet is
+  registered and `boq_drafts` / `bill_of_quantity` already have
+  `TABLE_REGISTRY` entries with tab names matching Portal's exactly.
+
+**NOT verified: anything requiring a running browser.** No screen was
+opened, no BOQ was created, authorized or revised, no PDF was generated,
+and the Design Dashboard's new route was never called against real data.
+
+### Flagged for human follow-up (deliberately NOT touched)
+
+- **`purchase/purchase-dashboard.js:255` has the identical broken
+  2-arg `showDashboardGlobalToolbar` call** as item 12 — the Purchase
+  Dashboard's Return button and period buttons are currently dead the
+  same way. One-line fix, but Purchase is Batch 5 and that file is due a
+  full re-diff anyway.
+- **A Cloud Scheduler job for `/internal/retryPendingBoqPdfs` does not
+  exist on ERP** (Portal created its own 14 Sep 2026). The route is live
+  and callable; without the job, a BOQ whose PDF failed post-commit stays
+  `pdf_url IS NULL` until someone triggers the admin route by hand.
+- **`syncLiveRow` is called in `routes/design.js` for 5 tables with no
+  `TABLE_REGISTRY` entry** — `projects`, `job_card_materials`,
+  `job_card_number`, `raw_material_store`, `spare_store`. These no-op
+  silently (by design, see `lib/liveSync.js`), so nothing breaks, but
+  those rows never reach a sheet. `projects` arguably belongs to Batch 3;
+  the other four are Store/Production (Batches 6/7). Not added here
+  because doing so would create sheet tabs for departments that don't
+  exist yet. (`material_descriptions` is unregistered in Portal too — not
+  a gap.)
+- **`update-boq.js` still carries the pre-11-Sep-2026 `jclh*` global
+  names** (`jclhWorkspaceInitInProgress` etc.) where Portal now has
+  `jcsh*`, from the Job Card Sheet / In Process Sheet split. They are
+  genuinely dead in ERP today (nothing references them — the owning
+  screen is Batch 7 Production / Batch 8 QA). Left alone.
+- **`lib/permissionCatalog.js`'s `DEPARTMENT_META` has no
+  `dashboard-design` entry** (Portal does). Confirmed harmless here:
+  ERP's Permissions Matrix is data-driven (`getPmCardOrder()` strips the
+  `dashboard-` prefix and folds it into the `design` card), and nothing
+  filters `PERMISSION_CATALOG` by `DEPARTMENT_META`, so
+  `perm_design_dashboard` is fully grantable from the UI. Noted only so a
+  future reader doesn't mistake it for the QA-style "permission can never
+  be granted" bug.
+- **`item_codes` is `tier: 'scheduled'` in ERP but `'live'` in Portal.**
+  Inside the "Add/Check Item Code left alone" boundary, and the poller
+  maps it either way, so sync works — flagged for the drift audit, not
+  changed.
 
 ## Batch 5 — Purchase
 

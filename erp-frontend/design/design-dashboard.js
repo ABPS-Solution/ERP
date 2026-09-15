@@ -107,12 +107,12 @@ function navigateToDesignDashboard() {
   document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
   const c = document.getElementById("canvas-module-design-dashboard");
   if (c) c.style.display = "block";
-  showDashboardGlobalToolbar("Design Dashboard", exitDesignWorkspacePanelBackToMenu);
+  showDashboardGlobalToolbar("Design Dashboard", "dd-period-btns", exitDesignWorkspacePanelBackToMenu);
   if (typeof ddLoadDashboard === "function") ddLoadDashboard();
 }
 
 function ddSetPeriod(btn) {
-  document.querySelectorAll(".dd-period-btn").forEach(b => b.classList.remove("active"));
+  document.querySelectorAll("#dd-period-btns .dd-period-btn").forEach(b => b.classList.remove("active"));
   btn.classList.add("active");
   const p = btn.dataset.period;
   ddCurrentPeriod = p;
@@ -123,19 +123,55 @@ function ddSetPeriod(btn) {
   ddLoadDashboard();
 }
 
+// ★★★ Never mutate an <input>'s `type` at runtime (date->month->text->
+// number) — it leaves native browser rendering artifacts (a ghosted
+// date-picker under a text input's placeholder). Five dedicated inputs
+// toggled via the `hidden` attribute instead, never style.display. Portal
+// keeps these as shared dashCustomTypeChange/dashReadCustomVal helpers;
+// ERP's convention is a per-dashboard prefixed copy (mdCustomTypeChange,
+// admCustomTypeChange, adCustomTypeChange) — followed here for consistency
+// with the three dashboards already live in this app.
+const DD_CUSTOM_TYPE_SUFFIX = {
+  customday: "day", customrange: "range", custommonth: "month",
+  customquarter: "quarter", customyear: "year",
+};
+
 function ddCustomTypeChange() {
   const type = document.getElementById("dd-custom-type").value;
   ddCurrentCustomType = type;
-  const valInput = document.getElementById("dd-custom-val");
-  if (type === "customday")     { valInput.type = "date";  valInput.placeholder = ""; }
-  else if (type === "customweek")  { valInput.type = "date";  valInput.placeholder = "Pick any day in the week"; }
-  else if (type === "custommonth") { valInput.type = "month"; }
-  else if (type === "customquarter") { valInput.type = "text"; valInput.placeholder = "e.g. 2025-Q2"; }
-  else if (type === "customyear")  { valInput.type = "number"; valInput.placeholder = "e.g. 2025"; }
+  const activeSuffix = DD_CUSTOM_TYPE_SUFFIX[type];
+  Object.values(DD_CUSTOM_TYPE_SUFFIX).forEach(suf => {
+    const el = document.getElementById(`dd-custom-val-${suf}`);
+    if (el) el.hidden = (suf !== activeSuffix);
+  });
+}
+
+function ddReadCustomVal() {
+  const type = document.getElementById("dd-custom-type").value;
+  if (type === "customday") {
+    return document.getElementById("dd-custom-val-day-input").value.trim();
+  }
+  if (type === "customrange") {
+    const s = document.getElementById("dd-custom-val-range-start").value.trim();
+    const e = document.getElementById("dd-custom-val-range-end").value.trim();
+    return (s && e) ? `${s}_${e}` : "";
+  }
+  if (type === "custommonth") {
+    const y = document.getElementById("dd-custom-val-month-year").value;
+    const m = document.getElementById("dd-custom-val-month-month").value;
+    return (y && m) ? `${y}-${String(m).padStart(2, "0")}` : "";
+  }
+  if (type === "customquarter") {
+    const y = document.getElementById("dd-custom-val-quarter-year").value;
+    const q = document.getElementById("dd-custom-val-quarter-q").value;
+    return (y && q) ? `${y}-Q${q}` : "";
+  }
+  const el = document.getElementById(`dd-custom-val-${DD_CUSTOM_TYPE_SUFFIX[type]}`);
+  return el ? el.value.trim() : "";
 }
 
 function ddLoadCustom() {
-  const val = document.getElementById("dd-custom-val").value.trim();
+  const val = ddReadCustomVal();
   if (!val) return alert("Please enter a value for the custom period.");
   ddCurrentPeriod = ddCurrentCustomType;
   ddLoadDashboard(val);
@@ -224,18 +260,18 @@ function ddRenderDashboard(data) {
       scales:{ x:{ grid:{ color:"#f1f5f9" }, ticks:{ stepSize:1 } }, y:{ grid:{ display:false }, ticks:{ font:{ size:10 } } } } }
   });
 
-  // Chart 3 — Version distribution
+  // Chart 3 — BOQ Version distribution
   if (ddChartVersion) ddChartVersion.destroy();
   const ctx3 = document.getElementById("dd-chart-version").getContext("2d");
   ddChartVersion = new Chart(ctx3, {
     type: "bar",
     data: {
-      labels: ["v1","v2","v3+"],
-      datasets: [{ label:"BOQs", data: [versionDist["v1"], versionDist["v2"], versionDist["v3+"]],
-        backgroundColor: ["rgba(16,185,129,0.7)","rgba(245,158,11,0.7)","rgba(239,68,68,0.7)"],
+      labels: ["V1","V2","V3","V4","V5+"],
+      datasets: [{ label:"BOQs", data: ["v1","v2","v3","v4","v5+"].map(k => versionDist[k] || 0),
+        backgroundColor: ["rgba(16,185,129,0.7)","rgba(52,211,153,0.7)","rgba(245,158,11,0.7)","rgba(249,115,22,0.7)","rgba(239,68,68,0.7)"],
         borderRadius: 4 }]
     },
-    options: { responsive:true, plugins:{ legend:{ display:false } },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } },
       scales:{ y:{ ticks:{ stepSize:1 }, grid:{ color:"#f1f5f9" } }, x:{ grid:{ display:false } } } }
   });
 

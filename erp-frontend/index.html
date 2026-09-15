@@ -199,6 +199,7 @@
   .store-basket-data-table { width: 100%; border-collapse: collapse; margin-top: 10px; text-align: left; }
   .store-basket-data-table th { background: #f8fafc; color: #64748b; font-size: 0.75rem; text-transform: uppercase; font-weight: 700; padding: 8px 10px; border-bottom: 1px solid var(--border); }
   .store-basket-data-table td { padding: 10px; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem; }
+      input.boq-center-num { text-align: center !important; }
 
   .grid-cell-item { display: flex; flex-direction: column; background: #f8fafc; padding: 2px 4px; border: 1px solid #e2e8f0; border-radius: 4px; min-width: 0; word-wrap: break-word; overflow-wrap: break-word; }
   .grid-cell-item label { font-size: 0.58rem; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 1px; }
@@ -793,6 +794,15 @@
           <button class="dd-period-btn" data-period="thisyear" onclick="admSetPeriod(this)">This Year</button>
           <button class="dd-period-btn" data-period="custom" onclick="admSetPeriod(this)">Custom ▾</button>
         </div>
+        <div id="dd-period-btns" style="display:none; gap:4px; flex-wrap:nowrap;">
+          <button class="dd-period-btn active" data-period="today" onclick="ddSetPeriod(this)">Today</button>
+          <button class="dd-period-btn" data-period="yesterday" onclick="ddSetPeriod(this)">Yesterday</button>
+          <button class="dd-period-btn" data-period="thisweek" onclick="ddSetPeriod(this)">This Week</button>
+          <button class="dd-period-btn" data-period="thismonth" onclick="ddSetPeriod(this)">This Month</button>
+          <button class="dd-period-btn" data-period="thisquarter" onclick="ddSetPeriod(this)">This Quarter</button>
+          <button class="dd-period-btn" data-period="thisyear" onclick="ddSetPeriod(this)">This Year</button>
+          <button class="dd-period-btn" data-period="custom" onclick="ddSetPeriod(this)">Custom ▾</button>
+        </div>
       </div>
       <span id="dash-global-title" style="text-align:center; font-size:1.35rem; font-weight:800; color:var(--text); white-space:nowrap;"></span>
       <button class="nav-btn-styled" onclick="dashboardGlobalReturnClick()" style="justify-self:end; font-size:0.75rem;">Return to Main Dashboard</button>
@@ -835,6 +845,19 @@
       <span id="adm-custom-val-quarter" hidden style="flex:none; white-space:nowrap;"><select id="adm-custom-val-quarter-year" class="dash-fy-year-select" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:80px;"></select><select id="adm-custom-val-quarter-q" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:110px; margin-left:4px;"><option value="1">Q1 (Apr-Jun)</option><option value="2">Q2 (Jul-Sep)</option><option value="3">Q3 (Oct-Dec)</option><option value="4">Q4 (Jan-Mar)</option></select></span>
       <select id="adm-custom-val-year" class="dash-fy-year-select" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:90px;" hidden></select>
       <button onclick="admLoadCustom()" style="font-size:0.72rem; background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; cursor:pointer; font-weight:700; flex:none; white-space:nowrap;">Go</button>
+    </div>
+<div id="dd-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc; flex-wrap:nowrap; overflow-x:auto;">
+      <span style="font-size:0.72rem; font-weight:700; color:var(--muted); flex:none; white-space:nowrap;">Select:</span>
+      <select id="dd-custom-type" onchange="ddCustomTypeChange()" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:120px;">
+        <option value="customday">Day</option><option value="customrange">Date Range</option><option value="custommonth">Month</option>
+        <option value="customquarter">Quarter</option><option value="customyear">Year</option>
+      </select>
+      <span id="dd-custom-val-day" style="flex:none; white-space:nowrap;"><span style="display:inline-block; flex:none; width:130px;"><input id="dd-custom-val-day-input" type="date" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:100%;" /></span></span>
+      <span id="dd-custom-val-range" hidden style="flex:none; white-space:nowrap;"><span style="display:inline-block; flex:none; width:130px;"><input id="dd-custom-val-range-start" type="date" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:100%;" /></span><span style="font-size:0.72rem; color:var(--muted); margin:0 4px; flex:none;">to</span><span style="display:inline-block; flex:none; width:130px;"><input id="dd-custom-val-range-end" type="date" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:100%;" /></span></span>
+      <span id="dd-custom-val-month" hidden style="flex:none; white-space:nowrap;"><select id="dd-custom-val-month-year" class="dash-cal-year-select" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:80px;"></select><select id="dd-custom-val-month-month" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:70px; margin-left:4px;"><option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option><option value="4">Apr</option><option value="5">May</option><option value="6">Jun</option><option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option><option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option></select></span>
+      <span id="dd-custom-val-quarter" hidden style="flex:none; white-space:nowrap;"><select id="dd-custom-val-quarter-year" class="dash-fy-year-select" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:80px;"></select><select id="dd-custom-val-quarter-q" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:110px; margin-left:4px;"><option value="1">Q1 (Apr-Jun)</option><option value="2">Q2 (Jul-Sep)</option><option value="3">Q3 (Oct-Dec)</option><option value="4">Q4 (Jan-Mar)</option></select></span>
+      <select id="dd-custom-val-year" class="dash-fy-year-select" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:90px;" hidden></select>
+      <button onclick="ddLoadCustom()" style="font-size:0.72rem; background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; cursor:pointer; font-weight:700; flex:none; white-space:nowrap;">Go</button>
     </div>
   </div>
 
@@ -2063,7 +2086,7 @@
             </div>
             <div>
               <label class="field-label" style="margin-top:0;">Product Rating</label>
-              <textarea id="cboq-product-rating" readonly rows="1" style="padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius); width:100%; resize:none; overflow:hidden; font-family:inherit; font-size:inherit; line-height:1.4; display:block; min-height:38px; border:1.5px solid var(--border);" placeholder="Auto-filled from Product Name"></textarea>
+              <textarea id="cboq-product-rating" readonly rows="1" style="padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius); width:100%; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; font-family:inherit; font-size:inherit; line-height:1.4; display:block; min-height:38px; box-sizing:border-box; border:1.5px solid var(--border);" placeholder="Auto-filled from Product Name"></textarea>
             </div>
           </div>
           <div style="display:grid; grid-template-columns:2fr 1fr; gap:14px; margin-bottom:14px;">
@@ -2176,11 +2199,15 @@
             <div id="update-boq-project-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
           </div>
         </div>
-        <div>
+        <div style="position:relative;">
           <label class="field-label" style="margin-top:0; color:var(--brand);">Select BOQ *</label>
-          <select id="update-boq-select" onchange="loadBOQForUpdate(this.value)" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);" disabled>
-            <option value="">— Select Project First —</option>
-          </select>
+          <input type="hidden" id="update-boq-select" value="" />
+          <div id="update-boq-select-display" class="gwd-display" data-disabled="1" onclick="toggleGenericDropdown('update-boq-select')"
+            style="display:flex; justify-content:space-between; align-items:flex-start; gap:6px; min-height:40px; padding:9px 10px; border:1.5px solid var(--border); border-radius:var(--radius); background:#f1f5f9; color:var(--muted); cursor:not-allowed; opacity:0.5; font-weight:600; line-height:1.35;">
+            <span id="update-boq-select-display-text" style="white-space:normal; word-break:break-word;">— Select Project First —</span>
+            <span style="flex-shrink:0; margin-top:2px;">▾</span>
+          </div>
+          <div id="update-boq-select-list" class="gwd-list" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:260px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
         </div>
       </div>
 
@@ -2240,59 +2267,59 @@
     <div id="canvas-module-design-dashboard" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
 
       <!-- DASHBOARD BODY -->
-      <div id="dd-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; min-height:calc(100vh - 100px); box-sizing:border-box; overflow-y:auto; overflow-x:hidden;">
+      <div id="dd-body" class="dd-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
 
-        <!-- ROW 1: 5 Stat Cards -->
-        <div class="dash-stat-row">
-          <div class="dd-stat-card">
+        <!-- ROW 1: Live snapshots -->
+        <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; flex:0 0 80px; min-height:0;">
+          <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Design Work Overdue in Project Timeline</div>
             <div class="dd-stat-val" id="dd-s-overdue" style="color:#b91c1c;">—</div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Pending BOQ Authorizations</div>
             <div class="dd-stat-val" id="dd-s-pending" style="color:#b45309;">—</div>
           </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Pending BOQ Revision Authorizations</div>
             <div class="dd-stat-val" id="dd-s-pendingrevisions" style="color:#b45309;">—</div>
           </div>
-          <div class="dd-stat-card">
-            <div class="dd-stat-label">New Item Codes Added</div>
-            <div class="dd-stat-val" id="dd-s-itemcodes">—</div>
-          </div>
-          <div class="dd-stat-card">
-            <div class="dd-stat-label">Drawings Uploaded</div>
-            <div class="dd-stat-val" id="dd-s-drawingsuploaded">—</div>
-          </div>
-        </div>
-
-        <!-- ROW 2: Throughput/Averages -->
-        <div class="dash-stat-row">
-          <div class="dd-stat-card">
-            <div class="dd-stat-label">BOQs Authorized</div>
-            <div class="dd-stat-val" id="dd-s-authorized" style="color:#15803d;">—</div>
-          </div>
-          <div class="dd-stat-card">
-            <div class="dd-stat-label">BOQs Revised</div>
-            <div class="dd-stat-val" id="dd-s-revised">—</div>
-          </div>
-          <div class="dd-stat-card">
-            <div class="dd-stat-label">Average Drawing Turnaround (Sent → Approved)</div>
-            <div class="dd-stat-val" id="dd-s-drawingturnaround">—</div>
-          </div>
-          <div class="dd-stat-card">
+          <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Average BOQs per Active Project</div>
             <div class="dd-stat-val" id="dd-s-avgboqs">—</div>
           </div>
-          <div class="dd-stat-card">
+        </div>
+
+        <!-- ROW 2: Period throughput/averages -->
+        <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(6,1fr); gap:10px; flex:0 0 80px; min-height:0;">
+          <div class="dd-stat-card stat-period">
+            <div class="dd-stat-label">New Item Codes Added</div>
+            <div class="dd-stat-val" id="dd-s-itemcodes">—</div>
+          </div>
+          <div class="dd-stat-card stat-period">
+            <div class="dd-stat-label">Drawings Uploaded</div>
+            <div class="dd-stat-val" id="dd-s-drawingsuploaded">—</div>
+          </div>
+          <div class="dd-stat-card stat-period">
+            <div class="dd-stat-label">BOQs Authorized</div>
+            <div class="dd-stat-val" id="dd-s-authorized" style="color:#15803d;">—</div>
+          </div>
+          <div class="dd-stat-card stat-period">
+            <div class="dd-stat-label">BOQs Revised</div>
+            <div class="dd-stat-val" id="dd-s-revised">—</div>
+          </div>
+          <div class="dd-stat-card stat-period">
+            <div class="dd-stat-label">Average Drawing Sent → Approved Days</div>
+            <div class="dd-stat-val" id="dd-s-drawingturnaround">—</div>
+          </div>
+          <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">BOQ Revision Rate</div>
             <div class="dd-stat-val" id="dd-s-revrate">—</div>
-            <div class="dd-stat-sub">via Revise BOQ, not auto-cascades</div>
+            <div class="dd-stat-sub">by Revise BOQ, not auto-revisions</div>
           </div>
         </div>
 
         <!-- ROW 3: MFC-cleared-awaiting-BOQ table + Charts -->
-        <div class="dash-chart-row-3">
+        <div class="dd-chart-row" style="display:grid; grid-template-columns:1.2fr 1fr 1fr; gap:10px; flex:0 0 230px; min-height:0;">
           <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; min-height:0; height:100%;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px; flex-shrink:0;">
               <div class="dd-card-title" style="margin:0;">Products Cleared at MFC, Still Awaiting a BOQ</div>
@@ -2309,18 +2336,18 @@
               </table>
             </div>
           </div>
-          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; justify-content:center;">
+          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column;">
             <div class="dd-card-title">BOQs by Department</div>
-            <canvas id="dd-chart-dept" style="max-height:130px;"></canvas>
+            <div style="flex:1; min-height:0; position:relative;"><canvas id="dd-chart-dept" style="position:absolute; width:100%; height:100%;"></canvas></div>
           </div>
-          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; justify-content:center;">
-            <div class="dd-card-title">Version Distribution</div>
-            <canvas id="dd-chart-version" style="max-height:90px;"></canvas>
+          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column;">
+            <div class="dd-card-title">BOQ Version Distribution</div>
+            <div style="flex:1; min-height:0; position:relative;"><canvas id="dd-chart-version" style="position:absolute; width:100%; height:100%;"></canvas></div>
           </div>
         </div>
 
         <!-- ROW 4: Design work Due Today / Overdue, from Project Timeline -->
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; flex:1; min-height:0;">
+        <div class="dd-detail-row" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; flex:1; min-height:0;">
           <div class="dd-stat-card" style="display:flex; flex-direction:column; min-height:0;">
             <div class="dd-card-title" style="margin-bottom:8px;">Due Today (Active projects, Project Timeline)</div>
             <div style="flex:1; min-height:0; overflow-y:auto;">
@@ -3397,6 +3424,7 @@
 <script src="shared/pinLogin.js"></script>
 <script src="shared/googleLogin.js"></script>
 <script src="shared/format.js"></script>
+<script src="shared/drafts.js"></script>
 <script src="shared/typeahead.js"></script>
 <script src="shared/ui.js"></script>
 <script src="shared/navigation.js"></script>

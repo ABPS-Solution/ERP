@@ -48,13 +48,32 @@ const ERP_LOCAL_STORAGE_KEYS = [
 // not just ERP's own. Every key ERP writes is now prefixed "erp" and this
 // function only ever removes that specific list — Portal's own keys (and
 // anything else sharing this origin) are never touched.
-function clearAppLocalStorageKeepingDeviceKeys() {
+//
+// options.keepDrafts (15 Sep 2026, Batch 4 / shared/drafts.js) — form
+// autosave drafts (ERP_DRAFT_PREFIX-keyed) survive an INVOLUNTARY session
+// expiry, where you come back as the same person, but are cleared on an
+// explicit logout, since several devices here are shared. Same rule as
+// Portal's own clearAppLocalStorageKeepingDeviceKeys.
+function clearAppLocalStorageKeepingDeviceKeys(options) {
+  const keepDrafts = !!(options && options.keepDrafts);
   const pcDeviceSecret = localStorage.getItem("erpAbpsPcDeviceSecret");
   // erpDeviceToken (1 Sep 2026, Google Sign-In restored as a 3rd login
   // mode) — the location-restricted-login device-trust token, same
   // preserved-across-logout treatment Portal gives its own abpsDeviceToken.
   const googleDeviceToken = localStorage.getItem("erpDeviceToken");
   ERP_LOCAL_STORAGE_KEYS.forEach(k => localStorage.removeItem(k));
+  if (!keepDrafts) {
+    // Draft keys are prefix-generated (one per form), so they can't sit in
+    // the fixed ERP_LOCAL_STORAGE_KEYS list — swept by prefix instead.
+    // Still never a bare .clear(): the prefix is erp-scoped, so Portal's
+    // own abpsDraft: keys on this same origin are untouched.
+    const doomed = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith("erpAbpsDraft:")) doomed.push(k);
+    }
+    doomed.forEach(k => { try { localStorage.removeItem(k); } catch (_) {} });
+  }
   if (pcDeviceSecret) localStorage.setItem("erpAbpsPcDeviceSecret", pcDeviceSecret);
   if (googleDeviceToken) localStorage.setItem("erpDeviceToken", googleDeviceToken);
 }
@@ -74,7 +93,7 @@ async function apFetch(payload) {
   const res  = await fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) });
   const data = await res.json();
   if (!data.success && data.code === "SESSION_EXPIRED") {
-    clearAppLocalStorageKeepingDeviceKeys();
+    clearAppLocalStorageKeepingDeviceKeys({ keepDrafts: true });
     document.getElementById("app-container").style.display   = "none";
     document.getElementById("auth-container").style.display  = "flex";
     const authCard = document.querySelector(".auth-card");
@@ -176,12 +195,12 @@ window.onload = async function() {
       try { userPermissions = JSON.parse(savedPerms); } catch (e) { userPermissions = {}; }
       showAppView();
     } else {
-      clearAppLocalStorageKeepingDeviceKeys();
+      clearAppLocalStorageKeepingDeviceKeys({ keepDrafts: true });
       syncPlatformPersonnelDropdownOptionsList();
       initializeLoginScreen();
     }
   } else {
-    clearAppLocalStorageKeepingDeviceKeys();
+    clearAppLocalStorageKeepingDeviceKeys({ keepDrafts: true });
     syncPlatformPersonnelDropdownOptionsList();
     initializeLoginScreen();
   }

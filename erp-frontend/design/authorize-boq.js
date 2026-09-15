@@ -53,7 +53,7 @@ async function initializeAuthorizeBOQPanel(mode) {
             <div class="meta-row-line-block">
               <span style="background:#edf2f7;">Department:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:400; color:#111827; margin-right:15px;">${draft.department}</span>
               <span style="background:#edf2f7;">MFC Qty:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:400; color:#111827; margin-right:15px;">${formatQtyTrimmed(draft.orderQuantity)}</span>
-              <span style="background:#edf2f7;">Date:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:400; color:#111827;">${formatDateDMY(draft.date)}</span>
+              <span style="background:#edf2f7;">Date:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:400; color:#111827;">${formatOrdinalDate(draft.date)}</span>
             </div>
           </div>
         </div>
@@ -116,7 +116,7 @@ async function initializeAuthorizeBOQRevisionPanel() {
             <div class="meta-row-line-block">
               <span style="background:#edf2f7;">Department:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:400; color:#111827; margin-right:15px;">${reqItem.department || ""}</span>
               <span style="background:#edf2f7;">MFC Qty:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:400; color:#111827; margin-right:15px;">${formatQtyTrimmed(reqItem.newOrderQuantity)}</span>
-              <span style="background:#edf2f7;">Date:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:400; color:#111827;">${formatDateDMY(reqItem.createdAt)}</span>
+              <span style="background:#edf2f7;">Date:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:400; color:#111827;">${formatOrdinalDate(reqItem.createdAt)}</span>
             </div>
           </div>
         </div>
@@ -325,7 +325,7 @@ function renderEBOQForm(containerId) {
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Date</label>
-          <input type="text" value="${formatDateDMY(draft.date)}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
+          <input type="text" value="${formatOrdinalDate(draft.date)}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Department ${eboqMode === "authorize-update" ? "(locked)" : "*"}</label>
@@ -404,7 +404,7 @@ function renderEBOQForm(containerId) {
         allPersonnel.filter(p => p.departmentsList.some(d => d.toLowerCase().includes("design")))
           .forEach(p => { const o = document.createElement("option"); o.value = p.fullName; o.textContent = p.fullName; authByEl.appendChild(o); });
       } else {
-        apFetch({ action: "getStoreOperatorsList" }).then(data => {
+        fetchWithStaleCache({ action: "getStoreOperatorsList" }).then(data => {
           window.cboqAllPersonnel = data.fullPersonnelDataRecordsTree || [];
           authByEl.innerHTML = '<option value="">— Select Authorized By —</option>';
           window.cboqAllPersonnel.filter(p => p.departmentsList.some(d => d.toLowerCase().includes("design")))
@@ -557,7 +557,7 @@ function recomputeEBOQBoqId(productName, rating) {
   const cleanSeg = (s) => (s || '').toString().trim().replace(/\s+/g, ' ');
   const newBoqId = `${prefix}_${cleanSeg(productName)}_${cleanSeg(rating)}${variantSuffix}`;
   boqIdBox.value = newBoqId;
-  boqIdBox.style.height = 'auto'; boqIdBox.style.height = boqIdBox.scrollHeight + 'px';
+  autoGrowTextField(boqIdBox);
 }
 
 function addEBOQMaterialRow() {
@@ -616,7 +616,7 @@ function renderEBOQMaterialRows() {
       </td>
       <td style="padding:4px; text-align:center;">
         ${isRawMaterial ? `
-        <input type="number" class="boq-center-num" value="${row.designRatePerQuantity || ""}" min="0" step="0.01" placeholder="0.00"
+        <input type="number" class="boq-center-num" value="${row.designRatePerQuantity || ""}" min="0" step="1" placeholder="0.00"
           oninput="eboqMaterialRows[${idx}].designRatePerQuantity=parseFloat(this.value)||0; updateEBOQTotals(); const r=document.getElementById('eboq-rate-${idx}'); if(r) { const v=(Number(eboqMaterialRows[${idx}].quantityFor1Set)||0)*(parseFloat(this.value)||0); r.value=v.toLocaleString('en-IN',{maximumFractionDigits:2}); }"
           ${isFgRow ? `title="Provisional — replaced automatically when this Finished Goods material's own BOQ is authorized" style="padding:5px; font-size:0.85rem; width:100%; border:1.5px solid #f59e0b; background:#fffbeb; border-radius:3px;"` : `style="padding:5px; font-size:0.85rem; width:100%; border:1px solid var(--border); border-radius:3px;"`} />
         ` : `<input type="text" class="boq-center-num" value="—" readonly style="padding:5px; font-size:0.85rem; width:100%; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:3px; border:1px solid var(--border);" />`}
@@ -647,12 +647,7 @@ function renderEBOQMaterialRows() {
     }
   });
 
-  requestAnimationFrame(() => {
-    tbody.querySelectorAll("textarea").forEach(ta => {
-      ta.style.height = "auto";
-      ta.style.height = ta.scrollHeight + "px";
-    });
-  });
+  requestAnimationFrame(() => autoGrowAllIn(tbody));
 
   updateEBOQTotals();
 }

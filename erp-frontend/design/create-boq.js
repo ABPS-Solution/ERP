@@ -38,7 +38,7 @@ function handleCBOQImportProductSearch(query) {
 function selectCBOQImportProduct(productName, productRating) {
   const searchEl = document.getElementById("cboq-import-product-search");
   searchEl.value = productRating ? `${productName} - ${productRating}` : productName;
-  searchEl.style.height = "auto"; searchEl.style.height = searchEl.scrollHeight + "px";
+  autoGrowTextField(searchEl);
   document.getElementById("cboq-import-product-dropdown").style.display = "none";
   window.cboqImportSelectedProduct = { productName, productRating };
 
@@ -405,7 +405,7 @@ function selectCBOQProductOption(itemCode, descriptionId) {
   // an already-BOQ'd product kept reappearing as still-pending forever,
   // silently allowing duplicate BOQs for the same product on one project.
   document.getElementById("cboq-source-po-line-id").value = opt.lineId || "";
-  if (ratingEl) { ratingEl.value = opt.productRating || ""; ratingEl.style.height = "auto"; ratingEl.style.height = ratingEl.scrollHeight + "px"; }
+  if (ratingEl) { ratingEl.value = opt.productRating || ""; autoGrowTextField(ratingEl); }
   if (qtyEl) { qtyEl.value = trimNum(opt.lockedQuantity); updateCBOQTotals(); }
 
   // Description of Material / Make — Tier 2 (Finished Goods) options carry
@@ -483,7 +483,7 @@ function renderCBOQMaterialRows() {
       </td>
       <td style="padding:4px; text-align:center;">
         ${isRawMaterial ? `
-        <input type="number" value="${row.designRatePerQuantity || ""}" min="0" step="0.01" placeholder="0.00"
+        <input type="number" value="${row.designRatePerQuantity || ""}" min="0" step="1" placeholder="0.00"
           oninput="cboqMaterialRows[${idx}].designRatePerQuantity=parseFloat(this.value)||0; updateCBOQTotals(); const r=document.getElementById('cboq-rate-${idx}'); if(r) { const v=(Number(cboqMaterialRows[${idx}].quantityFor1Set)||0)*(parseFloat(this.value)||0); r.value=v.toLocaleString('en-IN',{maximumFractionDigits:2}); }"
           ${isFgRow ? `title="Provisional — replaced automatically when this Finished Goods material's own BOQ is authorized" style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1.5px solid #f59e0b; background:#fffbeb; border-radius:3px;"` : `style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;"`} />
         ` : `<input type="text" value="—" readonly style="padding:5px; font-size:0.85rem; text-align:center; width:100%; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:3px; border:1px solid var(--border);" />`}
@@ -515,10 +515,7 @@ function renderCBOQMaterialRows() {
   });
 
   // Auto-size all description textareas to fit existing content on initial render
-  tbody.querySelectorAll("textarea").forEach(ta => {
-    ta.style.height = "auto";
-    ta.style.height = ta.scrollHeight + "px";
-  });
+  autoGrowAllIn(tbody);
 
   updateCBOQTotals();
 }
@@ -626,6 +623,9 @@ document.addEventListener("visibilitychange", function() {
   }
 });
 function resetCreateBOQForm() {
+  // A submitted or explicitly-reset BOQ is finished work — drop its
+  // autosaved draft so it can't be offered back later.
+  if (typeof abpsDraftClear === 'function') abpsDraftClear('createBOQ');
   cboqMaterialRows = [];
   renderCBOQMaterialRows();
   ["cboq-project-id-ta-input","cboq-department"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });

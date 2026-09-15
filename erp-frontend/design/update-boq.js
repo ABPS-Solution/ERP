@@ -92,7 +92,7 @@ async function toggleBOQRevisionExpansion(updateId) {
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Date</label>
-          <input type="text" value="${formatDateDMY(reqItem.createdAt)}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
+          <input type="text" value="${formatOrdinalDate(reqItem.createdAt)}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Department (locked)</label>
@@ -216,7 +216,7 @@ function renderBOQRevisionRows(updateId) {
           style="padding:4px; font-size:0.8rem; width:100%; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed; text-align:center; border-radius:3px; border:1px solid var(--border);" />
       </td>
       <td style="padding:4px;">
-        <input type="number" class="boq-center-num" value="${row.designRatePerQuantity || ""}" min="0" placeholder="0.00"
+        <input type="number" class="boq-center-num" value="${row.designRatePerQuantity || ""}" min="0" step="1" placeholder="0.00"
           oninput="uboqRevRows[${idx}].designRatePerQuantity=parseFloat(this.value)||0; const r=document.getElementById('boqrev-rate-${idx}'); if(r) { const v=(Number(uboqRevRows[${idx}].quantityFor1Set)||0)*(Number(uboqRevRows[${idx}].designRatePerQuantity)||0); r.value=v.toLocaleString('en-IN',{maximumFractionDigits:2}); } updateBOQRevisionTotalsOnly(${updateId}); recomputeBOQRevisionSummary(${updateId});"
           ${isFgRow ? `title="Provisional — replaced automatically when this Finished Goods material's own BOQ is authorized" style="padding:5px; font-size:0.85rem; width:100%; border:1.5px solid #f59e0b; background:#fffbeb; border-radius:3px;"` : `style="padding:5px; font-size:0.85rem; width:100%; border:1px solid var(--border); border-radius:3px;"`} />
       </td>
@@ -275,10 +275,7 @@ function renderBOQRevisionRows(updateId) {
       </div>
     </div>
   `;
-  mount.querySelectorAll("textarea").forEach(ta => {
-    ta.style.height = "auto";
-    ta.style.height = ta.scrollHeight + "px";
-  });
+  autoGrowAllIn(mount);
 }
 
 // Debounced-ish live re-diff as the authorizer edits, so the summary
@@ -325,14 +322,14 @@ async function initializeUpdateBOQPanel() {
   if (selectorZone) { selectorZone.style.display = "grid"; selectorZone.style.gridTemplateColumns = "1fr 2fr"; }
   if (projInput)  { projInput.value = ""; projInput.placeholder = "Type Project ID or Customer Name..."; }
   if (projDropdown) projDropdown.style.display = "none";
-  if (boqDrop)  { boqDrop.innerHTML   = '<option value="">— Select Project First —</option>'; boqDrop.disabled = true; }
+  if (boqDrop)  { genericDropdownReset("update-boq-select", "— Select Project First —"); genericDropdownSetDisabled("update-boq-select", true); }
   if (formEl)     formEl.style.display  = "none";
   if (fbEl)     { fbEl.style.display    = "none"; fbEl.innerHTML = ""; }
 
   await loadItemCodeCatalogIntoCache().catch(() => {});
   await loadMaterialDescriptionsIntoCache().catch(() => {});
   try {
-    const data = await apFetch({ action:"pullLiveActiveProjectCodes", statusFilter: "Active" });
+    const data = await fetchWithStaleCache({ action:"pullLiveActiveProjectCodes", statusFilter: "Active" });
     window.sharedActiveProjectCodes = data.projects || [];
     window.sharedProjectMeta = data.projectMeta || {};
     window.uboqProjectMeta = data.projectMeta || {};
@@ -347,11 +344,11 @@ async function handleUpdateBOQStatusChange(selectedStatus) {
   const formEl   = document.getElementById("update-boq-form");
 
   if (projDrop) projDrop.innerHTML = '<option value="">Loading...</option>';
-  if (boqDrop)  { boqDrop.innerHTML = '<option value="">— Select Project First —</option>'; boqDrop.disabled = true; }
+  if (boqDrop)  { genericDropdownReset("update-boq-select", "— Select Project First —"); genericDropdownSetDisabled("update-boq-select", true); }
   if (formEl)   formEl.style.display = "none";
 
   try {
-    const data = await apFetch({ action:"pullLiveActiveProjectCodes", statusFilter: selectedStatus });
+    const data = await fetchWithStaleCache({ action:"pullLiveActiveProjectCodes", statusFilter: selectedStatus });
     if (projDrop) {
       window.sharedActiveProjectCodes = data.projects || [];
       window.sharedProjectMeta = data.projectMeta || {};
@@ -365,28 +362,24 @@ async function handleUpdateBOQStatusChange(selectedStatus) {
 }
 
 async function loadAuthorizedBOQsForProject(projectId) {
-  const boqDrop = document.getElementById("update-boq-select");
   document.getElementById("update-boq-form").style.display = "none";
-  if (!projectId) { boqDrop.innerHTML = '<option value="">— Select Project First —</option>'; boqDrop.disabled = true; return; }
+  if (!projectId) { genericDropdownReset("update-boq-select", "— Select Project First —"); genericDropdownSetDisabled("update-boq-select", true); return; }
 
-  boqDrop.innerHTML = '<option value="">Loading...</option>';
-  boqDrop.disabled  = true;
+  genericDropdownReset("update-boq-select", "Loading...");
+  genericDropdownSetDisabled("update-boq-select", true);
 
   try {
     const data = await apFetch({ action:"fetchAuthorizedBOQsForUpdate", projectId });
-    boqDrop.innerHTML = '<option value="">— Select BOQ —</option>';
     window.uboqDraftsMeta = {};
-    (data.drafts || []).forEach(draft => {
-      const opt = document.createElement("option");
-      opt.value = draft.boqId;
-      const pendingTag = draft.hasPendingRevision ? " — REVISION PENDING AUTHORIZATION" : "";
-      opt.textContent = `${draft.productName || ""}${draft.productRating ? " " + draft.productRating : ""} | ${draft.department}${pendingTag}`;
-      window.uboqDraftsMeta[draft.boqId] = draft;
-      boqDrop.appendChild(opt);
-    });
-    boqDrop.disabled = false;
+    (data.drafts || []).forEach(draft => { window.uboqDraftsMeta[draft.boqId] = draft; });
+    genericDropdownReset("update-boq-select", "— Select BOQ —");
+    genericDropdownPopulate("update-boq-select", (data.drafts || []).map(draft => ({
+      value: draft.boqId,
+      label: `${draft.productName || ""}${draft.productRating ? " " + draft.productRating : ""} | ${draft.department}${draft.hasPendingRevision ? " — REVISION PENDING AUTHORIZATION" : ""}`
+    })), loadBOQForUpdate);
+    genericDropdownSetDisabled("update-boq-select", false);
   } catch(e) {
-    boqDrop.innerHTML = '<option value="">Error loading BOQs</option>';
+    genericDropdownReset("update-boq-select", "Error loading BOQs");
   }
 }
 
@@ -477,7 +470,7 @@ function renderUBOQForm() {
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Date</label>
-          <input type="text" value="${formatDateDMY(draft.date)}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
+          <input type="text" value="${formatOrdinalDate(draft.date)}" readonly style="padding:8px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius);" />
         </div>
         <div>
           <label class="field-label" style="margin-top:0;">Department (locked)</label>
@@ -588,7 +581,7 @@ function renderUBOQMaterialRows() {
       </td>
       <td style="padding:4px; text-align:center;">
         ${isRawMaterial ? `
-        <input type="number" value="${row.designRatePerQuantity || ""}" min="0" step="0.01" placeholder="0.00"
+        <input type="number" value="${row.designRatePerQuantity || ""}" min="0" step="1" placeholder="0.00"
           oninput="uboqMaterialRows[${idx}].designRatePerQuantity=parseFloat(this.value)||0; updateUBOQTotals(); const r=document.getElementById('uboq-rate-${idx}'); if(r) { const v=(Number(uboqMaterialRows[${idx}].quantityFor1Set)||0)*(parseFloat(this.value)||0); r.value=v.toLocaleString('en-IN',{maximumFractionDigits:2}); }"
           ${isFgRow ? `title="Provisional — replaced automatically when this Finished Goods material's own BOQ is authorized" style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1.5px solid #f59e0b; background:#fffbeb; border-radius:3px;"` : `style="padding:5px; font-size:0.85rem; text-align:center; width:100%; border:1px solid var(--border); border-radius:3px;"`} />
         ` : `<input type="text" value="—" readonly style="padding:5px; font-size:0.85rem; text-align:center; width:100%; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:3px; border:1px solid var(--border);" />`}
@@ -623,10 +616,7 @@ function renderUBOQMaterialRows() {
     }
   });
 
-  tbody.querySelectorAll("textarea").forEach(ta => {
-    ta.style.height = "auto";
-    ta.style.height = ta.scrollHeight + "px";
-  });
+  autoGrowAllIn(tbody);
 
   updateUBOQTotals();
 }
