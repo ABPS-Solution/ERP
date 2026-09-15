@@ -176,3 +176,37 @@ function enhanceAllDateInputsForDMY() {
   });
 }
 setInterval(enhanceAllDateInputsForDMY, 400);
+
+// ── Follow-up timestamp helpers (Batch 6, 16 Sep 2026) ────────────────
+// Ported verbatim from Portal's shared/format.js. Needed by
+// store/qa.js's renderIsolatedFollowUpTimeline — which despite living in
+// a Store-named file is a MARKETING lead-card helper (an artifact of
+// Portal's own 4 Sep 2026 automated file split), called by
+// marketing/companies.js and marketing/leads.js. Batch 5's partial
+// store/qa.js extracted only exitCanvasToCardView, so that renderer was
+// genuinely undefined in ERP and lead View Details' follow-up timeline
+// threw; the full qa.js port in Batch 6 fixes that, and these three
+// helpers are what it needs.
+function formatPlainTimeOfDay(rawStr) {
+  if (!rawStr) return "";
+  const m = rawStr.toString().trim().match(/^(\d{1,2}):(\d{2})/);
+  if (!m) return "";
+  let hours = parseInt(m[1], 10);
+  const minutes = m[2];
+  const ampm = hours >= 12 ? 'pm' : 'am';
+  hours = hours % 12; hours = hours ? hours : 12;
+  return `${hours}:${minutes} ${ampm}`;
+}
+
+function formatCleanDateOnly(rawStr) {
+  return formatDateDMY(rawStr);
+}
+
+// Combines a plain event_date + event_time pair (see formatPlainTimeOfDay)
+// into "h:mm am/pm DD-MM-YYYY" for a created/last-edited timestamp column.
+function formatFollowUpTimestamp(dateVal, timeVal) {
+  const datePart = formatCleanDateOnly(dateVal);
+  const timePart = formatPlainTimeOfDay(timeVal);
+  if (!datePart && !timePart) return "";
+  return `${timePart} ${datePart}`.trim();
+}

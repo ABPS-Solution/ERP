@@ -319,6 +319,46 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-project-invoice")) document.getElementById("mod-project-invoice").style.display = canProjectInvoiceGeneration ? "block" : "none";
   if (document.getElementById("mod-admin-dashboard-wrapper")) document.getElementById("mod-admin-dashboard-wrapper").style.display = canViewAdminDashboard ? "block" : "none";
 
+  // ── Store (Batch 6, 16 Sep 2026) — ported from Portal's
+  // shared/navigation.js, same camelCase permission keys, same card ids.
+  // The four PRN cards and Reserve Store Stock belong to this block in
+  // Portal too (PRN routes live in routes/purchase.js but the permissions
+  // and menu cards are Store's) — they were ported functionally in
+  // Batch 5 but had no card here until now.
+  const canPurchaseRequestNote  = userPermissionsObject.purchaseRequestNote === true;
+  const canAuthorizePRN         = userPermissionsObject.authorizePRN === true;
+  const canRevisePRN            = userPermissionsObject.revisePRN === true;
+  const canAuthorizePRNRevision = userPermissionsObject.authorizePRNRevision === true;
+  const canReserveStoreStock    = userPermissionsObject.reserveStoreStock === true;
+  const canGateEntry            = userPermissionsObject.gateEntry === true;
+  const canStoreEntryAndGrn     = userPermissionsObject.storeEntryAndGrn === true;
+  const canExpectedInbounds     = userPermissionsObject.expectedDeliveries === true;
+  const canApproveBOQIncrease   = userPermissionsObject.approveJCIncrease === true;
+  const canReleaseTicket        = userPermissionsObject.storeApproveTickets === true;
+  const canSearchStoreMat       = userPermissionsObject.storeAdminMatrix === true;
+  const canViewLiveStock        = userPermissionsObject.liveStoreStock === true;
+  const canViewLiveFinishedStock = userPermissionsObject.liveFinishedGoodsStoreStock === true;
+  const canLiveSpareStoreStock  = userPermissionsObject.liveSpareStoreStock === true;
+  const canMaterialOutward      = userPermissionsObject.materialOutward === true;
+  const canViewStoreDashboard   = userPermissionsObject.viewStoreDashboard === true;
+
+  if (document.getElementById("mod-purchase-request-note"))  document.getElementById("mod-purchase-request-note").style.display  = canPurchaseRequestNote ? "block" : "none";
+  if (document.getElementById("mod-purchase-authorize-prn")) document.getElementById("mod-purchase-authorize-prn").style.display = canAuthorizePRN ? "block" : "none";
+  if (document.getElementById("mod-revise-prn"))             document.getElementById("mod-revise-prn").style.display             = canRevisePRN ? "block" : "none";
+  if (document.getElementById("mod-authorize-prn-revision")) document.getElementById("mod-authorize-prn-revision").style.display = canAuthorizePRNRevision ? "block" : "none";
+  if (document.getElementById("mod-assign-current-stock"))   document.getElementById("mod-assign-current-stock").style.display   = canReserveStoreStock ? "block" : "none";
+  if (document.getElementById("mod-store-gate"))             document.getElementById("mod-store-gate").style.display             = canGateEntry ? "block" : "none";
+  if (document.getElementById("mod-store-entry"))            document.getElementById("mod-store-entry").style.display            = canStoreEntryAndGrn ? "block" : "none";
+  if (document.getElementById("mod-expected-inbounds"))      document.getElementById("mod-expected-inbounds").style.display      = canExpectedInbounds ? "block" : "none";
+  if (document.getElementById("mod-stock-sweep"))            document.getElementById("mod-stock-sweep").style.display            = canReserveStoreStock ? "block" : "none";
+  if (document.getElementById("mod-boq-increase-approvals")) document.getElementById("mod-boq-increase-approvals").style.display = canApproveBOQIncrease ? "block" : "none";
+  if (document.getElementById("mod-store-approvals"))        document.getElementById("mod-store-approvals").style.display        = canReleaseTicket ? "block" : "none";
+  if (document.getElementById("mod-store-matrix"))           document.getElementById("mod-store-matrix").style.display           = canSearchStoreMat ? "block" : "none";
+  if (document.getElementById("mod-live-store-stock"))       document.getElementById("mod-live-store-stock").style.display       = canViewLiveStock ? "block" : "none";
+  if (document.getElementById("mod-live-finished-store-stock")) document.getElementById("mod-live-finished-store-stock").style.display = canViewLiveFinishedStock ? "block" : "none";
+  if (document.getElementById("mod-live-spare-store-stock")) document.getElementById("mod-live-spare-store-stock").style.display = canLiveSpareStoreStock ? "block" : "none";
+  if (document.getElementById("mod-material-outward"))       document.getElementById("mod-material-outward").style.display       = canMaterialOutward ? "block" : "none";
+
   if (document.getElementById("mod-tourexpense"))  document.getElementById("mod-tourexpense").style.display  = canTourExpense  ? "block" : "none";
   if (document.getElementById("mod-cashexpenses")) document.getElementById("mod-cashexpenses").style.display = canCashExpenses ? "block" : "none";
   if (document.getElementById("mod-traveltickets")) document.getElementById("mod-traveltickets").style.display = canTravelTickets ? "block" : "none";
@@ -332,6 +372,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
     "mod-design-dashboard-wrapper":   canViewDesignDashboard,
     "mod-purchase-dashboard-wrapper": canViewPurchaseDashboard,
     "mod-marketing-dashboard-wrapper": canViewMarketingDashboard,
+    "mod-store-dashboard-wrapper":     canViewStoreDashboard,
   };
   Object.keys(dashMap).forEach(function(id) {
     const el = document.getElementById(id);
@@ -351,12 +392,14 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (marketingBlock) marketingBlock.style.display = (canEnterCard || canViewEmailLeads || canUploadCommissioning || canUploadPurchaseOrder || canSearchCompany || canSearchTasks || canSearchStatus || canSearchQual || canSearchCityState || canMeetingPreparation) ? "block" : "none";
   const projectBlock = document.getElementById("dashboard-project-department-header-block");
   if (projectBlock) projectBlock.style.display = (canManufacturingClearance || canProjectTimeline || canDailyTimeline || canProjectStatus || canViewAdminDashboard) ? "block" : "none";
-  // Store's own real content isn't built in ERP yet (Batch 1 scaffolding
-  // only) — Project Invoice Generation is the first real Store tile, so
-  // this block's visibility is keyed on it alone for now. Extend the OR
-  // list here, not a second gate, when Store's own screens land.
+  // Batch 6 (16 Sep 2026): Store's own screens landed, so this is no
+  // longer keyed on Project Invoice Generation alone.
   const storeBlock = document.getElementById("dashboard-store-department-header-block");
-  if (storeBlock) storeBlock.style.display = canProjectInvoiceGeneration ? "block" : "none";
+  if (storeBlock) storeBlock.style.display = (canProjectInvoiceGeneration || canPurchaseRequestNote || canAuthorizePRN
+    || canRevisePRN || canAuthorizePRNRevision || canReserveStoreStock || canGateEntry || canStoreEntryAndGrn
+    || canExpectedInbounds || canApproveBOQIncrease || canReleaseTicket || canSearchStoreMat || canViewLiveStock
+    || canViewLiveFinishedStock || canLiveSpareStoreStock || canMaterialOutward || canViewStoreDashboard)
+    ? "block" : "none";
 
   refreshDepartmentTabsBar();
 }
@@ -454,6 +497,65 @@ function switchActiveDashboardModule(targetSectionId) {
 
   document.getElementById("dashboard-view").style.display = "none";
   document.querySelectorAll('[id^="canvas-module-"]').forEach(p => p.style.display = "none");
+  // Batch 6: the enclosure CONTAINERS were never swept here. Before Store
+  // existed nothing nested inside one was reachable through this router,
+  // so it never showed; now Store's 14 canvases live inside
+  // module-store-workspace-enclosure-panel and reaching an unrelated
+  // top-level panel from one of them would leave the enclosure visible
+  // underneath. Same fix, same reasoning, as Portal's own copy.
+  document.querySelectorAll('[id$="-workspace-enclosure-panel"]').forEach(p => p.style.display = "none");
+
+  // ── Store department (Batch 6, 16 Sep 2026) ────────────────────────
+  // These five targets live inside the Store enclosure, so they route
+  // through it rather than through the generic show-one-canvas path
+  // below. Copied from Portal's own switchActiveDashboardModule.
+  if (targetSectionId === "store-history-matrix" || targetSectionId === "store-live-stock") {
+    navigateToStoreWorkspacePanel(targetSectionId);
+    return;
+  }
+  if (targetSectionId === "store-live-finished-goods" || targetSectionId === "live-finished-goods") {
+    document.getElementById("module-store-workspace-enclosure-panel").style.display = "block";
+    document.querySelectorAll("#module-store-workspace-enclosure-panel .workspace-panel").forEach(p => p.style.display = "none");
+    const leftControls = document.getElementById("store-panel-left-controls");
+    const centerTitle  = document.getElementById("store-panel-center-title");
+    const syncBtn      = document.getElementById("live-stock-sync-btn");
+    if (leftControls) leftControls.style.visibility = "visible";
+    if (centerTitle)  { centerTitle.style.visibility = "visible"; centerTitle.textContent = "Live Finished Goods Store Stock"; }
+    if (syncBtn) {
+      syncBtn.removeAttribute("onclick");
+      syncBtn.onclick = function() { triggerLiveFinishedGoodsStoreStockMetricsSync(); };
+    }
+    document.getElementById("canvas-module-store-live-fg").style.display = "block";
+    triggerLiveFinishedGoodsStoreStockMetricsSync();
+    return;
+  }
+  if (targetSectionId === "store-live-spare") {
+    document.getElementById("module-store-workspace-enclosure-panel").style.display = "block";
+    document.querySelectorAll("#module-store-workspace-enclosure-panel .workspace-panel").forEach(p => p.style.display = "none");
+    const leftControls = document.getElementById("store-panel-left-controls");
+    const centerTitle  = document.getElementById("store-panel-center-title");
+    const syncBtn      = document.getElementById("live-stock-sync-btn");
+    if (leftControls) leftControls.style.visibility = "visible";
+    if (centerTitle)  { centerTitle.style.visibility = "visible"; centerTitle.textContent = "Live Spare Store Stock"; }
+    if (syncBtn) {
+      syncBtn.removeAttribute("onclick");
+      syncBtn.onclick = function() { triggerLiveSpareStoreStockMetricsSync(); };
+    }
+    document.getElementById("canvas-module-store-live-spare").style.display = "block";
+    triggerLiveSpareStoreStockMetricsSync();
+    return;
+  }
+  if (targetSectionId === "material-outward") {
+    document.getElementById("module-store-workspace-enclosure-panel").style.display = "block";
+    document.querySelectorAll("#module-store-workspace-enclosure-panel .workspace-panel").forEach(p => p.style.display = "none");
+    const leftControlsMOW = document.getElementById("store-panel-left-controls");
+    const centerTitleMOW  = document.getElementById("store-panel-center-title");
+    if (leftControlsMOW) leftControlsMOW.style.visibility = "hidden";
+    if (centerTitleMOW)  centerTitleMOW.style.visibility  = "hidden";
+    document.getElementById("canvas-module-material-outward").style.display = "block";
+    initializeMaterialOutwardWorkspace();
+    return;
+  }
 
   const target = document.getElementById("canvas-module-" + targetSectionId);
   if (target) target.style.display = "block";
@@ -476,6 +578,99 @@ function switchActiveDashboardModule(targetSectionId) {
   if (targetSectionId === "daily-timeline" && typeof initializeDailyTimelinePanel === "function") initializeDailyTimelinePanel();
   if (targetSectionId === "project-status" && typeof initializeProjectStatusPanel === "function") initializeProjectStatusPanel();
   if (targetSectionId === "project-invoice" && typeof initializePinvWorkspace === "function") initializePinvWorkspace();
+}
+
+// ── navigateToStoreWorkspacePanel (Batch 6, 16 Sep 2026) ──────────────
+// Ported from Portal's own shared/navigation.js. Two deliberate ERP
+// adaptations, both defensive rather than behavioural:
+//  - checkMaterialRequirementDateReminder / checkProductionPlanningReminder
+//    do not exist here yet (Batch 7), so only the PRN reminder is called.
+//  - the Production/QA branches (job-card-sheet, in-process-sheet, the
+//    two MRD panels, production-planning, fg-add, fg-approval) are not
+//    reproduced — none of those canvases exist in ERP yet. Batch 7/8 add
+//    their own branches.
+// store-grn (Raw Materials Q/A Check) and store-material-request (Create
+// Material Issue Ticket) ARE routed here, matching Portal, even though
+// their dashboard cards belong to QA/Production and don't exist yet.
+function navigateToStoreWorkspacePanel(targetPanelModuleId) {
+  window.scrollTo(0, 0);
+  setTimeout(() => window.scrollTo(0, 0), 50);
+  document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
+  // Approve Excess Material Requests and Gate Entry are their own focused
+  // workflows — the "A BOQ has been revised, check Revise PRN" reminder
+  // isn't actionable from either screen, just noise on top of them.
+  if (["boq-increase-approvals", "store-gate-entry"].includes(targetPanelModuleId)) {
+    const banner = document.getElementById("store-prn-revision-reminder-banner");
+    if (banner) banner.style.display = "none";
+  } else {
+    checkStorePRNRevisionReminder();
+  }
+  if (typeof stopLiveStockPolling === "function") stopLiveStockPolling();
+  if (typeof stopPendingTicketsQueuePolling === "function") stopPendingTicketsQueuePolling();
+
+  document.getElementById("dashboard-view").style.display = "none";
+  const mwc0 = document.getElementById("module-workspace-container");
+  if (mwc0) {
+    document.querySelectorAll("#module-workspace-container .workspace-panel").forEach(p => p.style.display = "none");
+    mwc0.style.display = "none";
+  }
+
+  document.getElementById("module-store-workspace-enclosure-panel").style.display = "block";
+
+  const leftControls = document.getElementById("store-panel-left-controls");
+  const centerTitle = document.getElementById("store-panel-center-title");
+  const isLiveStock = targetPanelModuleId === 'store-live-stock';
+  if (leftControls) leftControls.style.visibility = isLiveStock ? "visible" : "hidden";
+  if (centerTitle) {
+    centerTitle.style.visibility = isLiveStock ? "visible" : "hidden";
+    if (isLiveStock) centerTitle.textContent = "Live Raw Materials Store Stock";
+  }
+  const syncBtn = document.getElementById("live-stock-sync-btn");
+  if (syncBtn && isLiveStock) {
+    syncBtn.removeAttribute("onclick");
+    syncBtn.onclick = function() { triggerLiveWarehouseStockMetricsSync(); };
+  }
+
+  const show = id => { const el = document.getElementById(id); if (el) el.style.display = "block"; };
+  if (targetPanelModuleId === 'store-material-request') {
+    show("canvas-module-store-material-request");
+    initializeMaterialRequestWorkspace();
+  } else if (targetPanelModuleId === 'boq-increase-approvals') {
+    show("canvas-module-boq-increase-approvals");
+    initializeBOQIncreaseApprovalsWorkspace();
+  } else if (targetPanelModuleId === 'store-manager-approvals') {
+    show("canvas-module-store-manager-approvals");
+    initializeStoreManagerApprovalsWorkspace();
+  } else if (targetPanelModuleId === 'store-history-matrix') {
+    show("canvas-module-store-history-matrix");
+    initializeStoreHistoryMatrixWorkspace();
+  } else if (targetPanelModuleId === 'store-live-stock') {
+    show("canvas-module-store-live-stock");
+    triggerLiveWarehouseStockMetricsSync();
+  } else if (targetPanelModuleId === 'store-gate-entry') {
+    show("canvas-module-store-gate-entry");
+    resetGateEntryWorkspaceState();
+  } else if (targetPanelModuleId === 'store-entry') {
+    show("canvas-module-store-entry");
+    const seBanner = document.getElementById("store-entry-runtime-feedback-banner");
+    if (seBanner) { seBanner.style.display = "none"; seBanner.innerHTML = ""; }
+    initializeStoreEntryWorkspaceQueue();
+  } else if (targetPanelModuleId === 'store-grn') {
+    show("canvas-module-store-grn");
+    const grnBanner = document.getElementById("store-grn-runtime-feedback-banner");
+    if (grnBanner) { grnBanner.style.display = "none"; grnBanner.innerHTML = ""; }
+    window.activeQAToggle = "pending";
+    initializeStoreGrnWorkspaceQueue('pending');
+  } else if (targetPanelModuleId === 'stock-sweep') {
+    show("canvas-module-stock-sweep");
+    initializeStockSweepPanel();
+  } else if (targetPanelModuleId === 'assign-current-stock') {
+    show("canvas-module-assign-current-stock");
+    initializeAssignCurrentStockPanel();
+  } else if (targetPanelModuleId === 'expected-inbounds') {
+    show("canvas-module-expected-inbounds");
+    initializeExpectedInboundsPanel();
+  }
 }
 
 function returnToDashboard() {

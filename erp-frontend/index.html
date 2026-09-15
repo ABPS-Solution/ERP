@@ -54,6 +54,31 @@
   .card-row { display: flex; gap: 6px; margin-bottom: 4px; }
   .card-box { flex: 1; border: 2px dashed var(--border); padding: 20px 10px; text-align: center; font-size: .85rem; cursor: pointer; border-radius: 4px; min-height: 46px; display: flex; align-items: center; justify-content: center; }
   .card-box.done { border-color: var(--accent); color: var(--accent); font-weight: 700; }
+
+  /* --- GATE ENTRY MOBILE RESPONSIVENESS (scoped to #canvas-module-store-gate-entry only)
+         Batch 6 (Store, 16 Sep 2026) — copied verbatim from Portal's index.html. --- */
+  .gate-upload-row { display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap; }
+  .gate-upload-row .card-box { flex:1 1 200px; }
+  .gate-meta-grid { display:grid; grid-template-columns:20fr 15fr 15fr 40fr 10fr; gap:10px; margin-bottom:15px; }
+  .gate-verification-footer { display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap; }
+
+  @media(max-width:640px) {
+    #canvas-module-store-gate-entry { padding:12px !important; }
+    #canvas-module-store-gate-entry h2 { font-size:1.05rem; }
+    .gate-upload-row { flex-direction:row; gap:8px; }
+    .gate-upload-row .card-box { min-height:44px !important; padding:8px 6px !important; font-size:0.72rem !important; line-height:1.2; }
+    .gate-meta-grid { grid-template-columns:repeat(2,1fr); }
+    .gate-verification-footer { flex-direction:column-reverse; }
+    .gate-verification-footer .nav-btn-styled { width:100%; padding:12px !important; font-size:0.95rem; }
+    #canvas-module-store-gate-entry table.store-basket-data-table th,
+    #canvas-module-store-gate-entry table.store-basket-data-table td { font-size:0.75rem; padding:6px 4px; }
+    #canvas-module-store-gate-entry table.store-basket-data-table th:nth-child(2),
+    #canvas-module-store-gate-entry table.store-basket-data-table td:nth-child(2) { min-width:220px !important; }
+  }
+  @media(max-width:400px) {
+    .gate-meta-grid { grid-template-columns:1fr; }
+  }
+
   .card-details-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   .card-details-grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
 
@@ -725,10 +750,46 @@
       <div class="dept-header">
         <div class="dept-bar" style="background:#0369a1;"></div>
         <span class="dept-name">Store Department</span>
+        <div id="mod-store-dashboard-wrapper" style="display:none;">
+          <button class="dept-dash-pill" id="mod-store-dashboard" onclick="navigateToStoreDashboard()" style="background:#eff8ff; color:#0369a1;">📊 Dashboard</button>
+        </div>
+      </div>
+      <!-- Sections/cards/order copied verbatim from Portal's own Store
+           dept-block (Batch 6, 16 Sep 2026). Rows 1-5 match
+           lib/permissionCatalog.js's rowLabels exactly. The four PRN
+           cards were ported functionally in Batch 5 but never got a menu
+           card, so those screens were unreachable until now. -->
+      <div class="sec-label">Stock PRN and Reservation</div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-purchase-request-note" onclick="navigateToPurchaseWorkspacePanel('purchase-prn')"><span class="mc-label">Create Purchase Request Note (PRN)</span></div>
+        <div class="menu-card" id="mod-purchase-authorize-prn" onclick="openAuthorizePRNPanel('Delta')"><span class="mc-label">Authorize Purchase Request Note (PRN)</span></div>
+        <div class="menu-card" id="mod-revise-prn" onclick="navigateToPurchaseWorkspacePanel('purchase-revise-prn')"><span class="mc-label">Revise Purchase Request Note (PRN)</span></div>
+        <div class="menu-card" id="mod-authorize-prn-revision" onclick="openAuthorizePRNPanel('Revision')"><span class="mc-label">Authorize Purchase Request Note (PRN) Revision</span></div>
+        <div class="menu-card" id="mod-assign-current-stock" onclick="navigateToStoreWorkspacePanel('assign-current-stock')"><span class="mc-label">Reserve Store Stock</span></div>
+      </div>
+      <div class="sec-label">Raw Materials Store Inward</div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-store-gate"        onclick="navigateToStoreWorkspacePanel('store-gate-entry')"><span class="mc-label">Gate Entry</span></div>
+        <div class="menu-card" id="mod-store-entry"       onclick="navigateToStoreWorkspacePanel('store-entry')"><span class="mc-label">Raw Materials Store Entry and GRN</span></div>
+        <div class="menu-card" id="mod-expected-inbounds" onclick="navigateToStoreWorkspacePanel('expected-inbounds')"><span class="mc-label">Expected Deliveries</span></div>
+        <div class="menu-card" id="mod-stock-sweep"       onclick="navigateToStoreWorkspacePanel('stock-sweep')"><span class="mc-label">Stock Sweep (Weekly Return)</span></div>
+      </div>
+      <div class="sec-label">Raw Materials Store Outward</div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-boq-increase-approvals"  onclick="navigateToStoreWorkspacePanel('boq-increase-approvals')"><span class="mc-label">Approve Excess Material Request</span></div>
+        <div class="menu-card" id="mod-store-approvals"         onclick="navigateToStoreWorkspacePanel('store-manager-approvals')"><span class="mc-label">Approve Material Issue Tickets</span></div>
+        <div class="menu-card" id="mod-store-matrix"            onclick="switchActiveDashboardModule('store-history-matrix')"><span class="mc-label">Search Material Issue Tickets</span></div>
+      </div>
+      <div class="sec-label">Store Quantity</div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-live-store-stock"          onclick="switchActiveDashboardModule('store-live-stock')"><span class="mc-label">Live Raw Materials Store Stock</span></div>
+        <div class="menu-card" id="mod-live-finished-store-stock" onclick="switchActiveDashboardModule('store-live-finished-goods')"><span class="mc-label">Live Finished Goods Store Stock</span></div>
+        <div class="menu-card" id="mod-live-spare-store-stock"    onclick="switchActiveDashboardModule('store-live-spare')"><span class="mc-label">Live Spare Store Stock</span></div>
       </div>
       <div class="sec-label">Dispatch</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
-        <div class="menu-card" id="mod-project-invoice" onclick="switchActiveDashboardModule('project-invoice')"><span class="mc-label">Project Invoice Generation</span></div>
+        <div class="menu-card" id="mod-project-invoice"  onclick="switchActiveDashboardModule('project-invoice')"><span class="mc-label">Project Invoice Generation</span></div>
+        <div class="menu-card" id="mod-material-outward" onclick="switchActiveDashboardModule('material-outward')"><span class="mc-label">Material Outward on Delivery Challan</span></div>
       </div>
     </div>
 
@@ -812,6 +873,15 @@
           <button class="dd-period-btn" data-period="thisyear" onclick="pdSetPeriod(this)">This Year</button>
           <button class="dd-period-btn" data-period="custom" onclick="pdSetPeriod(this)">Custom ▾</button>
         </div>
+        <div id="sd-period-btns" style="display:none; gap:4px; flex-wrap:nowrap;">
+          <button class="dd-period-btn active" data-period="today" onclick="sdSetPeriod(this)">Today</button>
+          <button class="dd-period-btn" data-period="yesterday" onclick="sdSetPeriod(this)">Yesterday</button>
+          <button class="dd-period-btn" data-period="thisweek" onclick="sdSetPeriod(this)">This Week</button>
+          <button class="dd-period-btn" data-period="thismonth" onclick="sdSetPeriod(this)">This Month</button>
+          <button class="dd-period-btn" data-period="thisquarter" onclick="sdSetPeriod(this)">This Quarter</button>
+          <button class="dd-period-btn" data-period="thisyear" onclick="sdSetPeriod(this)">This Year</button>
+          <button class="dd-period-btn" data-period="custom" onclick="sdSetPeriod(this)">Custom ▾</button>
+        </div>
       </div>
       <span id="dash-global-title" style="text-align:center; font-size:1.35rem; font-weight:800; color:var(--text); white-space:nowrap;"></span>
       <button class="nav-btn-styled" onclick="dashboardGlobalReturnClick()" style="justify-self:end; font-size:0.75rem;">Return to Main Dashboard</button>
@@ -880,6 +950,19 @@
       <span id="pd-custom-val-quarter" hidden style="flex:none; white-space:nowrap;"><select id="pd-custom-val-quarter-year" class="dash-fy-year-select" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:80px;"></select><select id="pd-custom-val-quarter-q" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:110px; margin-left:4px;"><option value="1">Q1 (Apr-Jun)</option><option value="2">Q2 (Jul-Sep)</option><option value="3">Q3 (Oct-Dec)</option><option value="4">Q4 (Jan-Mar)</option></select></span>
       <select id="pd-custom-val-year" class="dash-fy-year-select" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:90px;" hidden></select>
       <button onclick="pdLoadCustom()" style="font-size:0.72rem; background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; cursor:pointer; font-weight:700; flex:none; white-space:nowrap;">Go</button>
+    </div>
+    <div id="sd-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc; flex-wrap:nowrap; overflow-x:auto;">
+      <span style="font-size:0.72rem; font-weight:700; color:var(--muted); flex:none; white-space:nowrap;">Select:</span>
+      <select id="sd-custom-type" onchange="sdCustomTypeChange()" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:120px;">
+        <option value="customday">Day</option><option value="customrange">Date Range</option><option value="custommonth">Month</option>
+        <option value="customquarter">Quarter</option><option value="customyear">Year</option>
+      </select>
+      <span id="sd-custom-val-day" style="flex:none; white-space:nowrap;"><span style="display:inline-block; flex:none; width:130px;"><input id="sd-custom-val-day-input" type="date" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:100%;" /></span></span>
+      <span id="sd-custom-val-range" hidden style="flex:none; white-space:nowrap;"><span style="display:inline-block; flex:none; width:130px;"><input id="sd-custom-val-range-start" type="date" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:100%;" /></span><span style="font-size:0.72rem; color:var(--muted); margin:0 4px; flex:none;">to</span><span style="display:inline-block; flex:none; width:130px;"><input id="sd-custom-val-range-end" type="date" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:100%;" /></span></span>
+      <span id="sd-custom-val-month" hidden style="flex:none; white-space:nowrap;"><select id="sd-custom-val-month-year" class="dash-cal-year-select" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:80px;"></select><select id="sd-custom-val-month-month" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:70px; margin-left:4px;"><option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option><option value="4">Apr</option><option value="5">May</option><option value="6">Jun</option><option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option><option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option></select></span>
+      <span id="sd-custom-val-quarter" hidden style="flex:none; white-space:nowrap;"><select id="sd-custom-val-quarter-year" class="dash-fy-year-select" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:80px;"></select><select id="sd-custom-val-quarter-q" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:110px; margin-left:4px;"><option value="1">Q1 (Apr-Jun)</option><option value="2">Q2 (Jul-Sep)</option><option value="3">Q3 (Oct-Dec)</option><option value="4">Q4 (Jan-Mar)</option></select></span>
+      <select id="sd-custom-val-year" class="dash-fy-year-select" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:90px;" hidden></select>
+      <button onclick="sdLoadCustom()" style="font-size:0.72rem; background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; cursor:pointer; font-weight:700; flex:none; white-space:nowrap;">Go</button>
     </div>
   </div>
 
@@ -2776,6 +2859,868 @@
     </div>
   </div>
 
+  <!-- ═══════════════════════════════════════════════════════════════════
+       STORE DEPARTMENT (Batch 6, 16 Sep 2026) — ported from Portal.
+       Portal keeps Production/QA/Project-Invoice canvases inside this
+       same enclosure (an artifact of its own history); only STORE's own
+       14 canvases are carried across here. Job Card Sheet, In Process
+       Sheet, Material Requirement Dates, Production Planning, Add to FG
+       Store and FG Approval stay with Batches 7/8; Project Invoice
+       Generation already lives as its own top-level panel (Batch 3).
+       canvas-module-store-grn (Raw Materials Q/A Check) and
+       canvas-module-store-material-request (Create Material Issue
+       Ticket) ARE included — their routes and screen JS live in Store's
+       own files — but their dashboard menu cards belong to QA (Batch 8)
+       and Production (Batch 7), so neither is reachable from the
+       dashboard yet.
+       ═══════════════════════════════════════════════════════════════ -->
+  <div id="module-store-workspace-enclosure-panel" class="workspace-panel" style="display: none; padding: 12px 10px;">
+    
+    <div class="navigation-action-header-row" style="margin-bottom: 15px; position: relative; display: flex; align-items: center; justify-content: space-between;">
+      <div id="store-panel-left-controls" style="visibility: hidden;">
+        <button class="nav-btn-styled" id="live-stock-sync-btn" style="background: var(--brand); padding: 6px 18px; display: inline-flex; align-items: center; gap: 6px;" onclick="triggerLiveWarehouseStockMetricsSync()">🔄 Refresh</button>
+      </div>
+      
+      <!-- FIXED: Added id="store-panel-center-title" to allow dynamic title swapping -->
+      <span id="store-panel-center-title" style="position: absolute; left: 50%; transform: translateX(-50%); font-size: 1.1rem; font-weight: 700; color: var(--text); letter-spacing: 0.2px; visibility: hidden; white-space: nowrap;">Live Raw Materials Store Stock</span>
+      
+      <button class="nav-btn-styled" onclick="exitStoreWorkspacePanelBackToMenu()">Return to Main Dashboard</button>
+    </div>
+
+    <div id="store-prn-revision-reminder-banner" class="store-prn-revision-reminder-banner-el" style="display:none; margin-bottom:14px; padding:10px 14px; background:#fef3c7; border-left:4px solid #f59e0b; color:#78350f; border-radius:var(--radius); font-size:0.85rem; font-weight:700;">⚠️ A BOQ has been revised — check the <strong>Revise PRN</strong> section to see if a PRN needs revising.</div>
+
+    <div id="canvas-module-store-gate-entry" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
+      <h2 class="panel-title">Store Gate Entry</h2>
+      <div id="store-gate-runtime-feedback-banner" style="display:none; padding:12px; font-size:0.88rem; font-weight:700; border-radius:var(--radius); margin-bottom:12px; border-left:4px solid;"></div>
+      
+      <div class="section" style="padding: 16px;">
+        <div id="gate-upload-fields-wrapper-group" style="display: block;">
+          <div class="card-row gate-upload-row">
+            <div class="card-box" id="gate-invoice-box" onclick="document.getElementById('gate-invoice-file').click()" style="padding: 24px; font-size: 0.95rem; min-height: 80px; display: flex; align-items: center; justify-content: center;">📷 Select Invoice Image</div>
+            <div class="card-box" id="gate-challan-box" onclick="document.getElementById('gate-challan-file').click()" style="padding: 24px; font-size: 0.95rem; min-height: 80px; display: flex; align-items: center; justify-content: center;">📷 Select Challan Image</div>
+          </div>
+          <input type="file" id="gate-invoice-file" accept="image/*,application/pdf" hidden onchange="handleGateFileSelectionChange(this, 'gate-invoice-box', 'Invoice Attached ✅')" />
+          <input type="file" id="gate-challan-file" accept="image/*,application/pdf" hidden onchange="handleGateFileSelectionChange(this, 'gate-challan-box', 'Challan Attached ✅')" />
+          <button class="btn btn-ai" id="gate-parse-ai-btn" onclick="parseGateDocumentsWithAI()" style="width:100%;">Process Documents with AI</button>
+        </div>
+
+        <div id="gate-ai-verification-workspace" style="display: none; margin-top: 15px; border-top: 1px dashed var(--border); padding-top: 15px;">
+          <div class="gate-meta-grid">
+            <div><label class="field-label">PO Number</label><input type="text" id="gate-meta-po" placeholder="e.g. PO_26-27_00002" readonly style="background:#f1f5f9; cursor:not-allowed;" /><div id="gate-po-check-msg" style="font-size:0.68rem; font-weight:700; margin-top:3px;"></div></div>
+            <div><label class="field-label">Invoice Number <span id="gate-invoice-required-mark" style="display:none;">*</span></label><input type="text" id="gate-meta-invoice" style="background:#fff;" /></div>
+            <div><label class="field-label">Challan Number <span id="gate-challan-required-mark" style="display:none;">*</span></label><input type="text" id="gate-meta-challan" style="background:#fff;" /></div>
+            <div><label class="field-label">Vendor Name</label><input type="text" id="gate-meta-vendor" readonly style="background:#f1f5f9; cursor:not-allowed;" /></div>
+            <div><label class="field-label">Date</label><input type="text" id="gate-meta-date" readonly style="background:#f1f5f9; cursor:not-allowed;" /></div>
+            <input type="hidden" id="gate-meta-time" value="" />
+          </div>
+          <div id="gate-vendor-rejection-banner" style="display:none; margin-bottom:16px;"></div>
+          <div style="margin-bottom: 16px; overflow-x: auto; -webkit-overflow-scrolling: touch;">
+            <table class="store-basket-data-table" style="width:100%; table-layout:fixed; word-wrap:break-word; min-width:560px;">
+              <thead>
+                <tr>
+                  <th style="width:160px;">Item Code</th>
+                  <th style="min-width:280px;">Material Name</th>
+                  <th style="width:90px; text-align:center; color:#64748b; font-size:0.75rem; font-weight:700; text-transform:uppercase;">Invoice Unit</th>
+                  <th style="width:140px; text-align:center; color:#64748b; font-size:0.75rem; font-weight:700; text-transform:uppercase;">Invoice Quantity</th>
+                </tr>
+              </thead>
+              <tbody id="gate-verification-table-body"></tbody>
+            </table>
+          </div>
+          <div class="gate-verification-footer">
+            <button class="nav-btn-styled" onclick="resetGateEntryWorkspaceState()" style="background: #718096;">Cancel</button>
+            <button class="nav-btn-styled" id="gate-submit-btn" onclick="commitGateEntryRecordsToBackend()" style="background: var(--brand); padding: 8px 25px; font-weight: 700;">Generate Gate Entry</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="canvas-module-store-entry" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
+      <h2 class="panel-title">Raw Materials Store Entry and GRN</h2>
+      <p style="font-size:0.82rem; color:var(--muted); margin:-6px 0 14px;">Stock is recorded in <strong>Item Code Unit</strong> — convert the quantity from Invoice Unit if they differ.</p>
+      <div id="store-entry-runtime-feedback-banner" style="display:none; padding:12px; font-size:0.88rem; font-weight:700; border-radius:var(--radius); margin-bottom:12px; border-left:4px solid;"></div>
+      <div id="store-entry-queue-cards-feed" style="display: flex; flex-direction: column; gap: 14px;"></div>
+    </div>
+
+    <div id="canvas-module-store-grn" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
+      <h2 class="panel-title">Raw Materials Q/A Check</h2>
+      <div id="store-grn-runtime-feedback-banner" style="display:none; padding:12px; font-size:0.88rem; font-weight:700; border-radius:var(--radius); margin-bottom:12px; border-left:4px solid;"></div>
+      <div id="store-grn-queue-cards-feed" style="display: flex; flex-direction: column; gap: 14px;"></div>
+    </div>  
+
+    <div id="canvas-module-store-material-request" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:2px solid var(--bg); padding-bottom:10px;">
+        <h2 class="panel-title" style="margin:0;">Create Material Issue Ticket</h2>
+        <span id="cmit-locked-department-badge" style="display:none; font-weight:700; font-size:0.85rem; padding:6px 14px; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); color:var(--brand);"></span>
+      </div>
+      <div id="mrd-reminder-banner-cmit" class="material-requirement-date-revision-banner-el" style="display:none; margin-bottom:14px; padding:10px 14px; background:#fef3c7; border-left:4px solid #f59e0b; color:#78350f; border-radius:var(--radius); font-size:0.85rem; font-weight:700;">⚠️ Purchase Quantities have changed on one or more PRNs — their <strong>Production Requirement Dates</strong> need revising.</div>
+      <div id="cmit-blocked-banner" style="display:none; margin-bottom:14px; padding:14px; background:#fee2e2; border-left:4px solid #b91c1c; color:#991b1b; border-radius:var(--radius); font-size:0.88rem; font-weight:700;">You don't have a Production sub-department (Reactor/Capacitor/Panel) assigned to your account, so a Material Issue Ticket can't be attributed correctly. Contact an admin to have your sub-department set.</div>
+      <div id="store-ticket-runtime-inline-feedback-banner" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid;"></div>
+
+      <div class="section" id="cmit-main-section" style="background: var(--card); border: 1px solid var(--border); padding: 16px; border-radius: var(--radius);">
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+          <div id="wrapper-ticket-department-outgoing-field">
+            <label class="field-label" id="lbl-dept-outgoing-title" style="margin-top:0; font-weight: 700;">Production Department / Outgoing Use *</label>
+            <select id="ticket-department-outgoing-dropdown" onchange="handleCreateTicketDepartmentChange(this.value)" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius); font-weight: 600;">
+              <option value="">— Select Outgoing Use —</option>
+              <option value="Reactor">Reactor</option>
+              <option value="Capacitor">Capacitor</option>
+              <option value="Panel">Panel</option>
+              <option value="Service">Service</option>
+            </select>
+          </div>
+          <div id="wrapper-ticket-legacy-toggle" style="display:none;">
+            <label class="field-label" style="margin-top:0;">&nbsp;</label>
+            <label style="display:flex; align-items:center; gap:8px; padding:8px 0; font-size:0.85rem; font-weight:600; cursor:pointer;">
+              <input type="checkbox" id="ticket-legacy-project-toggle" onchange="handleTicketLegacyToggleChange(this.checked)" style="width:16px; height:16px;" />
+              This is a legacy/pre-system project (not in the system)
+            </label>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+          <div id="wrapper-ticket-project-id">
+            <label class="field-label" style="margin-top:0;">Project ID or Customer Name *</label>
+            <div style="position:relative;">
+              <input type="text" id="ticket-project-id-dropdown-ta-input" placeholder="Type Project ID or Customer Name..." autocomplete="off" disabled
+                oninput="handleSharedProjectTypeaheadInput(this.value, 'ticket-project-id-dropdown-ta-input', 'ticket-project-id-dropdown-ta-dropdown')"
+                onchange="handleCreateTicketProjectChange(this.value)"
+                style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius); font-weight: 600; opacity:0.5; cursor:not-allowed; background:#f1f5f9;" />
+              <div id="ticket-project-id-dropdown-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+            </div>
+            <input type="text" id="ticket-legacy-company-name" placeholder="Type Company Name..." autocomplete="off" style="display:none; width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius); font-weight: 600; margin-top:6px;"
+              oninput="handleTicketLegacyCompanyNameInput(this.value)" />
+          </div>
+          <div>
+            <label class="field-label" style="margin-top:0;">Customer Name</label>
+            <textarea id="ticket-customer-name" readonly rows="1" style="padding:9px; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed; border-radius:var(--radius); width:100%; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; box-sizing:border-box; border:1.5px solid var(--border); font-size:1rem;" placeholder="Auto-filled from Project ID"></textarea>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;" id="wrapper-ticket-boq-jobcard-row">
+          <div style="position:relative;" id="wrapper-ticket-boq">
+            <label class="field-label" id="lbl-ticket-boq-title" style="font-weight: 700; color: var(--muted);">Select BOQ ID *</label>
+            <div id="ticket-boq-display" data-disabled="1" onclick="toggleTicketBOQDropdown()" style="display:flex; justify-content:space-between; align-items:flex-start; gap:6px; min-height:56px; padding:8px 10px; border:1px solid var(--border); border-radius:var(--radius); background:#f1f5f9; color:var(--muted); cursor:not-allowed; opacity:0.5; font-weight:600; line-height:1.35;">
+              <span id="ticket-boq-display-text" style="white-space:normal; word-break:break-word;">— Choose Outgoing Use First —</span>
+              <span style="flex-shrink:0; margin-top:2px;">▾</span>
+            </div>
+            <div id="ticket-boq-dropdown-list" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:260px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+            <input type="hidden" id="ticket-boq-dropdown" value="" />
+          </div>
+          <div style="position:relative;" id="wrapper-ticket-job-card">
+            <label class="field-label" id="lbl-job-card-title" style="font-weight: 700; color: var(--muted);">Select Job Card Number *</label>
+            <div id="ticket-job-card-display" data-disabled="1" onclick="toggleTicketJobCardDropdown()" style="display:flex; justify-content:space-between; align-items:flex-start; gap:6px; min-height:56px; padding:8px 10px; border:1px solid var(--border); border-radius:var(--radius); background:#f1f5f9; color:var(--muted); cursor:not-allowed; opacity:0.5; font-weight:600; line-height:1.35;">
+              <span id="ticket-job-card-display-text" style="white-space:normal; word-break:break-word;">— Choose BOQ First —</span>
+              <span style="flex-shrink:0; margin-top:2px;">▾</span>
+            </div>
+            <div id="ticket-job-card-dropdown-list" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:260px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+            <input type="hidden" id="ticket-job-card-dropdown" value="" />
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 16px;">
+          <div>
+            <label class="field-label" id="lbl-store-scope-title" style="font-weight: 700; color: var(--muted);">Choose Store *</label>
+            <select id="ticket-selected-store-scope-toggle" onchange="handleTicketStoreScopeSelectionChange(this.value)" disabled style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius); font-weight: 600; opacity: 0.5; cursor: not-allowed;">
+              <option value="">— Choose Outgoing Use First —</option>
+              <option value="Raw Materials Store">Raw Materials Store</option>
+              <option value="Finished Goods Store">Finished Goods Store</option>
+              <option value="Spare Store">Spare Store</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="background: #f8fafc; border: 1px solid var(--border); padding: 10px; border-radius: var(--radius); margin-bottom: 14px; opacity: 0.5;" id="wrapper-ticket-add-item-zone">
+          <span style="display: block; font-size: 0.72rem; font-weight: 800; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">Add Item</span>
+          <div style="display: flex; gap: 10px; align-items: flex-end;">
+            <div style="flex-grow: 1;">
+              <label class="field-label" style="font-size: 0.75rem;">Material Description</label>
+              <select id="ticket-item-selection-dropdown" onchange="refreshLiveStockForSelectedMaterial(); startLiveStockPolling(); checkSpareStoreSuggestion();" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius);" disabled></select>
+            </div>
+            <div style="width: 100px;">
+              <label class="field-label" style="font-size: 0.75rem;">Quantity</label>
+              <input type="number" id="ticket-item-quantity-input" min="1" placeholder="Qty" oninput="checkSpareStoreSuggestion()" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius);" disabled>
+            </div>
+            <button class="nav-btn-styled" id="ticket-add-item-action-btn" onclick="addItemToShoppingBasketRow()" style="width: 15%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius); transition: all 0.15s ease;" disabled>+ Add</button>
+          </div>
+          <div id="ticket-live-counter-pill-zone" style="margin-top: 8px; font-size: 0.8rem; min-height: 20px;"></div>
+          <div id="spare-store-suggestion-banner" style="display:none; margin-top:8px; padding:8px 12px; background:#fffbeb; border:1.5px solid #f59e0b; border-radius:4px; font-size:0.8rem; color:#92400e; font-weight:600;"></div>
+        </div>
+
+        <div style="margin-bottom: 20px; overflow-x: auto;">
+          <span style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--brand); text-transform: uppercase; margin-bottom: 6px;">Material Basket</span>
+          <table class="store-basket-data-table" id="shopping-basket-preview-table">
+            <thead>
+              <tr><th>Material Name</th><th>Unit</th><th style="text-align:center;">Quantity</th><th style="width: 60px; text-align: center;">Action</th></tr>
+            </thead>
+            <tbody id="shopping-basket-table-body">
+              <tr><td colspan="4" style="text-align: center; color: var(--muted); padding: 20px;">Your request ticket basket is currently empty.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border); padding-top: 14px;">
+          <button class="nav-btn-styled" onclick="clearFullBasketDraftState()" style="background: #718096;">Clear Basket</button>
+          <button class="nav-btn-styled" id="submit-ticket-final-btn" onclick="submitMaterialRequestTicketToBackend()" style="background: var(--accent); padding: 8px 20px; font-weight: 700;">Generate Material Ticket</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="canvas-module-boq-increase-approvals" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
+      <h2 class="panel-title">Approve Excess Material Requests</h2>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Review tickets where engineers requested materials exceeding the Job Card allotted quantity. You can accept, partially accept, or reject each exceeded item.</p>
+      <div id="boq-increase-approvals-feedback" style="display:none; padding:12px; font-size:0.88rem; font-weight:700; border-radius:var(--radius); margin-bottom:12px; border-left:4px solid;"></div>
+      <div id="boq-increase-approvals-queue-feed" style="display: flex; flex-direction: column; gap: 14px;"></div>
+    </div>
+
+    <div id="canvas-module-store-manager-approvals" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
+      <h2 class="panel-title">Approve Material Issue Tickets</h2>
+      <p style="margin:0 0 16px; font-size:0.82rem; color:var(--muted);">Actual Quantity can only be reduced below Requested Quantity, never increased.</p>
+      <div id="store-approvals-runtime-inline-feedback-banner" style="display:none; padding:12px; font-size:0.88rem; font-weight:700; border-radius:var(--radius); margin-bottom:12px; border-left:4px solid;"></div>
+      <div id="store-manager-approvals-queue-cards-feed" style="display: flex; flex-direction: column; gap: 14px;"></div>
+    </div>
+
+    <div id="canvas-module-store-live-stock" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
+      <div style="display:flex; gap:10px; margin-bottom:16px;">
+        <button class="nav-btn-styled" id="rm-toggle-live" onclick="switchRMStockView('live')" style="flex:1; padding:9px; background:var(--accent);">Live Store Stock</button>
+        <button class="nav-btn-styled" id="rm-toggle-ledger" onclick="switchRMStockView('ledger')" style="flex:1; padding:9px; background:#718096;">Store Ledger</button>
+        <button class="nav-btn-styled" id="rm-toggle-variance" onclick="switchRMStockView('variance')" style="flex:1; padding:9px; background:#718096;">Consumption Variance</button>
+      </div>
+      <div id="rm-live-view">
+        <div style="margin-bottom:14px;">
+          <input type="text" id="raw-stock-search-input" placeholder="🔎 Search Material..." autocomplete="off"
+            oninput="handleRawStockSearchInput(this.value)"
+            style="width:100%; max-width:420px; padding:9px 12px; font-size:0.85rem; border:1.5px solid var(--border); border-radius:var(--radius); box-sizing:border-box;" />
+        </div>
+        <div class="dashboard-grid" id="dashboard-live-inventory-metrics-mount-zone" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important; gap:10px; padding:0;"></div>
+      </div>
+      <div id="rm-ledger-view" style="display:none;">
+        <div style="display:grid; grid-template-columns:1fr 1fr auto auto; gap:14px; align-items:end; margin-bottom:14px;">
+          <div><label class="field-label" style="margin-top:0;">Start Date</label><input type="date" id="rm-ledger-start" style="width:100%; padding:8px; box-sizing:border-box;" /></div>
+          <div><label class="field-label" style="margin-top:0;">End Date</label><input type="date" id="rm-ledger-end" style="width:100%; padding:8px; box-sizing:border-box;" /></div>
+          <label style="display:inline-flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:700; padding:9px 16px; border:1.5px solid var(--border); border-radius:var(--radius); cursor:pointer; background:#fff; white-space:nowrap; user-select:none;">
+            <input type="checkbox" id="rm-ledger-all-materials" checked onchange="toggleStoreLedgerAllMaterials('rm')" style="width:17px; height:17px; cursor:pointer; accent-color:var(--brand);" /> All Materials
+          </label>
+          <button class="nav-btn-styled" onclick="generateStoreLedgerReport('rm', 'Raw Materials')" style="background:var(--accent); padding:9px 20px; font-weight:700; white-space:nowrap;">Generate Report</button>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <div id="rm-ledger-material-picker" style="display:none;">
+            <div style="position:relative; max-width:420px;">
+              <input type="text" id="rm-ledger-material-search" placeholder="🔎 Search and add material..." autocomplete="off"
+                oninput="handleStoreLedgerMaterialSearch('rm', this.value)"
+                style="width:100%; padding:8px 10px; border:1.5px solid var(--border); border-radius:var(--radius); box-sizing:border-box;" />
+              <div id="rm-ledger-material-dropdown" style="display:none; position:fixed; z-index:9999; background:#fff; border:1.5px solid var(--brand); border-radius:6px; box-shadow:0 8px 24px rgba(0,0,0,0.18); overflow-y:auto; min-width:280px;"></div>
+            </div>
+            <div id="rm-ledger-selected-materials" style="display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;"></div>
+          </div>
+        </div>
+
+        <div id="rm-ledger-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+        <div id="rm-ledger-results" style="display:none;">
+          <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+            <button class="nav-btn-styled" onclick="downloadStoreLedgerReportFile('rm', 'Raw Materials')" style="background:var(--brand); padding:8px 18px; font-weight:700;">⬇ Download Excel</button>
+          </div>
+          <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
+            <table style="width:100%; border-collapse:collapse; min-width:800px;">
+              <thead>
+                <tr style="background:#f8fafc;">
+                  <th style="padding:8px; font-size:0.92rem; text-align:left;">Material Name</th>
+                  <th style="padding:8px; font-size:0.92rem; text-align:center;">Unit</th>
+                  <th style="padding:8px; font-size:0.92rem; text-align:left;">Type of Material</th>
+                  <th style="padding:8px; font-size:0.92rem; text-align:center;">Starting Stock</th>
+                  <th style="padding:8px; font-size:0.92rem; text-align:center;">Inward Stock</th>
+                  <th style="padding:8px; font-size:0.92rem; text-align:center;">Ticket Issued</th>
+                  <th style="padding:8px; font-size:0.92rem; text-align:center;">Ending Stock</th>
+                </tr>
+              </thead>
+              <tbody id="rm-ledger-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="rm-variance-view" style="display:none;">
+        <p style="margin:0 0 14px; font-size:0.82rem; color:var(--muted);">
+          Compares each project's BOQ estimate against what was actually issued out of Store.
+          A row with no estimate (Service issues, Spare draws, borrowed stock) is flagged — that's usually where the real leakage is.
+        </p>
+        <div style="display:grid; grid-template-columns:2fr 1fr 1fr auto; gap:14px; align-items:end; margin-bottom:14px;">
+          <div style="position:relative;">
+            <label class="field-label" style="margin-top:0;">Project ID or Customer Name (up to 20)</label>
+            <input type="text" id="cvar-project-ta-input" placeholder="Type to search and add a project..." autocomplete="off"
+              oninput="cvarHandleProjectInput(this.value)"
+              style="width:100%; padding:8px; box-sizing:border-box;" />
+            <div id="cvar-project-ta-dropdown" style="display:none; position:fixed; z-index:9999; background:#fff; border:1.5px solid var(--brand); border-radius:6px; box-shadow:0 8px 24px rgba(0,0,0,0.18); overflow-y:auto; min-width:280px;"></div>
+            <div id="cvar-selected-projects" style="display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;"></div>
+          </div>
+          <div><label class="field-label" style="margin-top:0;">Start Date</label><input type="date" id="cvar-start-date" style="width:100%; padding:8px; box-sizing:border-box;" /></div>
+          <div><label class="field-label" style="margin-top:0;">End Date</label><input type="date" id="cvar-end-date" style="width:100%; padding:8px; box-sizing:border-box;" /></div>
+          <button class="nav-btn-styled" onclick="runConsumptionVarianceReport()" style="background:var(--accent); padding:9px 20px; font-weight:700; white-space:nowrap;">Generate Report</button>
+        </div>
+
+        <div id="cvar-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+        <div id="cvar-results" style="display:none;">
+          <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+            <button class="nav-btn-styled" onclick="downloadConsumptionVarianceReportFile()" style="background:var(--brand); padding:8px 18px; font-weight:700;">⬇ Download Excel</button>
+          </div>
+          <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
+            <table style="width:100%; border-collapse:collapse; min-width:1100px;">
+              <thead>
+                <tr style="background:#f8fafc;">
+                  <th style="padding:8px; font-size:0.72rem; text-align:left;">Project ID</th>
+                  <th style="padding:8px; font-size:0.72rem; text-align:left;">Material</th>
+                  <th style="padding:8px; font-size:0.92rem; text-align:center;">Estimate Qty (BOQ)</th>
+                  <th style="padding:8px; font-size:0.92rem; text-align:center;">Approved Increase</th>
+                  <th style="padding:8px; font-size:0.92rem; text-align:center;">Actual Qty (Issued)</th>
+                  <th style="padding:8px; font-size:0.92rem; text-align:center;">Variance</th>
+                  <th style="padding:8px; font-size:0.92rem; text-align:left;">Flags</th>
+                </tr>
+              </thead>
+              <tbody id="cvar-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="canvas-module-store-live-fg" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
+      <div style="display:flex; gap:10px; margin-bottom:16px;">
+        <button class="nav-btn-styled" id="fgstock-toggle-live" onclick="switchStoreLedgerView('fgstock', 'live')" style="flex:1; padding:9px; background:var(--accent);">Live Store Stock</button>
+        <button class="nav-btn-styled" id="fgstock-toggle-ledger" onclick="switchStoreLedgerView('fgstock', 'ledger')" style="flex:1; padding:9px; background:#718096;">Store Ledger</button>
+      </div>
+      <div id="fgstock-live-view">
+      <div style="margin-bottom:14px;">
+        <input type="text" id="fg-stock-search-input" placeholder="🔎 Search Material..." autocomplete="off"
+          oninput="handleFgStockSearchInput(this.value)"
+          style="width:100%; max-width:420px; padding:9px 12px; font-size:0.85rem; border:1.5px solid var(--border); border-radius:var(--radius); box-sizing:border-box;" />
+      </div>
+      <!-- Reactor -->
+      <div style="margin-bottom:20px;">
+        <div onclick="toggleFgStockGroup('reactor')" style="cursor:pointer; user-select:none; display:flex; align-items:center; gap:6px; font-size:0.8rem; font-weight:700; color:#1a2332; margin-bottom:8px; padding:6px 10px; background:#f8fafc; border-radius:var(--radius); border-left:3px solid var(--brand);">
+          <span id="fg-stock-reactor-chevron" style="display:inline-block; transition:transform 0.15s;">▾</span> Reactor
+        </div>
+        <div id="fg-stock-reactor-wrap" style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
+          <table style="width:100%; border-collapse:collapse; min-width:700px;">
+            <thead>
+              <tr style="background:#f8fafc;">
+                <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Project ID</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Product Name</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Product Rating</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Description of Material</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Make</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Unit</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:center; font-weight:700; text-transform:uppercase; color:var(--muted);">Qty (In Stock)</th>
+              </tr>
+            </thead>
+            <tbody id="fg-stock-reactor-rows">
+              <tr><td colspan="7" style="text-align:center; padding:20px; color:var(--muted); font-size:0.82rem;">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Capacitor -->
+      <div style="margin-bottom:20px;">
+        <div onclick="toggleFgStockGroup('capacitor')" style="cursor:pointer; user-select:none; display:flex; align-items:center; gap:6px; font-size:0.8rem; font-weight:700; color:#1a2332; margin-bottom:8px; padding:6px 10px; background:#f8fafc; border-radius:var(--radius); border-left:3px solid var(--brand);">
+          <span id="fg-stock-capacitor-chevron" style="display:inline-block; transition:transform 0.15s;">▾</span> Capacitor
+        </div>
+        <div id="fg-stock-capacitor-wrap" style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
+          <table style="width:100%; border-collapse:collapse; min-width:700px;">
+            <thead>
+              <tr style="background:#f8fafc;">
+                <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Project ID</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Product Name</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Product Rating</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Description of Material</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Make</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Unit</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:center; font-weight:700; text-transform:uppercase; color:var(--muted);">Qty (In Stock)</th>
+              </tr>
+            </thead>
+            <tbody id="fg-stock-capacitor-rows">
+              <tr><td colspan="7" style="text-align:center; padding:20px; color:var(--muted); font-size:0.82rem;">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Panel -->
+      <div style="margin-bottom:8px;">
+        <div onclick="toggleFgStockGroup('panel')" style="cursor:pointer; user-select:none; display:flex; align-items:center; gap:6px; font-size:0.8rem; font-weight:700; color:#1a2332; margin-bottom:8px; padding:6px 10px; background:#f8fafc; border-radius:var(--radius); border-left:3px solid var(--brand);">
+          <span id="fg-stock-panel-chevron" style="display:inline-block; transition:transform 0.15s;">▾</span> Panel
+        </div>
+        <div id="fg-stock-panel-wrap" style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
+          <table style="width:100%; border-collapse:collapse; min-width:700px;">
+            <thead>
+              <tr style="background:#f8fafc;">
+                <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Project ID</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Product Name</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Product Rating</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Description of Material</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Make</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:left; font-weight:700; text-transform:uppercase; color:var(--muted);">Unit</th>
+                <th style="padding:8px; font-size:0.7rem; text-align:center; font-weight:700; text-transform:uppercase; color:var(--muted);">Qty (In Stock)</th>
+              </tr>
+            </thead>
+            <tbody id="fg-stock-panel-rows">
+              <tr><td colspan="7" style="text-align:center; padding:20px; color:var(--muted); font-size:0.82rem;">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      </div>
+      <div id="fgstock-ledger-view" style="display:none;">
+        <div style="display:grid; grid-template-columns:1fr 1fr auto auto; gap:14px; align-items:end; margin-bottom:14px;">
+          <div><label class="field-label" style="margin-top:0;">Start Date</label><input type="date" id="fgstock-ledger-start" style="width:100%; padding:8px; box-sizing:border-box;" /></div>
+          <div><label class="field-label" style="margin-top:0;">End Date</label><input type="date" id="fgstock-ledger-end" style="width:100%; padding:8px; box-sizing:border-box;" /></div>
+          <label style="display:inline-flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:700; padding:9px 16px; border:1.5px solid var(--border); border-radius:var(--radius); cursor:pointer; background:#fff; white-space:nowrap; user-select:none;">
+            <input type="checkbox" id="fgstock-ledger-all-materials" checked onchange="toggleStoreLedgerAllMaterials('fgstock')" style="width:17px; height:17px; cursor:pointer; accent-color:var(--brand);" /> All Materials
+          </label>
+          <button class="nav-btn-styled" onclick="generateStoreLedgerReport('fgstock', 'Finished Goods')" style="background:var(--accent); padding:9px 20px; font-weight:700; white-space:nowrap;">Generate Report</button>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <div id="fgstock-ledger-material-picker" style="display:none;">
+            <div style="position:relative; max-width:420px;">
+              <input type="text" id="fgstock-ledger-material-search" placeholder="🔎 Search and add material..." autocomplete="off"
+                oninput="handleStoreLedgerMaterialSearch('fgstock', this.value)"
+                style="width:100%; padding:8px 10px; border:1.5px solid var(--border); border-radius:var(--radius); box-sizing:border-box;" />
+              <div id="fgstock-ledger-material-dropdown" style="display:none; position:fixed; z-index:9999; background:#fff; border:1.5px solid var(--brand); border-radius:6px; box-shadow:0 8px 24px rgba(0,0,0,0.18); overflow-y:auto; min-width:280px;"></div>
+            </div>
+            <div id="fgstock-ledger-selected-materials" style="display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;"></div>
+          </div>
+        </div>
+
+        <div id="fgstock-ledger-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+        <div id="fgstock-ledger-results" style="display:none;">
+          <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+            <button class="nav-btn-styled" onclick="downloadStoreLedgerReportFile('fgstock', 'Finished Goods')" style="background:var(--brand); padding:8px 18px; font-weight:700;">⬇ Download Excel</button>
+          </div>
+          <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
+            <table style="width:100%; border-collapse:collapse; min-width:800px;">
+              <thead>
+                <tr style="background:#f8fafc;">
+                  <th style="padding:8px; font-size:0.92rem; text-align:left;">Material Name</th>
+                  <th style="padding:8px; font-size:0.92rem; text-align:center;">Unit</th>
+                  <th style="padding:8px; font-size:0.92rem; text-align:left;">Type of Material</th>
+                  <th style="padding:8px; font-size:0.92rem; text-align:center;">Starting Stock</th>
+                  <th style="padding:8px; font-size:0.92rem; text-align:center;">Inward Stock</th>
+                  <th style="padding:8px; font-size:0.92rem; text-align:center;">Ticket Issued</th>
+                  <th style="padding:8px; font-size:0.92rem; text-align:center;">Ending Stock</th>
+                </tr>
+              </thead>
+              <tbody id="fgstock-ledger-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="canvas-module-store-live-spare" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
+      <div style="display:flex; gap:10px; margin-bottom:16px;">
+        <button class="nav-btn-styled" id="spare-toggle-live" onclick="switchStoreLedgerView('spare', 'live')" style="flex:1; padding:9px; background:var(--accent);">Live Store Stock</button>
+        <button class="nav-btn-styled" id="spare-toggle-ledger" onclick="switchStoreLedgerView('spare', 'ledger')" style="flex:1; padding:9px; background:#718096;">Store Ledger</button>
+      </div>
+      <div id="spare-live-view">
+      <div style="margin-bottom:14px;">
+        <input type="text" id="spare-stock-search-input" placeholder="🔎 Search Material..." autocomplete="off"
+          oninput="handleSpareStockSearchInput(this.value)"
+          style="width:100%; max-width:420px; padding:9px 12px; font-size:0.85rem; border:1.5px solid var(--border); border-radius:var(--radius); box-sizing:border-box;" />
+      </div>
+      <div class="dashboard-grid" id="dashboard-live-spare-inventory-metrics-mount-zone" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important; gap:10px; padding:0;"></div>
+      </div>
+      <div id="spare-ledger-view" style="display:none;">
+        <div style="display:grid; grid-template-columns:1fr 1fr auto auto; gap:14px; align-items:end; margin-bottom:14px;">
+          <div><label class="field-label" style="margin-top:0;">Start Date</label><input type="date" id="spare-ledger-start" style="width:100%; padding:8px; box-sizing:border-box;" /></div>
+          <div><label class="field-label" style="margin-top:0;">End Date</label><input type="date" id="spare-ledger-end" style="width:100%; padding:8px; box-sizing:border-box;" /></div>
+          <label style="display:inline-flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:700; padding:9px 16px; border:1.5px solid var(--border); border-radius:var(--radius); cursor:pointer; background:#fff; white-space:nowrap; user-select:none;">
+            <input type="checkbox" id="spare-ledger-all-materials" checked onchange="toggleStoreLedgerAllMaterials('spare')" style="width:17px; height:17px; cursor:pointer; accent-color:var(--brand);" /> All Materials
+          </label>
+          <button class="nav-btn-styled" onclick="generateStoreLedgerReport('spare', 'Spare')" style="background:var(--accent); padding:9px 20px; font-weight:700; white-space:nowrap;">Generate Report</button>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <div id="spare-ledger-material-picker" style="display:none;">
+            <div style="position:relative; max-width:420px;">
+              <input type="text" id="spare-ledger-material-search" placeholder="🔎 Search and add material..." autocomplete="off"
+                oninput="handleStoreLedgerMaterialSearch('spare', this.value)"
+                style="width:100%; padding:8px 10px; border:1.5px solid var(--border); border-radius:var(--radius); box-sizing:border-box;" />
+              <div id="spare-ledger-material-dropdown" style="display:none; position:fixed; z-index:9999; background:#fff; border:1.5px solid var(--brand); border-radius:6px; box-shadow:0 8px 24px rgba(0,0,0,0.18); overflow-y:auto; min-width:280px;"></div>
+            </div>
+            <div id="spare-ledger-selected-materials" style="display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;"></div>
+          </div>
+        </div>
+
+        <div id="spare-ledger-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+        <div id="spare-ledger-results" style="display:none;">
+          <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+            <button class="nav-btn-styled" onclick="downloadStoreLedgerReportFile('spare', 'Spare')" style="background:var(--brand); padding:8px 18px; font-weight:700;">⬇ Download Excel</button>
+          </div>
+          <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
+            <table style="width:100%; border-collapse:collapse; min-width:800px;">
+              <thead>
+                <tr style="background:#f8fafc;">
+                  <th style="padding:8px; font-size:0.92rem; text-align:left;">Material Name</th>
+                  <th style="padding:8px; font-size:0.92rem; text-align:center;">Unit</th>
+                  <th style="padding:8px; font-size:0.92rem; text-align:left;">Type of Material</th>
+                  <th style="padding:8px; font-size:0.92rem; text-align:center;">Starting Stock</th>
+                  <th style="padding:8px; font-size:0.92rem; text-align:center;">Inward Stock</th>
+                  <th style="padding:8px; font-size:0.92rem; text-align:center;">Ticket Issued</th>
+                  <th style="padding:8px; font-size:0.92rem; text-align:center;">Ending Stock</th>
+                </tr>
+              </thead>
+              <tbody id="spare-ledger-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="canvas-module-material-outward" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Material Outward on Delivery Challan</h2>
+      <div style="display:flex; gap:10px; margin:14px 0 18px;">
+        <button class="nav-btn-styled" id="mow-toggle-service-btn" onclick="switchMaterialOutwardToggle('service')" style="background:var(--brand);">Materials for Service</button>
+        <button class="nav-btn-styled" id="mow-toggle-search-btn" onclick="switchMaterialOutwardToggle('search')" style="background:#718096;">Search Challans</button>
+      </div>
+      <div id="mow-feedback-banner" style="display:none; padding:12px; margin-bottom:14px; border-left:4px solid; border-radius:var(--radius);"></div>
+
+      <div id="mow-service-panel">
+        <div id="mow-service-queue-feed" style="display:flex; flex-direction:column; gap:14px;"></div>
+      </div>
+
+      <div id="mow-search-panel" style="display:none;">
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:12px; align-items:end; margin-bottom:16px;">
+          <div style="position:relative;">
+            <label class="field-label" style="margin-top:0;">Project ID or Customer Name</label>
+            <input type="text" id="mow-search-project-ta-input" placeholder="Type Project ID or Customer Name..." autocomplete="off"
+              oninput="handleSharedProjectTypeaheadInput(this.value, 'mow-search-project-ta-input', 'mow-search-project-ta-dropdown')"
+              style="width:100%; padding:8px; border:1px solid var(--border); border-radius:var(--radius); font-weight:600;" />
+            <div id="mow-search-project-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          </div>
+          <div>
+            <label class="field-label" style="margin-top:0;">Date From</label>
+            <input type="date" id="mow-search-date-from" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:var(--radius);" />
+          </div>
+          <div>
+            <label class="field-label" style="margin-top:0;">Date To</label>
+            <input type="date" id="mow-search-date-to" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:var(--radius);" />
+          </div>
+          <button class="nav-btn-styled" style="background:var(--brand);" onclick="runMaterialOutwardSearch()">Search</button>
+        </div>
+        <div id="mow-search-label" style="display:none; font-weight:700; color:var(--brand); margin-bottom:10px; font-size:0.9rem; line-height:1.7;"></div>
+        <div id="mow-search-results" style="overflow-x:auto;"></div>
+      </div>
+    </div>
+
+    <div id="canvas-module-store-history-matrix" class="workspace-panel" style="display:none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;">
+      
+      <h2 class="panel-title">Search Material Issue Tickets</h2>
+      <div style="background: var(--highlight-bg); border: 1.5px solid var(--border); border-left: 4px solid var(--brand); padding: 16px; border-radius: var(--radius); margin-bottom: 16px; text-align: left;">
+        <div style="display: flex; flex-wrap: wrap; gap: 24px; width: 100%;">
+          
+          <div style="flex: 1; min-width: 220px;">
+            <label class="field-label">Filter By Store</label>
+            <div class="pill-group" style="margin-bottom:0;">
+              <input type="checkbox" name="matrixStoreFilter" value="Raw Materials Store" id="ms_st_raw">
+              <label for="ms_st_raw">Raw Materials Store</label>
+              <input type="checkbox" name="matrixStoreFilter" value="Spare Store" id="ms_st_spare">
+              <label for="ms_st_spare">Spare Store</label>
+              <input type="checkbox" name="matrixStoreFilter" value="Finished Goods Store" id="ms_st_fg">
+              <label for="ms_st_fg">Finished Goods Store</label>
+            </div>
+          </div>
+
+          <div style="flex: 2; min-width: 320px;">
+            <label class="field-label">Filter By Verification Status</label>
+            <div class="pill-group" style="margin-bottom:0;">
+              <input type="checkbox" name="matrixStatusFilter" value="Pending" id="ms_st_pending">
+              <label for="ms_st_pending">Pending</label>
+              <input type="checkbox" name="matrixStatusFilter" value="Pending BOQ Increase Review" id="ms_st_pending_boq_increase">
+              <label for="ms_st_pending_boq_increase">Pending BOQ Increase Review</label>
+              <input type="checkbox" name="matrixStatusFilter" value="Approved" id="ms_st_approved">
+              <label for="ms_st_approved">Approved</label>
+              <input type="checkbox" name="matrixStatusFilter" value="Increase Approved" id="ms_st_approved_released">
+              <label for="ms_st_approved_released">Increase Approved</label>
+              <input type="checkbox" name="matrixStatusFilter" value="Rejected" id="ms_st_rejected">
+              <label for="ms_st_rejected">Rejected</label>
+              <input type="checkbox" name="matrixStatusFilter" value="Rejected by Admin" id="ms_st_rejected_admin">
+              <label for="ms_st_rejected_admin">Rejected by Admin</label>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 24px; margin-top: 10px; border-top: 1px dashed rgba(0, 86, 179, 0.15); padding-top: 12px; width: 100%;">
+
+          <div style="flex: 1; min-width: 280px; position: relative;">
+            <label class="field-label" style="margin-top: 0;">Material Name</label>
+            <div style="position: relative;">
+              <input
+                type="text"
+                id="matrix-material-name-search-input"
+                placeholder="Type material name or item code (e.g. Copper Bus Bar, IC-0042)..."
+                autocomplete="off"
+                oninput="handleMatrixMaterialSearchInput(this.value)"
+                style="width: 100%; padding: 9px 36px 9px 12px; border: 1.5px solid var(--border); border-radius: var(--radius); font-size: 0.88rem; background: var(--card); color: var(--text); box-sizing: border-box;"
+              />
+              <span id="matrix-material-search-clear-btn" onclick="clearMatrixMaterialSearch()" style="display:none; position:absolute; right:10px; top:50%; transform:translateY(-50%); cursor:pointer; color:var(--muted); font-size:1rem; font-weight:700; line-height:1;">✕</span>
+            </div>
+            <div id="matrix-material-search-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          </div>
+
+          <div style="flex: 1; min-width: 280px; position: relative;">
+            <label class="field-label" style="margin-top: 0;">Project ID</label>
+            <div style="position: relative;">
+              <input
+                type="text"
+                id="matrix-project-search-input"
+                placeholder="Type Project ID..."
+                autocomplete="off"
+                oninput="handleMatrixProjectSearchInput(this.value)"
+                style="width: 100%; padding: 9px 36px 9px 12px; border: 1.5px solid var(--border); border-radius: var(--radius); font-size: 0.88rem; background: var(--card); color: var(--text); box-sizing: border-box;"
+              />
+              <span id="matrix-project-search-clear-btn" onclick="clearMatrixProjectSearch()" style="display:none; position:absolute; right:10px; top:50%; transform:translateY(-50%); cursor:pointer; color:var(--muted); font-size:1rem; font-weight:700; line-height:1;">✕</span>
+            </div>
+            <div id="matrix-project-search-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          </div>
+
+          <div style="flex: 1; min-width: 280px;">
+            <label class="field-label" style="margin-top: 0;">Filter By Production Department / Outgoing Use</label>
+            <div class="pill-group" style="margin-bottom: 0;">
+              <input type="checkbox" name="matrixDepartmentFilter" value="Reactor" id="m_dept_reactor">
+              <label for="m_dept_reactor">Reactor</label>
+              <input type="checkbox" name="matrixDepartmentFilter" value="Capacitor" id="m_dept_capacitor">
+              <label for="m_dept_capacitor">Capacitor</label>
+              <input type="checkbox" name="matrixDepartmentFilter" value="Panel" id="m_dept_panel">
+              <label for="m_dept_panel">Panel</label>
+              <input type="checkbox" name="matrixDepartmentFilter" value="Processing" id="m_dept_processing">
+              <label for="m_dept_processing">Processing</label>
+              <input type="checkbox" name="matrixDepartmentFilter" value="Service" id="m_dept_service">
+              <label for="m_dept_service">Service</label>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; margin-top:14px; border-top:1px dashed rgba(0, 86, 179, 0.15); padding-top:12px;">
+          <button class="btn btn-sub" id="matrix-search-btn" onclick="triggerStoreTicketMatrixSearch()">Search</button>
+        </div>
+      </div>
+      <div id="matrix-search-summary-text" style="display:none; font-weight:700; color:var(--brand); margin-bottom:10px; font-size:0.9rem;"></div>
+      <div id="store-historical-matrix-results-feed" style="display: flex; flex-direction: column; gap: 12px;"></div>
+    </div>
+
+    <div id="canvas-module-stock-sweep" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Stock Sweep (Weekly Return)</h2>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">
+        Record all material recovered from every department/job card in this sweep, regardless of project.
+      </p>
+      <div id="sweep-feedback" style="display:none; margin-bottom:14px;"></div>
+      <div id="sweep-form-body">
+      <div style="display:grid; grid-template-columns:minmax(200px,1fr) minmax(260px,2fr); gap:12px; margin-bottom:12px; align-items:end;">
+        <div>
+          <label class="field-label">Sweep Type *</label>
+          <select id="sweep-type" onchange="handleSweepTypeChange()" style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);">
+            <option value="Production Return">Production Return</option>
+            <option value="Count Correction">Count Correction</option>
+            <option value="Found Stock">Found Stock</option>
+            <option value="Blocked → Restricted">Spare Store Blocked → Spare Store Restricted</option>
+            <option value="Blocked → RM Store">Spare Store Blocked → RM Store</option>
+          </select>
+        </div>
+        <div id="sweep-material-search-wrapper" style="position:relative;">
+          <label class="field-label">Select Material *</label>
+          <input type="text" id="sweep-material-search" placeholder="Search material to add to this sweep..." oninput="handleSweepSearch(this.value)"
+                 autocomplete="off" style="width:100%; padding:10px; border:1.5px solid var(--border); border-radius:var(--radius);">
+          <div id="sweep-material-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid var(--border); border-radius:var(--radius); max-height:260px; overflow-y:auto; z-index:20; box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
+        </div>
+        <div id="sweep-allocation-picker-wrapper" style="display:none; position:relative;">
+          <label class="field-label">Select Blocked Allocation *</label>
+          <select id="sweep-allocation-select" onchange="handleSweepAllocationPick(this)" style="width:100%; padding:10px; border:1.5px solid var(--border); border-radius:var(--radius);">
+            <option value="">— Choose an unfreed Blocked allocation —</option>
+          </select>
+        </div>
+      </div>
+      <table style="width:100%; border-collapse:collapse; font-size:0.85rem; margin-bottom:14px;">
+        <thead><tr style="background:var(--highlight-bg); text-align:left;">
+          <th style="padding:8px;">Item Code</th><th style="padding:8px;">Material Name</th>
+          <th style="padding:8px; width:80px;">Unit</th><th style="padding:8px; width:110px;">Quantity *</th><th style="padding:8px; width:40px;"></th>
+        </tr></thead>
+        <tbody id="sweep-basket-body"><tr id="sweep-basket-empty"><td colspan="5" style="padding:14px; text-align:center; color:var(--muted);">No items added yet.</td></tr></tbody>
+      </table>
+      <button id="sweep-submit-btn" class="nav-btn-styled" style="background:var(--brand);" onclick="submitStockSweep()" disabled>Submit Stock Sweep</button>
+      </div>
+    </div>
+
+    <div id="canvas-module-assign-current-stock" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Reserve Store Stock</h2>
+      <div id="ass-feedback" style="display:none; margin-bottom:14px;"></div>
+      <label class="field-label" style="margin-top:0;">Search Material Name</label>
+      <div style="position:relative; margin-bottom:16px;">
+        <input type="text" id="ass-material-search" placeholder="Search material name..." oninput="handleAssStockSearch(this.value)"
+               style="width:100%; padding:10px; border:1.5px solid var(--border); border-radius:var(--radius);">
+        <div id="ass-material-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid var(--border); border-radius:var(--radius); max-height:260px; overflow-y:auto; z-index:20; box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
+      </div>
+      <div id="ass-results-zone" style="display:none;">
+        <h3 id="ass-material-title" style="margin-bottom:10px;"></h3>
+        <div style="display:flex; align-items:stretch; gap:0; background:var(--highlight-bg); border:1px solid var(--border); border-radius:var(--radius); padding:12px 16px; margin-bottom:14px;">
+          <div style="padding-right:24px;"><span style="font-size:0.7rem; color:#16a34a; font-weight:700; text-transform:uppercase;">Total Stock</span><br><span id="ass-total-stock" style="font-weight:700; font-size:1rem; color:#000;">0</span></div>
+          <div style="border-left:1px solid var(--border); padding:0 24px;"><span style="font-size:0.7rem; color:#16a34a; font-weight:700; text-transform:uppercase;">Reserved Stock</span><br><span id="ass-reserved-stock" style="font-weight:700; font-size:1rem; color:#000;">0</span></div>
+          <div style="border-left:1px solid var(--border); padding:0 24px;"><span style="font-size:0.7rem; color:#16a34a; font-weight:700; text-transform:uppercase;">Available Stock</span><br><span id="ass-available-stock" style="font-weight:700; font-size:1rem; color:#000;">0</span></div>
+          <button class="nav-btn-styled" style="margin-left:auto; align-self:center; background:var(--accent); padding:8px 18px; font-weight:700;" onclick="submitAssReservationChanges()">Submit Reservation</button>
+        </div>
+        <table style="width:100%; border-collapse:collapse; font-size:0.85rem; table-layout:fixed;">
+          <thead><tr style="background:var(--highlight-bg); text-align:left;">
+            <th style="padding:8px; width:34%;">BOQ ID</th>
+            <th style="padding:8px; width:10%; text-align:center;">Unit</th>
+            <th style="padding:8px; width:16%; text-align:center;">Number of Job Cards</th>
+            <th style="padding:8px; width:20%; text-align:center;">Current Total Reserved Qty</th>
+            <th style="padding:8px; width:20%; text-align:center;">New Total Reserved Qty</th>
+          </tr></thead>
+          <tbody id="ass-results-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="canvas-module-expected-inbounds" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:10px;">
+        <h2 class="panel-title" style="margin:0;">Expected Deliveries</h2>
+        <button class="nav-btn-styled" onclick="loadExpectedInbounds()" style="background:var(--brand); padding:6px 16px; font-size:0.78rem;">🔄 Refresh</button>
+      </div>
+      <div id="expected-inbounds-window-toggle" style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px;">
+        <button class="ei-filter-btn" data-mode="overdue" onclick="setExpectedInboundsFilter('overdue')" style="padding:5px 12px; font-size:0.76rem; font-weight:700; border-radius:20px; border:1.5px solid var(--border); background:#fff; cursor:pointer;">Overdue</button>
+        <button class="ei-filter-btn" data-mode="today" onclick="setExpectedInboundsFilter('today')" style="padding:5px 12px; font-size:0.76rem; font-weight:700; border-radius:20px; border:1.5px solid var(--border); background:#fff; cursor:pointer;">Today</button>
+        <button class="ei-filter-btn" data-mode="7" onclick="setExpectedInboundsFilter('7')" style="padding:5px 12px; font-size:0.76rem; font-weight:700; border-radius:20px; border:1.5px solid var(--border); background:#fff; cursor:pointer;">7 Days</button>
+        <button class="ei-filter-btn" data-mode="30" onclick="setExpectedInboundsFilter('30')" style="padding:5px 12px; font-size:0.76rem; font-weight:700; border-radius:20px; border:1.5px solid var(--border); background:#fff; cursor:pointer;">30 Days</button>
+        <button class="ei-filter-btn" data-mode="90" onclick="setExpectedInboundsFilter('90')" style="padding:5px 12px; font-size:0.76rem; font-weight:700; border-radius:20px; border:1.5px solid var(--border); background:#fff; cursor:pointer;">90 Days</button>
+        <button class="ei-filter-btn" data-mode="partiallyDelivered" onclick="setExpectedInboundsFilter('partiallyDelivered')" style="padding:5px 12px; font-size:0.76rem; font-weight:700; border-radius:20px; border:1.5px solid var(--border); background:#fff; cursor:pointer;">Partially Delivered</button>
+        <button class="ei-filter-btn" data-mode="delivered" onclick="setExpectedInboundsFilter('delivered')" style="padding:5px 12px; font-size:0.76rem; font-weight:700; border-radius:20px; border:1.5px solid var(--border); background:#fff; cursor:pointer;">Fully Delivered</button>
+      </div>
+      <div id="expected-inbounds-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+      <div id="expected-inbounds-results" style="display:flex; flex-direction:column; gap:16px;"></div>
+    </div>
+  </div>
+
+  <!-- ═══ STORE DASHBOARD (Batch 6, 16 Sep 2026) ═══ -->
+    <div id="canvas-module-store-dashboard" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
+
+      <!-- DASHBOARD BODY -->
+      <div id="sd-body" class="dd-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
+
+        <!-- ROW 1: Live Queues — needs action right now -->
+        <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
+          <div class="dd-stat-card stat-live">
+            <div class="dd-stat-label">Pending Ticket Approvals</div>
+            <div class="dd-stat-val" id="sd-s-pending" style="color:#b45309;">—</div>
+          </div>
+          <div class="dd-stat-card stat-live">
+            <div class="dd-stat-label">BOQs Needing PRN</div>
+            <div class="dd-stat-val" id="sd-s-boqneedprn" style="color:#b45309;">—</div>
+          </div>
+          <div class="dd-stat-card stat-live">
+            <div class="dd-stat-label">Gate Entries Awaiting GRN</div>
+            <div class="dd-stat-val" id="sd-s-gateawaiting" style="color:#b45309;">—</div>
+            <div class="dd-stat-sub" id="sd-s-gateawaiting-sub"></div>
+          </div>
+          <div class="dd-stat-card stat-live">
+            <div class="dd-stat-label">GRNs Awaiting QA Check</div>
+            <div class="dd-stat-val" id="sd-s-qaawaiting" style="color:#b45309;">—</div>
+            <div class="dd-stat-sub" id="sd-s-qaawaiting-sub"></div>
+          </div>
+          <div class="dd-stat-card stat-live">
+            <div class="dd-stat-label">Pending Excess Material Requests</div>
+            <div class="dd-stat-val" id="sd-s-boqinc" style="color:#b91c1c;">—</div>
+          </div>
+        </div>
+
+        <!-- ROW 2: Period Throughput / Rates -->
+        <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
+          <div class="dd-stat-card stat-period">
+            <div class="dd-stat-label">Material Issue Tickets</div>
+            <div class="dd-stat-val" id="sd-s-tickets">—</div>
+          </div>
+          <div class="dd-stat-card stat-period">
+            <div class="dd-stat-label">GRNs</div>
+            <div class="dd-stat-val" id="sd-s-grns">—</div>
+          </div>
+          <div class="dd-stat-card stat-period">
+            <div class="dd-stat-label">Average GRN Turnaround</div>
+            <div class="dd-stat-val" id="sd-s-rejrate">—</div>
+          </div>
+          <div class="dd-stat-card stat-period">
+            <div class="dd-stat-label">Stock Sweeps Recorded</div>
+            <div class="dd-stat-val" id="sd-s-sweeps">—</div>
+          </div>
+          <div class="dd-stat-card stat-period">
+            <div class="dd-stat-label">Delivery Challans Issued for Service</div>
+            <div class="dd-stat-val" id="sd-s-challans">—</div>
+          </div>
+        </div>
+
+        <!-- ROW 3: Charts -->
+        <div class="dd-chart-row" style="display:grid; grid-template-columns:1fr 1.4fr 1fr; gap:10px; flex:0 0 230px; min-height:0;">
+          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column;">
+            <div class="dd-card-title">Tickets by Department</div>
+            <div style="flex:1; min-height:0; position:relative;"><canvas id="sd-chart-dept" style="position:absolute; width:100%; height:100%;"></canvas></div>
+          </div>
+          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column;">
+            <div class="dd-card-title">Material Received vs Issued Trend</div>
+            <div style="flex:1; min-height:0; position:relative;"><canvas id="sd-chart-trend" style="position:absolute; width:100%; height:100%;"></canvas></div>
+          </div>
+          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column;">
+            <div class="dd-card-title">Expected Deliveries</div>
+            <div style="flex:1; min-height:0; position:relative;"><canvas id="sd-chart-expected-deliveries" style="position:absolute; width:100%; height:100%;"></canvas></div>
+          </div>
+        </div>
+
+        <!-- ROW 4: Inbound Pipeline Aging + Project Health -->
+        <div class="dd-detail-row" style="display:grid; grid-template-columns:1.3fr 1fr; gap:10px; flex:1; min-height:0;">
+
+          <!-- Inbound Pipeline Aging -->
+          <div class="dd-card" style="padding:12px 16px; display:flex; flex-direction:column; min-height:0;">
+            <div class="dd-card-title" style="margin-bottom:6px;">Inbound Pipeline Aging</div>
+            <div style="overflow-y:auto; flex:1;">
+              <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
+                <thead><tr style="color:var(--muted); font-size:0.68rem; border-bottom:1.5px solid var(--border); position:sticky; top:0; background:var(--card);">
+                  <th style="text-align:left; padding:3px 6px; font-weight:700;">Stage</th>
+                  <th style="text-align:left; padding:3px 6px; font-weight:700;">Vendor</th>
+                  <th style="text-align:left; padding:3px 6px; font-weight:700;">Invoice</th>
+                  <th style="text-align:left; padding:3px 6px; font-weight:700;">Material</th>
+                  <th style="text-align:center; padding:3px 6px; font-weight:700;">Days Waiting</th>
+                </tr></thead>
+                <tbody id="sd-pipeline-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Project Stock Health -->
+          <div class="dd-card" style="padding:12px 16px; display:flex; flex-direction:column; min-height:0;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <div class="dd-card-title" style="margin-bottom:0;">Project Stock Health</div>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <input id="sd-health-search" type="text" placeholder="Search project..." oninput="sdFilterHealth()"
+                  style="font-size:0.72rem; padding:3px 8px; border:1px solid var(--border); border-radius:4px; width:110px;" />
+                <span id="sd-health-page-info" style="font-size:0.68rem; color:var(--muted); white-space:nowrap;"></span>
+                <button onclick="sdHealthPage(-1)" class="dd-period-btn" style="padding:2px 7px;">‹</button>
+                <button onclick="sdHealthPage(1)"  class="dd-period-btn" style="padding:2px 7px;">›</button>
+              </div>
+            </div>
+            <div style="overflow-y:auto; flex:1;">
+              <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
+                <thead><tr style="color:var(--muted); font-size:0.68rem; border-bottom:1.5px solid var(--border); position:sticky; top:0; background:var(--card);">
+                  <th style="text-align:left; padding:3px 6px; font-weight:700;">Project ID</th>
+                  <th style="text-align:center; padding:3px 6px; font-weight:700;">Tickets</th>
+                  <th style="text-align:center; padding:3px 6px; font-weight:700;">Approved</th>
+                  <th style="text-align:center; padding:3px 6px; font-weight:700;">Pending</th>
+                  <th style="text-align:center; padding:3px 6px; font-weight:700;">Items Issued</th>
+                </tr></thead>
+                <tbody id="sd-health-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
   <!-- ═══ PURCHASE DASHBOARD (ported from ABPS Portal 4 Sep 2026) ═══ -->
     <div id="canvas-module-purchase-dashboard" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
 
@@ -3491,12 +4436,26 @@
 <script src="store/revise-prn.js"></script>
 <script src="store/qa.js"></script>
 <script src="store/live-stock.js"></script>
+<script src="store/gate-entry.js"></script>
+<script src="store/grn.js"></script>
+<script src="store/tickets.js"></script>
+<script src="store/approvals.js"></script>
+<script src="store/stock-sweep.js"></script>
+<script src="store/store-history.js"></script>
+<script src="store/store-ledger.js"></script>
+<script src="store/consumption-variance.js"></script>
+<script src="store/material-outward.js"></script>
+<script src="store/store-dashboard.js"></script>
 <script src="purchase/po.js"></script>
 <script src="purchase/vendor-costing.js"></script>
 <script src="purchase/revise-po.js"></script>
 <script src="purchase/pps-tracking.js"></script>
 <script src="purchase/material-list.js"></script>
 <script src="purchase/purchase-dashboard.js"></script>
+<!-- production/job-cards.js is entirely Create Material Issue Ticket
+     helpers despite its path — ported in Batch 6 (Store), not Batch 7.
+     See its own header. -->
+<script src="production/job-cards.js"></script>
 <script src="project/security-admin.js"></script>
 <script src="project/manufacturing-clearance.js"></script>
 <script src="project/project-timeline.js"></script>

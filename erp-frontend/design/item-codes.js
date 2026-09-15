@@ -828,3 +828,126 @@ async function submitIcfDeactivateFormat() {
     showBOQBanner("itemcode-feedback-banner", "⚠️ Network error: " + e.message, "error");
   }
 }
+
+// -- Store Entry / GRN item-code helpers (Batch 6, 16 Sep 2026) -------
+// These four live in Portal's own design/item-codes.js even though they
+// belong to STORE's "Raw Materials Store Entry and GRN" screen
+// (store/grn.js calls all of them) -- an artifact of Portal's 4 Sep 2026
+// automated file split. Batch 4's Design audit found them absent here
+// and explicitly flagged them as Batch 6's. Ported verbatim rather than
+// relocated, so the two systems' files stay comparable.
+function reopenSEMaterialSearch(gateNum, idx) {
+  const nameDisplay = document.querySelector(`.se-mat-name-display-${gateNum}[data-idx="${idx}"]`);
+  const searchInput = document.getElementById(`se-search-${gateNum}-${idx}`);
+  if (nameDisplay) nameDisplay.style.display = "none";
+  if (searchInput) {
+    searchInput.style.display = "block";
+    searchInput.value = "";
+    searchInput.focus();
+  }
+  // Note: the previously-selected Item Code / Material Name / Type values are left in place
+  // (in the hidden inputs) until a new match is actually picked from the dropdown — so if the
+  // person clicks "change" and then clicks away without selecting anything, the original
+  // selection is still submitted rather than silently becoming blank.
+}
+
+function handleSENameSearch(inputEl, gateNum, idx) {
+  const query   = inputEl.value.trim().toLowerCase();
+  const dropId  = `se-drop-${gateNum}-${idx}`;
+  const dropdown = document.getElementById(dropId);
+  const catalog  = window.itemCodeCatalogCache || [];
+  if (!dropdown) return;
+
+  const rect = inputEl.getBoundingClientRect();
+  dropdown.style.top   = (rect.bottom + 2) + "px";
+  dropdown.style.left  = rect.left + "px";
+  dropdown.style.width = rect.width + "px";
+
+  if (query.length < 2) { dropdown.style.display = "none"; return; }
+  // Search matches the raw name (findable without knowing the rating), display/select the
+  // combined name — same convention as BOQ search and every other catalog consumer.
+  const matches = catalog.filter(c => (c.combinedName || c.productName || "").toLowerCase().includes(query)).slice(0, 10);
+  if (matches.length === 0) {
+    const createUrl = window.location.pathname + "?module=design-itemcode";
+    dropdown.innerHTML = `<div style="padding:8px 10px; font-size:0.78rem; color:var(--muted); display:flex; justify-content:space-between; align-items:center;">
+      <span>No match found</span>
+      <a href="${createUrl}" target="_blank" style="color:var(--brand); font-weight:700; font-size:0.75rem;">+ Create Item Code →</a>
+    </div>`;
+    dropdown.style.display = "block"; return;
+  }
+  dropdown.innerHTML = matches.map(c => `
+    <div onclick="selectSENameMatch('${gateNum}', ${idx}, '${c.itemCode}', '${(c.combinedName || c.productName).replace(/'/g,"\\'")}', '${c.typeOfMaterial || ""}', '${c.unit || ""}')"
+      style="padding:7px 10px; cursor:pointer; font-size:0.78rem; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center;"
+      onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#fff'">
+      <span style="font-weight:600;">${c.combinedName || c.productName}</span>
+      <span style="font-size:0.7rem; color:var(--muted); background:#f1f5f9; padding:2px 6px; border-radius:3px;">${c.itemCode}</span>
+    </div>`).join("");
+  dropdown.style.display = "block";
+}
+
+function selectSENameMatch(gateNum, idx, itemCode, productName, typeOfMaterial, unit) {
+  const dropdown    = document.getElementById(`se-drop-${gateNum}-${idx}`);
+  const searchInput = document.getElementById(`se-search-${gateNum}-${idx}`);
+  selectStoreEntryItemCodeMatch(gateNum, idx, itemCode, productName, typeOfMaterial, null, unit);
+  if (searchInput) searchInput.style.display = "none";
+  if (dropdown)    dropdown.style.display = "none";
+}
+
+// Close SE dropdowns on outside click
+document.addEventListener("click", function(e) {
+  if (!e.target.id || !e.target.id.startsWith("se-search-")) {
+    document.querySelectorAll("[id^='se-drop-']").forEach(d => d.style.display = "none");
+  }
+});
+
+function selectStoreEntryItemCodeMatch(gateNum, idx, itemCode, productName, typeOfMaterial, clickedEl, unit) {
+  const codeInput   = document.querySelector(`.se-item-code-${gateNum}[data-idx="${idx}"]`);
+  const nameInput   = document.querySelector(`.se-mat-name-${gateNum}[data-idx="${idx}"]`);
+  const typeInput   = document.querySelector(`.se-material-type-${gateNum}[data-idx="${idx}"]`);
+  const unitInput   = document.querySelector(`.se-item-code-unit-${gateNum}[data-idx="${idx}"]`);
+  const nameDisplay = document.querySelector(`.se-mat-name-display-${gateNum}[data-idx="${idx}"]`);
+  const typeDisplay = document.querySelector(`.se-material-type-display-${gateNum}[data-idx="${idx}"]`);
+  const searchInput = document.getElementById(`se-search-${gateNum}-${idx}`);
+  const dropdown    = document.getElementById(`se-drop-${gateNum}-${idx}`);
+  if (searchInput) searchInput.style.display = "none";
+  if (dropdown)    dropdown.style.display    = "none";
+
+  if (codeInput) {
+    codeInput.value = itemCode;
+    codeInput.placeholder = "";
+    codeInput.style.border = "1.5px solid #86efac";
+    codeInput.style.background = "#f0fdf4";
+    codeInput.style.color = "var(--brand)";
+  }
+  if (nameInput) nameInput.value = productName;
+  if (typeInput) typeInput.value = typeOfMaterial;
+  if (unitInput) unitInput.value = unit || "NOS";
+  // Item Code Unit just (re)resolved -- re-evaluate whether the Unit
+  // Converter should lock to 1 (units now match) or open up for manual
+  // entry (they don't), same trigger as editing Invoice Unit directly.
+  if (typeof updateSEUnitConverterLock === "function") updateSEUnitConverterLock(gateNum, idx);
+
+  if (nameDisplay) {
+    nameDisplay.style.display = "block";
+    nameDisplay.textContent = productName;
+  }
+  if (typeDisplay) {
+    typeDisplay.textContent = typeOfMaterial;
+    typeDisplay.style.color = "var(--accent)";
+  }
+
+  // Dim all pills in this row, highlight selected
+  if (clickedEl) {
+    const parent = clickedEl.closest("td");
+    if (parent) {
+      parent.querySelectorAll("div[onclick]").forEach(pill => {
+        pill.style.opacity = "0.4";
+        pill.style.border  = "1.5px solid #e2e8f0";
+        pill.style.background = "#f8fafc";
+      });
+    }
+    clickedEl.style.opacity   = "1";
+    clickedEl.style.border    = "2px solid var(--accent)";
+    clickedEl.style.background = "#f0fdf4";
+  }
+}

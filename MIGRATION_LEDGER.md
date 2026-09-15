@@ -1020,9 +1020,363 @@ routes were ever called against real data.
 
 ## Batch 6 — Store
 
-**Status: not started**
+**Status: ported, committed locally, NOT pushed/deployed — and NOT
+click-tested.** No live login was attempted in this session, so every claim
+below rests on static verification (byte-level copy from Portal, `node
+--check` on every backend and frontend file, runtime `require()` of every
+touched backend module, two full `server.js` boots, a route-collision
+sweep, an action→route resolution sweep, a "called but defined nowhere"
+sweep across every `on*=` handler in `index.html`, a DOM-id/div-balance
+check, and a mechanical CSS/markup parity audit) — not on a real browser.
 
-`routes/store.js` (51), `store/*.js` (14 files). 17 screens + dashboard.
+`routes/store.js` (51 routes — replaced Batch 5's 246-line partial),
+`store/*.js` (12 files ported/replaced), `production/job-cards.js` (new),
+plus 4 routes added to the `routes/production.js` partial, 1 to
+`routes/utility.js`, 1 to `routes/dashboards.js`, and 2 new `lib/` files.
+14 canvases + dashboard.
+
+### Method note — a straight port, not a re-diff
+
+Unlike Batches 4/5, Store had no stale 4 Sep 2026 code to reconcile:
+`routes/store.js`, `store/qa.js` and `store/live-stock.js` existed only as
+Batch 5's deliberately-flagged **partial** files. Each was confirmed to be a
+strict subset of Portal's current file (function-by-function) and then
+replaced wholesale, so the extracted blocks came across unchanged. The end
+state:
+
+- `routes/store.js` — Portal's file **verbatim**, zero edits (no `.email`
+  references to rename, no `syncLiveRow` inside a transaction to move).
+- `store/create-prn.js`, `store/revise-prn.js` — re-diffed against Portal:
+  `create-prn.js` is byte-identical, `revise-prn.js` differs only by Batch
+  2's documented `md*` deviation. No drift.
+- All 12 newly-ported `store/*.js` are Portal's current files with the
+  enumerated ERP adaptations below and nothing else.
+
+### Real bugs / gaps found and fixed
+
+**Backend**
+
+1. **★★ `u.production_sub_dept` was never selected by ERP's
+   `requireSession`** — so `req.user.production_sub_dept` was always
+   `undefined` and `lib/productionScope.js`'s `resolveTicketDepartmentLock`
+   returned `{ blocked: true }` for **every** Production user. Create
+   Material Issue Ticket would have refused outright for exactly the people
+   it exists for. `resolveProductionSubDeptScope` (Purchase/Production
+   Material Requirement Dates, Batch 5) was silently scoping to `null` for
+   the same reason — a **pre-existing Batch 5 bug**, not a Store one. The
+   column exists on `admin_db.users` and has since ERP's founding; only the
+   SELECT was missing.
+2. **`getSessionPermissions` genuinely had to be ported.** Batch 2's note
+   in `routes/utility.js` ("ERP bakes permissions into the login response,
+   confirmed no ERP frontend file calls this action") was true when written
+   and is now stale — `store/tickets.js` calls it on every entry to Create
+   Material Issue Ticket, and it is the **only** source of
+   `ticketOutgoingUseLock`, the server-computed Outgoing Use lock that
+   `routes/store.js`'s `submitEngineerMaterialTicket` independently
+   enforces. Recomputing that lock client-side would let the two drift, so
+   the route was ported rather than worked around. ERP still also bakes
+   permissions into the login response — this is additive.
+3. **Five routes Store's screens call did not exist in ERP.** Found by the
+   action→route sweep, not by reading: `fetchStoreDashboardData` (Portal's
+   `routes/dashboards.js` — the Store Dashboard's data fetch was a
+   guaranteed 404; ported verbatim and deliberately **reuses** this file's
+   existing `computeExpectedDeliveryTimeline` rather than a second copy, so
+   Store and Purchase can never drift on what counts as overdue), and four
+   from Portal's `routes/production.js` —
+   `getLiveFinishedGoodsInventory` (Live FG Store Stock),
+   `fetchJobCardMaterials` (the ticket item dropdown + stock pill),
+   `fetchPendingBOQIncreaseTickets` (Approve Excess Material Request) and
+   `fetchJobCardsForProject` (the Project → BOQ → Job Card cascade). All
+   four were added to the existing `routes/production.js` **partial** file
+   at Portal's own path, permission gates unchanged, so Batch 7 can still
+   copy Portal's full file over it without a duplicate-path collision.
+4. **`lib/pdf.js` was missing `generateMaterialIssueTicketPdf` /
+   `generateStockSweepPdf`**, and `lib/storeLedgerExcel.js` /
+   `lib/consumptionVarianceExcel.js` did not exist at all. All ported
+   verbatim (`exceljs` is already a dependency).
+5. **7-place permission rule — 11 columns were missing from at least one
+   place.** New to all 5 code places: `perm_gate_entry`,
+   `perm_store_entry_and_grn`, `perm_expected_deliveries`,
+   `perm_approve_job_card_increase`, `perm_approve_store_tickets`,
+   `perm_search_store_tickets`, `perm_material_outward`,
+   `perm_store_dashboard`. Also surfaced early, same precedent as Batch 5's
+   live-stock permissions: `perm_qa_check` (its screen and routes are
+   Store's; its dashboard card is QA's, Batch 8) and
+   `perm_create_store_ticket` (screen and routes Store's, card Production's,
+   Batch 7) — without a catalog entry neither could ever be granted from
+   the Permissions Matrix, so both ported screens would have 403'd.
+   `lib/permissionCatalog.js` gained a `qa` `DEPARTMENT_META` row and a
+   `dashboard-store` row to match.
+6. **★ `perm_authorize_prn_revision` was missing from all 5 code places —
+   a Batch 5 gap.** Authorize PRN Revision's screen was ported in Batch 5
+   but the permission was never wired, so `requirePermission` could never
+   see it and the card could never be shown. Added.
+7. **The PRN and Material-Requirement-Date permissions were missing from
+   the Users sheet** (`lib/sheetsRegistry.js`'s users query and
+   `lib/sheetsPull.js`'s `USER_PERM_HEADERS`) despite being wired
+   everywhere else in Batches 3/5 — the same 2-of-7 gap Batches 4 and 5
+   each found. All 18 Store/PRN/MRD headers added with Portal's exact
+   header text; the Sheet's header row self-heals on the next sync
+   (`ensureTabFormatted` rewrites A1 from this list), no manual step.
+8. **All 10 Store tables were missing from BOTH `TABLE_REGISTRY` and
+   `lib/sheetChangePoller.js`'s `REAL_TABLE_TO_REGISTRY_KEY`**, even though
+   every one of them already carries a live `trg_sheet_sync` trigger
+   (verified against the Batch 0 and 4 Sep migration files). Anything they
+   queued hit the "no sheet mapping" branch and was silently discarded —
+   the third batch in a row to hit this class. Both lists now carry the
+   same 10 Portal maps; `receipt_attributions` and `stock_borrow_events`
+   stay deliberately absent in both systems (pure audit tables).
+
+**Frontend**
+
+9. **★★ `renderIsolatedFollowUpTimeline` / `editIsolatedFollowUpItem` were
+   genuinely undefined in ERP — a pre-existing Batch 2 bug.** They live in
+   Portal's `store/qa.js` (an artifact of its own 4 Sep automated split)
+   but are MARKETING lead-card helpers, called by `marketing/companies.js`
+   and `marketing/leads.js`; Batch 5's partial `qa.js` extracted only
+   `exitCanvasToCardView`, so lead View Details' follow-up timeline threw.
+   The full `qa.js` port fixes it, and the three helpers it needs
+   (`formatPlainTimeOfDay`, `formatCleanDateOnly`, `formatFollowUpTimestamp`)
+   were ported into `shared/format.js`.
+10. **`updateSelectedLiveStockPillCounter` was awaited unguarded from
+    `store/tickets.js` and defined nowhere** — same class of gap as Batch
+    5's seven missing live-stock pollers. It lives in Portal's
+    `production/job-cards.js`, which turned out to contain **nothing but**
+    Create Material Issue Ticket helpers (it and
+    `handleCreateTicketProjectChange`, after Portal deleted that file's dead
+    Job Card creation screen on 3 Sep 2026). Ported as a complete file, not
+    a partial — Batch 7 should leave it alone.
+11. **The four Store Entry / GRN item-code helpers Batch 4 explicitly
+    flagged as Batch 6's** (`handleSENameSearch`,
+    `selectStoreEntryItemCodeMatch`, `reopenSEMaterialSearch`,
+    `selectSENameMatch`) live in Portal's `design/item-codes.js` and were
+    absent here. `store/grn.js` calls three of them. Ported verbatim into
+    ERP's own `design/item-codes.js` rather than relocated, so the two
+    systems' files stay comparable.
+12. **The four PRN cards and Reserve Store Stock had no menu card at all.**
+    Batch 5 ported Create PRN / Authorize PRN / Revise PRN / Authorize PRN
+    Revision functionally (routes, screen JS, and the panels inside the
+    Purchase enclosure) but their dashboard tiles belong to Portal's STORE
+    dept-block, which ERP had never built — so all four screens were
+    unreachable from the dashboard. Added along with the rest of Portal's
+    Store block (rows 1-5, sections and order copied verbatim).
+13. **`switchActiveDashboardModule` never swept the enclosure
+    CONTAINERS.** Before Store existed nothing nested inside one was
+    reachable through that router, so it never showed; with Store's 14
+    canvases inside `module-store-workspace-enclosure-panel`, reaching an
+    unrelated top-level panel from a Store screen would have left the
+    enclosure rendering underneath. Added the
+    `[id$="-workspace-enclosure-panel"]` sweep Portal's own copy has.
+    (`returnToDashboard` and `handleDepartmentTabClick` already had it from
+    Batch 4; `navigateToModule` uses the blanket `.workspace-panel` sweep.)
+14. **★★★ The Custom period selector would have mutated an `<input>`'s
+    `type` at runtime** — Portal's `store-dashboard.js` delegates to its
+    shared `dashCustomTypeChange`/`dashReadCustomVal`, which ERP does not
+    have, and which carry Portal's own pre-8-Sep behaviour. Rewritten to
+    ERP's per-dashboard convention (`SD_CUSTOM_TYPE_SUFFIX` /
+    `sdCustomTypeChange` / `sdReadCustomVal`, five dedicated inputs toggled
+    with `hidden`), matching `md`/`dd`/`pd`/`adm`/`ad` exactly. The
+    `sd-period-btns` and `sd-custom-zone` markup was cloned from ERP's own
+    `pd-` blocks in the shared `dashboard-global-toolbar`, so it is
+    structurally identical to the four dashboards already live here.
+15. **Portal's `store-dashboard.js` ends with a misplaced Production
+    Dashboard block** (`navigateToProductionDashboard` + the start of its
+    `pd2*` engine globals — another automated-split artifact). Dropped
+    rather than carried across as permanently-broken dead code: it calls
+    `ddShowAllWorkspaceEnclosures` / `pd2ReturnToMain`, neither of which
+    exists in ERP. Batch 7 owns it and should file it in
+    `production/production-dashboard.js`, its real home. `sd*` globals,
+    `navigateToStoreDashboard` and `sdReturnToMain` moved the other way —
+    Portal declares them in `marketing/marketing-dashboard.js`; here they
+    live in `store/store-dashboard.js`, the same choice Batch 5 made for
+    `navigateToPurchaseDashboard`.
+16. **All three `typeof`-guarded forward references were verified as
+    guarded, not missing**: `pd2LoadDashboard` (Batch 7),
+    `resetJCSHWorkspace` (Batch 7), `resetIPSHWorkspace` (Batch 8). They
+    stay no-ops until their own batch lands, exactly as in Portal.
+
+### A stale claim in Portal's own docs, corrected
+
+Portal's `CLAUDE.md` still says "`routes/store.js:2072`'s Material Issue
+Ticket PDF upload still uses `PRODUCTION_DRIVE_FOLDER_ID` — same gap, not
+yet fixed", and this batch's brief repeated it as something to port as-is.
+Portal's **current** code does not do that: the upload reads
+`process.env.STORE_MATERIAL_ISSUE_TICKETS_DRIVE_FOLDER_ID`. Nothing in
+ERP's `routes/store.js` references `PRODUCTION_DRIVE_FOLDER_ID` at all.
+The gap is closed in Portal; only its doc is stale.
+
+### ERP adaptations kept (the complete list)
+
+- `store/qa.js` — `erpIsUserAdminGlobal` (2 sites).
+- `store/live-stock.js` — `erp_rm_section_*` / `erp_spare_section_*`
+  localStorage prefixes (6 sites), matching Batch 5's `erp_ml_section_*`
+  precedent. These are per-viewer collapse-state conveniences, so like
+  Portal's own equivalents they are NOT in `ERP_LOCAL_STORAGE_KEYS` —
+  flagged below.
+- `store/store-dashboard.js` — ERP's per-dashboard custom-period
+  convention; ERP's 3-arg `showDashboardGlobalToolbar`; ERP's own
+  `navigateToStoreDashboard`/`sdReturnToMain`; Portal's misplaced
+  Production Dashboard block removed (items 14/15).
+- `shared/navigation.js`'s `navigateToStoreWorkspacePanel` — Portal's
+  function minus the Production/QA branches (`job-card-sheet`,
+  `in-process-sheet`, the two MRD panels, `production-planning`, `fg-add`,
+  `fg-approval`) whose canvases do not exist here yet, and minus
+  `checkMaterialRequirementDateReminder`/`checkProductionPlanningReminder`
+  (Batch 7). Every `getElementById(...).style` was made defensive.
+- `routes/production.js` / `routes/store.js` / `routes/utility.js` —
+  `recordStageEvent` still resolves to `lib/analyticsLog.js`'s no-op stub.
+
+**One new localStorage key family** (`erp_rm_section_*`,
+`erp_spare_section_*`) was introduced, correctly `erp`-prefixed.
+
+### CSS / markup parity audit
+
+Mechanical audit: every class referenced by the ported Store `index.html`
+markup (enclosure + 14 canvases + dashboard canvas) AND by all 12
+`store/*.js` files AND `production/job-cards.js` — static `class="..."`,
+JS template strings, `className =`, `classList.*` — checked against ERP's
+`<style>` block, comparing rule **bodies**, not just presence.
+**68 classes referenced; 37 styled in Portal; exactly 3 missing in ERP**
+(31 have no rule in either system — pure JS selector hooks):
+`gate-upload-row`, `gate-meta-grid`, `gate-verification-footer`. All three
+plus their two `@media` variants and the `#canvas-module-store-gate-entry`
+-scoped table rules were copied verbatim (Portal's whole "GATE ENTRY MOBILE
+RESPONSIVENESS" block).
+
+Three further body-level differences were examined and deliberately left:
+`.dd-stat-card`'s base rule (ERP's `height:auto; overflow:visible` vs
+Portal's `height:100%; overflow:hidden` — Batch 4's documented non-change,
+aligning it would re-break Marketing/Accounts), and
+`.pill-group.business-potential-pills` (Marketing, out of scope). Every
+other difference was rule ORDER only.
+
+Markup was taken directly from Portal, not re-authored:
+- **Store workspace enclosure** — Portal's lines 1015-1516 + 2123-2345,
+  i.e. the enclosure header/banner and all 14 Store canvases, verbatim.
+  Portal's Production/QA/Project-Invoice canvases that share this enclosure
+  were excluded (Batches 7/8; Project Invoice Generation is already its own
+  top-level panel from Batch 3).
+- **Store Dashboard canvas** — Portal's 121-line block verbatim.
+- **Store dept-block** — Portal's sections, card ids, labels and order
+  verbatim; row labels match `lib/permissionCatalog.js`'s `rowLabel`s.
+
+### Verification actually performed
+
+- `node --check` on every backend file and every `.js` under
+  `erp-frontend` — clean.
+- Runtime `require()` of all 13 touched backend modules + a full
+  `server.js` boot — clean (no circular import, no missing export).
+  `routes/utility.js` now requires `../auth`; confirmed no cycle.
+- Zero duplicate route paths across all `erp-backend/routes/*.js`
+  (re-checked after each of the three route insertions).
+- **All 66 distinct `apFetch` actions** used by `store/*.js` and
+  `production/job-cards.js` resolve to a real backend route — this sweep
+  is what surfaced items 2 and 3.
+- Mechanical "called but defined nowhere" sweep across all 14 Store/PRN
+  frontend files, `production/job-cards.js`, and every `on*=` handler in
+  `index.html` — this is what surfaced items 9, 10 and 11. Now returns
+  only the two `typeof`-guarded Batch 7/8 forward references.
+- Zero duplicate top-level `let`/`const`, zero duplicate `function` names
+  across the whole `erp-frontend` tree.
+- Every `<script src>` in `index.html` resolves; `<div>` balance is 0; zero
+  duplicate DOM ids (the one reported hit is Portal's own HTML comment
+  containing the literal text `id="store-panel-center-title"`).
+- All 20 Store panel/control ids that `navigateToStoreWorkspacePanel`,
+  `switchActiveDashboardModule` and `store/*.js` reference were confirmed
+  present in `index.html`.
+- Navigation sweeps confirmed to reach the new enclosure: it carries
+  `class="workspace-panel"` and matches `[id$="-workspace-enclosure-panel"]`,
+  so `returnToDashboard`, `handleDepartmentTabClick`, `navigateToModule`
+  and (now) `switchActiveDashboardModule` all clear it.
+- **Migration 201 ID generation — verified, the specific check this batch
+  was asked for.** All four `allocateSequentialDocNumber` call sites
+  (`allocateNextGateNumber` line 235, `allocateNextGrnNumber` 428,
+  `allocateNextTicketId` 1553, `allocateNextStockSweepBatchId` 3399) were
+  confirmed to sit **inside** a `withTransaction(async (client) => {`
+  callback opened 1-5 lines earlier, and to pass that transaction's own
+  `client` — never the shared `pool`. The helper itself does a single
+  atomic `INSERT ... ON CONFLICT DO UPDATE ... RETURNING` on
+  `client.query`. This is Portal's current post-201 shape verbatim.
+- **`syncLiveRow`/`removeLiveRow` inside a transaction — scanned, zero
+  hits.** A brace-depth scan over the whole of `routes/store.js` found no
+  sync call inside any `withTransaction` body; Portal's current file is
+  already clean of the 15 Sep 2026 landmine.
+- Store's own `store.*` tables confirmed present in ERP and confirmed to
+  carry `trg_sheet_sync` (7 from Batch 0's migration, 3 from the 4 Sep
+  mirror migration) before mapping them in the poller.
+
+**NOT verified: anything requiring a running browser or a live database.**
+No screen was opened, no Gate Entry / GRN / QA check / ticket / stock sweep
+/ delivery challan was created, no PDF or Excel export was generated,
+`fetchStoreDashboardData` was never called against real data, and the four
+migration-201 counter tables were never queried live (see follow-ups).
+
+### Flagged for human follow-up (deliberately NOT touched)
+
+- **★★★ Five Drive env vars are NOT set on `erp-backend`** —
+  `INVOICE_FOLDER_ID`, `CHALLAN_FOLDER_ID`, `STORE_DRIVE_FOLDER_ID`,
+  `MATERIAL_OUTWARD_DRIVE_FOLDER_ID`,
+  `STORE_MATERIAL_ISSUE_TICKETS_DRIVE_FOLDER_ID` (queried live, not
+  assumed). Gate Entry's invoice/challan uploads silently skip without the
+  first two; Stock Sweep, Material Outward and the Material Issue Ticket
+  PDF each hard-refuse with "…root folder is not configured on the server."
+  The folder IDs are already recorded in this file's Prerequisites section.
+  Not set here because a Cloud Run env-var update deploys a new revision,
+  and this batch was explicitly local-only:
+  ```
+  gcloud run services update erp-backend --region asia-south1 \
+    --update-env-vars INVOICE_FOLDER_ID=1eijm29umA2oxnQ-J4h59o4Wz1X9NKLTK,\
+  CHALLAN_FOLDER_ID=1fznjUrkO2l1O8YAUXLT7pK2HTnuwv60Q,\
+  STORE_DRIVE_FOLDER_ID=1jwWLVpPhvGflUCDuv-4XYu9JZvuNjHlk,\
+  MATERIAL_OUTWARD_DRIVE_FOLDER_ID=1PjymA91DRR_BZopC1fPK2WTx_sTF5dLd,\
+  STORE_MATERIAL_ISSUE_TICKETS_DRIVE_FOLDER_ID=19DzIf4n3njXbyPcGv3RQhwdPnRPYZp-s
+  ```
+  (Verify the VPC-egress flags from CLAUDE.md §2 survive that update.)
+- **★★ The migration-201 counter tables could not be verified live.**
+  Portal's CLAUDE.md states migration 201 was applied to both databases and
+  that these four tables were created in `erp` ahead of Store being built,
+  but there is no ERP migration file for them and no session had DB access
+  to confirm. If they are genuinely absent, **every** Gate Entry, GRN,
+  Material Issue Ticket and Stock Sweep fails outright. A new idempotent
+  `erp-backend/migrations/store_document_number_counters.sql` re-asserts
+  only the Store half of migration 201 (`CREATE TABLE IF NOT EXISTS` ×4,
+  plus explicit `GRANT ... TO erp_app`, since a table created later by
+  `postgres` does not inherit Batch 2's one-off grant fix). **Run it once
+  before the first Gate Entry** — it is a no-op if the tables already
+  exist. It deliberately does NOT replay migration 201's Lead/Company
+  zero-padding (Batch 2's) or its dead `prn_id`/`po_no` DEFAULT drops
+  (Batch 5's).
+- **Raw Materials Q/A Check and Create Material Issue Ticket have no
+  dashboard card yet.** Their routes (`routes/store.js`) and screens
+  (`store/qa.js`, `store/tickets.js`, `production/job-cards.js`) and
+  canvases are all in place and permission-wired, but Portal files their
+  menu cards under QA (`perm_qa_check`, Batch 8) and Production
+  (`perm_create_store_ticket`, Batch 7). Batch 7/8 only need to add the
+  card — `navigateToStoreWorkspacePanel('store-grn')` and
+  `('store-material-request')` already work.
+- **`erp_rm_section_*` / `erp_spare_section_*` are not in
+  `ERP_LOCAL_STORAGE_KEYS`**, so they survive an explicit logout. This
+  matches Portal's behaviour for the same feature and Batch 5's identical
+  decision for `erp_ml_section_*`, but it does sit outside CLAUDE.md §3's
+  "register every key" rule.
+- **`fetchJobCardsForProject` and `fetchJobCardMaterials` are gated on
+  permission columns ERP's `requireSession` does not yet SELECT**
+  (`perm_add_finished_goods_store`, `perm_fg_approval`,
+  `perm_in_process_sheet`, `perm_job_card_sheet`). Harmless today —
+  `requirePermission` takes an array and `perm_create_store_ticket` is
+  selected, so a Store/Production ticket user passes — but Batches 7/8 must
+  add those four columns to the SELECT or their own screens will 403.
+- **`lib/sheetChangePoller.js`'s map and `TABLE_REGISTRY` remain two
+  independent lists with no cross-check.** This has now caused the same
+  silent-discard bug in Batch 4 (Design), Batch 5 (Purchase) and Batch 6
+  (Store). A startup assertion — "every registry entry whose real table has
+  a `trg_sheet_sync` trigger must appear in the poller map" — would end the
+  class. Third batch flagging it.
+- **The STORE spreadsheet's 10 tabs will auto-create on first sync**
+  (`ensureTabFormatted`/`getOrCreateSheetId`), same as QA's did in Portal —
+  no manual Sheets step is expected, but nothing confirmed it here.
+- **A Cloud Scheduler job for `/internal/retryPendingBoqPdfs` still does
+  not exist on ERP** (carried forward from Batches 4/5, unchanged).
 
 ## Batch 7 — Production
 
