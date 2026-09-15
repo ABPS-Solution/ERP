@@ -33,11 +33,20 @@
 // is the right time to generalize both into one shared file.
 // ═══════════════════════════════════════════════════════
 // mdCurrentPeriod/mdCurrentCustomType/mdChartFunnel/mdChartPotential/
-// mdChartVertical are declared in store/revise-prn.js, NOT here — ERP
-// already carries forward this exact same Portal misplaced-declaration
-// artifact from an earlier port (verified live: store/revise-prn.js lines
-// ~501-502). Redeclaring them here with `let` would be a fatal
-// SyntaxError (both files share one global scope). Do not add them back.
+// mdChartVertical are declared HERE, in their real owner file — NOT in
+// store/revise-prn.js the way Portal's own (misplaced) copy has them.
+// 15 Sep 2026: an earlier session in THIS repo, working from Portal's
+// history, mistook Portal's misplaced declaration in store/revise-prn.js
+// for genuinely dead code and deleted it outright (no equivalent existed
+// here to replace it) — that broke this dashboard with a live
+// "mdCurrentPeriod is not defined" error the moment it was opened, since
+// nothing anywhere declared these names. Fixed by declaring them properly
+// in the file that actually reads/writes them, rather than reintroducing
+// Portal's own misplacement. Do NOT add a second declaration to
+// store/revise-prn.js — that file's own comment (~line 500) documents
+// this history.
+let mdChartFunnel = null, mdChartPotential = null, mdChartVertical = null;
+let mdCurrentPeriod = "today", mdCurrentCustomType = "customday";
 
 const MD_CUSTOM_TYPE_SUFFIX = {
   customday: "day", customrange: "range", custommonth: "month",

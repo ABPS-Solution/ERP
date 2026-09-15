@@ -500,13 +500,16 @@ let ddCurrentPeriod = "today";
 let ddCurrentCustomType = "customday";
 let ddChartDept = null, ddChartVersion = null, ddChartTrend = null;
 // mdChartFunnel/mdChartPotential/mdChartVertical/mdCurrentPeriod/
-// mdCurrentCustomType used to be declared here too — leftover from the
-// 4 Sep 2026 Design/Purchase port, never referenced anywhere in this
-// file (confirmed by grep before removing). Removed 15 Sep 2026: they
-// collided fatally (duplicate top-level `let` = app-wide SyntaxError)
-// with the real Marketing Dashboard's own md* declarations added by
-// Batch 2's marketing/marketing-dashboard.js. Unlike the dd* vars just
-// above (genuinely load-bearing for design/design-dashboard.js despite
-// being declared in this unrelated Purchase file — see the file-
-// placement caveat), these had zero live use, so removing them is safe.
+// mdCurrentCustomType used to be declared here too, mirroring Portal's own
+// (equally misplaced) copy in its store/revise-prn.js. Removed 15 Sep 2026
+// on the mistaken assumption they were dead leftovers from the 4 Sep 2026
+// Design/Purchase port — they weren't: Marketing Dashboard's real code
+// (marketing/marketing-dashboard.js) reads/writes them but has never
+// declared them anywhere, relying entirely on this file's declaration
+// existing (Portal's own load-order-dependent global-sharing accident).
+// Deleting them with no replacement broke the live dashboard
+// ("mdCurrentPeriod is not defined") the moment it was opened. Re-fixed
+// the same day: the real declaration now lives in
+// marketing/marketing-dashboard.js itself, where it's actually used —
+// don't add a second copy here.
 

@@ -137,7 +137,80 @@ GitHub Pages ERP frontend until the user explicitly says to push.
 
 ## Batch 2 — Marketing
 
-**Status: ported, committed locally, NOT pushed** (not click-tested yet)
+**Status: click-tested, committed locally, NOT pushed/deployed** — real
+login (PIN, Ashwin Kumar/admin), all 10 screens + dashboard opened and
+verified against the real DB, entirely on localhost (backend on :8090,
+frontend statically served on :8091, temp `GAS_URL`/`db.js` SSL overrides
+reverted immediately after — zero diff left in git). Cloud SQL public IP
+opened and closed for the DB-side checks/fixes below.
+
+### 4 real bugs found and fixed during click-testing (15 Sep 2026)
+
+1. **`erp_app` DB role had no grant on 7 of Batch 0's new schemas**
+   (`marketing`, `qa`, `project`, `production`, `purchase`, `store`,
+   `analytics`) — Batch 0's migration ran as `postgres` and never granted
+   the app's own runtime role USAGE/SELECT/INSERT/etc. on what it created.
+   Every Marketing route calling `marketing.*` 500'd with
+   `permission denied for schema marketing`. **This silently affected the
+   ALREADY-LIVE Purchase and Store schemas too** — the same gap would have
+   broken those in production the moment a query touched a Batch-0-added
+   table, not just Marketing. Fixed with `GRANT USAGE`/`GRANT ALL ON ALL
+   TABLES`/`ALTER DEFAULT PRIVILEGES` for `erp_app` on all 7 schemas, run
+   as `postgres` directly against the live `erp` database — this is a
+   database-level fix, not a code deploy, so it is already in effect for
+   the real Cloud Run service today.
+2. **`shared/navigation.js`'s Marketing Dashboard permission check read
+   the wrong key** — `userPermissionsObject.viewMarketingDashboard`
+   (copied verbatim from Portal) instead of ERP's own `permMap.js` key,
+   `marketingDashboard`. The Dashboard pill never appeared even for a user
+   with the permission. Fixed to read `.marketingDashboard`.
+3. **`mdCurrentPeriod`/`mdChartFunnel`/etc. — a real regression from
+   earlier in THIS session, not from Portal.** An earlier (pre-Batch-2)
+   cleanup pass mistook Portal's own misplaced declaration of these
+   variables (they live in Portal's `store/revise-prn.js`, not
+   `marketing-dashboard.js`, an artifact of the 4 Sep automated split) for
+   dead code and deleted it from ERP's `store/revise-prn.js` with no
+   replacement. When Batch 2's real `marketing/marketing-dashboard.js`
+   landed — genuinely reading/writing these names throughout — nothing
+   anywhere declared them, so opening the Marketing Dashboard threw
+   `mdCurrentPeriod is not defined` immediately. Fixed properly this time:
+   declared in `marketing-dashboard.js` itself (their real, sole owner),
+   not reintroduced into the unrelated `revise-prn.js` file.
+4. **`routes/utility.js` was never ported to ERP at all** —
+   `getUniqueCompaniesList`/`getUniqueQualifications`/
+   `getUniqueCityStatePayloadTree`/`getEngineers`/`getStoreOperatorsList`/
+   `pullLiveActiveProjectCodes` are genuinely missing shared
+   infrastructure the ported Marketing screens (Search Company/
+   Qualification/City-State typeaheads, engineer directories) call
+   directly — a real dependency-tracing gap in both the original plan and
+   the porting agent's own sweep, only surfaced by an actual 404 while
+   clicking through Search by Company Name. Ported a trimmed version
+   (excludes `getSessionPermissions` — ERP bakes permissions into the
+   login response instead of a separate re-fetch call, confirmed no ERP
+   frontend file calls that action — and `sendWeeklyAdminDigest`, which
+   needs `lib/mailer.js`/env vars ERP doesn't have yet) to
+   `erp-backend/routes/utility.js`, mounted in `server.js` right after
+   `itemCodes`.
+
+### Known, expected gap (not a bug)
+
+- **Marketing Dashboard's data** 404s on `fetchMarketingDashboardData` —
+  that route lives in Portal's `routes/dashboards.js`, squarely Batch 9
+  (Cross-cutting), not Batch 2. The dashboard's full layout/stat-tile/
+  chart structure renders correctly; only the data-fetch is out of scope
+  until Batch 9.
+
+### Verified in the click-test
+
+All 10 screens open cleanly with no console errors after the 4 fixes
+above: Marketing Dashboard (structure), Create New Leads Details, Leads
+Received through Email (engineer directory populated, correct empty
+state), Upload Purchase Order, Upload Commissioning Report, Search by
+Company Name, Search by Type of Customer, Search by City/State/Country,
+Search Leads by Engineer/Status, Search Tasks by Engineer/Status.
+Permission gating confirmed correct both ways: Meeting Preparation
+correctly hidden for a user without `perm_meeting_preparation`, every
+other of Ashwin's 10 held Marketing permissions correctly shown.
 
 `routes/marketing.js` (29 routes), `meetingPrep.js` (2), `marketing/*.js`
 (7 files). 10 screens + dashboard.

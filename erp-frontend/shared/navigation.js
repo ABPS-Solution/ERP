@@ -242,7 +242,9 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canSearchQual              = userPermissionsObject.searchQualification === true;
   const canSearchCityState         = userPermissionsObject.searchCityState === true;
   const canMeetingPreparation      = userPermissionsObject.meetingPreparation === true;
-  const canViewMarketingDashboard  = userPermissionsObject.viewMarketingDashboard === true;
+  // ERP's permMap.js key is "marketingDashboard", not Portal's
+  // "viewMarketingDashboard" — ERP's own dedicated key, not a rename.
+  const canViewMarketingDashboard  = userPermissionsObject.marketingDashboard === true;
 
   if (document.getElementById("mod-card")) document.getElementById("mod-card").style.display = canEnterCard ? "block" : "none";
   if (document.getElementById("mod-email-whatsapp")) document.getElementById("mod-email-whatsapp").style.display = canViewEmailLeads ? "block" : "none";
