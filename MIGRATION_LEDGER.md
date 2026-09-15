@@ -428,6 +428,37 @@ when each batch starts):
   - Sub: ABPS Store Database Sheets `1NEc3zUgPdBUNd324FdH90Ddym8VPJTrD`
     (not an env var — just a place to keep the STORE spreadsheet if wanted)
 
+## Cross-batch infrastructure fixes (not specific to one batch)
+
+Found and fixed during Batch 2/3 click-testing, but affect ERP as a
+whole, not just Marketing/Project — recorded here since they don't
+belong to any one batch's own section above.
+
+- **`erp_app` DB role missing GRANT on 7 of Batch 0's schemas**
+  (`marketing`/`qa`/`project`/`production`/`purchase`/`store`/`analytics`)
+  — silently affected the already-live Purchase/Store schemas too, not
+  just the new ones. Fixed directly against the database (`GRANT USAGE`/
+  `GRANT ALL ON ALL TABLES,SEQUENCES`/`ALTER DEFAULT PRIVILEGES`, run as
+  `postgres`). Already in effect for production.
+- **★★★ ERP's Drive/Sheets/Gmail OAuth connection was dead, with no way
+  to reconnect** — `routes/gmailAuth.js` never existed in ERP.
+  Root-caused a user-reported "Failed to load file" on Tour Voucher bill
+  links AND every "invalid_grant" Sheet-sync failure seen since
+  31 Aug 2026. Fixed by porting `routes/gmailAuth.js` from Portal
+  verbatim, mounting it, and setting `GMAIL_CONNECT_SECRET`/
+  `GMAIL_OAUTH_REDIRECT_URI` on `erp-backend` (revision `erp-backend-
+  00061-p7w` for the env vars, `erp-backend-00062-8jw` for the code,
+  both confirmed live). **Still needs a human to visit the connect URL
+  once and click Allow** — see `HANDOFF.md` for the exact link and
+  current status; this is the one piece of this fix that could not be
+  completed by an agent.
+- **`routes/utility.js` never existed in ERP at all** until Batch 2's
+  screens 404'd on it. Ported a trimmed version (excludes
+  `getSessionPermissions`/`sendWeeklyAdminDigest`, which ERP doesn't
+  need/have infra for). If a future batch's screen 404s on a
+  dropdown-feed action that isn't obviously department-specific, check
+  Portal's `routes/utility.js` before writing a new route from scratch.
+
 ## Already done / left alone (per explicit decision, not tracked further)
 
 - **Accounts** — real data, mature, left alone. Drift-audit only.
