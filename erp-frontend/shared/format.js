@@ -2,22 +2,20 @@
 // are generic display/date helpers, not department-specific, so nothing
 // here needed trimming for ERP's 3-section scope.
 
-// boqRowMaterialDisplayText / autoGrowPoField — added 4 Sep 2026 alongside
-// the Design department mirror. In Portal these live in shared/format.js
-// and marketing/leads.js respectively; autoGrowPoField's real home
-// (marketing/leads.js) doesn't exist in ERP, and it's a small enough
-// generic DOM utility (auto-growing a <textarea> to fit its content) that
-// it belongs here instead of a new file for one function.
+// boqRowMaterialDisplayText — added 4 Sep 2026 alongside the Design
+// department mirror. In Portal this lives in shared/format.js.
 function boqRowMaterialDisplayText(row) {
   const name = (row && row.materialName || "").toString();
   const make = (row && row.make || "").toString().trim();
   return make ? `${name} - Make: ${make}` : name;
 }
 
-function autoGrowPoField(el) {
-  el.style.height = 'auto';
-  el.style.height = el.scrollHeight + 'px';
-}
+// autoGrowPoField used to be stubbed here ("marketing/leads.js doesn't
+// exist in ERP") — now that Marketing has been ported (15 Sep 2026),
+// leads.js provides the real one (a thin wrapper over autoGrowTextField,
+// matching Portal exactly). Removed here to avoid two competing top-level
+// `function autoGrowPoField` declarations across the app's one shared
+// script scope.
 
 function escapeHtml(value) {
   return (value === null || value === undefined ? "" : String(value))

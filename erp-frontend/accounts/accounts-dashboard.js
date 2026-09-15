@@ -45,12 +45,20 @@ function syncDashboardCanvasTopPadding() {
   });
 }
 
-function showDashboardGlobalToolbar(title, returnFn) {
+// Generalized 15 Sep 2026 (Marketing Dashboard port) to a 3-arg signature —
+// periodBtnsId — matching Portal's shared/marketing-dashboard.js shape, now
+// that a second dashboard shares this one toolbar element. Each
+// dashboard's own [id$="-period-btns"] group is shown only when it's the
+// active one; every other one hides, same as Portal.
+function showDashboardGlobalToolbar(title, periodBtnsId, returnFn) {
   activeDashboardReturnFn = returnFn;
   const toolbar = document.getElementById("dashboard-global-toolbar");
   toolbar.style.display = "block";
   const appHeader = document.querySelector('header');
   if (appHeader) appHeader.style.display = "none";
+  document.querySelectorAll('[id$="-period-btns"]').forEach(el => {
+    el.style.display = (el.id === periodBtnsId) ? "flex" : "none";
+  });
   requestAnimationFrame(syncDashboardCanvasTopPadding);
   document.getElementById("dash-global-title").textContent = title;
 }
@@ -60,7 +68,7 @@ function navigateToAccountsDashboard() {
   document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
   const c = document.getElementById("canvas-module-accounts-dashboard");
   if (c) c.style.display = "block";
-  showDashboardGlobalToolbar("Accounts Dashboard", adReturnToMain);
+  showDashboardGlobalToolbar("Accounts Dashboard", "ad-period-btns", adReturnToMain);
   adLoadDashboard();
 }
 

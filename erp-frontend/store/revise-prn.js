@@ -499,6 +499,14 @@ function prnStatusChip(status, stillToOrder) {
 let ddCurrentPeriod = "today";
 let ddCurrentCustomType = "customday";
 let ddChartDept = null, ddChartVersion = null, ddChartTrend = null;
-let mdChartFunnel = null, mdChartPotential = null, mdChartVertical = null;
-let mdCurrentPeriod = "today", mdCurrentCustomType = "customday";
+// mdChartFunnel/mdChartPotential/mdChartVertical/mdCurrentPeriod/
+// mdCurrentCustomType used to be declared here too — leftover from the
+// 4 Sep 2026 Design/Purchase port, never referenced anywhere in this
+// file (confirmed by grep before removing). Removed 15 Sep 2026: they
+// collided fatally (duplicate top-level `let` = app-wide SyntaxError)
+// with the real Marketing Dashboard's own md* declarations added by
+// Batch 2's marketing/marketing-dashboard.js. Unlike the dd* vars just
+// above (genuinely load-bearing for design/design-dashboard.js despite
+// being declared in this unrelated Purchase file — see the file-
+// placement caveat), these had zero live use, so removing them is safe.
 

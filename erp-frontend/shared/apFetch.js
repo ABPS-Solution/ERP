@@ -15,6 +15,11 @@ const GAS_URL = "https://erp-backend-244281871074.asia-south1.run.app/exec";
 const ERP_LOCAL_STORAGE_KEYS = [
   "erpSessionToken", "erpSessionExpiry", "erpSessionUser", "erpUserFirstName",
   "erpUserLastName", "erpActiveOperatorSignature", "erpUserPermissions", "erpIsUserAdminGlobal",
+  // erpActiveEmailLeadsCache (15 Sep 2026, Marketing port) — Portal's own
+  // equivalent key (abps_active_email_leads_cache) is wiped on every full
+  // localStorage.clear() there too (session-expiry / logout), so this is
+  // cleared on the same paths, not preserved like a device secret.
+  "erpActiveEmailLeadsCache",
 ];
 
 // clearAppLocalStorageKeepingDeviceKeys — a bare localStorage.clear() must
@@ -112,7 +117,17 @@ let globalPersonnelKeyLookupCache = [];
 let appActiveOperatorIdentityString = "";
 // Only the camelCase keys erp-backend/lib/permMap.js actually sends —
 // see mapPermissionsForFrontend there. Nothing else exists on this object.
-let userPermissions = { itemCodeAccess: false, tourExpense: false, cashExpenses: false, travelTickets: false, viewAccountsDashboard: false, securityLoginAccess: false };
+// Marketing keys added 15 Sep 2026 (frontend port) — same camelCase names
+// Portal's own userPermissions object uses for these (cardDetails,
+// searchCompany, etc.); erp-backend/lib/permMap.js's own port must send the
+// identical names or every one of these checks silently reads false.
+let userPermissions = {
+  itemCodeAccess: false, tourExpense: false, cashExpenses: false, travelTickets: false,
+  viewAccountsDashboard: false, securityLoginAccess: false,
+  cardDetails: false, searchCompany: false, emailLeads: false, meetingPreparation: false,
+  purchaseOrder: false, commissioningReport: false, searchTasks: false, searchStatus: false,
+  searchQualification: false, searchCityState: false, marketingDashboard: false,
+};
 
 window.scrollTo(0, 0);
 document.documentElement.scrollTop = 0;
@@ -124,6 +139,18 @@ window.onload = async function() {
   const token   = localStorage.getItem("erpSessionToken");
   const expires = localStorage.getItem("erpSessionExpiry");
   const cachedOperator = localStorage.getItem("erpActiveOperatorSignature");
+
+  // Email Leads in-memory cache bootstrap (15 Sep 2026, Marketing port) —
+  // mirrors Portal's own window.onload restore of cachedInboundEmailLeadsArray
+  // from abps_active_email_leads_cache. cachedInboundEmailLeadsArray itself
+  // is declared in marketing/email-processing.js, which (being a plain
+  // <script>, no bundler) has already run its top-level `let` by the time
+  // this onload handler executes, so assigning to it here is safe.
+  if (localStorage.getItem("erpActiveEmailLeadsCache")) {
+    try {
+      cachedInboundEmailLeadsArray = JSON.parse(localStorage.getItem("erpActiveEmailLeadsCache"));
+    } catch (e) { cachedInboundEmailLeadsArray = []; }
+  }
 
   if (token && expires && new Date() < new Date(expires) && cachedOperator) {
     // Portal re-fetches permissions fresh from the server on every load
@@ -294,4 +321,163 @@ async function showAppView() {
     console.error("showAppView: userPermissions is empty — every section will render hidden.", userPermissions);
   }
   enforceDynamicModuleRoleGateways(userPermissions || {});
+}
+
+// ── Stale-but-usable reference data (ported from Portal's shared/apFetch.js,
+// 15 Sep 2026, for the Marketing port — leads.js's Search by City/State
+// screen calls this) ────────────────────────────────────────────────────
+// Dropdown/catalog sources are near-static and are re-fetched on every page
+// load; this keeps the last good response and serves it if the network is
+// down, so a dropdown never renders empty during an outage. See Portal's
+// own copy of this comment for the full "what must never go through this"
+// list (permissions, anything a write is keyed on, live queues) — the same
+// rules apply here.
+const ERP_STALE_PREFIX = "erpStale:";
+const ERP_STALE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+
+function erpStaleCacheKey(payload) {
+  const { action, sessionToken, ...rest } = payload || {};
+  const params = Object.keys(rest).sort().map(k => `${k}=${JSON.stringify(rest[k])}`).join("&");
+  return ERP_STALE_PREFIX + action + (params ? "|" + params : "");
+}
+
+async function fetchWithStaleCache(payload) {
+  const key = erpStaleCacheKey(payload);
+  try {
+    const data = await apFetch(payload);
+    if (data && data.success) {
+      try { localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data })); } catch (_) { /* quota full or private mode — best-effort */ }
+    }
+    return data;
+  } catch (err) {
+    if (err && err.message === "SESSION_EXPIRED") throw err;
+    let cached = null;
+    try { cached = JSON.parse(localStorage.getItem(key) || "null"); } catch (_) { cached = null; }
+    if (!cached || !cached.data || (Date.now() - cached.ts) > ERP_STALE_MAX_AGE_MS) throw err;
+    return { ...cached.data, __stale: true, __syncedAt: cached.ts };
+  }
+}
+
+// ── Search by Company Name typeahead (ported from Portal's shared/apFetch.js,
+// 15 Sep 2026, for the Marketing port) — a type-to-search text input rather
+// than a <select>, since the company list runs into the hundreds. The
+// suggestion list is a single shared element appended straight to <body>
+// with position:fixed, positioned via the input's own getBoundingClientRect
+// on every keystroke, so it isn't clipped by any overflow:hidden ancestor.
+// Generalized with default args (matching Portal) so Meeting Preparation's
+// own company picker can reuse this with a different inputId/ddId pair.
+async function triggerCompanyDropdownArrayFetch() {
+  try {
+    const d = await fetchWithStaleCache({
+      action: "getUniqueCompaniesList",
+      activeEngineer: appActiveOperatorIdentityString
+    });
+    if (d.success) window.cachedCompanySearchList = d.companies || [];
+  } catch (e) { console.error("Company list refresh failed:", e.message); }
+}
+
+function ensureCompanySearchDropdownEl(ddId = "lookup-module-company-dropdown-suggestions") {
+  let dd = document.getElementById(ddId);
+  if (!dd) {
+    dd = document.createElement("div");
+    dd.id = ddId;
+    dd.className = "company-typeahead-dd";
+    dd.style.cssText = "display:none; position:fixed; background:#fff; border:1.5px solid var(--brand); border-radius:4px; z-index:9999; max-height:240px; overflow-y:auto; box-shadow:0 6px 16px rgba(0,0,0,0.15);";
+    document.body.appendChild(dd);
+  }
+  return dd;
+}
+
+function handleCompanySearchTypeaheadInput(query, inputId = "lookup-module-company-dropdown", ddId = "lookup-module-company-dropdown-suggestions") {
+  const dd = ensureCompanySearchDropdownEl(ddId);
+  dd.dataset.inputId = inputId;
+  if (!query || query.trim().length < 1) { dd.style.display = "none"; return; }
+  const q = query.trim().toLowerCase();
+  const matches = (window.cachedCompanySearchList || [])
+    .filter(item => (item.displayLabel || "").toLowerCase().includes(q) || (item.companyValue || "").toLowerCase().includes(q))
+    .slice(0, 10);
+  if (matches.length === 0) { dd.style.display = "none"; return; }
+  dd.innerHTML = matches.map(item => `
+    <div onmousedown="event.preventDefault(); selectCompanySearchTypeahead('${item.companyValue.replace(/'/g, "\\'")}', '${inputId}', '${ddId}')"
+      style="padding:9px 12px; cursor:pointer; font-size:0.88rem; border-bottom:1px solid var(--border);"
+      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background=''">${escapeHtml(item.displayLabel)}</div>
+  `).join("");
+  const input = document.getElementById(inputId);
+  const rect = input.getBoundingClientRect();
+  dd.style.top = rect.bottom + "px";
+  dd.style.left = rect.left + "px";
+  dd.style.width = rect.width + "px";
+  dd.style.display = "block";
+}
+
+function selectCompanySearchTypeahead(companyValue, inputId = "lookup-module-company-dropdown", ddId = "lookup-module-company-dropdown-suggestions") {
+  const input = document.getElementById(inputId);
+  if (input) input.value = companyValue;
+  const dd = document.getElementById(ddId);
+  if (dd) dd.style.display = "none";
+  if (typeof window.onCompanySearchTypeaheadSelect === "function" && ddId !== "lookup-module-company-dropdown-suggestions") {
+    window.onCompanySearchTypeaheadSelect(companyValue, inputId, ddId);
+  }
+}
+
+document.addEventListener("click", (e) => {
+  document.querySelectorAll(".company-typeahead-dd").forEach((dd) => {
+    const inputId = dd.dataset.inputId || "lookup-module-company-dropdown";
+    if (!e.target.closest(`#${inputId}`) && !e.target.closest(`#${dd.id}`)) {
+      dd.style.display = "none";
+    }
+  });
+});
+
+// Ported from Portal's shared/apFetch.js for the Marketing port — Search by
+// Type of Customer's "Other Types of Customer" sub-drawer.
+async function loadQualFilter() {
+  const container = document.getElementById("qual-filter-checkboxes");
+  if (!container) return;
+
+  container.innerHTML = '<p style="font-size:0.75rem; color:var(--brand); font-weight:600; margin:0; display:flex; align-items:center; gap:6px;"><span class="spinner" style="display:inline-block; width:10px; height:10px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite;"></span> Loading Other Types of Customer...</p>';
+
+  try {
+    const data = await fetchWithStaleCache({
+      action: "getUniqueQualifications",
+      activeEngineer: appActiveOperatorIdentityString
+    });
+    if (data.success) {
+      // Baseline core options to strip from the 'Others' sub-drawer completely
+      const baselineCoreQualifications = [
+        "industry", "epc", "govt/psu", "consultant",
+        "developer", "electrical contractor", "dealer", "vendor"
+      ];
+
+      // Use a local Set to deduplicate raw text values coming from rows
+      let uniqueCustomQualsSet = new Set();
+      data.quals.forEach(q => {
+        let cleanQual = q.toString().trim();
+        if (!cleanQual) return;
+
+        if (baselineCoreQualifications.indexOf(cleanQual.toLowerCase()) === -1) {
+          uniqueCustomQualsSet.add(cleanQual);
+        }
+      });
+
+      // CRITICAL OVERWRITE FIX: Empty the container right before rendering
+      // This stops multiple navigateToModule clicks from stacking copies back-to-back!
+      container.innerHTML = "";
+      let customOptionsCount = 0;
+
+      uniqueCustomQualsSet.forEach(cleanQual => {
+        const cleanId = "custom_q_" + cleanQual.replace(/\s+/g, '_');
+
+        container.innerHTML += `
+          <input type="checkbox" name="searchQual" value="${cleanQual}" id="${cleanId}" onchange="updateSelectedDisplay()">
+          <label for="${cleanId}">${cleanQual}</label>
+        `;
+        customOptionsCount++;
+      });
+
+      if (customOptionsCount === 0) {
+        container.innerHTML = '<p style="font-size:0.75rem; color:var(--muted); font-weight:600; padding:4px 0;">No unlisted custom Type of Customer yet.</p>';
+      }
+    }
+  } catch(e) { console.error("Custom Types of Customer load failed:", e.message); }
 }

@@ -18,6 +18,12 @@
 // content (accounts/*.js, design/item-codes.js, project/security-admin.js)
 // is later, separate work per the task this file was built for.
 
+// currentActiveModuleContext / canvasLastParentWorkspaceId / navigateToModule
+// — ported verbatim from Portal's shared/navigation.js for the Marketing
+// port (15 Sep 2026, batch 2). Referenced heavily by marketing/leads.js.
+let currentActiveModuleContext = "CARD";
+let canvasLastParentWorkspaceId = "workspace-searchCompany";
+
 // checkStorePRNRevisionReminder / checkPurchasePORevisionReminder — ported
 // from Portal's shared/navigation.js. Both are called from
 // purchase/revise-po.js's navigateToPurchaseWorkspacePanel on every
@@ -45,6 +51,154 @@ async function checkPurchasePORevisionReminder() {
     const data = await apFetch({ action: "checkPRNsNeedingPORevisionCount" });
     banner.style.display = (data.success && data.count > 0) ? "block" : "none";
   } catch (e) { /* non-critical — leave banner state as-is on network error */ }
+}
+
+// navigateToModule — ported verbatim from Portal's shared/navigation.js
+// (Marketing port, 15 Sep 2026, batch 2). Every Marketing menu card calls
+// this directly. Depends on functions/globals living in the already-ported
+// marketing/*.js files and shared/typeahead.js — see that batch's own
+// verification notes for the full dependency check.
+async function navigateToModule(key) {
+    window.scrollTo(0, 0);
+    setTimeout(() => window.scrollTo(0, 0), 50);
+    // 1. Core verification gateway check routing against userPermissions payload mapping
+    if (!userPermissions[key]) return alert("Access Denied: Missing permission profile privileges.");
+
+    const canvas = document.getElementById("step2-inline-interaction-canvas");
+    if (canvas) {
+        canvas.style.display = "none";
+    }
+
+    document.getElementById("dashboard-view").style.display = "none";
+    document.getElementById("module-workspace-container").style.display = "block";
+    document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
+
+    // Maps keys to the exact workspace element panel DOM IDs
+    let targetPanelKeyIdStr = key;
+    if (key === "emailLeads") {
+        targetPanelKeyIdStr = "emailWhatsapp";
+    } else if (key === "commissioningReport") {
+        targetPanelKeyIdStr = "commissioningReport";
+        // Project ID typeahead needs sharedActiveProjectCodes/sharedProjectMeta
+        // populated before the user can type into it — same reasoning
+        // Create BOQ's panel-open hook has for the identical component.
+        if (typeof ensureSharedProjectTypeaheadData === "function") ensureSharedProjectTypeaheadData();
+        const crProjectInput = document.getElementById("commissioning-report-project-ta-input");
+        const crCustomerName = document.getElementById("commissioning-report-customer-name");
+        if (crProjectInput) crProjectInput.value = "";
+        if (crCustomerName) crCustomerName.value = "";
+    } else if (key === "purchaseOrder") {
+        targetPanelKeyIdStr = "purchaseOrder";
+        // Always start fresh — otherwise leaving via Return to Main
+        // Dashboard mid-review and coming back shows the previous
+        // session's Review Extracted Purchase Order screen instead of
+        // the blank upload form.
+        if (typeof resetPurchaseOrderWorkspace === "function") resetPurchaseOrderWorkspace();
+        // Populate owner dropdown with marketing engineers
+        const poOwnerDrop = document.getElementById("po-owner-of-order-dropdown");
+        if (poOwnerDrop) {
+          const populatePOOwnerDrop = () => {
+            poOwnerDrop.innerHTML = '<option value="">— Select Engineer —</option>';
+            cachedEngineers.forEach(eng => {
+              const opt = document.createElement("option");
+              opt.value = eng.personKey; opt.textContent = eng.name;
+              poOwnerDrop.appendChild(opt);
+            });
+            if (appActiveOperatorIdentityString && cachedEngineers.indexOf(appActiveOperatorIdentityString) !== -1) {
+              poOwnerDrop.value = appActiveOperatorIdentityString;
+            }
+          };
+          if (cachedEngineers.length > 0) {
+            populatePOOwnerDrop();
+          } else {
+            poOwnerDrop.innerHTML = '<option value="">Loading engineers...</option>';
+            let waitAttempts = 0;
+            const waitForEngineers = setInterval(() => {
+              waitAttempts++;
+              if (cachedEngineers.length > 0 || waitAttempts > 25) {
+                clearInterval(waitForEngineers);
+                if (cachedEngineers.length > 0) populatePOOwnerDrop();
+              }
+            }, 200);
+          }
+          // Always default to logged-in user
+          setTimeout(() => {
+            if (poOwnerDrop.value === "" && appActiveOperatorIdentityString) {
+              poOwnerDrop.value = appActiveOperatorIdentityString;
+            }
+          }, 300);
+        }
+    }
+
+    const targetWorkspacePanel = document.getElementById("workspace-" + targetPanelKeyIdStr);
+    if (targetWorkspacePanel) targetWorkspacePanel.style.display = "block";
+
+    document.getElementById("multi-contact-records-container").innerHTML = "";
+    document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
+    document.getElementById("global-direct-inline-collapse-entry-btn").style.display = "none";
+    document.getElementById("missing-trigger-notice-block").style.display = "none";
+
+    const taskOutputNode = document.getElementById("task-matrix-results-output-node");
+    if (taskOutputNode) taskOutputNode.innerHTML = "";
+
+    currentActiveModuleContext = (key === "cardDetails") ? "CARD" : (key === "searchCompany" ? "DROPDOWN" : "FILTERS");
+    resetSequentialFormState();
+
+    if (key === "cardDetails") {
+      fileFront = null; fileBack = null;
+      const fb = document.getElementById('front-box'); if (fb) { fb.textContent = '📷 Front Side '; fb.classList.remove('done'); }
+      const bb = document.getElementById('back-box'); if (bb) { bb.textContent = '📷 Back Side (Optional)'; bb.classList.remove('done'); }
+      const fi = document.getElementById('card-front'); if (fi) fi.value = '';
+      const bi = document.getElementById('card-back'); if (bi) bi.value = '';
+      ['f-company','f-name','f-position','f-phone','f-altphone','f-email','f-website','f-city','f-state','f-country','f-address'].forEach(function(id){ const el=document.getElementById(id); if(el) el.value=''; });
+      document.getElementById('step1-card-capture-block').style.display = 'block';
+      document.getElementById('step2-new-entry-dropdown').style.display = 'none';
+      document.getElementById('step2-inline-interaction-canvas').style.display = 'none';
+      document.getElementById('missing-trigger-notice-block').style.display = 'none';
+    }
+
+    // Runtime synchronization switches
+    if (key === "searchCompany") {
+      const companyDropdownNode = document.getElementById("lookup-module-company-dropdown");
+      if (companyDropdownNode && companyDropdownNode.value) {
+          triggerSequentialSearch('DROPDOWN');
+      } else {
+          triggerCompanyDropdownArrayFetch();
+      }
+    } else if (key === "cardDetails") {
+      const companyInputTextNode = document.getElementById("f-company");
+      if (companyInputTextNode && companyInputTextNode.value.trim() !== "") {
+          triggerSequentialSearch('CARD');
+      }
+    } else if (key === "searchQualification") {
+      document.querySelectorAll('input[name="searchQual"]').forEach(cb => cb.checked = false);
+      const drawerPanel = document.getElementById("custom-qualifications-sub-drawer");
+      if (drawerPanel) drawerPanel.style.display = "block";
+      // #selected-quals-display was removed 10 Sep 2026 (see the no-op note
+      // in marketing/leads.js). The sibling reset below got its null guard;
+      // this site was missed, so the bare deref threw a TypeError right
+      // here — and because it threw mid-branch, loadQualFilter() on the
+      // next line never ran and Search by Qualification opened permanently
+      // empty. Guarded, not deleted, to match the sibling's shape.
+      const selQuals = document.getElementById("selected-quals-display");
+      if (selQuals) selQuals.textContent = "";
+      loadQualFilter();
+    } else if (key === "searchStatus") {
+      document.querySelectorAll('input[name="leadMatrixStatusFilter"]').forEach(cb => cb.checked = false);
+      renderLeadMatrixEngineerCheckboxes();
+      const fd = document.getElementById("lead-matrix-active-filters-display");
+      if (fd) { fd.style.display = "none"; fd.textContent = ""; }
+    } else if (key === "searchEngineer") {
+      const engineerSelectNode = document.getElementById("engineer-filter-select");
+      if (engineerSelectNode && engineerSelectNode.value) triggerEngineerSearch();
+    } else if (key === "searchCityState") {
+      loadCityStateFilterOptions();
+    } else if (key === "emailLeads") {
+      executeInboundEmailSyncPipelineFetch();
+    } else if (key === "meetingPreparation") {
+      if (typeof mprepResetScreen === "function") mprepResetScreen();
+      triggerCompanyDropdownArrayFetch();
+    }
 }
 
 // marketing/project/store/qa/production added 15 Sep 2026 (Batch 1
@@ -75,6 +229,31 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canViewAccountsDashboard = userPermissionsObject.viewAccountsDashboard === true;
   const canItemCode = userPermissionsObject.itemCodeAccess === true;
   const canSecurity  = userPermissionsObject.securityLoginAccess === true;
+
+  // ── Marketing, ported from Portal's shared/navigation.js — same
+  // camelCase permission keys, same card ids (mod-card/mod-email-whatsapp/...).
+  const canEnterCard               = userPermissionsObject.cardDetails === true;
+  const canViewEmailLeads          = userPermissionsObject.emailLeads === true;
+  const canUploadCommissioning     = userPermissionsObject.commissioningReport === true;
+  const canUploadPurchaseOrder     = userPermissionsObject.purchaseOrder === true;
+  const canSearchCompany           = userPermissionsObject.searchCompany === true;
+  const canSearchTasks             = userPermissionsObject.searchTasks === true;
+  const canSearchStatus            = userPermissionsObject.searchStatus === true;
+  const canSearchQual              = userPermissionsObject.searchQualification === true;
+  const canSearchCityState         = userPermissionsObject.searchCityState === true;
+  const canMeetingPreparation      = userPermissionsObject.meetingPreparation === true;
+  const canViewMarketingDashboard  = userPermissionsObject.viewMarketingDashboard === true;
+
+  if (document.getElementById("mod-card")) document.getElementById("mod-card").style.display = canEnterCard ? "block" : "none";
+  if (document.getElementById("mod-email-whatsapp")) document.getElementById("mod-email-whatsapp").style.display = canViewEmailLeads ? "block" : "none";
+  if (document.getElementById("mod-commissioning-report")) document.getElementById("mod-commissioning-report").style.display = canUploadCommissioning ? "block" : "none";
+  if (document.getElementById("mod-purchase-order")) document.getElementById("mod-purchase-order").style.display = canUploadPurchaseOrder ? "block" : "none";
+  if (document.getElementById("mod-company")) document.getElementById("mod-company").style.display = canSearchCompany ? "block" : "none";
+  if (document.getElementById("mod-tasks")) document.getElementById("mod-tasks").style.display = canSearchTasks ? "block" : "none";
+  if (document.getElementById("mod-status")) document.getElementById("mod-status").style.display = canSearchStatus ? "block" : "none";
+  if (document.getElementById("mod-qual")) document.getElementById("mod-qual").style.display = canSearchQual ? "block" : "none";
+  if (document.getElementById("mod-city-state")) document.getElementById("mod-city-state").style.display = canSearchCityState ? "block" : "none";
+  if (document.getElementById("mod-meeting-prep")) document.getElementById("mod-meeting-prep").style.display = canMeetingPreparation ? "block" : "none";
 
   // ── Design (BOQ + Catalog & Drawings), ported from Portal's
   // shared/navigation.js — same camelCase permission keys, same card ids
@@ -128,6 +307,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const dashMap = {
     "mod-design-dashboard-wrapper":   canViewDesignDashboard,
     "mod-purchase-dashboard-wrapper": canViewPurchaseDashboard,
+    "mod-marketing-dashboard-wrapper": canViewMarketingDashboard,
   };
   Object.keys(dashMap).forEach(function(id) {
     const el = document.getElementById(id);
@@ -143,6 +323,8 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (purchaseBlock) purchaseBlock.style.display = (canViewMaterialListPurchase || canViewRejectedMaterial || canCreatePO || canAuthorizePO || canPPSTracking || canSearchVendorCostingInfo || canReviseRMPO || canAuthorizeRMPORevision || canSearchRMPO || canViewPurchaseDashboard) ? "block" : "none";
   const adminBlock = document.getElementById("dashboard-admin-department-header-block");
   if (adminBlock) adminBlock.style.display = canSecurity ? "block" : "none";
+  const marketingBlock = document.getElementById("dashboard-marketing-department-header-block");
+  if (marketingBlock) marketingBlock.style.display = (canEnterCard || canViewEmailLeads || canUploadCommissioning || canUploadPurchaseOrder || canSearchCompany || canSearchTasks || canSearchStatus || canSearchQual || canSearchCityState || canMeetingPreparation) ? "block" : "none";
 
   refreshDepartmentTabsBar();
 }
