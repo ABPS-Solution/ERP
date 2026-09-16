@@ -2138,6 +2138,33 @@ and no dashboard route was run against real data this session.
 - **No Documentation-specific env var, Drive folder, spreadsheet or
   migration is needed** — the feature is filesystem + catalog only.
   Nothing new to set before deploying.
+- **★★ A deploy of this batch was authorised and ATTEMPTED at the end of
+  the 17 Sep 2026 session, and did not happen.** Both `git push origin
+  main` and `gcloud run deploy erp-backend --source ./erp-backend
+  --region asia-south1` were refused by the session's own permission
+  layer, so **nothing was pushed and nothing was deployed**.
+  `origin/main` is still at Batch 8's `1b7b9d6` and the live
+  `erp-backend` revision is unchanged; the two local commits
+  (`8424aae`, `6afdd85`) remain the only record of this batch.
+  A live probe confirmed that the deployed service cannot tell you
+  either way: `erp-backend` mounts `requireSession` on the FIRST `/api`
+  router, so **every** unauthenticated `/api/*` POST returns 401
+  regardless of whether that action's route exists (verified against a
+  deliberately nonexistent action). **Never read an unauthenticated 401
+  as evidence that a route is live** — it isn't.
+- **ERP has no `deploy.sh`** (confirmed by a repo-wide glob — Portal's
+  verified-live wrapper has no counterpart here). The deploy is the bare
+  `gcloud run deploy` above, so none of Portal's three post-deploy safety
+  checks run (revision actually advanced / health check answers / tests
+  gate). Afterwards, confirm `--network=default --subnet=default
+  --vpc-egress=private-ranges-only` survived — CLAUDE.md §2: without
+  those flags `erp-backend` cannot reach the private-IP Cloud SQL
+  instance at all.
+- **Ship the backend FIRST, then the frontend.** The committed frontend
+  adds a Docs button whose two routes exist only in the gitignored
+  backend, so a Pages deploy on its own leaves that button opening a
+  screen that 404s. The reverse order is harmless — the routes simply sit
+  unused until the frontend catches up.
 
 ---
 
