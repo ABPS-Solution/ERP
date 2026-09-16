@@ -1928,10 +1928,216 @@ data-fetch calls with no real session).
 
 ## Batch 9 — Cross-cutting
 
-**Status: not started**
+**Status: Part B (Documentation) ported, committed locally, NOT
+pushed/deployed. Part A (dashboard data routes) audited and found
+ALREADY COMPLETE — one real bug fixed. Neither part click-tested against
+a real login** (no credentials this session); Documentation WAS render-
+tested in a real browser against a local stub of its own new route.
 
-`routes/dashboards.js` (7), `documentation.js`, `docs/content/**`. 8
-dashboards + in-app Documentation.
+`routes/documentation.js`, `shared/documentation.js`, `docs/content/**`
+(76 files), `scripts/checkDocsCoverage.js`. Plus a full drift audit of
+all 8 dashboards' data routes and the 4 recurring dashboard bug classes.
+
+### Part A — dashboard data-fetch routes: already done, not missing
+
+The brief expected several dashboards to still be 404ing on a route that
+was never ported. **That is stale.** Every batch from 4 onward ported its
+own department's dashboard route as it went, and Batch 2's explicitly-
+flagged Marketing gap was closed somewhere along the way too. Verified
+mechanically, not by reading notes: Portal's `routes/dashboards.js` and
+ERP's were split function-by-function and diffed **comment-stripped**.
+
+| Dashboard | ERP location | Result |
+|---|---|---|
+| Marketing | `routes/dashboards.js` | code-identical (comments only) |
+| Design | `routes/dashboards.js` | byte-identical |
+| Purchase | `routes/dashboards.js` | code-identical |
+| Store | `routes/dashboards.js` | code-identical |
+| Production | `routes/dashboards.js` | code-identical |
+| Accounts | `routes/dashboards.js` | code-identical bar the bug below |
+| QA | `routes/qaDashboard.js` | code-identical |
+| Admin | `routes/adminDashboard.js` | byte-identical |
+
+Shared helpers were diffed the same way and are all code-identical:
+`getPeriodBounds`, `buildPeriodBuckets`, `resolveDashboardToday`,
+`istParts`/`istDayKey`/`istMidnight`/`istWeekMonday`/`istWeekKey`/
+`istMonthKey`, `computeExpectedDeliveryTimeline`, and all three
+`fetch*TimelineDueOverdue` helpers. The only non-comment differences
+anywhere were **declaration ORDER** of four module-level constants
+(`DESIGN_/PURCHASE_TIMELINE_ITEM_PRIORITY`/`_LABELS`, `MONTH_NAMES`) —
+hoisting-irrelevant, left alone rather than churned.
+
+**1 real bug found and fixed.** `fetchAccountsDashboardData` returned a
+raw `err.message` to the client — the only one of the 8 dashboard routes
+still doing so. It predates Portal's 7 Sep 2026 `safeErrorMessage` sweep
+and was never touched by a port, so it leaked Postgres SQLSTATE detail on
+any failure. `safeErrorMessage` was already imported at the top of the
+file (the ported routes use it); only this one call site was stale.
+Deliberate business-error messages still pass through unchanged.
+
+**The four recurring dashboard bug classes were re-swept and all 8 are
+clean** — this is the audit the brief asked for, done against the code,
+not assumed from earlier batches' claims:
+- `showDashboardGlobalToolbar` — all 8 call sites use the 3-arg ERP
+  signature `(title, periodBtnsId, returnFn)`. No 2-arg holdout survives
+  (Batch 4 fixed Design, Batch 5 fixed Purchase).
+- Runtime `<input>.type` mutation — **zero hits anywhere in
+  `erp-frontend`**. All 8 dashboards carry the 5-dedicated-inputs-toggled-
+  with-`hidden` pattern (`ad`/`md`/`dd`/`pd`/`sd`/`pd2`/`qad`/`adm`), and
+  all 8 `*-period-btns` + `*-custom-zone` blocks exist exactly once in
+  `index.html`. (The two `.type =` hits in `marketing/leads.js` are
+  `createElement` on a brand-new element, not a mutation of a rendered
+  input — not this bug class.)
+- Chart.js `maintainAspectRatio:false` — **every** chart config on every
+  dashboard has it: the per-file count of `maintainAspectRatio` equals the
+  count of `new Chart(` in all 8 files (7/7, 3/3, 2/2, 6/6, 3/3, 3/3, 2/2,
+  3/3 = 29 charts).
+- `syncLiveRow` inside `withTransaction` — not applicable: every dashboard
+  route is read-only and contains no sync call at all (checked).
+
+**Permission wiring re-verified live with grep for all 8 dashboard
+columns** (per this file's own twice-burned rule about trusting a prior
+"confirmed wired" note): all 8 present in all 5 backend places
+(`auth.js`'s `requireSession` SELECT, `permMap.js`, `permissionCatalog.js`,
+`sheetsRegistry.js`, `sheetsPull.js`). Separately, **all 67
+`PERMISSION_CATALOG` columns** were confirmed present in the
+`requireSession` SELECT — this matters for Part B, which reads
+`req.user[dbColumn]` for every one of them and would silently hide a
+section whose column wasn't selected.
+
+**No new backend code was written for Part A** beyond the one-line
+`safeErrorMessage` fix.
+
+### Part B — in-app Documentation, ported
+
+- **`erp-backend/routes/documentation.js`** — Portal's file verbatim plus
+  an ERP port-note header. Two routes (`fetchDocumentationNav`,
+  `fetchDocumentationArticle`), mounted in `server.js` behind
+  `requireSession` with **no permission column of its own** (deliberate,
+  avoids the 7-place rule — same reasoning as Portal). Visibility is a
+  read of the permissions the requester already holds, narrowed further by
+  `req.deviceRestrictedPermissions` for a restricted PIN-login device.
+  No logic change was needed; two ERP facts are recorded in its header:
+  ERP's catalog gives `perm_accounts_dashboard` the REAL `accounts`
+  department (Portal uses synthetic `dashboard-accounts`) — harmless,
+  `DASHBOARD_REAL_DEPT` falls through to the entry's own department, so
+  the `dashboard-accounts` row is simply unused here; and
+  `perm_customer_query_management` doesn't exist in ERP's catalog.
+- **`erp-backend/docs/content/**`** — all 76 article files copied, NOT
+  regenerated. Four ERP-specific content edits, all made because the
+  Portal text described something that genuinely does not exist here:
+  `project/perm_customer_query_management.html` deleted outright;
+  the Customer Queries row removed from `project/_overview.html`'s section
+  table; the "a Customer Query opens directly on Current Pending Queries"
+  clause removed from `project/perm_daily_timeline.html`'s click-through
+  list; `getting-started.html`'s "Welcome to the ABPS Portal" →
+  "ABPS ERP"; and `accounts/_overview.html`'s "not inside the Portal" →
+  "not inside this system".
+  Content depth is inherited from Portal as-is: **Marketing/Project/
+  Design/Purchase/Store carry the deep second-pass rewrite; Production/
+  QA/Accounts still carry the shallower first-pass content** (Portal's
+  own standing next task, see its CLAUDE.md).
+- **`erp-backend/scripts/checkDocsCoverage.js`** — ported with one
+  deliberate fix (see the real-bug note below). Reports **67/67 sections
+  written, 0 orphaned**.
+- **`erp-frontend/shared/documentation.js`** — byte-for-byte from Portal
+  apart from a port-note header.
+- **`erp-frontend/index.html`** — "Docs" header button (Portal's own
+  entry point: `switchActiveDashboardModule('documentation')`),
+  `canvas-module-documentation` panel, the `.doc-*` CSS block verbatim
+  from Portal (so an article file stays portable between the two
+  systems), and the script tag.
+- **`erp-frontend/shared/navigation.js`** — one init-on-open line. **No
+  sweep-list change was needed**, unlike Portal: ERP's
+  `switchActiveDashboardModule` / `returnToDashboard` /
+  `handleDepartmentTabClick` use blanket `[id^="canvas-module-"]` and
+  `[id$="-workspace-enclosure-panel"]` selectors, where Portal maintains
+  hardcoded id lists (the exact shape that produced Portal's own 5 Sep
+  2026 missing-id landmine).
+
+### Real bug found and fixed in the ported tooling
+
+**Portal's `scripts/checkDocsCoverage.js` cannot pass on its own
+content.** It groups and orphan-checks on the raw `p.department`, but a
+dashboard permission's department is the synthetic `dashboard-xxx` key
+while `routes/documentation.js` files its article under the REAL
+department (`realDeptForCatalogEntry`). So every written `*_dashboard.html`
+article — 8 of them, all present in Portal — reports as `ORPHANED` and
+the script exits 1. ERP's copy applies the same mapping the route uses,
+so the two agree and it exits 0. **Portal was not touched** (this session
+is read-only against that repo); flagged below for whoever owns it.
+
+### Verification actually performed
+
+- Comment-stripped, function-by-function diff of all 8 dashboard routes
+  and all 12 shared dashboard helpers vs Portal (the sweep that found the
+  `err.message` bug).
+- `node --check` on every touched backend file and **every** `.js` under
+  `erp-frontend` — clean.
+- Runtime `require()` of `routes/documentation.js` (both route paths
+  registered) and a **full `server.js` boot** — loaded, GeoIP warmed,
+  listening.
+- Zero duplicate route paths across all `erp-backend/routes/*.js`.
+- Zero duplicate top-level `let`/`const`, zero duplicate `function` names
+  across the whole `erp-frontend` tree; every `<script src>` resolves;
+  zero duplicate DOM ids (the single hit is the known
+  `store-panel-center-title` HTML-comment false positive, same as Batches
+  6/7).
+- **CSS parity audit**: every `class="..."` value used across all 76
+  article files was checked against ERP's `<style>` block —
+  **zero unstyled classes**.
+- **Functional route test** (an express harness mounting the real router
+  with a stubbed session, exercising the real files on disk):
+  - admin nav returns all 8 departments with 11/5/7/10/17/6/7/4 sections
+    plus Getting Started;
+  - a `perm_tour_expense`-only user sees exactly one department with
+    exactly one section;
+  - that same user on a device restricted to `perm_cash_expenses` sees
+    the Accounts card with **zero** sections (device narrowing works);
+  - requesting `perm_gate_entry` as that user is refused with Access
+    Denied;
+  - a dashboard article (`perm_marketing_dashboard`) resolves under its
+    REAL department, and a `dept:qa` overview resolves;
+  - a path-traversal key (`../../../auth`) is refused as "Unknown
+    article" — the catalog whitelist holds;
+  - **all 67 catalog articles load successfully** for an admin, none
+    falling through to the "hasn't been written yet" placeholder.
+- **Real browser render** (`erp-frontend` served locally, the new route
+  behind a local stub): the Docs button opens the panel, the nav tree
+  renders 27 clickable items with department colours, a department
+  expands, and Gate Entry's article loads with its `doc-steps` numbering
+  intact — **zero JS exceptions**.
+
+**NOT verified: anything requiring a real login or the live database.**
+No Documentation screen was opened as a real user against `erp-backend`,
+and no dashboard route was run against real data this session.
+
+### Flagged for human follow-up (deliberately NOT touched)
+
+- **Portal's own `scripts/checkDocsCoverage.js` is broken** (the orphan
+  false-positive above). One-line fix there; not applied, since this
+  session treats Portal as read-only.
+- **Production / QA / Accounts documentation is still first-pass depth**
+  in both systems. Portal's own CLAUDE.md lists the deep rewrite of those
+  three as its standing next task; when Portal does it, re-copy those
+  three directories here rather than writing ERP-specific content.
+- **Article content was copied, not re-verified against ERP's screens.**
+  Every article describes Portal's version of a screen. The ports are
+  faithful, so this should read correctly — but wherever a batch kept a
+  documented ERP adaptation (Project Invoice Generation being a plain
+  top-level panel rather than nested under Store, `pplanCanWriteLane`
+  failing open, the per-dashboard custom-period convention), the article
+  still describes Portal's behaviour. Worth a pass once ERP's screens are
+  actually click-tested.
+- **`erp-backend/` is gitignored**, so `routes/documentation.js`,
+  `docs/content/**` and `scripts/checkDocsCoverage.js` are **not in any
+  commit** — they exist on local disk only and reach production only via
+  `gcloud run deploy erp-backend --source ./erp-backend`. The frontend
+  half IS committed. Deploying one half without the other leaves the Docs
+  button opening a screen whose two routes 404.
+- **No Documentation-specific env var, Drive folder, spreadsheet or
+  migration is needed** — the feature is filesystem + catalog only.
+  Nothing new to set before deploying.
 
 ---
 
