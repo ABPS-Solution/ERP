@@ -831,6 +831,19 @@ function returnToDashboard() {
   const mwc = document.getElementById("module-workspace-container");
   if (mwc) mwc.style.display = "none";
   document.getElementById("dashboard-view").style.display = "flex";
+
+  // Fixed 17 Sep 2026 (found via live click-test): #dashboard-global-toolbar
+  // isn't a canvas-module-*/workspace-enclosure-panel, so the sweeps above
+  // never caught it — leaving a Dashboard via this generic escape hatch
+  // (rather than the toolbar's own Return button, dashboardGlobalReturnClick)
+  // left the Today/Yesterday toolbar permanently stacked on top of whatever
+  // screen was visited next. Ported to Portal's identical function too.
+  const staleToolbar = document.getElementById("dashboard-global-toolbar");
+  if (staleToolbar) staleToolbar.style.display = "none";
+  const staleAppHeader = document.querySelector('header');
+  if (staleAppHeader) staleAppHeader.style.display = "";
+  if (typeof activeDashboardReturnFn !== 'undefined') activeDashboardReturnFn = null;
+
   window.scrollTo(0, 0);
 }
 
