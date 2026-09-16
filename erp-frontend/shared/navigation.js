@@ -695,6 +695,10 @@ function switchActiveDashboardModule(targetSectionId) {
   // not through this generic path, so it needs no entry here.
   if (targetSectionId === "qa-inspection-timeline" && typeof initializeQaInspectionTimelinePanel === "function") initializeQaInspectionTimelinePanel();
   if (targetSectionId === "product-serial-tracking" && typeof initializeProductSerialTrackingPanel === "function") initializeProductSerialTrackingPanel();
+  // In-app Documentation (Batch 9, 16 Sep 2026) — reached from the header's
+  // "Docs" button, not a menu card, so it has no permission gate here; the
+  // nav rendered inside the panel is filtered server-side.
+  if (targetSectionId === "documentation" && typeof initializeDocumentationPanel === "function") initializeDocumentationPanel();
 }
 
 // ── navigateToStoreWorkspacePanel (Batch 6, 16 Sep 2026) ──────────────
