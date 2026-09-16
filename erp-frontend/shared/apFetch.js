@@ -29,6 +29,12 @@ const ERP_LOCAL_STORAGE_KEYS = [
   // to this app's convention) — cleared on logout like every other key
   // here, not preserved like a device secret.
   "erpPtlTodayOverride", "erpPinvDraftV1",
+  // erpUserDepartment / erpUserProductionSubDept (16 Sep 2026, Batch 7 —
+  // Production Planning's lane write-gate). Portal's own equivalents
+  // (userDepartment / userProductionSubDept) are unprefixed and would
+  // COLLIDE with Portal on this shared origin, hence the erp prefix.
+  // Cleared on logout/session expiry like every other identity value.
+  "erpUserDepartment", "erpUserProductionSubDept",
 ];
 
 // clearAppLocalStorageKeepingDeviceKeys — a bare localStorage.clear() must
@@ -311,6 +317,19 @@ function completeSuccessfulLogin(data, activeOperatorDisplayName, isUserAdminGlo
   localStorage.setItem("erpActiveOperatorSignature", activeOperatorDisplayName);
   localStorage.setItem("erpUserPermissions", JSON.stringify(data.permissions));
   localStorage.setItem("erpIsUserAdminGlobal", isUserAdminGlobal ? "true" : "false");
+  // erpUserDepartment / erpUserProductionSubDept (Batch 7, 16 Sep 2026) —
+  // the authoritative, server-computed values off the login response, used
+  // by Production Planning's pplanCanWriteLane to mirror the server's own
+  // write gate so a user is never shown a control the server will refuse.
+  // Portal keeps these fresh on EVERY page load via applyServerRoleFlags /
+  // getSessionPermissions; ERP has no such route yet, so these are
+  // login-time only and go stale if someone's department changes
+  // mid-session. That is why pplanCanWriteLane fails OPEN when they are
+  // missing/unknown and the server gate stays the real enforcement — but
+  // when a getSessionPermissions equivalent does land here, refresh these
+  // two alongside erpIsUserAdminGlobal (Portal's 4 Sep 2026 staleness bug).
+  localStorage.setItem("erpUserDepartment", data.department || "");
+  localStorage.setItem("erpUserProductionSubDept", data.productionSubDept || "");
   appActiveOperatorIdentityString = activeOperatorDisplayName;
   userPermissions = data.permissions;
   showAppView();

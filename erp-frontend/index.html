@@ -803,11 +803,38 @@
       </div>
     </div>
 
-    <!-- ── PRODUCTION (Batch 1 scaffolding) ────────────────────────────── -->
+    <!-- ── PRODUCTION (Batch 7, 16 Sep 2026) ───────────────────────────
+         Sections, card ids, labels and order copied verbatim from Portal.
+         "Create Material Issue Ticket" is Store's screen and Store's
+         route, but Portal files its CARD here (Material Issue & Job
+         Cards) — hence navigateToStoreWorkspacePanel, not
+         switchActiveDashboardModule. Row labels match
+         lib/permissionCatalog.js's rowLabel values exactly. -->
     <div id="dashboard-production-department-header-block" class="dept-block" style="display:none; --dept-accent:#b45309;">
       <div class="dept-header">
         <div class="dept-bar" style="background:#b45309;"></div>
         <span class="dept-name">Production Department</span>
+        <div id="mod-production-dashboard-wrapper" style="display:none;">
+          <button class="dept-dash-pill" id="mod-production-dashboard" onclick="navigateToProductionDashboard()" style="background:#fffbeb; color:#b45309;">📊 Dashboard</button>
+        </div>
+      </div>
+      <div class="sec-label">Material Requirement Dates</div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-assign-material-requirement-date" onclick="switchActiveDashboardModule('assign-material-requirement-date')"><span class="mc-label">Assign Material Requirement Date</span></div>
+        <div class="menu-card" id="mod-revise-material-requirement-date" onclick="switchActiveDashboardModule('revise-material-requirement-date')"><span class="mc-label">Revise Material Requirement Date</span></div>
+      </div>
+      <div class="sec-label">Production Planning</div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-production-planning" onclick="switchActiveDashboardModule('production-planning')"><span class="mc-label">Production Planning</span></div>
+      </div>
+      <div class="sec-label">Material Issue &amp; Job Cards</div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-store-ticket"            onclick="navigateToStoreWorkspacePanel('store-material-request')"><span class="mc-label">Create Material Issue Ticket</span></div>
+        <div class="menu-card" id="mod-job-card-sheet"          onclick="switchActiveDashboardModule('job-card-sheet')"><span class="mc-label">Job Card Sheet</span></div>
+      </div>
+      <div class="sec-label">Finished Goods</div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-fg-add"                  onclick="switchActiveDashboardModule('fg-add')"><span class="mc-label">Add to Finished Goods Store</span></div>
       </div>
     </div>
 
@@ -883,6 +910,15 @@
           <button class="dd-period-btn" data-period="thisquarter" onclick="sdSetPeriod(this)">This Quarter</button>
           <button class="dd-period-btn" data-period="thisyear" onclick="sdSetPeriod(this)">This Year</button>
           <button class="dd-period-btn" data-period="custom" onclick="sdSetPeriod(this)">Custom ▾</button>
+        </div>
+        <div id="pd2-period-btns" style="display:none; gap:4px; flex-wrap:nowrap;">
+          <button class="dd-period-btn active" data-period="today" onclick="pd2SetPeriod(this)">Today</button>
+          <button class="dd-period-btn" data-period="yesterday" onclick="pd2SetPeriod(this)">Yesterday</button>
+          <button class="dd-period-btn" data-period="thisweek" onclick="pd2SetPeriod(this)">This Week</button>
+          <button class="dd-period-btn" data-period="thismonth" onclick="pd2SetPeriod(this)">This Month</button>
+          <button class="dd-period-btn" data-period="thisquarter" onclick="pd2SetPeriod(this)">This Quarter</button>
+          <button class="dd-period-btn" data-period="thisyear" onclick="pd2SetPeriod(this)">This Year</button>
+          <button class="dd-period-btn" data-period="custom" onclick="pd2SetPeriod(this)">Custom ▾</button>
         </div>
       </div>
       <span id="dash-global-title" style="text-align:center; font-size:1.35rem; font-weight:800; color:var(--text); white-space:nowrap;"></span>
@@ -965,6 +1001,19 @@
       <span id="sd-custom-val-quarter" hidden style="flex:none; white-space:nowrap;"><select id="sd-custom-val-quarter-year" class="dash-fy-year-select" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:80px;"></select><select id="sd-custom-val-quarter-q" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:110px; margin-left:4px;"><option value="1">Q1 (Apr-Jun)</option><option value="2">Q2 (Jul-Sep)</option><option value="3">Q3 (Oct-Dec)</option><option value="4">Q4 (Jan-Mar)</option></select></span>
       <select id="sd-custom-val-year" class="dash-fy-year-select" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:90px;" hidden></select>
       <button onclick="sdLoadCustom()" style="font-size:0.72rem; background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; cursor:pointer; font-weight:700; flex:none; white-space:nowrap;">Go</button>
+    </div>
+    <div id="pd2-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc; flex-wrap:nowrap; overflow-x:auto;">
+      <span style="font-size:0.72rem; font-weight:700; color:var(--muted); flex:none; white-space:nowrap;">Select:</span>
+      <select id="pd2-custom-type" onchange="pd2CustomTypeChange()" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:120px;">
+        <option value="customday">Day</option><option value="customrange">Date Range</option><option value="custommonth">Month</option>
+        <option value="customquarter">Quarter</option><option value="customyear">Year</option>
+      </select>
+      <span id="pd2-custom-val-day" style="flex:none; white-space:nowrap;"><span style="display:inline-block; flex:none; width:130px;"><input id="pd2-custom-val-day-input" type="date" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:100%;" /></span></span>
+      <span id="pd2-custom-val-range" hidden style="flex:none; white-space:nowrap;"><span style="display:inline-block; flex:none; width:130px;"><input id="pd2-custom-val-range-start" type="date" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:100%;" /></span><span style="font-size:0.72rem; color:var(--muted); margin:0 4px; flex:none;">to</span><span style="display:inline-block; flex:none; width:130px;"><input id="pd2-custom-val-range-end" type="date" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:100%;" /></span></span>
+      <span id="pd2-custom-val-month" hidden style="flex:none; white-space:nowrap;"><select id="pd2-custom-val-month-year" class="dash-cal-year-select" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:80px;"></select><select id="pd2-custom-val-month-month" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:70px; margin-left:4px;"><option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option><option value="4">Apr</option><option value="5">May</option><option value="6">Jun</option><option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option><option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option></select></span>
+      <span id="pd2-custom-val-quarter" hidden style="flex:none; white-space:nowrap;"><select id="pd2-custom-val-quarter-year" class="dash-fy-year-select" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:80px;"></select><select id="pd2-custom-val-quarter-q" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:110px; margin-left:4px;"><option value="1">Q1 (Apr-Jun)</option><option value="2">Q2 (Jul-Sep)</option><option value="3">Q3 (Oct-Dec)</option><option value="4">Q4 (Jan-Mar)</option></select></span>
+      <select id="pd2-custom-val-year" class="dash-fy-year-select" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:90px;" hidden></select>
+      <button onclick="pd2LoadCustom()" style="font-size:0.72rem; background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; cursor:pointer; font-weight:700; flex:none; white-space:nowrap;">Go</button>
     </div>
   </div>
 
@@ -3599,7 +3648,483 @@
       <div id="expected-inbounds-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
       <div id="expected-inbounds-results" style="display:flex; flex-direction:column; gap:16px;"></div>
     </div>
+
+    <!-- ═══ PRODUCTION canvases (Batch 7, 16 Sep 2026) ═══
+         Copied verbatim from Portal, which nests these inside this same
+         store workspace enclosure. Portal's canvas-module-in-process-sheet
+         and canvas-module-fg-approval sit between these in its own file and
+         are deliberately NOT copied — they are QA's screens (Batch 8). -->
+    <div id="canvas-module-job-card-sheet" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Job Card Sheet</h2>
+      <div id="mrd-reminder-banner-jcsh" class="material-requirement-date-revision-banner-el" style="display:none; margin-bottom:14px; padding:10px 14px; background:#fef3c7; border-left:4px solid #f59e0b; color:#78350f; border-radius:var(--radius); font-size:0.85rem; font-weight:700;">⚠️ Purchase Quantities have changed on one or more PRNs — their <strong>Production Requirement Dates</strong> need revising.</div>
+      <div id="jcsh-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+        <div>
+          <label class="field-label" style="margin-top:0;">Project ID or Customer Name *</label>
+          <div style="position:relative;">
+            <input type="text" id="jcsh-project-ta-input" placeholder="Type Project ID or Customer Name..." autocomplete="off"
+              oninput="handleSharedProjectTypeaheadInput(this.value, 'jcsh-project-ta-input', 'jcsh-project-ta-dropdown')"
+              onchange="handleJCSHProjectChange(this.value)"
+              style="width:100%; padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); box-sizing:border-box;" />
+            <div id="jcsh-project-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          </div>
+        </div>
+        <div>
+          <label class="field-label" style="margin-top:0;">Customer Name</label>
+          <input type="text" id="jcsh-customer" readonly style="padding:9px; background:#f1f5f9; color:#1a2332; font-weight:600; cursor:not-allowed; border-radius:var(--radius);" placeholder="Auto-filled from Project ID" />
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr; gap:14px; margin-bottom:14px;">
+        <div style="position:relative;">
+          <label class="field-label" style="margin-top:0;">BOQ ID *</label>
+          <div id="jcsh-boq-display" data-disabled="1" onclick="toggleJCSHBOQDropdown()" style="display:flex; justify-content:space-between; align-items:center; gap:6px; min-height:38px; padding:8px 10px; border:1.5px solid var(--border); border-radius:var(--radius); background:#f1f5f9; color:var(--muted); cursor:not-allowed; opacity:0.5; font-weight:600; line-height:1.35;">
+            <span id="jcsh-boq-display-text" style="white-space:normal; word-break:break-word;">— Select Project First —</span>
+            <span style="flex-shrink:0; margin-top:2px;">▾</span>
+          </div>
+          <div id="jcsh-boq-dropdown-list" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:260px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          <input type="hidden" id="jcsh-boq" value="" />
+        </div>
+        <input type="hidden" id="jcsh-department" value="" />
+        <input type="hidden" id="jcsh-description-of-material" value="" />
+        <input type="hidden" id="jcsh-make" value="" />
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+        <div>
+          <label class="field-label" style="margin-top:0;">Product Name</label>
+          <textarea id="jcsh-product-name" readonly rows="1" oninput="autoGrowTextField(this)"
+            style="width:100%; padding:9px; background:#f1f5f9; color:#1a2332; font-weight:600; cursor:not-allowed; border-radius:var(--radius); border:1px solid var(--border); resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; font-family:inherit; line-height:1.3; box-sizing:border-box;" placeholder="Auto-filled from BOQ ID"></textarea>
+        </div>
+        <div>
+          <label class="field-label" style="margin-top:0;">Product Rating</label>
+          <textarea id="jcsh-product-rating" readonly rows="1" oninput="autoGrowTextField(this)"
+            style="width:100%; padding:9px; background:#f1f5f9; color:#1a2332; font-weight:600; cursor:not-allowed; border-radius:var(--radius); border:1px solid var(--border); resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; font-family:inherit; line-height:1.3; box-sizing:border-box;" placeholder="Auto-filled from BOQ ID (blank if none)"></textarea>
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr; gap:14px; margin-bottom:14px;">
+        <div style="position:relative;">
+          <label class="field-label" style="margin-top:0;">Job Card Number *</label>
+          <div id="jcsh-jobcard-display" data-disabled="1" onclick="toggleJCSHJobCardDropdown()" style="display:flex; justify-content:space-between; align-items:center; gap:6px; min-height:38px; padding:8px 10px; border:1.5px solid var(--border); border-radius:var(--radius); background:#f1f5f9; color:var(--muted); cursor:not-allowed; opacity:0.5; font-weight:600; line-height:1.35;">
+            <span id="jcsh-jobcard-display-text" style="white-space:normal; word-break:break-word;">— Select BOQ ID First —</span>
+            <span style="flex-shrink:0; margin-top:2px;">▾</span>
+          </div>
+          <div id="jcsh-jobcard-dropdown-list" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:260px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          <input type="hidden" id="jcsh-jobcard" value="" />
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:20px;">
+        <div>
+          <label class="field-label" style="margin-top:0;">Product Type *</label>
+          <select id="jcsh-product-type" onchange="updateJCSHDownloadButtonState()" disabled style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box;">
+            <option value="">— Select Job Card Number First —</option>
+            <option value="Air Core Reactor">Air Core Reactor</option>
+            <option value="Thyristor Switches">Thyristor Switches</option>
+            <option value="ACU Panel">ACU Panel</option>
+            <option value="HT Panel">HT Panel</option>
+            <option value="Structure Panel">Structure Panel</option>
+            <option value="HT Capacitor">HT Capacitor</option>
+            <option value="LT Capacitor">LT Capacitor</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label" style="margin-top:0;">Date *</label>
+          <input type="date" id="jcsh-sheet-date" style="width:100%; padding:9px; box-sizing:border-box; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);" />
+        </div>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--border); padding-top:14px;">
+        <button class="nav-btn-styled" id="jcsh-download-btn" disabled onclick="submitJCSHDownload()" style="background:var(--accent); padding:8px 24px; font-weight:700; opacity:0.5; cursor:not-allowed;">Download</button>
+      </div>
+    </div>
+
+    <div id="canvas-module-assign-material-requirement-date" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Assign Material Requirement Date</h2>
+      <div id="mrd-reminder-banner-assign" class="material-requirement-date-revision-banner-el" style="display:none; margin-bottom:14px; padding:10px 14px; background:#fef3c7; border-left:4px solid #f59e0b; color:#78350f; border-radius:var(--radius); font-size:0.85rem; font-weight:700;">⚠️ Purchase Quantities have changed on one or more PRNs — their <strong>Production Requirement Dates</strong> need revising.</div>
+      <div id="mrd-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+      <div id="mrd-needqueue-zone" style="margin-bottom:16px;"></div>
+      <div id="mrd-selector-row" style="display:grid; grid-template-columns:1fr 2fr; gap:12px; align-items:end; margin-bottom:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
+        <div>
+          <label class="field-label" style="margin-top:0; color:var(--brand);">Project ID or Customer Name *</label>
+          <div style="position:relative;">
+            <input type="text" id="mrd-project-select-ta-input" placeholder="Type Project ID or Customer Name..." autocomplete="off"
+              oninput="handleSharedProjectTypeaheadInput(this.value, 'mrd-project-select-ta-input', 'mrd-project-select-ta-dropdown')"
+              onchange="loadMRDPRNList()"
+              style="width:100%; padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);" />
+            <div id="mrd-project-select-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          </div>
+        </div>
+        <div style="position:relative;">
+          <label class="field-label" style="margin-top:0; color:var(--brand);">Select PRN *</label>
+          <input type="hidden" id="mrd-prn-select" value="" />
+          <div id="mrd-prn-select-display" class="gwd-display" data-disabled="1" onclick="toggleGenericDropdown('mrd-prn-select')"
+            style="display:flex; justify-content:space-between; align-items:flex-start; gap:6px; min-height:40px; padding:9px 10px; border:1.5px solid var(--border); border-radius:var(--radius); background:#f1f5f9; color:var(--muted); cursor:not-allowed; opacity:0.5; font-weight:600; line-height:1.35;">
+            <span id="mrd-prn-select-display-text" style="white-space:normal; word-break:break-word;">— Select a project first —</span>
+            <span style="flex-shrink:0; margin-top:2px;">▾</span>
+          </div>
+          <div id="mrd-prn-select-list" class="gwd-list" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:260px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+        </div>
+      </div>
+      <div id="mrd-prn-header" style="display:none; margin-bottom:10px; font-size:0.85rem;"></div>
+      <div id="mrd-body"></div>
+    </div>
+
+    <div id="canvas-module-revise-material-requirement-date" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Revise Material Requirement Date</h2>
+      <div id="rmrd-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+
+      <div id="rmrd-tabs-bar" style="display:flex; gap:0; margin-bottom:16px; border-bottom:2px solid var(--border);">
+        <button id="rmrd-tab-queue" onclick="switchReviseMRDTab('queue')" style="padding:10px 20px; border:none; background:none; cursor:pointer; font-weight:800; font-size:0.85rem; color:var(--brand); border-bottom:3px solid var(--brand); margin-bottom:-2px;">PRN Revisions Needing Requirement Dates Revision</button>
+        <button id="rmrd-tab-other" onclick="switchReviseMRDTab('other')" style="padding:10px 20px; border:none; background:none; cursor:pointer; font-weight:700; font-size:0.85rem; color:var(--muted); border-bottom:3px solid transparent; margin-bottom:-2px;">Other Requirement Dates Revisions</button>
+      </div>
+
+      <div id="rmrd-queue-section">
+        <div id="rmrd-delta-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+        <div id="rmrd-queue-feed" style="display:flex; flex-direction:column; gap:12px; margin-bottom:16px;"></div>
+        <div id="rmrd-delta-zone"></div>
+      </div>
+
+      <div id="rmrd-other-section" style="display:none;">
+        <div id="rmrd-selector-row" style="display:grid; grid-template-columns:1fr 2fr; gap:12px; align-items:end; margin-bottom:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
+          <div>
+            <label class="field-label" style="margin-top:0; color:var(--brand);">Project ID or Customer Name *</label>
+            <div style="position:relative;">
+              <input type="text" id="rmrd-project-select-ta-input" placeholder="Type Project ID or Customer Name..." autocomplete="off"
+                oninput="handleSharedProjectTypeaheadInput(this.value, 'rmrd-project-select-ta-input', 'rmrd-project-select-ta-dropdown')"
+                onchange="loadReviseMRDList()"
+                style="width:100%; padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);" />
+              <div id="rmrd-project-select-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+            </div>
+          </div>
+          <div style="position:relative;">
+            <label class="field-label" style="margin-top:0; color:var(--brand);">Select PRN *</label>
+            <input type="hidden" id="rmrd-prn-select" value="" />
+            <div id="rmrd-prn-select-display" class="gwd-display" data-disabled="1" onclick="toggleGenericDropdown('rmrd-prn-select')"
+              style="display:flex; justify-content:space-between; align-items:flex-start; gap:6px; min-height:40px; padding:9px 10px; border:1.5px solid var(--border); border-radius:var(--radius); background:#f1f5f9; color:var(--muted); cursor:not-allowed; opacity:0.5; font-weight:600; line-height:1.35;">
+              <span id="rmrd-prn-select-display-text" style="white-space:normal; word-break:break-word;">— Select a project first —</span>
+              <span style="flex-shrink:0; margin-top:2px;">▾</span>
+            </div>
+            <div id="rmrd-prn-select-list" class="gwd-list" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:260px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          </div>
+        </div>
+        <div id="rmrd-body"></div>
+      </div>
+    </div>
+
+    <div id="canvas-module-production-planning" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Production Planning</h2>
+      <div id="pplan-reminder-banner" class="production-planning-reminder-banner-el" style="display:none; margin-bottom:14px; padding:10px 14px; background:#fef3c7; border-left:4px solid #f59e0b; color:#78350f; border-radius:var(--radius); font-size:0.85rem; font-weight:700;">⚠️ One or more products are due or overdue for Production Planning.</div>
+      <div id="pplan-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+
+      <div id="pplan-tabs-bar" style="display:flex; gap:0; margin-bottom:16px; border-bottom:2px solid var(--border);">
+        <button id="pplan-tab-submit" onclick="switchProductionPlanningTab('submit')" style="flex:1; padding:11px 16px; border:none; cursor:pointer; font-weight:800; font-size:0.85rem; background:var(--brand); color:#fff;">Submit Initial Plan</button>
+        <button id="pplan-tab-update" onclick="switchProductionPlanningTab('update')" style="flex:1; padding:11px 16px; border:none; cursor:pointer; font-weight:800; font-size:0.85rem; background:#e2e8f0; color:#334155;">Update Plan</button>
+      </div>
+
+      <div id="pplan-needqueue-zone" style="margin-bottom:16px;"></div>
+
+      <div id="pplan-selector-row" style="margin-bottom:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
+        <label class="field-label" style="margin-top:0; color:var(--brand);">Project ID or Customer Name *</label>
+        <div style="position:relative;">
+          <input type="text" id="pplan-project-select-ta-input" placeholder="Type Project ID or Customer Name..." autocomplete="off"
+            oninput="handleSharedProjectTypeaheadInput(this.value, 'pplan-project-select-ta-input', 'pplan-project-select-ta-dropdown')"
+            onchange="loadProductionPlanForProject()"
+            style="width:100%; padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);" />
+          <div id="pplan-project-select-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+        </div>
+      </div>
+
+      <div id="pplan-body"></div>
+    </div>
+
+    <div id="canvas-module-fg-add" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <div style="margin-bottom:16px;">
+        <h2 class="panel-title" style="margin:0;">Add to Finished Goods Store</h2>
+      </div>
+      <div id="fg-add-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+      <div id="fg-add-form">
+        <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:14px; margin-bottom:14px;">
+          <div>
+            <label class="field-label" style="margin-top:0;">Project ID or Customer Name *</label>
+            <div style="position:relative;">
+              <input type="text" id="fg-add-project-ta-input" placeholder="Type Project ID or Customer Name..." autocomplete="off"
+                oninput="handleSharedProjectTypeaheadInput(this.value, 'fg-add-project-ta-input', 'fg-add-project-ta-dropdown')"
+                onchange="handleFGAddProjectChange(this.value)"
+                style="width:100%; padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);" />
+              <div id="fg-add-project-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+            </div>
+          </div>
+          <div>
+            <label class="field-label" style="margin-top:0;">Department *</label>
+            <select id="fg-add-department" disabled style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%;">
+              <option value="">— Select —</option>
+              <option value="Panel">Panel</option>
+              <option value="Reactor">Reactor</option>
+              <option value="Capacitor">Capacitor</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label" style="margin-top:0;">Select Use *</label>
+            <select id="fg-add-use-toggle" style="border-color:var(--brand); font-weight:700; color:var(--brand); padding:9px; width:100%; border-radius:var(--radius);">
+              <option value="" selected>— Select Use *</option>
+              <option value="Use in other Product">Use in other Product</option>
+              <option value="Ready for Dispatch">Ready for Dispatch</option>
+            </select>
+          </div>
+        </div>
+        <input type="hidden" id="fg-add-customer" />
+        <div style="margin-bottom:14px; position:relative;">
+          <label class="field-label" id="fg-add-boq-label" style="margin-top:0; color:var(--muted);">BOQ ID *</label>
+          <div id="fg-add-boq-display" data-disabled="1" onclick="toggleFGBOQDropdown()" style="display:flex; justify-content:space-between; align-items:center; gap:6px; min-height:38px; padding:8px 10px; border:1px solid var(--border); border-radius:var(--radius); background:#f1f5f9; color:var(--muted); cursor:not-allowed; opacity:0.5; font-weight:600; line-height:1.35;">
+            <span id="fg-add-boq-display-text" style="white-space:normal; word-break:break-word;">— Select Project First —</span>
+            <span style="flex-shrink:0; margin-top:2px;">▾</span>
+          </div>
+          <div id="fg-add-boq-dropdown-list" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:260px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          <input type="hidden" id="fg-add-boq" value="" />
+        </div>
+        <div style="display:grid; grid-template-columns:15fr 35fr 50fr; gap:14px; margin-bottom:14px;">
+          <div>
+            <label class="field-label" style="margin-top:0;">Item Code</label>
+            <textarea id="fg-add-item-code-display" readonly rows="1" style="padding:9px; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed; border-radius:var(--radius); font-family:monospace; width:100%; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; box-sizing:border-box; border:1.5px solid var(--border);" placeholder="Auto-filled from selected BOQ ID"></textarea>
+            <input type="hidden" id="fg-add-item-code" />
+          </div>
+          <div>
+            <label class="field-label" style="margin-top:0;">Product Name</label>
+            <textarea id="fg-add-product-name-display" readonly rows="1" style="padding:9px; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed; border-radius:var(--radius); width:100%; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; box-sizing:border-box; border:1.5px solid var(--border);" placeholder="Auto-filled from selected BOQ ID"></textarea>
+            <input type="hidden" id="fg-add-product-name" />
+          </div>
+          <div>
+            <label class="field-label" style="margin-top:0;">Product Rating</label>
+            <textarea id="fg-add-rating" readonly rows="1" style="padding:9px; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed; border-radius:var(--radius); width:100%; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; box-sizing:border-box; border:1.5px solid var(--border);" placeholder="Auto-filled from selected BOQ ID"></textarea>
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns:2fr 1fr; gap:14px; margin-bottom:14px;">
+          <div>
+            <label class="field-label" style="margin-top:0;">Description of Material</label>
+            <textarea id="fg-add-description" readonly rows="1" style="padding:9px; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed; border-radius:var(--radius); width:100%; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; box-sizing:border-box; border:1.5px solid var(--border);" placeholder="Auto-filled from selected BOQ ID"></textarea>
+            <input type="hidden" id="fg-add-description-id" />
+          </div>
+          <div>
+            <label class="field-label" style="margin-top:0;">Make</label>
+            <textarea id="fg-add-make" readonly rows="1" style="padding:9px; background:#f1f5f9; color:var(--text); font-weight:600; cursor:not-allowed; border-radius:var(--radius); width:100%; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; box-sizing:border-box; border:1.5px solid var(--border);" placeholder="Auto-filled from selected BOQ ID"></textarea>
+          </div>
+        </div>
+        <div style="margin-bottom:14px; position:relative;">
+          <label class="field-label" id="fg-add-jobcard-label" style="margin-top:0; color:var(--muted);">Job Card Number *</label>
+          <div id="fg-add-jobcard-display" data-disabled="1" onclick="toggleFGJobCardDropdown()" style="display:flex; justify-content:space-between; align-items:center; gap:6px; min-height:38px; padding:8px 10px; border:1px solid var(--border); border-radius:var(--radius); background:#f1f5f9; color:var(--muted); cursor:not-allowed; opacity:0.5; font-weight:600; line-height:1.35;">
+            <span id="fg-add-jobcard-display-text" style="white-space:normal; word-break:break-word;">— Select BOQ First —</span>
+            <span style="flex-shrink:0; margin-top:2px;">▾</span>
+          </div>
+          <div id="fg-add-jobcard-dropdown-list" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:260px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          <input type="hidden" id="fg-add-jobcard" value="" />
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+          <div>
+            <label class="field-label" style="margin-top:0;">Unit</label>
+            <input type="text" id="fg-add-unit" readonly style="padding:9px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; border-radius:var(--radius); font-weight:600;" placeholder="Auto-filled from Product Name" />
+          </div>
+          <div>
+            <label class="field-label" style="margin-top:0;">Product Serial Number *</label>
+            <input type="text" id="fg-add-serial" disabled style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius);" placeholder="Enter product serial number..." />
+          </div>
+        </div>
+
+        <div id="fg-boq-validation-zone" style="display:none; margin-bottom:16px;"></div>
+        <div style="margin-bottom:16px;">
+          <label class="field-label" style="margin-top:0;">Additional Remarks</label>
+          <input type="text" id="fg-add-remarks" disabled style="padding:9px; border:1.5px solid var(--border); border-radius:var(--radius);" placeholder="Any additional notes..." />
+        </div>
+
+        <div style="background:#fffbeb; border:1.5px solid #f59e0b; border-radius:var(--radius); padding:14px; margin-bottom:16px;">
+          <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#b45309; margin-bottom:12px; letter-spacing:0.5px;">FG Documents</div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+            <div>
+              <label class="field-label" style="margin-top:0;">Job Card Sheet * <span style="color:#b91c1c;">(required)</span></label>
+              <div class="card-box" id="fg-add-jobcard-sheet-dropzone" onclick="document.getElementById('fg-add-jobcard-sheet-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                📎 Click to attach Job Card Sheet
+              </div>
+              <input type="file" id="fg-add-jobcard-sheet-input" multiple hidden onchange="handleFGFileSelectionMulti(this, 'jobCardSheet')" />
+              <div id="fg-add-jobcard-sheet-filelist"></div>
+            </div>
+            <div>
+              <label class="field-label" style="margin-top:0;">Packed Products Images * <span style="color:#b91c1c;">(required)</span></label>
+              <div class="card-box" id="fg-add-packed-images-dropzone" onclick="document.getElementById('fg-add-packed-images-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                📎 Click to attach Packed Products Images
+              </div>
+              <input type="file" id="fg-add-packed-images-input" multiple hidden onchange="handleFGFileSelectionMulti(this, 'packedProductsImages')" />
+              <div id="fg-add-packed-images-filelist"></div>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr; gap:14px; margin-bottom:14px;">
+            <div>
+              <label class="field-label" style="margin-top:0;">Other Documents</label>
+              <div class="card-box" id="fg-add-otherdocs-dropzone" onclick="document.getElementById('fg-add-otherdocs-input').click()" style="padding:14px; border:2px dashed var(--border); font-size:0.82rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                📎 Click to attach Other Documents
+              </div>
+              <input type="file" id="fg-add-otherdocs-input" multiple hidden onchange="handleFGFileSelectionMulti(this, 'otherDocuments')" />
+              <div id="fg-add-otherdocs-filelist"></div>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+            <div>
+              <label class="field-label" style="margin-top:0;">Packing Quality Confirmation *</label>
+              <select id="fg-add-packing-quality" style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); max-width:260px;">
+                <option value="No">No</option>
+                <option value="Yes">Yes</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--border); padding-top:14px;">
+          <button class="nav-btn-styled" onclick="resetFGAddForm()" style="background:#718096;">Clear</button>
+          <button class="nav-btn-styled" id="fg-add-submit-btn" disabled onclick="submitFGAddItem()" style="background:var(--accent); padding:8px 24px; font-weight:700; opacity:0.5; cursor:not-allowed;">Add to Finished Goods Store</button>
+        </div>
+      </div>
+    </div>
+
+
   </div>
+
+  <!-- ═══ PRODUCTION DASHBOARD (Batch 7, 16 Sep 2026) ═══
+       Canvas copied verbatim from Portal. Its period buttons and custom
+       zone live in the shared dashboard-global-toolbar above (pd2-*),
+       cloned from the sd-* blocks so they follow ERP's hidden-attribute
+       convention rather than Portal's shared dash* helpers. -->
+    <div id="canvas-module-production-dashboard" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
+
+      <!-- DASHBOARD BODY -->
+      <div id="pd2-body" class="dd-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
+
+        <!-- ROW 1: Job Card Pulse + Material Requirement Date queues — 5 cards -->
+        <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
+          <div class="dd-stat-card stat-live">
+            <div class="dd-stat-label">Total Current Job Cards</div>
+            <div class="dd-stat-val" id="pd2-s-activejcn">—</div>
+          </div>
+          <div class="dd-stat-card stat-period">
+            <div class="dd-stat-label">Job Cards Products Add to FG</div>
+            <div class="dd-stat-val" id="pd2-s-finished" style="color:#15803d;">—</div>
+          </div>
+          <div class="dd-stat-card stat-live">
+            <div class="dd-stat-label">In Progress Job Cards</div>
+            <div class="dd-stat-val" id="pd2-s-inprogress" style="color:#b45309;">—</div>
+          </div>
+          <div class="dd-stat-card stat-live">
+            <div class="dd-stat-label">PRNs Awaiting MRD</div>
+            <div class="dd-stat-val" id="pd2-s-mrd-awaiting" style="color:#b45309;">—</div>
+          </div>
+          <div class="dd-stat-card stat-live">
+            <div class="dd-stat-label">PRNs Needing MRD Revision</div>
+            <div class="dd-stat-val" id="pd2-s-mrd-revision" style="color:#b45309;">—</div>
+          </div>
+        </div>
+
+        <!-- ROW 2: Material & Operations — 5 cards -->
+        <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
+          <div class="dd-stat-card stat-period">
+            <div class="dd-stat-label">Material Issue Tickets Created</div>
+            <div class="dd-stat-val" id="pd2-s-tickets">—</div>
+          </div>
+          <div class="dd-stat-card stat-live">
+            <div class="dd-stat-label">Currently Being Repaired at ABPS</div>
+            <div class="dd-stat-val" id="pd2-s-repair-qty" style="color:#b91c1c;">—</div>
+          </div>
+          <div class="dd-stat-card stat-live">
+            <div class="dd-stat-label">Overdue Expected Deliveries</div>
+            <div class="dd-stat-val" id="pd2-s-overdue-deliveries" style="color:#b91c1c;">—</div>
+          </div>
+          <div class="dd-stat-card stat-live">
+            <div class="dd-stat-label">BOQs Awaiting Initial Production Plan</div>
+            <div class="dd-stat-val" id="pd2-s-boq-awaiting-plan" style="color:#b45309;">—</div>
+          </div>
+          <div class="dd-stat-card stat-live">
+            <div class="dd-stat-label">FG Items Awaiting QA Approval</div>
+            <div class="dd-stat-val" id="pd2-s-fg-pending" style="color:#b45309;">—</div>
+          </div>
+        </div>
+
+        <!-- ROW 3: Charts -->
+        <div class="dd-chart-row" style="display:grid; grid-template-columns:1fr 1.4fr 1fr; gap:10px; flex:0 0 230px; min-height:0;">
+          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column;">
+            <div class="dd-card-title">Products Added to Finished Goods by Department</div>
+            <div style="flex:1; min-height:0; position:relative;"><canvas id="pd2-chart-dept" style="position:absolute; width:100%; height:100%;"></canvas></div>
+          </div>
+          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column;">
+            <div class="dd-card-title">Job Card Completion Trend</div>
+            <div style="flex:1; min-height:0; position:relative;"><canvas id="pd2-chart-trend" style="position:absolute; width:100%; height:100%;"></canvas></div>
+          </div>
+          <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column;">
+            <div class="dd-card-title">Avg Days Late vs Target, by Production Flow</div>
+            <div style="flex:1; min-height:0; position:relative;"><canvas id="pd2-chart-completion" style="position:absolute; width:100%; height:100%;"></canvas></div>
+          </div>
+        </div>
+
+        <!-- ROW 4: In Progress Job Cards | Due Today | Overdue (Project Timeline) -->
+        <div class="dd-detail-row" style="display:grid; grid-template-columns:1.3fr 1fr 1fr; gap:10px; flex:1; min-height:0;">
+
+          <!-- In Progress Job Cards -->
+          <div class="dd-card" style="padding:12px 16px; display:flex; flex-direction:column; min-height:0;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:6px;">
+              <div class="dd-card-title" style="margin-bottom:0;">In Progress Job Cards</div>
+              <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                <select id="pd2-jcn-dept-filter" onchange="pd2FilterJCN()"
+                  style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px;">
+                  <option value="">All Departments</option>
+                </select>
+                <span id="pd2-jcn-page-info" style="font-size:0.68rem; color:var(--muted); white-space:nowrap;"></span>
+                <button onclick="pd2JCNPage(-1)" class="dd-period-btn" style="padding:2px 7px;">‹</button>
+                <button onclick="pd2JCNPage(1)"  class="dd-period-btn" style="padding:2px 7px;">›</button>
+              </div>
+            </div>
+            <div style="overflow-y:auto; flex:1;">
+              <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
+                <thead><tr style="color:var(--muted); font-size:0.68rem; border-bottom:1.5px solid var(--border); position:sticky; top:0; background:var(--card);">
+                  <th style="text-align:left; padding:3px 6px; font-weight:700; width:60%;">Job Card</th>
+                  <th style="text-align:left; padding:3px 6px; font-weight:700;">Department</th>
+                  <th style="text-align:center; padding:3px 6px; font-weight:700;">Tickets</th>
+                </tr></thead>
+                <tbody id="pd2-jcn-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Due Today (Production Planning, Project Timeline) -->
+          <div class="dd-stat-card" style="display:flex; flex-direction:column; min-height:0;">
+            <div class="dd-card-title" style="margin-bottom:8px;">Due Today (Active projects, Project Timeline)</div>
+            <div style="flex:1; min-height:0; overflow-y:auto;">
+              <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
+                <thead>
+                  <tr style="text-align:left; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--card);">
+                    <th style="padding:4px;">Project</th>
+                    <th style="padding:4px;">Item</th>
+                  </tr>
+                </thead>
+                <tbody id="pd2-duetoday-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Overdue (Production Planning, Project Timeline) -->
+          <div class="dd-stat-card" style="display:flex; flex-direction:column; min-height:0;">
+            <div class="dd-card-title" style="margin-bottom:8px;">Overdue (Active projects, Project Timeline)</div>
+            <div style="flex:1; min-height:0; overflow-y:auto;">
+              <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
+                <thead>
+                  <tr style="text-align:left; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--card);">
+                    <th style="padding:4px;">Project</th>
+                    <th style="padding:4px;">Item</th>
+                    <th style="padding:4px; text-align:right;">Days Late</th>
+                  </tr>
+                </thead>
+                <tbody id="pd2-overdue-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
 
   <!-- ═══ STORE DASHBOARD (Batch 6, 16 Sep 2026) ═══ -->
     <div id="canvas-module-store-dashboard" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
@@ -4458,6 +4983,14 @@
      helpers despite its path — ported in Batch 6 (Store), not Batch 7.
      See its own header. -->
 <script src="production/job-cards.js"></script>
+<!-- Production department (Batch 7, 16 Sep 2026). Load order is
+     irrelevant between these — every one of them is function
+     declarations plus module globals, none executes at load time. -->
+<script src="production/material-requirement-dates.js"></script>
+<script src="production/production-planning.js"></script>
+<script src="production/job-card-sheet.js"></script>
+<script src="production/finished-goods.js"></script>
+<script src="production/production-dashboard.js"></script>
 <script src="project/security-admin.js"></script>
 <script src="project/manufacturing-clearance.js"></script>
 <script src="project/project-timeline.js"></script>

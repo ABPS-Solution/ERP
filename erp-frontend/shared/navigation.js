@@ -53,6 +53,41 @@ async function checkPurchasePORevisionReminder() {
   } catch (e) { /* non-critical — leave banner state as-is on network error */ }
 }
 
+// checkMaterialRequirementDateReminder / checkProductionPlanningReminder —
+// ported verbatim from Portal (Batch 7, 16 Sep 2026). Batch 6 deliberately
+// left these two out of navigateToStoreWorkspacePanel because they did not
+// exist yet; both calls are restored in that function below now.
+//
+// Note the route name: checkPRNsNeedingRequirementDateRevisionCount, NOT
+// ...RequirementDatesCount. The extra "Revision" is load-bearing (Portal,
+// 31 Aug 2026) — this banner's wording ("...have changed... need
+// revising") only makes sense for an actual revision, so the route it
+// calls deliberately EXCLUDES a brand-new PRN that has never had
+// requirement dates submitted at all. The other route is correct for
+// Purchase's own "N hidden" note and must not be swapped in here.
+async function checkMaterialRequirementDateReminder() {
+  const banners = document.querySelectorAll(".material-requirement-date-revision-banner-el");
+  if (!banners.length) return;
+  try {
+    const data = await apFetch({ action: "checkPRNsNeedingRequirementDateRevisionCount" });
+    const show = data.success && data.count > 0;
+    banners.forEach(b => { b.style.display = show ? "block" : "none"; });
+  } catch (e) { /* non-critical — leave banner state as-is on network error */ }
+}
+
+// Same shape, for Production Planning's own reminder banner — ungated
+// count route (checkProductionPlansNeededCount), keyed off a class so
+// multiple banners could share one check.
+async function checkProductionPlanningReminder() {
+  const banners = document.querySelectorAll(".production-planning-reminder-banner-el");
+  if (!banners.length) return;
+  try {
+    const data = await apFetch({ action: "checkProductionPlansNeededCount" });
+    const show = data.success && data.count > 0;
+    banners.forEach(b => { b.style.display = show ? "block" : "none"; });
+  } catch (e) { /* non-critical — leave banner state as-is on network error */ }
+}
+
 // navigateToModule — ported verbatim from Portal's shared/navigation.js
 // (Marketing port, 15 Sep 2026, batch 2). Every Marketing menu card calls
 // this directly. Depends on functions/globals living in the already-ported
@@ -342,6 +377,18 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canMaterialOutward      = userPermissionsObject.materialOutward === true;
   const canViewStoreDashboard   = userPermissionsObject.viewStoreDashboard === true;
 
+  // ── Production department (Batch 7, 16 Sep 2026) ────────────────────
+  // storeCreateTicket's CARD is Production's (Material Issue & Job Cards)
+  // even though its screen and routes are Store's — Portal files it the
+  // same way, and Batch 6 already wired the permission itself.
+  const canAssignMRD             = userPermissionsObject.assignMaterialRequirementDate === true;
+  const canReviseMRD             = userPermissionsObject.reviseMaterialRequirementDate === true;
+  const canProductionPlanning    = userPermissionsObject.productionPlanning === true;
+  const canCreateStoreTicket     = userPermissionsObject.storeCreateTicket === true;
+  const canJobCardSheet          = userPermissionsObject.jobCardSheet === true;
+  const canAddFinishedGoods      = userPermissionsObject.addFinishedGoodsStore === true;
+  const canViewProductionDashboard = userPermissionsObject.viewProductionDashboard === true;
+
   if (document.getElementById("mod-purchase-request-note"))  document.getElementById("mod-purchase-request-note").style.display  = canPurchaseRequestNote ? "block" : "none";
   if (document.getElementById("mod-purchase-authorize-prn")) document.getElementById("mod-purchase-authorize-prn").style.display = canAuthorizePRN ? "block" : "none";
   if (document.getElementById("mod-revise-prn"))             document.getElementById("mod-revise-prn").style.display             = canRevisePRN ? "block" : "none";
@@ -359,6 +406,14 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-live-spare-store-stock")) document.getElementById("mod-live-spare-store-stock").style.display = canLiveSpareStoreStock ? "block" : "none";
   if (document.getElementById("mod-material-outward"))       document.getElementById("mod-material-outward").style.display       = canMaterialOutward ? "block" : "none";
 
+  // Production cards (Batch 7, 16 Sep 2026)
+  if (document.getElementById("mod-assign-material-requirement-date")) document.getElementById("mod-assign-material-requirement-date").style.display = canAssignMRD ? "block" : "none";
+  if (document.getElementById("mod-revise-material-requirement-date")) document.getElementById("mod-revise-material-requirement-date").style.display = canReviseMRD ? "block" : "none";
+  if (document.getElementById("mod-production-planning")) document.getElementById("mod-production-planning").style.display = canProductionPlanning ? "block" : "none";
+  if (document.getElementById("mod-store-ticket"))        document.getElementById("mod-store-ticket").style.display        = canCreateStoreTicket ? "block" : "none";
+  if (document.getElementById("mod-job-card-sheet"))      document.getElementById("mod-job-card-sheet").style.display      = canJobCardSheet ? "block" : "none";
+  if (document.getElementById("mod-fg-add"))              document.getElementById("mod-fg-add").style.display              = canAddFinishedGoods ? "block" : "none";
+
   if (document.getElementById("mod-tourexpense"))  document.getElementById("mod-tourexpense").style.display  = canTourExpense  ? "block" : "none";
   if (document.getElementById("mod-cashexpenses")) document.getElementById("mod-cashexpenses").style.display = canCashExpenses ? "block" : "none";
   if (document.getElementById("mod-traveltickets")) document.getElementById("mod-traveltickets").style.display = canTravelTickets ? "block" : "none";
@@ -373,6 +428,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
     "mod-purchase-dashboard-wrapper": canViewPurchaseDashboard,
     "mod-marketing-dashboard-wrapper": canViewMarketingDashboard,
     "mod-store-dashboard-wrapper":     canViewStoreDashboard,
+    "mod-production-dashboard-wrapper": canViewProductionDashboard,
   };
   Object.keys(dashMap).forEach(function(id) {
     const el = document.getElementById(id);
@@ -399,6 +455,11 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
     || canRevisePRN || canAuthorizePRNRevision || canReserveStoreStock || canGateEntry || canStoreEntryAndGrn
     || canExpectedInbounds || canApproveBOQIncrease || canReleaseTicket || canSearchStoreMat || canViewLiveStock
     || canViewLiveFinishedStock || canLiveSpareStoreStock || canMaterialOutward || canViewStoreDashboard)
+    ? "block" : "none";
+  // Production department block (Batch 7, 16 Sep 2026)
+  const productionBlock = document.getElementById("dashboard-production-department-header-block");
+  if (productionBlock) productionBlock.style.display = (canAssignMRD || canReviseMRD || canProductionPlanning
+    || canCreateStoreTicket || canJobCardSheet || canAddFinishedGoods || canViewProductionDashboard)
     ? "block" : "none";
 
   refreshDepartmentTabsBar();
@@ -489,6 +550,12 @@ const DESIGN_WORKSPACE_TARGET_IDS = [
 
 function switchActiveDashboardModule(targetSectionId) {
   window.scrollTo(0, 0);
+  // Production reminder banners (Batch 7, 16 Sep 2026) — Portal calls both
+  // from exactly here, on every dashboard navigation, so the banners are
+  // already correct by the time a Production screen renders. Both are
+  // no-ops when their banner elements aren't in the DOM.
+  checkMaterialRequirementDateReminder();
+  checkProductionPlanningReminder();
 
   if (DESIGN_WORKSPACE_TARGET_IDS.includes(targetSectionId) && typeof navigateToDesignWorkspacePanel === "function") {
     navigateToDesignWorkspacePanel(targetSectionId);
@@ -510,6 +577,19 @@ function switchActiveDashboardModule(targetSectionId) {
   // through it rather than through the generic show-one-canvas path
   // below. Copied from Portal's own switchActiveDashboardModule.
   if (targetSectionId === "store-history-matrix" || targetSectionId === "store-live-stock") {
+    navigateToStoreWorkspacePanel(targetSectionId);
+    return;
+  }
+
+  // ── Production department (Batch 7, 16 Sep 2026) ────────────────────
+  // Portal inlines these five branches here (enclosure -> hide left
+  // controls/centre title -> show canvas -> init). ERP delegates to
+  // navigateToStoreWorkspacePanel instead, which does exactly those four
+  // things for any target that isn't store-live-stock — the same shortcut
+  // the two Store targets just above already take. Identical resulting
+  // DOM state, one copy of the enclosure logic instead of six.
+  if (["production-planning", "assign-material-requirement-date",
+       "revise-material-requirement-date", "job-card-sheet", "fg-add"].includes(targetSectionId)) {
     navigateToStoreWorkspacePanel(targetSectionId);
     return;
   }
@@ -670,6 +750,31 @@ function navigateToStoreWorkspacePanel(targetPanelModuleId) {
   } else if (targetPanelModuleId === 'expected-inbounds') {
     show("canvas-module-expected-inbounds");
     initializeExpectedInboundsPanel();
+  // ── Production department (Batch 7, 16 Sep 2026) ────────────────────
+  // These five canvases live inside the SAME store workspace enclosure in
+  // Portal, which is why they are routed from here rather than from
+  // switchActiveDashboardModule's generic show-one-canvas path. Portal
+  // hides store-panel-left-controls / store-panel-center-title for all of
+  // them (none of these screens uses the enclosure's sync button or
+  // title); ERP's local `show()` helper already does that, so the branches
+  // are one line shorter than Portal's, with identical effect.
+  // in-process-sheet and fg-approval are QA's (Batch 8) and are
+  // deliberately NOT added here yet — their canvases don't exist.
+  } else if (targetPanelModuleId === 'production-planning') {
+    show("canvas-module-production-planning");
+    initializeProductionPlanningPanel();
+  } else if (targetPanelModuleId === 'assign-material-requirement-date') {
+    show("canvas-module-assign-material-requirement-date");
+    initializeAssignMaterialRequirementDatePanel();
+  } else if (targetPanelModuleId === 'revise-material-requirement-date') {
+    show("canvas-module-revise-material-requirement-date");
+    initializeReviseMRDPanel();
+  } else if (targetPanelModuleId === 'job-card-sheet') {
+    show("canvas-module-job-card-sheet");
+    initializeJCSHWorkspace();
+  } else if (targetPanelModuleId === 'fg-add') {
+    show("canvas-module-fg-add");
+    initializeFGAddWorkspace();
   }
 }
 
