@@ -472,6 +472,80 @@
     .pstat-header-company { text-align: left; }
   }
 
+  /* Product Serial Number Tracking (Batch 8, QA) — copied verbatim from
+     Portal. Scoped to .psn-* classes only; the JS still inlines one-off
+     styles for anything data-driven (colors computed at render time). */
+  .psn-search-input-wrap { position: relative; flex: 1; }
+  .psn-search-icon {
+    position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+    color: var(--muted); font-size: 1rem; pointer-events: none;
+  }
+  #psn-search-ta-input.psn-search-input { padding-left: 38px; font-size: 0.95rem; }
+  .psn-suggestion-row { padding: 10px 12px; cursor: pointer; border-bottom: 1px solid #f1f5f9; transition: background 0.1s; }
+  .psn-suggestion-row:last-child { border-bottom: none; }
+  .psn-suggestion-row:hover { background: var(--highlight-bg); }
+
+  .psn-section-card {
+    background: var(--card); border: 1px solid var(--border); border-left: 3px solid var(--psn-accent, var(--brand));
+    border-radius: var(--radius); padding: 16px 18px; margin-bottom: 14px;
+    box-shadow: 0 1px 2px rgba(16,24,40,0.04);
+  }
+  .psn-section-title {
+    display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.92rem;
+    color: var(--text); margin-bottom: 12px;
+  }
+  .psn-section-title .psn-section-icon { font-size: 1rem; line-height: 1; }
+  .psn-field-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px 16px; }
+  .psn-field-label { font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; margin-bottom: 2px; }
+  .psn-field-value { font-size: 0.92rem; color: var(--text); word-break: break-word; }
+  .psn-field-value.psn-mono { font-family: ui-monospace, "SF Mono", Consolas, monospace; font-size: 0.85rem; }
+
+  .psn-status-badge {
+    display: inline-flex; align-items: center; gap: 5px; padding: 3px 11px; border-radius: 999px;
+    font-size: 0.75rem; font-weight: 700; white-space: nowrap;
+  }
+  .psn-tier-chip { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 0.7rem; font-weight: 700; }
+
+  .psn-doc-chip {
+    display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border: 1px solid var(--border);
+    border-radius: 999px; font-size: 0.82rem; color: var(--brand); text-decoration: none; background: #fff;
+    transition: border-color 0.1s, background 0.1s;
+  }
+  .psn-doc-chip:hover { border-color: var(--brand); background: var(--highlight-bg); }
+
+  .psn-material-card { border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 12px; background: #fafbfc; }
+  .psn-material-card:last-child { margin-bottom: 0; }
+  .psn-qty-bar-track { height: 6px; border-radius: 999px; background: #e2e8f0; overflow: hidden; margin-top: 6px; }
+  .psn-qty-bar-fill { height: 100%; background: var(--accent); border-radius: 999px; }
+  .psn-po-row { padding: 9px 11px; border: 1px solid var(--border); border-radius: var(--radius); margin-top: 6px; background: #fff; }
+
+  .psn-chooser-card {
+    cursor: pointer; padding: 14px 16px; border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--card); transition: border-color 0.12s, box-shadow 0.12s, transform 0.12s;
+  }
+  .psn-chooser-card:hover { border-color: var(--brand); box-shadow: 0 2px 8px rgba(0,86,179,0.1); transform: translateY(-1px); }
+
+  .psn-empty-state { text-align: center; padding: 48px 20px; color: var(--muted); }
+  .psn-empty-state .psn-empty-icon { font-size: 2.2rem; margin-bottom: 10px; opacity: 0.5; }
+  .psn-spinner {
+    display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(0,86,179,0.25);
+    border-top-color: var(--brand); border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: middle; margin-right: 8px;
+  }
+
+  #psn-queue-wrap table.psn-table { border-collapse: separate; border-spacing: 0; }
+  #psn-queue-wrap table.psn-table thead th {
+    position: sticky; top: 0; background: #f8fafc; z-index: 5; border-bottom: 2px solid var(--border);
+  }
+  #psn-queue-wrap table.psn-table tbody tr { transition: background 0.1s; }
+  #psn-queue-wrap table.psn-table tbody tr:nth-child(even) { background: #fafbfc; }
+  #psn-queue-wrap table.psn-table tbody tr:hover { background: var(--highlight-bg); }
+  #psn-queue-wrap table.psn-table tbody td { border-top: 1px solid #f1f5f9; }
+  #psn-queue-wrap table.psn-table .psn-status-badge { font-size: 0.68rem; padding: 2px 8px; white-space: normal; line-height: 1.3; }
+
+  @media (max-width: 900px) {
+    .psn-field-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
 </style>
 
 </head>
@@ -792,11 +866,32 @@
       </div>
     </div>
 
-    <!-- ── QUALITY ASSURANCE (Batch 1 scaffolding) ─────────────────────── -->
+    <!-- ── QUALITY ASSURANCE (Batch 8, 16 Sep 2026) — copied verbatim from
+         Portal ─────────────────────────────────────────────────────── -->
     <div id="dashboard-qa-department-header-block" class="dept-block" style="display:none; --dept-accent:#dc2626;">
       <div class="dept-header">
         <div class="dept-bar" style="background:#dc2626;"></div>
         <span class="dept-name">Quality Assurance Department</span>
+        <div id="mod-qa-dashboard-wrapper" style="display:none;">
+          <button class="dept-dash-pill" id="mod-qa-dashboard" onclick="navigateToQaDashboard()" style="background:#fef2f2; color:#dc2626;">📊 Dashboard</button>
+        </div>
+      </div>
+      <div class="sec-label">Inward Quality</div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-store-grn" onclick="navigateToStoreWorkspacePanel('store-grn')"><span class="mc-label">Raw Materials Q/A Check</span></div>
+      </div>
+      <div class="sec-label">Finished Goods</div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-fg-approval" onclick="switchActiveDashboardModule('fg-approval')"><span class="mc-label">Add to Finished Goods Store Approval</span></div>
+        <div class="menu-card" id="mod-in-process-sheet" onclick="switchActiveDashboardModule('in-process-sheet')"><span class="mc-label">In Process Sheet</span></div>
+      </div>
+      <div class="sec-label">Inspection</div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-qa-inspection-timeline" onclick="switchActiveDashboardModule('qa-inspection-timeline')"><span class="mc-label">QA Inspection Timeline</span></div>
+      </div>
+      <div class="sec-label">Traceability</div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-product-serial-tracking" onclick="switchActiveDashboardModule('product-serial-tracking')"><span class="mc-label">Product Serial Number Tracking</span></div>
       </div>
     </div>
 
@@ -885,6 +980,15 @@
           <button class="dd-period-btn" data-period="thisyear" onclick="admSetPeriod(this)">This Year</button>
           <button class="dd-period-btn" data-period="custom" onclick="admSetPeriod(this)">Custom ▾</button>
         </div>
+        <div id="qad-period-btns" style="display:none; gap:4px; flex-wrap:nowrap;">
+          <button class="dd-period-btn active" data-period="today" onclick="qadSetPeriod(this)">Today</button>
+          <button class="dd-period-btn" data-period="yesterday" onclick="qadSetPeriod(this)">Yesterday</button>
+          <button class="dd-period-btn" data-period="thisweek" onclick="qadSetPeriod(this)">This Week</button>
+          <button class="dd-period-btn" data-period="thismonth" onclick="qadSetPeriod(this)">This Month</button>
+          <button class="dd-period-btn" data-period="thisquarter" onclick="qadSetPeriod(this)">This Quarter</button>
+          <button class="dd-period-btn" data-period="thisyear" onclick="qadSetPeriod(this)">This Year</button>
+          <button class="dd-period-btn" data-period="custom" onclick="qadSetPeriod(this)">Custom ▾</button>
+        </div>
         <div id="dd-period-btns" style="display:none; gap:4px; flex-wrap:nowrap;">
           <button class="dd-period-btn active" data-period="today" onclick="ddSetPeriod(this)">Today</button>
           <button class="dd-period-btn" data-period="yesterday" onclick="ddSetPeriod(this)">Yesterday</button>
@@ -963,6 +1067,19 @@
       <span id="adm-custom-val-quarter" hidden style="flex:none; white-space:nowrap;"><select id="adm-custom-val-quarter-year" class="dash-fy-year-select" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:80px;"></select><select id="adm-custom-val-quarter-q" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:110px; margin-left:4px;"><option value="1">Q1 (Apr-Jun)</option><option value="2">Q2 (Jul-Sep)</option><option value="3">Q3 (Oct-Dec)</option><option value="4">Q4 (Jan-Mar)</option></select></span>
       <select id="adm-custom-val-year" class="dash-fy-year-select" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:90px;" hidden></select>
       <button onclick="admLoadCustom()" style="font-size:0.72rem; background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; cursor:pointer; font-weight:700; flex:none; white-space:nowrap;">Go</button>
+    </div>
+    <div id="qad-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc; flex-wrap:nowrap; overflow-x:auto;">
+      <span style="font-size:0.72rem; font-weight:700; color:var(--muted); flex:none; white-space:nowrap;">Select:</span>
+      <select id="qad-custom-type" onchange="qadCustomTypeChange()" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:120px;">
+        <option value="customday">Day</option><option value="customrange">Date Range</option><option value="custommonth">Month</option>
+        <option value="customquarter">Quarter</option><option value="customyear">Year</option>
+      </select>
+      <span id="qad-custom-val-day" style="flex:none; white-space:nowrap;"><span style="display:inline-block; flex:none; width:130px;"><input id="qad-custom-val-day-input" type="date" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:100%;" /></span></span>
+      <span id="qad-custom-val-range" hidden style="flex:none; white-space:nowrap;"><span style="display:inline-block; flex:none; width:130px;"><input id="qad-custom-val-range-start" type="date" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:100%;" /></span><span style="font-size:0.72rem; color:var(--muted); margin:0 4px; flex:none;">to</span><span style="display:inline-block; flex:none; width:130px;"><input id="qad-custom-val-range-end" type="date" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:100%;" /></span></span>
+      <span id="qad-custom-val-month" hidden style="flex:none; white-space:nowrap;"><select id="qad-custom-val-month-year" class="dash-cal-year-select" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:80px;"></select><select id="qad-custom-val-month-month" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:70px; margin-left:4px;"><option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option><option value="4">Apr</option><option value="5">May</option><option value="6">Jun</option><option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option><option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option></select></span>
+      <span id="qad-custom-val-quarter" hidden style="flex:none; white-space:nowrap;"><select id="qad-custom-val-quarter-year" class="dash-fy-year-select" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:80px;"></select><select id="qad-custom-val-quarter-q" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:110px; margin-left:4px;"><option value="1">Q1 (Apr-Jun)</option><option value="2">Q2 (Jul-Sep)</option><option value="3">Q3 (Oct-Dec)</option><option value="4">Q4 (Jan-Mar)</option></select></span>
+      <select id="qad-custom-val-year" class="dash-fy-year-select" style="font-size:0.72rem; padding:3px 6px; border:1px solid var(--border); border-radius:4px; flex:none; width:90px;" hidden></select>
+      <button onclick="qadLoadCustom()" style="font-size:0.72rem; background:var(--brand); color:#fff; border:none; padding:4px 12px; border-radius:4px; cursor:pointer; font-weight:700; flex:none; white-space:nowrap;">Go</button>
     </div>
 <div id="dd-custom-zone" style="display:none; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); background:#f8fafc; flex-wrap:nowrap; overflow-x:auto;">
       <span style="font-size:0.72rem; font-weight:700; color:var(--muted); flex:none; white-space:nowrap;">Select:</span>
@@ -3742,6 +3859,100 @@
       </div>
     </div>
 
+    <!-- In Process Sheet (Batch 8, QA) — copied verbatim from Portal,
+         which nests it right here alongside Job Card Sheet inside this
+         same Store workspace enclosure. -->
+    <div id="canvas-module-in-process-sheet" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">In Process Sheet</h2>
+      <div id="ipsh-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+        <div>
+          <label class="field-label" style="margin-top:0;">Project ID or Customer Name *</label>
+          <div style="position:relative;">
+            <input type="text" id="ipsh-project-ta-input" placeholder="Type Project ID or Customer Name..." autocomplete="off"
+              oninput="handleSharedProjectTypeaheadInput(this.value, 'ipsh-project-ta-input', 'ipsh-project-ta-dropdown')"
+              onchange="handleIPSHProjectChange(this.value)"
+              style="width:100%; padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); box-sizing:border-box;" />
+            <div id="ipsh-project-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          </div>
+        </div>
+        <div>
+          <label class="field-label" style="margin-top:0;">Customer Name</label>
+          <input type="text" id="ipsh-customer" readonly style="padding:9px; background:#f1f5f9; color:#1a2332; font-weight:600; cursor:not-allowed; border-radius:var(--radius);" placeholder="Auto-filled from Project ID" />
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr; gap:14px; margin-bottom:14px;">
+        <div style="position:relative;">
+          <label class="field-label" style="margin-top:0;">BOQ ID *</label>
+          <div id="ipsh-boq-display" data-disabled="1" onclick="toggleIPSHBOQDropdown()" style="display:flex; justify-content:space-between; align-items:center; gap:6px; min-height:38px; padding:8px 10px; border:1.5px solid var(--border); border-radius:var(--radius); background:#f1f5f9; color:var(--muted); cursor:not-allowed; opacity:0.5; font-weight:600; line-height:1.35;">
+            <span id="ipsh-boq-display-text" style="white-space:normal; word-break:break-word;">— Select Project First —</span>
+            <span style="flex-shrink:0; margin-top:2px;">▾</span>
+          </div>
+          <div id="ipsh-boq-dropdown-list" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:260px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          <input type="hidden" id="ipsh-boq" value="" />
+        </div>
+        <input type="hidden" id="ipsh-department" value="" />
+        <input type="hidden" id="ipsh-description-of-material" value="" />
+        <input type="hidden" id="ipsh-make" value="" />
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+        <div>
+          <label class="field-label" style="margin-top:0;">Product Name</label>
+          <textarea id="ipsh-product-name" readonly rows="1" oninput="autoGrowTextField(this)"
+            style="width:100%; padding:9px; background:#f1f5f9; color:#1a2332; font-weight:600; cursor:not-allowed; border-radius:var(--radius); border:1px solid var(--border); resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; font-family:inherit; line-height:1.3; box-sizing:border-box;" placeholder="Auto-filled from BOQ ID"></textarea>
+        </div>
+        <div>
+          <label class="field-label" style="margin-top:0;">Product Rating</label>
+          <textarea id="ipsh-product-rating" readonly rows="1" oninput="autoGrowTextField(this)"
+            style="width:100%; padding:9px; background:#f1f5f9; color:#1a2332; font-weight:600; cursor:not-allowed; border-radius:var(--radius); border:1px solid var(--border); resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; font-family:inherit; line-height:1.3; box-sizing:border-box;" placeholder="Auto-filled from BOQ ID (blank if none)"></textarea>
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr; gap:14px; margin-bottom:14px;">
+        <div style="position:relative;">
+          <label class="field-label" style="margin-top:0;">Job Card Number *</label>
+          <div id="ipsh-jobcard-display" data-disabled="1" onclick="toggleIPSHJobCardDropdown()" style="display:flex; justify-content:space-between; align-items:center; gap:6px; min-height:38px; padding:8px 10px; border:1.5px solid var(--border); border-radius:var(--radius); background:#f1f5f9; color:var(--muted); cursor:not-allowed; opacity:0.5; font-weight:600; line-height:1.35;">
+            <span id="ipsh-jobcard-display-text" style="white-space:normal; word-break:break-word;">— Select BOQ ID First —</span>
+            <span style="flex-shrink:0; margin-top:2px;">▾</span>
+          </div>
+          <div id="ipsh-jobcard-dropdown-list" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:260px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          <input type="hidden" id="ipsh-jobcard" value="" />
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:20px;">
+        <div>
+          <label class="field-label" style="margin-top:0;">Product Type *</label>
+          <select id="ipsh-product-type" onchange="updateIPSHDownloadButtonState()" disabled style="padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius); width:100%; box-sizing:border-box;">
+            <option value="">— Select Job Card Number First —</option>
+            <option value="Air Core Reactor">Air Core Reactor</option>
+            <option value="Thyristor Switches">Thyristor Switches</option>
+            <option value="Thyristor Switching Panel">Thyristor Switching Panel</option>
+            <option value="ACU Panel">ACU Panel</option>
+            <option value="HT Panel">HT Panel</option>
+            <option value="Structure Panel">Structure Panel</option>
+            <option value="HT Capacitor">HT Capacitor</option>
+            <option value="LT Capacitor">LT Capacitor</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label" style="margin-top:0;">Date *</label>
+          <input type="date" id="ipsh-sheet-date" style="width:100%; padding:9px; box-sizing:border-box; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);" />
+        </div>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--border); padding-top:14px;">
+        <button class="nav-btn-styled" id="ipsh-download-btn" disabled onclick="submitIPSHDownload()" style="background:var(--accent); padding:8px 24px; font-weight:700; opacity:0.5; cursor:not-allowed;">Download</button>
+      </div>
+    </div>
+
+    <!-- Add to Finished Goods Store Approval (Batch 8, QA) — copied
+         verbatim from Portal, which nests it in this same Store
+         workspace enclosure. -->
+    <div id="canvas-module-fg-approval" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Add to Finished Goods Store Approval</h2>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Review the Production and Quality Assurance documents uploaded for each submission before it becomes available in the Finished Goods Store.</p>
+      <div id="fg-approval-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+      <div id="fg-approval-queue-feed" style="display:flex; flex-direction:column; gap:14px;"></div>
+    </div>
+
     <div id="canvas-module-assign-material-requirement-date" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
       <h2 class="panel-title">Assign Material Requirement Date</h2>
       <div id="mrd-reminder-banner-assign" class="material-requirement-date-revision-banner-el" style="display:none; margin-bottom:14px; padding:10px 14px; background:#fef3c7; border-left:4px solid #f59e0b; color:#78350f; border-radius:var(--radius); font-size:0.85rem; font-weight:700;">⚠️ Purchase Quantities have changed on one or more PRNs — their <strong>Production Requirement Dates</strong> need revising.</div>
@@ -3992,6 +4203,221 @@
     </div>
 
 
+  </div>
+
+  <!-- ═══ QA INSPECTION TIMELINE (Batch 8, 16 Sep 2026) — copied verbatim
+       from Portal. Standalone panel (own Return to Main Dashboard button),
+       not nested inside the Store enclosure above. ═══ -->
+  <div id="canvas-module-qa-inspection-timeline" class="workspace-panel" style="display:none;">
+    <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
+      <div></div>
+      <button class="nav-btn-styled" onclick="returnToDashboard()">Return to Main Dashboard</button>
+    </div>
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">QA Inspection Timeline</h2>
+      <div id="qait-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+      <div id="qait-bucket-filter-bar" style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;"></div>
+      <div id="qait-summary-strip" style="margin-bottom:14px;"></div>
+      <div id="qait-table-wrap" style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
+        <table style="width:100%; border-collapse:collapse; table-layout:fixed; font-size:0.85rem;">
+          <thead>
+            <tr style="background:#f0fdf4; border-bottom:2px solid var(--border);">
+              <th style="width:4%; padding:8px 6px;"></th>
+              <th style="width:15%; padding:8px 6px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted); border-left:2px solid var(--border);">Project</th>
+              <th style="width:13%; padding:8px 6px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted); border-left:2px solid var(--border);">Company</th>
+              <th style="width:17%; padding:8px 6px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted); border-left:2px solid var(--border);">Next Step</th>
+              <th style="width:10%; padding:8px 6px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted); border-left:2px solid var(--border);">Expected</th>
+              <th style="width:14%; padding:8px 6px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted); border-left:2px solid var(--border);">Customer Inspection</th>
+              <th style="width:14%; padding:8px 6px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted); border-left:2px solid var(--border);">Inspection Clearance Note</th>
+              <th style="width:13%; padding:8px 6px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted); border-left:2px solid var(--border);">Dispatch Clearance</th>
+            </tr>
+          </thead>
+          <tbody id="qait-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PRODUCT SERIAL NUMBER TRACKING (Batch 8, 16 Sep 2026) — copied
+       verbatim from Portal. ═══ -->
+  <div id="canvas-module-product-serial-tracking" class="workspace-panel" style="display:none;">
+    <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
+      <div></div>
+      <button class="nav-btn-styled" onclick="returnToDashboard()">Return to Main Dashboard</button>
+    </div>
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Product Serial Number Tracking</h2>
+      <div id="psn-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+      <div id="psn-tab-bar" style="display:flex; gap:8px; margin-bottom:16px;"></div>
+
+      <div id="psn-search-tab">
+        <div id="psn-search-bar" style="display:flex; gap:10px; align-items:flex-end; margin-bottom:20px;">
+          <div class="psn-search-input-wrap">
+            <label class="field-label" style="margin-top:0;">Product Serial Number</label>
+            <span class="psn-search-icon">🔍</span>
+            <input type="text" id="psn-search-ta-input" class="form-input psn-search-input" autocomplete="off" placeholder="Type or scan the serial number on the product nameplate"
+              oninput="psnHandleSearchInput(this.value)" />
+            <div id="psn-search-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:280px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+          </div>
+          <button class="nav-btn-styled" onclick="psnRunSearch()">Search</button>
+        </div>
+        <div id="psn-results"></div>
+        <div id="psn-detail"></div>
+      </div>
+
+      <div id="psn-queue-tab" style="display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:12px;">
+          <input type="text" id="psn-queue-filter-input" class="form-input" autocomplete="off"
+            placeholder="Filter by serial, project, customer, or product..." style="max-width:360px;"
+            oninput="psnFilterQueue(this.value)" />
+          <span id="psn-queue-count" style="font-size:0.8rem; color:var(--muted); white-space:nowrap;"></span>
+        </div>
+        <div id="psn-queue-wrap" style="overflow-x:auto; max-height:60vh; overflow-y:auto; border:1px solid var(--border); border-radius:var(--radius);">
+          <table class="psn-table" style="width:100%; border-collapse:collapse; font-size:0.85rem; table-layout:fixed;">
+            <colgroup>
+              <col style="width:13%;" />
+              <col style="width:8%;" />
+              <col style="width:9%;" />
+              <col style="width:12%;" />
+              <col style="width:18%;" />
+              <col style="width:9%;" />
+              <col style="width:15%;" />
+              <col style="width:16%;" />
+            </colgroup>
+            <thead>
+              <tr style="text-align:left;">
+                <th style="padding:10px 8px; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted);">Serial Number</th>
+                <th style="padding:10px 8px; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted);">Job Card</th>
+                <th style="padding:10px 8px; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted);">Project ID</th>
+                <th style="padding:10px 8px; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted);">Customer</th>
+                <th style="padding:10px 8px; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted);">Product Name</th>
+                <th style="padding:10px 8px; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted);">FG Date</th>
+                <th style="padding:10px 8px; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted);">Status</th>
+                <th style="padding:10px 8px; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted);">Attribution</th>
+              </tr>
+            </thead>
+            <tbody id="psn-queue-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ QA DASHBOARD (Batch 8, 16 Sep 2026) — canvas copied verbatim from
+       Portal. Period buttons and custom zone live in the shared
+       dashboard-global-toolbar (qad-*, added alongside pd2-*/adm-* etc). ═══ -->
+  <div id="canvas-module-qa-dashboard" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
+    <div id="qad-body" class="dd-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
+
+      <!-- ROW 1: Live Queues -->
+      <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
+        <div class="dd-stat-card stat-live">
+          <div class="dd-stat-label">Raw Materials Pending Q/A Check</div>
+          <div class="dd-stat-val" id="qad-s-pendingqa" style="color:#b45309;">—</div>
+          <div class="dd-stat-sub" id="qad-s-pendingqa-sub"></div>
+        </div>
+        <div class="dd-stat-card stat-live">
+          <div class="dd-stat-label">Pending FG Approvals</div>
+          <div class="dd-stat-val" id="qad-s-fgpending" style="color:#b45309;">—</div>
+        </div>
+        <div class="dd-stat-card stat-live">
+          <div class="dd-stat-label">QA Inspections Due/Overdue</div>
+          <div class="dd-stat-val" id="qad-s-dueoverdue" style="color:#b91c1c;">—</div>
+        </div>
+        <div class="dd-stat-card stat-live">
+          <div class="dd-stat-label">Currently Being Repaired at ABPS</div>
+          <div class="dd-stat-val" id="qad-s-repairing" style="color:#b45309;">—</div>
+          <div class="dd-stat-sub" id="qad-s-repairing-sub"></div>
+        </div>
+        <div class="dd-stat-card stat-live">
+          <div class="dd-stat-label">Inspection Documents Pending Upload</div>
+          <div class="dd-stat-val" id="qad-s-docgap" style="color:#b45309;">—</div>
+        </div>
+      </div>
+
+      <!-- ROW 2: Period Throughput / Rates -->
+      <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
+        <div class="dd-stat-card stat-period">
+          <div class="dd-stat-label">Materials QA-Checked</div>
+          <div class="dd-stat-val" id="qad-s-checked">—</div>
+        </div>
+        <div class="dd-stat-card stat-period">
+          <div class="dd-stat-label">QA Rejection Rate</div>
+          <div class="dd-stat-val" id="qad-s-rejrate">—</div>
+        </div>
+        <div class="dd-stat-card stat-period">
+          <div class="dd-stat-label">FG Units Approved</div>
+          <div class="dd-stat-val" id="qad-s-fgapproved">—</div>
+        </div>
+        <div class="dd-stat-card stat-period">
+          <div class="dd-stat-label">Repair QA Resolved</div>
+          <div class="dd-stat-val" id="qad-s-repairresolved">—</div>
+        </div>
+        <div class="dd-stat-card stat-period">
+          <div class="dd-stat-label">Average QA Turnaround Time</div>
+          <div class="dd-stat-val" id="qad-s-turnaround">—</div>
+        </div>
+      </div>
+
+      <!-- ROW 3: Charts -->
+      <div class="dd-chart-row" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; flex:0 0 230px; min-height:0;">
+        <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column;">
+          <div class="dd-card-title">QA Rejection Rate Trend</div>
+          <div style="flex:1; min-height:0; position:relative;"><canvas id="qad-chart-rejtrend" style="position:absolute; width:100%; height:100%;"></canvas></div>
+        </div>
+        <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column;">
+          <div class="dd-card-title">Materials QA-Checked Volume Over Time</div>
+          <div style="flex:1; min-height:0; position:relative;"><canvas id="qad-chart-volume" style="position:absolute; width:100%; height:100%;"></canvas></div>
+        </div>
+      </div>
+
+      <!-- ROW 4: Aging Rejection Queue + Due Today + Overdue -->
+      <div class="dd-detail-row" style="display:grid; grid-template-columns:1.2fr 1fr 1fr; gap:10px; flex:1; min-height:0;">
+
+        <div class="dd-card" style="padding:12px 16px; display:flex; flex-direction:column; min-height:0;">
+          <div class="dd-card-title" style="margin-bottom:6px;">Aging Rejection Queue</div>
+          <div style="overflow-y:auto; flex:1;">
+            <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
+              <thead><tr style="color:var(--muted); font-size:0.68rem; border-bottom:1.5px solid var(--border); position:sticky; top:0; background:var(--card);">
+                <th style="text-align:left; padding:3px 6px; font-weight:700;">GRN</th>
+                <th style="text-align:left; padding:3px 6px; font-weight:700;">Material</th>
+                <th style="text-align:left; padding:3px 6px; font-weight:700;">Vendor</th>
+                <th style="text-align:center; padding:3px 6px; font-weight:700;">Days Waiting</th>
+              </tr></thead>
+              <tbody id="qad-aging-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="dd-card" style="padding:12px 16px; display:flex; flex-direction:column; min-height:0;">
+          <div class="dd-card-title" style="margin-bottom:6px;">Due Today</div>
+          <div style="overflow-y:auto; flex:1;">
+            <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
+              <thead><tr style="color:var(--muted); font-size:0.68rem; border-bottom:1.5px solid var(--border); position:sticky; top:0; background:var(--card);">
+                <th style="text-align:left; padding:3px 6px; font-weight:700;">Project</th>
+                <th style="text-align:left; padding:3px 6px; font-weight:700;">Milestone</th>
+              </tr></thead>
+              <tbody id="qad-duetoday-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="dd-card" style="padding:12px 16px; display:flex; flex-direction:column; min-height:0;">
+          <div class="dd-card-title" style="margin-bottom:6px;">Overdue</div>
+          <div style="overflow-y:auto; flex:1;">
+            <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
+              <thead><tr style="color:var(--muted); font-size:0.68rem; border-bottom:1.5px solid var(--border); position:sticky; top:0; background:var(--card);">
+                <th style="text-align:left; padding:3px 6px; font-weight:700;">Project</th>
+                <th style="text-align:left; padding:3px 6px; font-weight:700;">Milestone</th>
+                <th style="text-align:center; padding:3px 6px; font-weight:700;">Days Overdue</th>
+              </tr></thead>
+              <tbody id="qad-overdue-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
   </div>
 
   <!-- ═══ PRODUCTION DASHBOARD (Batch 7, 16 Sep 2026) ═══
@@ -4999,6 +5425,11 @@
 <script src="production/job-card-sheet.js"></script>
 <script src="production/finished-goods.js"></script>
 <script src="production/production-dashboard.js"></script>
+<script src="qa/fg-approval.js"></script>
+<script src="qa/in-process-sheet.js"></script>
+<script src="qa/qa-inspection-timeline.js"></script>
+<script src="qa/product-serial-tracking.js"></script>
+<script src="qa/qa-dashboard.js"></script>
 <script src="project/security-admin.js"></script>
 <script src="project/manufacturing-clearance.js"></script>
 <script src="project/project-timeline.js"></script>

@@ -391,6 +391,25 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canAddFinishedGoods      = userPermissionsObject.addFinishedGoodsStore === true;
   const canViewProductionDashboard = userPermissionsObject.viewProductionDashboard === true;
 
+  // ── Quality Assurance department (Batch 8, 16 Sep 2026) ─────────────
+  // qaCheck's CARD is QA's (Inward Quality) even though its screen and
+  // routes are Store's — Portal files it the same way, and Batch 6
+  // already wired the permission itself. fgApproval/inProcessSheet's
+  // screens live under production/ (Portal) and qa/ (here) but their
+  // routes are Production's (Batch 7) — same "card belongs to a
+  // different department than its routes" precedent.
+  const canQaCheck               = userPermissionsObject.qaCheck === true;
+  const canFgApproval            = userPermissionsObject.fgApproval === true;
+  const canInProcessSheet        = userPermissionsObject.inProcessSheet === true;
+  const canQaInspectionTimeline  = userPermissionsObject.qaInspectionTimeline === true;
+  const canProductSerialTracking = userPermissionsObject.productSerialTracking === true;
+  const canViewQaDashboard       = userPermissionsObject.viewQaDashboard === true;
+  if (document.getElementById("mod-store-grn"))              document.getElementById("mod-store-grn").style.display              = canQaCheck ? "block" : "none";
+  if (document.getElementById("mod-fg-approval"))             document.getElementById("mod-fg-approval").style.display             = canFgApproval ? "block" : "none";
+  if (document.getElementById("mod-in-process-sheet"))        document.getElementById("mod-in-process-sheet").style.display        = canInProcessSheet ? "block" : "none";
+  if (document.getElementById("mod-qa-inspection-timeline"))  document.getElementById("mod-qa-inspection-timeline").style.display  = canQaInspectionTimeline ? "block" : "none";
+  if (document.getElementById("mod-product-serial-tracking")) document.getElementById("mod-product-serial-tracking").style.display = canProductSerialTracking ? "block" : "none";
+
   if (document.getElementById("mod-purchase-request-note"))  document.getElementById("mod-purchase-request-note").style.display  = canPurchaseRequestNote ? "block" : "none";
   if (document.getElementById("mod-purchase-authorize-prn")) document.getElementById("mod-purchase-authorize-prn").style.display = canAuthorizePRN ? "block" : "none";
   if (document.getElementById("mod-revise-prn"))             document.getElementById("mod-revise-prn").style.display             = canRevisePRN ? "block" : "none";
@@ -435,6 +454,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
     // it now lives under the same Admin department tab as Security &
     // Login Access, matching Portal's identical move the same day.
     "mod-admin-dashboard-wrapper":     canViewAdminDashboard,
+    "mod-qa-dashboard-wrapper":        canViewQaDashboard,
   };
   Object.keys(dashMap).forEach(function(id) {
     const el = document.getElementById(id);
@@ -466,6 +486,11 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const productionBlock = document.getElementById("dashboard-production-department-header-block");
   if (productionBlock) productionBlock.style.display = (canAssignMRD || canReviseMRD || canProductionPlanning
     || canCreateStoreTicket || canJobCardSheet || canAddFinishedGoods || canViewProductionDashboard)
+    ? "block" : "none";
+  // Quality Assurance department block (Batch 8, 16 Sep 2026)
+  const qaBlock = document.getElementById("dashboard-qa-department-header-block");
+  if (qaBlock) qaBlock.style.display = (canQaCheck || canFgApproval || canInProcessSheet
+    || canQaInspectionTimeline || canProductSerialTracking || canViewQaDashboard)
     ? "block" : "none";
 
   refreshDepartmentTabsBar();
@@ -595,7 +620,8 @@ function switchActiveDashboardModule(targetSectionId) {
   // the two Store targets just above already take. Identical resulting
   // DOM state, one copy of the enclosure logic instead of six.
   if (["production-planning", "assign-material-requirement-date",
-       "revise-material-requirement-date", "job-card-sheet", "fg-add"].includes(targetSectionId)) {
+       "revise-material-requirement-date", "job-card-sheet", "fg-add",
+       "in-process-sheet", "fg-approval"].includes(targetSectionId)) {
     navigateToStoreWorkspacePanel(targetSectionId);
     return;
   }
@@ -664,6 +690,11 @@ function switchActiveDashboardModule(targetSectionId) {
   if (targetSectionId === "daily-timeline" && typeof initializeDailyTimelinePanel === "function") initializeDailyTimelinePanel();
   if (targetSectionId === "project-status" && typeof initializeProjectStatusPanel === "function") initializeProjectStatusPanel();
   if (targetSectionId === "project-invoice" && typeof initializePinvWorkspace === "function") initializePinvWorkspace();
+  // QA department (Batch 8, 16 Sep 2026) — same init-on-open convention.
+  // qa-dashboard is reached via its own dept-dash-pill (navigateToQaDashboard),
+  // not through this generic path, so it needs no entry here.
+  if (targetSectionId === "qa-inspection-timeline" && typeof initializeQaInspectionTimelinePanel === "function") initializeQaInspectionTimelinePanel();
+  if (targetSectionId === "product-serial-tracking" && typeof initializeProductSerialTrackingPanel === "function") initializeProductSerialTrackingPanel();
 }
 
 // ── navigateToStoreWorkspacePanel (Batch 6, 16 Sep 2026) ──────────────
@@ -764,8 +795,6 @@ function navigateToStoreWorkspacePanel(targetPanelModuleId) {
   // them (none of these screens uses the enclosure's sync button or
   // title); ERP's local `show()` helper already does that, so the branches
   // are one line shorter than Portal's, with identical effect.
-  // in-process-sheet and fg-approval are QA's (Batch 8) and are
-  // deliberately NOT added here yet — their canvases don't exist.
   } else if (targetPanelModuleId === 'production-planning') {
     show("canvas-module-production-planning");
     initializeProductionPlanningPanel();
@@ -781,6 +810,14 @@ function navigateToStoreWorkspacePanel(targetPanelModuleId) {
   } else if (targetPanelModuleId === 'fg-add') {
     show("canvas-module-fg-add");
     initializeFGAddWorkspace();
+  // ── Quality Assurance department (Batch 8, 16 Sep 2026) — same store
+  // enclosure, same reasoning as the Production branches just above.
+  } else if (targetPanelModuleId === 'in-process-sheet') {
+    show("canvas-module-in-process-sheet");
+    initializeIPSHWorkspace();
+  } else if (targetPanelModuleId === 'fg-approval') {
+    show("canvas-module-fg-approval");
+    initializeFGApprovalWorkspace();
   }
 }
 

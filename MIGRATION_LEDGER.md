@@ -1817,10 +1817,114 @@ Stage 4 there.
 
 ## Batch 8 — QA
 
-**Status: not started**
+**Status: ported, integrated, verified via static checks + a mocked-DOM
+smoke test in a real browser — NOT click-tested against live data (no
+login credentials in this session).**
 
-`routes/qaInspection.js` (7), `productSerialTracking.js` (4), `qa/*.js`
-(4). 6 screens + dashboard.
+Built with 4 parallel agents (each a genuinely new, disjoint file —
+unlike Batches 4-7's "repair existing scaffolding" work, there was no
+prior QA code in ERP to reconcile against), then one coordination pass to
+integrate their output into the shared files they were deliberately kept
+out of.
+
+**Ported**: `routes/qaInspection.js` (7 routes — replaced a pre-existing
+stub that only exported a no-op `computeQaInspectionQueueRows` for
+`dailyTimeline.js`'s `require`), `routes/productSerialTracking.js` (4
+routes, new), `routes/qaDashboard.js` (1 route, new — kept as its own
+file rather than appended into `routes/dashboards.js`, matching
+`adminDashboard.js`/`dailyTimeline.js`'s existing precedent; Batch 9 can
+decide whether to fold it in later), `lib/serialTraceSnapshot.js`
+(already existed from Batch 7, confirmed byte-identical to Portal — no
+work needed), `qa/qa-inspection-timeline.js`, `qa/product-serial-tracking.js`,
+`qa/qa-dashboard.js`, `qa/in-process-sheet.js`, `qa/fg-approval.js`
+(ported from Portal's `production/fg-approval.js` — Portal keeps it
+under `production/` despite being QA-owned, a known file-split artifact;
+ERP places it correctly under `qa/`). `lib/jobCardSheetTemplates.js`'s
+`IN_PROCESS_TABLES` (Thyristor Switches + Thyristor Switching Panel, 15
+Sep 2026 formats) was already byte-identical to Portal from the
+Production port — confirmed via diff, nothing to add.
+
+**Schema**: none needed. The entire `qa` schema
+(`inspection_calls`/`inspection_documents`/`product_serial_traceability`)
+and all 6 QA permission columns were already live from Batch 0's
+upfront schema-parity migration (signed off 15 Sep 2026) — this was the
+first batch that got to skip a migration step entirely.
+
+**Coordination pass** (done after the 4 agents finished, to avoid
+parallel edits to shared files): mounted the 3 new routers in
+`server.js`; replaced the empty Batch-1 QA dept-block scaffold in
+`index.html` with the full section (Inward Quality/Finished Goods/
+Inspection/Traceability + Dashboard pill, copied verbatim from Portal);
+added the 5 new canvas panels (`qa-inspection-timeline`/
+`product-serial-tracking` as standalone top-level panels, matching
+Portal; `fg-approval`/`in-process-sheet` nested inside
+`module-store-workspace-enclosure-panel` alongside `job-card-sheet`,
+also matching Portal); added `qad-period-btns`/`qad-custom-zone` to the
+shared dashboard toolbar (ERP's own generic `[id$="-period-btns"]`
+convention, confirmed already correct — no per-dashboard hardcoded-list
+bug to inherit from Portal here); added the `.psn-*` CSS block; added 5
+`<script src="qa/*.js">` tags; wired `shared/navigation.js` (new
+`canQaCheck`/`canFgApproval`/`canInProcessSheet`/
+`canQaInspectionTimeline`/`canProductSerialTracking`/`canViewQaDashboard`
+vars, 5 card-visibility toggles, the QA dept-block's own OR-condition,
+the `mod-qa-dashboard-wrapper` dashMap entry, two new
+`navigateToStoreWorkspacePanel` branches for `fg-approval`/
+`in-process-sheet`, and two new init-on-open hooks in
+`switchActiveDashboardModule` for the two standalone panels).
+
+**★ Real permission-wiring gap found and fixed**: `perm_qa_inspection_timeline`
+and `perm_product_serial_tracking` were confirmed by two separate
+agents to be completely unwired in ERP — not in `auth.js`'s
+`requireSession` SELECT, `lib/permMap.js`, `lib/permissionCatalog.js`,
+`lib/sheetsRegistry.js`, or `lib/sheetsPull.js` — despite an earlier
+Batch 7 note in this file claiming they were "already wired in all 5
+backend places." That claim was wrong; both were fixed in all 5 places
+during the coordination pass. Separately, `perm_qa_dashboard` (added by
+the QA Dashboard agent) was missing only from `lib/sheetsRegistry.js` —
+three of that agent's own edit attempts on that one file were blocked
+by the auto-mode permission classifier ("Modify Shared Resources");
+the coordination pass's edit to the same file went through without
+issue. **If a future permission's wiring is ever reported as "already
+done" by an earlier batch's notes, verify it live with grep before
+trusting it** — this is the second time in this file a "confirmed
+wired" claim turned out to be false (see the Batch 7 section's
+`perm_fg_approval`/`perm_in_process_sheet` note for the first).
+
+**Verified**: `node -c` on every touched/new file; a `require()` load
+test on all 3 new route files plus every file that cross-references them
+(`dailyTimeline.js`, `timeline.js`, `production.js`, `adminDashboard.js`)
+— all clean; a repo-wide route-path collision sweep (zero duplicates);
+a duplicate top-level `let`/`const`/`function` scan across all of
+`erp-frontend` (zero duplicates); every `<script src>` in `index.html`
+resolves to a real file; and a live browser smoke test (mocked
+`userPermissions`, no real login) confirming all 5 QA menu-cards + the
+dashboard pill render and gate correctly, the QA dept-tab appears, and
+all 6 screens (`store-grn`, `fg-approval`, `in-process-sheet`,
+`qa-inspection-timeline`, `product-serial-tracking`, `qa-dashboard`)
+navigate cleanly with zero JS exceptions (only expected 401s from
+data-fetch calls with no real session).
+
+**Not done / flagged for later**:
+- `QA_DRIVE_FOLDER_ID` env var is NOT set on `erp-backend` — confirmed
+  in a prior session and unchanged. `uploadQaInspectionDocument` will
+  return a clean "QA Drive root folder is not configured on the
+  server." error until it's set (no gcloud credentials available in
+  this session to set it).
+- `SPREADSHEET_IDS.QA` — not confirmed either way this session; check
+  before assuming QA's Sheet mirror works end to end.
+- `admin_db.document_registry` (Portal's 4 Sep 2026 Drive-ACL security
+  feature) was never ported to ERP at all — `lib/drive.js`'s
+  `uploadFile()` here only takes 4 params (no `registry` arg), confirmed
+  by the QA Inspection Timeline agent. Pre-existing gap, not introduced
+  by this batch, not fixed here.
+- No real click-through against live data — every verification above is
+  static/mocked. Submit a real Raw Materials Q/A Check, FG Approval
+  decision, In Process Sheet download, QA Inspection Timeline milestone
+  date, and a Product Serial Number Tracking search/record against real
+  data before fully trusting this batch, the same caveat every prior
+  batch in this file carries.
+- Not pushed or deployed — per the standing rule, ERP changes need the
+  user's explicit go-ahead each time.
 
 ## Batch 9 — Cross-cutting
 
