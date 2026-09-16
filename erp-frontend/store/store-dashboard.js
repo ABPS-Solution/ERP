@@ -31,6 +31,10 @@ function navigateToStoreDashboard() {
   const wc = document.getElementById("module-workspace-container");
   if (wc) wc.style.display = "none";
   document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
+  // Mirrors Portal's 16 Sep 2026 fix for the analogous Purchase banner —
+  // reset the leftover "BOQ revised" banner state before showing Dashboard.
+  document.querySelectorAll(".store-prn-revision-reminder-banner-el")
+    .forEach(b => b.style.display = "none");
   const c = document.getElementById("canvas-module-store-dashboard");
   if (c) c.style.display = "block";
   showDashboardGlobalToolbar("Store Dashboard", "sd-period-btns", sdReturnToMain);

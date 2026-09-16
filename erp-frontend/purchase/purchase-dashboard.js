@@ -290,6 +290,11 @@ function exitPurchaseWorkspacePanelBackToMenu() {
 function navigateToPurchaseDashboard() {
   document.getElementById("dashboard-view").style.display = "none";
   document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
+  // Mirrors Portal's 16 Sep 2026 fix: purchase-po-revision-reminder-banner
+  // is only toggled by other Purchase screens, so reset it here or a stale
+  // "PRN revised" banner can leak into the Dashboard from an earlier visit.
+  const poRevBanner = document.getElementById("purchase-po-revision-reminder-banner");
+  if (poRevBanner) poRevBanner.style.display = "none";
   const c = document.getElementById("canvas-module-purchase-dashboard");
   if (c) c.style.display = "block";
   showDashboardGlobalToolbar("Purchase Dashboard", "pd-period-btns", pdReturnToMain);
