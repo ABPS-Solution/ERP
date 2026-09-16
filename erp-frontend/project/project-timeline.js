@@ -119,13 +119,26 @@ async function initializeProjectTimelinePanel() {
           style="width:100%; padding:9px; border:1.5px solid var(--border); border-radius:var(--radius);" />
         <div id="ptl-project-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:260px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
       </div>
-      <button type="button" onclick="ptlOpenLdBoard()" style="padding:9px 16px; font-size:0.85rem; font-weight:700; border:1.5px solid #b45309; border-radius:var(--radius); background:#fffbeb; color:#92400e; cursor:pointer;">₹ LD Exposure Board</button>
+      <button type="button" id="ptl-ld-board-btn" onclick="ptlOpenLdBoard()" style="display:none; padding:9px 16px; font-size:0.85rem; font-weight:700; border:1.5px solid #b45309; border-radius:var(--radius); background:#fffbeb; color:#92400e; cursor:pointer;">₹ LD Exposure Board</button>
     </div>
     <div id="ptl-feedback" style="display:none; padding:12px; border-radius:var(--radius); margin-bottom:14px; border-left:4px solid;"></div>
     <div id="ptl-body"></div>
   `;
   document.getElementById("ptl-project-input").value = "";
   document.getElementById("ptl-body").innerHTML = "";
+  // LD Exposure Board button — narrowed (ported from Portal, 17 Sep 2026
+  // there) to Marketing dept / Admin / Super Admin, matching backend's
+  // canAccessLd (routes/timeline.js). This is UX only; fetchLdExposureBoard
+  // refuses the request server-side regardless of what this hides. Uses
+  // ERP's own prefixed localStorage keys (erpUserDepartment/
+  // erpIsUserAdminGlobal/erpIsUserSuperAdminGlobal) — NOT Portal's
+  // unprefixed isUserAdminGlobal/userDepartment, which don't exist here.
+  const ldBoardBtn = document.getElementById("ptl-ld-board-btn");
+  if (ldBoardBtn) {
+    const dept = localStorage.getItem("erpUserDepartment") || "";
+    const isAdminTier = localStorage.getItem("erpIsUserAdminGlobal") === "true" || localStorage.getItem("erpIsUserSuperAdminGlobal") === "true";
+    if (dept === "Marketing" || isAdminTier) ldBoardBtn.style.display = "inline-block";
+  }
   const elHeaderLeft0 = document.getElementById("ptl-header-left");
   if (elHeaderLeft0) elHeaderLeft0.innerHTML = "";
   ptlData = null; ptlSelected = null;
@@ -2098,10 +2111,10 @@ const PTL_LD_STATUS_META = {
   not_applicable:      { label: "No LD clause on this PO",                  color: "#6b7a8d", bg: "#f1f5f9" },
   no_basis:            { label: "LD terms confirmed - PO value unresolved", color: "#92400e", bg: "#fffbeb" },
   on_time:             { label: "No LD exposure at current projection",     color: "#15803d", bg: "#f0fdf4" },
-  accruing_projected:  { label: "LD accruing (projected)",                  color: "#b45309", bg: "#fff7ed" },
-  accrued_final:       { label: "LD accrued (final)",                      color: "#b91c1c", bg: "#fef2f2" },
+  accruing_projected:  { label: "LD building up (estimate)",                color: "#b45309", bg: "#fff7ed" },
+  accrued_final:       { label: "LD locked in (final)",                    color: "#b91c1c", bg: "#fef2f2" },
   at_cap:              { label: "LD at cap",                               color: "#b91c1c", bg: "#fef2f2" },
-  uncapped:            { label: "LD accruing - uncapped clause",           color: "#b91c1c", bg: "#fef2f2" },
+  uncapped:            { label: "LD building up - no cap",                 color: "#b91c1c", bg: "#fef2f2" },
 };
 const PTL_LD_MONEY_STATUSES = new Set(["accruing_projected", "accrued_final", "at_cap", "uncapped"]);
 
@@ -2214,6 +2227,11 @@ async function ptlSaveLdTerms() {
   if (!ptlLdPanelState) return;
   const f = ptlLdPanelState.form;
   if (f.ldApplicable && !(Number(f.ratePercent) > 0)) { alert("Rate percent is required."); return; }
+  // Both columns are numeric(6,3) — max 999.999. A larger value used to
+  // hit a raw, unhelpful Postgres "numeric field overflow" (found in
+  // Portal via a real ref-id lookup) instead of a clear message.
+  if (f.ldApplicable && Number(f.ratePercent) > 999.999) { alert("Rate % can't be more than 999.999."); return; }
+  if (f.ldApplicable && f.capPercent != null && f.capPercent !== "" && Number(f.capPercent) > 999.999) { alert("Cap % can't be more than 999.999."); return; }
   try {
     const data = await apFetch({
       action: "saveLdTerms", operatorName: appActiveOperatorIdentityString, projectId: ptlLdPanelState.projectId,
@@ -2232,23 +2250,17 @@ async function ptlSaveLdTerms() {
   }
 }
 
-async function ptlExtendLdDate() {
-  const newDate = document.getElementById("ptl-ld-extend-date")?.value;
-  const reason = document.getElementById("ptl-ld-extend-reason")?.value;
-  const documentRef = document.getElementById("ptl-ld-extend-docref")?.value;
-  if (!newDate || !reason || !reason.trim()) { alert("A new date and a reason are both required."); return; }
-  try {
-    const data = await apFetch({
-      action: "extendLdContractualDate", operatorName: appActiveOperatorIdentityString,
-      projectId: ptlLdPanelState.projectId, newDate, reason: reason.trim(), documentRef,
-    });
-    if (!data.success) { alert(data.error || "Could not extend this date."); return; }
-    ptlCloseLdPanel();
-    await selectPtlProject(ptlData.project.projectId);
-  } catch (e) {
-    alert("Network error: " + e.message);
-  }
-}
+// ptlExtendLdDate / the "Extend contractual date" UI removed (ported from
+// Portal, 17 Sep 2026 there) — the contractual date now just tracks
+// whatever Final/Tentative Delivery Date is live in the MFC section (see
+// routes/timeline.js's fetchProjectTimeline, which now resolves the
+// PO-sourced contractual date live rather than freezing it at confirm
+// time), so LD recalculates automatically when that changes. A manually-
+// entered date (no PO delivery date on file) is still directly editable
+// via the "Save changes" button below instead of a separate extend flow.
+// project.ld_contractual_date_history / extendLdContractualDate
+// (routes/timeline.js) are flagged dead, not deleted, per house
+// convention — old rows stay as an audit trail of pre-existing extensions.
 
 function ptlRenderLdPanel() {
   const body = document.getElementById("ptl-ld-panel-body");
@@ -2268,7 +2280,7 @@ function ptlRenderLdPanel() {
   </div>`;
 
   if (!canWrite) {
-    html += `<div style="background:#f1f5f9; border-radius:6px; padding:8px 12px; font-size:0.78rem; color:var(--muted); margin-bottom:14px;">View only - only Marketing, Project, or an admin can confirm LD terms.</div>`;
+    html += `<div style="background:#f1f5f9; border-radius:6px; padding:8px 12px; font-size:0.78rem; color:var(--muted); margin-bottom:14px;">View only - only Marketing, or an admin can confirm LD terms.</div>`;
   }
 
   html += field("This PO has an LD clause",
@@ -2290,8 +2302,9 @@ function ptlRenderLdPanel() {
       </div>`;
     }
 
-    html += `<div style="display:grid; grid-template-columns:1fr 1fr; gap:0 12px;">`
-      + field("Rate %", `<input type="number" step="0.001" ${dis} value="${f.ratePercent ?? ""}" style="${inputStyle}" oninput="ptlLdFormSet('ratePercent', this.value)" />`)
+    // Row 1: Rate % / Per / Counted in
+    html += `<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:0 12px;">`
+      + field("Rate %", `<input type="number" step="0.001" min="0" max="999.999" ${dis} value="${f.ratePercent != null ? formatQtyTrimmed(f.ratePercent) : ""}" style="${inputStyle}" oninput="ptlLdFormSet('ratePercent', this.value)" />`)
       + field("Per", `<select ${dis} style="${inputStyle}" onchange="ptlLdFormSet('periodUnit', this.value)">
           ${["week","day","month"].map(u => `<option value="${u}" ${f.periodUnit === u ? "selected" : ""}>${u}</option>`).join("")}
         </select>`)
@@ -2299,33 +2312,62 @@ function ptlRenderLdPanel() {
           <option value="calendar" ${f.periodBasis === "calendar" ? "selected" : ""}>Calendar days/weeks</option>
           <option value="business" ${f.periodBasis === "business" ? "selected" : ""}>Business days/weeks</option>
         </select>`)
+      + `</div>`;
+
+    // Row 2: Part period / Cap % / Grace days
+    html += `<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:0 12px;">`
       + field("Part period", `<select ${dis} style="${inputStyle}" onchange="ptlLdFormSet('partPeriodRule', this.value)">
           <option value="part_thereof" ${f.partPeriodRule === "part_thereof" ? "selected" : ""}>Or part thereof</option>
           <option value="completed_only" ${f.partPeriodRule === "completed_only" ? "selected" : ""}>Completed periods only</option>
           <option value="pro_rata" ${f.partPeriodRule === "pro_rata" ? "selected" : ""}>Pro-rata</option>
         </select>`)
-      + field("Cap % (blank = uncapped)", `<input type="number" step="0.001" ${dis} value="${f.capPercent ?? ""}" style="${inputStyle}" oninput="ptlLdFormSet('capPercent', this.value)" placeholder="Uncapped" />`)
+      + field("Cap % (blank = uncapped)", `<input type="number" step="0.001" min="0" max="999.999" ${dis} value="${f.capPercent != null ? formatQtyTrimmed(f.capPercent) : ""}" style="${inputStyle}" oninput="ptlLdFormSet('capPercent', this.value)" placeholder="Uncapped" />`)
       + field("Grace days", `<input type="number" ${dis} value="${f.graceDays ?? 0}" style="${inputStyle}" oninput="ptlLdFormSet('graceDays', this.value)" />`)
-      + field("Basis", `<select ${dis} style="${inputStyle}" onchange="ptlLdFormSet('basisKind', this.value)">
+      + `</div>`;
+
+    // Row 3: Basis / Currency / Tentative-or-Final delivery date.
+    //
+    // Contractual date no longer freezes at confirm time (ported from
+    // Portal — the old "Extend Date" flow is gone). Two cases:
+    //   - source is 'manual' (no PO delivery date existed at confirm
+    //     time): stays a directly-editable input, always — "Save changes"
+    //     updates it, same as every other field on this form.
+    //   - source is 'po_delivery_date' (the normal case): read-only,
+    //     always shows the project's CURRENT live Final/Tentative
+    //     Delivery Date (from the MFC section) — no input, nothing to
+    //     extend. routes/timeline.js's fetchProjectTimeline resolves LD
+    //     money off this same live value, so changing the date in MFC
+    //     recalculates LD automatically with no action needed here.
+    const finalDelivery = ptlData.project.actualDelivery || null;
+    const tentativeDelivery = ptlData.project.tentativeDelivery || null;
+    const liveDelivery = finalDelivery || tentativeDelivery;
+    const isManualSource = t?.contractualDateSource === "manual";
+    const deliveryDateLabel = finalDelivery ? "Final Delivery Date" : "Tentative Delivery Date";
+    html += `<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:0 12px;">`
+      + field("Basis", `<select ${dis} style="${inputStyle}" onchange="ptlLdFormSet('basisKind', this.value); ptlRenderLdPanel();">
           <option value="whole_po_basic" ${f.basisKind === "whole_po_basic" ? "selected" : ""}>Whole PO value</option>
-          <option value="delayed_goods_basic" ${f.basisKind === "delayed_goods_basic" ? "selected" : ""}>Delayed goods only (not yet supported - falls back to whole PO)</option>
+          <option value="delayed_goods_basic" ${f.basisKind === "delayed_goods_basic" ? "selected" : ""}>Delayed goods only</option>
         </select>`)
       + field("Currency", `<select ${dis} style="${inputStyle}" onchange="ptlLdFormSet('currency', this.value); ptlRenderLdPanel();">
           <option value="INR" ${f.currency === "INR" ? "selected" : ""}>INR</option>
           <option value="USD" ${f.currency === "USD" ? "selected" : ""}>USD</option>
         </select>`)
-      + (f.currency !== "INR" ? field("INR per unit", `<input type="number" step="0.0001" ${dis} value="${f.usdRate ?? ""}" style="${inputStyle}" oninput="ptlLdFormSet('usdRate', this.value)" />`) : "")
+      + (isConfirmed && !isManualSource
+          ? field(deliveryDateLabel,
+              `<div style="padding:7px 0; font-size:0.85rem; font-weight:700;">${liveDelivery ? ptlFmtFull(liveDelivery) : "-"}</div>`)
+          : field(isManualSource ? "Contractual delivery date (manual)" : deliveryDateLabel,
+              `<input type="date" ${dis} value="${f.contractualDateManual || t?.contractualDate || liveDelivery || ""}" style="${inputStyle}" oninput="ptlLdFormSet('contractualDateManual', this.value)" />`))
       + `</div>`;
 
-    const currentContractual = t?.contractualDate || ptlData.project.tentativeDelivery;
-    html += field(`Contractual delivery date${t?.contractualDateSource === "po_delivery_date" ? " (from PO Tentative Delivery Date)" : ""}`,
-      isConfirmed
-        ? `<div style="padding:7px 0; font-size:0.85rem; font-weight:700;">${ptlFmtFull(currentContractual)} - frozen once confirmed; use "Extend Date" below to change it.</div>`
-        : `<input type="date" ${dis} value="${f.contractualDateManual || currentContractual || ""}" style="${inputStyle}" oninput="ptlLdFormSet('contractualDateManual', this.value)" />`);
+    if (f.currency !== "INR") {
+      html += field("INR per unit", `<input type="number" step="0.0001" ${dis} value="${f.usdRate != null ? formatQtyTrimmed(f.usdRate) : ""}" style="${inputStyle}" oninput="ptlLdFormSet('usdRate', this.value)" />`);
+    }
 
-    // Basis amount - two independently-typed candidates that are NOT
-    // guaranteed to agree (see routes/timeline.js's resolveLdBasisAmount) -
-    // never auto-pick one.
+    // Row 4: PO basis value — which candidates show depends on the
+    // selected Basis (whole PO vs delayed goods only, ported from
+    // Portal). Two independently-typed candidates are NOT guaranteed to
+    // agree (see routes/timeline.js's resolveLdBasisAmount) - never
+    // auto-pick one.
     const bc = ptlLdPanelState.basisCandidates;
     html += `<div style="margin:12px 0;"><label style="display:block; font-size:0.72rem; font-weight:700; color:var(--muted); margin-bottom:5px;">PO basis value</label>`;
     if (ptlLdPanelState.loadingBasis) {
@@ -2336,10 +2378,15 @@ function ptlRenderLdPanel() {
           onchange="ptlLdFormSet('basisAmountSource','${source}'); ptlLdFormSet('basisAmountInr', ${amount}); ptlRenderLdPanel();" />
         <span>${label}: <strong>${ptlFmtINR(amount)}</strong></span>
       </label>`;
-      html += opt("po_line_items_sum", bc.candidates.poLineItemsSum, "Sum of PO line items");
-      html += opt("basic_po_amount", bc.candidates.basicPoAmount, "Basic PO Amount (as typed on PO upload)");
-      if (bc.delta != null && bc.delta > 0) {
-        html += `<div style="font-size:0.76rem; color:#b45309; margin:4px 0 8px;">⚠ These two figures differ by ${ptlFmtINR(bc.delta)} - pick the correct one.</div>`;
+      if (f.basisKind === "delayed_goods_basic") {
+        html += opt("delayed_goods_sum", bc.candidates.delayedGoodsSum,
+          `Sum of not-yet-invoiced PO products${bc.delayedLineCount != null ? ` (${bc.delayedLineCount} of ${bc.lineCount} line${bc.lineCount === 1 ? "" : "s"})` : ""}`);
+      } else {
+        html += opt("po_line_items_sum", bc.candidates.poLineItemsSum, "Sum of PO products price");
+        html += opt("basic_po_amount", bc.candidates.basicPoAmount, "Basic PO Amount (as typed on PO upload)");
+        if (bc.delta != null && bc.delta > 0) {
+          html += `<div style="font-size:0.76rem; color:#b45309; margin:4px 0 8px;">⚠ These two figures differ by ${ptlFmtINR(bc.delta)} - pick the correct one.</div>`;
+        }
       }
       html += `<label style="display:flex; align-items:center; gap:8px; font-size:0.82rem; cursor:pointer;">
         <input type="radio" name="ptl-ld-basis" style="width:auto; flex:none;" ${dis} ${f.basisAmountSource === "manual" ? "checked" : ""}
@@ -2350,6 +2397,7 @@ function ptlRenderLdPanel() {
     }
     html += `</div>`;
 
+    // Row 5: Notes
     html += field("Notes", `<textarea ${dis} rows="2" style="${inputStyle} resize:vertical;" oninput="ptlLdFormSet('notes', this.value)">${escapeHtml(f.notes || "")}</textarea>`);
   }
 
@@ -2357,27 +2405,10 @@ function ptlRenderLdPanel() {
     html += `<button type="button" onclick="ptlSaveLdTerms()" style="margin-top:8px; padding:9px 18px; font-size:0.85rem; font-weight:700; border:0; border-radius:var(--radius); background:var(--brand); color:#fff; cursor:pointer;">${isConfirmed ? "Save changes" : "Confirm LD Terms"}</button>`;
   }
 
-  if (isConfirmed && f.ldApplicable && canWrite) {
-    html += `<div style="margin-top:22px; padding-top:16px; border-top:1px solid var(--border);">
-      <h3 style="margin:0 0 8px; font-size:0.85rem; font-weight:800; color:var(--text);">Extend contractual date</h3>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0 12px;">
-        ${field("New date", `<input type="date" id="ptl-ld-extend-date" style="${inputStyle}" />`)}
-        ${field("Reference (amendment/LOI, optional)", `<input type="text" id="ptl-ld-extend-docref" style="${inputStyle}" />`)}
-      </div>
-      ${field("Reason (required)", `<textarea id="ptl-ld-extend-reason" rows="2" style="${inputStyle} resize:vertical;"></textarea>`)}
-      <button type="button" onclick="ptlExtendLdDate()" style="padding:8px 16px; font-size:0.82rem; font-weight:700; border:1.5px solid var(--brand); border-radius:var(--radius); background:#fff; color:var(--brand); cursor:pointer;">Extend Date</button>
-    </div>`;
-  }
-
-  if ((ptlData.ldHistory || []).length) {
-    html += `<div style="margin-top:18px; padding-top:12px; border-top:1px solid var(--border);">
-      <h3 style="margin:0 0 8px; font-size:0.82rem; font-weight:800; color:var(--text);">Date extension history</h3>
-      ${ptlData.ldHistory.map(h => `<div style="font-size:0.76rem; color:var(--muted); margin-bottom:6px;">
-        ${ptlFmt(h.oldDate)} → <strong style="color:var(--text)">${ptlFmt(h.newDate)}</strong> - ${escapeHtml(h.reason)}
-        <span style="opacity:0.7;"> (${escapeHtml(h.changedBy || "")}, ${ptlFmt(h.changedAt)})</span>
-      </div>`).join("")}
-    </div>`;
-  }
+  // "Extend contractual date" form + "Date extension history" removed
+  // (ported from Portal) — see the comment above ptlRenderLdPanel's
+  // declaration for why (contractual date now just follows MFC's
+  // Delivery Date live).
 
   body.innerHTML = html;
 }
@@ -2419,13 +2450,24 @@ function ptlRenderLdBoard(board, realised) {
   const expeditable = board.filter(r => r.ld.marginal > 0);
   const atCap = board.filter(r => !(r.ld.marginal > 0));
 
+  // Dispatch column — whether the effective dispatch date driving these
+  // numbers is a real, already-happened Final Invoice date ('actual') or
+  // still a projection off the current production plan ('projected').
+  // Matters for how much to trust the row: a 'projected' figure will
+  // keep moving as production actually progresses, an 'actual' one is
+  // final for that project's delay measurement.
+  const dispatchBadge = r => r.ld.dispatchMode === "actual"
+    ? `<span style="font-size:0.72rem; font-weight:700; padding:2px 7px; border-radius:8px; background:#dcfce7; color:#166534;">Actual</span>`
+    : `<span style="font-size:0.72rem; font-weight:700; padding:2px 7px; border-radius:8px; background:#fef3c7; color:#92400e;">Projected</span>`;
+
   const row = (r, showMarginal) => `<tr style="border-bottom:1px solid var(--border);">
     <td style="padding:8px 10px; font-weight:700; cursor:pointer; color:var(--brand);" onclick="ptlCloseLdBoard(); selectPtlProject('${r.projectId.replace(/'/g, "\\'")}');">${escapeHtml(r.projectId)}</td>
     <td style="padding:8px 10px; font-size:0.82rem; color:var(--muted);">${escapeHtml(r.companyName || "-")}</td>
+    <td style="padding:8px 10px; text-align:right;">${r.ld.delayDays != null ? r.ld.delayDays + "d" : "-"}</td>
+    <td style="padding:8px 10px;">${dispatchBadge(r)}</td>
     <td style="padding:8px 10px; text-align:right;">${ptlFmtINR(r.ld.ld)}</td>
     ${showMarginal ? `<td style="padding:8px 10px; text-align:right; font-weight:700; color:#15803d;">${ptlFmtINR(r.ld.marginal)}</td>
-    <td style="padding:8px 10px; text-align:right;">${r.ld.daysToNextStep != null ? r.ld.daysToNextStep + "d" : "-"}</td>
-    <td style="padding:8px 10px; text-align:right; font-size:0.82rem; color:var(--muted);">${r.ld.rupeesPerDaySaved ? ptlFmtINR(r.ld.rupeesPerDaySaved) + "/day" : "-"}</td>` : `<td style="padding:8px 10px; text-align:right; color:var(--muted);">-</td><td></td><td></td>`}
+    <td style="padding:8px 10px; text-align:right;">${r.ld.daysToNextStep != null ? r.ld.daysToNextStep + "d" : "-"}</td>` : `<td style="padding:8px 10px; text-align:right; color:var(--muted);">-</td><td></td>`}
   </tr>`;
 
   let html = `<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
@@ -2440,10 +2482,11 @@ function ptlRenderLdBoard(board, realised) {
     html += `<table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
       <thead><tr style="border-bottom:2px solid var(--border); text-align:left;">
         <th style="padding:8px 10px;">Project</th><th style="padding:8px 10px;">Company</th>
+        <th style="padding:8px 10px; text-align:right;">Days Delayed</th>
+        <th style="padding:8px 10px;">Dispatch</th>
         <th style="padding:8px 10px; text-align:right;">Current exposure</th>
-        <th style="padding:8px 10px; text-align:right;">Value of expediting</th>
+        <th style="padding:8px 10px; text-align:right;">Savings if Dispatched Sooner</th>
         <th style="padding:8px 10px; text-align:right;">Next step in</th>
-        <th style="padding:8px 10px; text-align:right;">₹/day</th>
       </tr></thead><tbody>${expeditable.map(r => row(r, true)).join("")}</tbody></table>`;
   }
 
