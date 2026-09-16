@@ -159,7 +159,7 @@ async function submitPinLoginAttempt() {
     const data = await res.json();
 
     if (data.success) {
-      completeSuccessfulLogin(data, selectedName, !!data.isAdmin);
+      completeSuccessfulLogin(data, selectedName, !!data.isAdmin, !!data.isSuperAdmin);
     } else {
       showFeedback(data.error || "Login failed.", true);
       pinInput.value = "";

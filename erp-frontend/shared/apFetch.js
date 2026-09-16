@@ -15,6 +15,11 @@ const GAS_URL = "https://erp-backend-244281871074.asia-south1.run.app/exec";
 const ERP_LOCAL_STORAGE_KEYS = [
   "erpSessionToken", "erpSessionExpiry", "erpSessionUser", "erpUserFirstName",
   "erpUserLastName", "erpActiveOperatorSignature", "erpUserPermissions", "erpIsUserAdminGlobal",
+  // erpIsUserSuperAdminGlobal (17 Sep 2026, super-admin tier, ported from
+  // Portal) — same staleness-safety precedent as erpIsUserAdminGlobal:
+  // set fresh from the server's real perm_super_admin flag on login,
+  // never trusted stale.
+  "erpIsUserSuperAdminGlobal",
   // erpActiveEmailLeadsCache (15 Sep 2026, Marketing port) — Portal's own
   // equivalent key (abps_active_email_leads_cache) is wiped on every full
   // localStorage.clear() there too (session-expiry / logout), so this is
@@ -324,10 +329,13 @@ function initializeLoginScreen() {
   if (typeof initializeGoogleSignInButton === "function") initializeGoogleSignInButton();
 }
 
-// completeSuccessfulLogin — shared tail end of pinLogin (the only login
-// path). isUserAdminGlobal comes straight from the server's real
-// perm_admin flag (data.isAdmin).
-function completeSuccessfulLogin(data, activeOperatorDisplayName, isUserAdminGlobal) {
+// completeSuccessfulLogin — shared tail end of both login paths.
+// isUserAdminGlobal comes straight from the server's real perm_admin flag
+// (data.isAdmin). isUserSuperAdminGlobal (17 Sep 2026, super-admin tier,
+// ported from Portal) comes straight from data.isSuperAdmin the same way
+// — optional 4th param so an older caller that hasn't been updated still
+// works (treated as false, never super admin, the safe default).
+function completeSuccessfulLogin(data, activeOperatorDisplayName, isUserAdminGlobal, isUserSuperAdminGlobal) {
   // Remember Department + Name for next time on this device (10 Sep 2026)
   // — read the login screen's own DOM before showAppView() below swaps it
   // away. Saved on real success only, not on every click, so a wrong
@@ -346,6 +354,7 @@ function completeSuccessfulLogin(data, activeOperatorDisplayName, isUserAdminGlo
   localStorage.setItem("erpActiveOperatorSignature", activeOperatorDisplayName);
   localStorage.setItem("erpUserPermissions", JSON.stringify(data.permissions));
   localStorage.setItem("erpIsUserAdminGlobal", isUserAdminGlobal ? "true" : "false");
+  localStorage.setItem("erpIsUserSuperAdminGlobal", isUserSuperAdminGlobal ? "true" : "false");
   // erpUserDepartment / erpUserProductionSubDept (Batch 7, 16 Sep 2026) —
   // the authoritative, server-computed values off the login response, used
   // by Production Planning's pplanCanWriteLane to mirror the server's own

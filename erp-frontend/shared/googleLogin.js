@@ -87,7 +87,10 @@ async function handleGooglePlatformCredentialResponse(response) {
       if (data.deviceToken) localStorage.setItem("erpDeviceToken", data.deviceToken);
       const activeDeptRaw = document.getElementById("app-auth-active-department-identity").value || "";
       const isUserAdminGlobal = activeDeptRaw.toLowerCase().includes("admin");
-      completeSuccessfulLogin(data, selectedEngineer, isUserAdminGlobal);
+      // isSuperAdmin (17 Sep 2026, super-admin tier, ported from Portal) —
+      // unlike the department-text heuristic above, this comes straight
+      // from the server's real perm_super_admin flag, so it's trustworthy.
+      completeSuccessfulLogin(data, selectedEngineer, isUserAdminGlobal, !!data.isSuperAdmin);
     } else if (data.code === "LOCATION_BLOCKED") {
       alert(data.error);
       if (googleBtnMount) googleBtnMount.style.display = "flex";
