@@ -674,9 +674,6 @@
       <div class="dept-header">
         <div class="dept-bar" style="background:#2563eb;"></div>
         <span class="dept-name">Project Department</span>
-        <div id="mod-admin-dashboard-wrapper" style="display:none;">
-          <button class="dept-dash-pill" id="mod-admin-dashboard" onclick="navigateToAdminDashboard()" style="background:#eff6ff; color:#2563eb;">📊 Admin Dashboard</button>
-        </div>
       </div>
       <div class="sec-label">Project Tracking</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
@@ -838,11 +835,15 @@
       </div>
     </div>
 
-    <!-- ── ADMIN ────────────────────────────────────────────────────────── -->
+    <!-- ── ADMIN (Admin Dashboard moved here from Project, 16 Sep 2026,
+         matching Portal's identical move the same day) ─────────────────── -->
     <div id="dashboard-admin-department-header-block" class="dept-block" style="display:none; --dept-accent:#7c3aed;">
       <div class="dept-header">
         <div class="dept-bar" style="background:#7c3aed;"></div>
         <span class="dept-name">Admin</span>
+        <div id="mod-admin-dashboard-wrapper" style="display:none;">
+          <button class="dept-dash-pill" id="mod-admin-dashboard" onclick="navigateToAdminDashboard()" style="background:#eff6ff; color:#2563eb;">📊 Admin Dashboard</button>
+        </div>
       </div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-security" onclick="switchActiveDashboardModule('security'); initializeSecurityAdminPanel();"><span class="mc-label">Security &amp; Login Access</span></div>

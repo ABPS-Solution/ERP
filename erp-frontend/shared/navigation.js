@@ -352,7 +352,9 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-daily-timeline")) document.getElementById("mod-daily-timeline").style.display = canDailyTimeline ? "block" : "none";
   if (document.getElementById("mod-project-status")) document.getElementById("mod-project-status").style.display = canProjectStatus ? "block" : "none";
   if (document.getElementById("mod-project-invoice")) document.getElementById("mod-project-invoice").style.display = canProjectInvoiceGeneration ? "block" : "none";
-  if (document.getElementById("mod-admin-dashboard-wrapper")) document.getElementById("mod-admin-dashboard-wrapper").style.display = canViewAdminDashboard ? "block" : "none";
+  // mod-admin-dashboard-wrapper's own visibility is set below via dashMap,
+  // alongside the other dashboard pills — it moved out of the Project
+  // block into the Admin block (16 Sep 2026), same as Portal.
 
   // ── Store (Batch 6, 16 Sep 2026) — ported from Portal's
   // shared/navigation.js, same camelCase permission keys, same card ids.
@@ -429,6 +431,10 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
     "mod-marketing-dashboard-wrapper": canViewMarketingDashboard,
     "mod-store-dashboard-wrapper":     canViewStoreDashboard,
     "mod-production-dashboard-wrapper": canViewProductionDashboard,
+    // Admin Dashboard moved here from the Project block (16 Sep 2026) —
+    // it now lives under the same Admin department tab as Security &
+    // Login Access, matching Portal's identical move the same day.
+    "mod-admin-dashboard-wrapper":     canViewAdminDashboard,
   };
   Object.keys(dashMap).forEach(function(id) {
     const el = document.getElementById(id);
@@ -443,11 +449,11 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const purchaseBlock = document.getElementById("dashboard-purchase-department-header-block");
   if (purchaseBlock) purchaseBlock.style.display = (canViewMaterialListPurchase || canViewRejectedMaterial || canCreatePO || canAuthorizePO || canPPSTracking || canSearchVendorCostingInfo || canReviseRMPO || canAuthorizeRMPORevision || canSearchRMPO || canViewPurchaseDashboard) ? "block" : "none";
   const adminBlock = document.getElementById("dashboard-admin-department-header-block");
-  if (adminBlock) adminBlock.style.display = canSecurity ? "block" : "none";
+  if (adminBlock) adminBlock.style.display = (canSecurity || canViewAdminDashboard) ? "block" : "none";
   const marketingBlock = document.getElementById("dashboard-marketing-department-header-block");
   if (marketingBlock) marketingBlock.style.display = (canEnterCard || canViewEmailLeads || canUploadCommissioning || canUploadPurchaseOrder || canSearchCompany || canSearchTasks || canSearchStatus || canSearchQual || canSearchCityState || canMeetingPreparation) ? "block" : "none";
   const projectBlock = document.getElementById("dashboard-project-department-header-block");
-  if (projectBlock) projectBlock.style.display = (canManufacturingClearance || canProjectTimeline || canDailyTimeline || canProjectStatus || canViewAdminDashboard) ? "block" : "none";
+  if (projectBlock) projectBlock.style.display = (canManufacturingClearance || canProjectTimeline || canDailyTimeline || canProjectStatus) ? "block" : "none";
   // Batch 6 (16 Sep 2026): Store's own screens landed, so this is no
   // longer keyed on Project Invoice Generation alone.
   const storeBlock = document.getElementById("dashboard-store-department-header-block");
