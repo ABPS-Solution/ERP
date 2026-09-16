@@ -601,7 +601,13 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
     // displays correctly without being editable.
     try {
       const data = await apFetch({ action: "fetchPODraftById", poNo: authorizePoNo });
-      if (isStale()) return;
+      // Deliberately NOT gated on isStale() here — mirrors Portal's 16 Sep
+      // 2026 fix. This containerId is unique per PO number
+      // (po-auth-expand-<poNo>), so a "stale" call here can only ever be a
+      // second load of the SAME PO's SAME data (idempotent), never a
+      // different PO's data landing in the wrong card. The isStale() bail
+      // was the actual cause of "expand a PO, comes back blank, need to
+      // refresh."
       if (data.success && data.po) {
         const po = data.po;
         document.getElementById("cpo-vendor").value = po.vendorName || "";
