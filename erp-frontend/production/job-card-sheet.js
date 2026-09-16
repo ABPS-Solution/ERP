@@ -113,6 +113,37 @@ function jcshTodayLocalISO() {
   return `${d.getFullYear()}-${mm}-${dd}`;
 }
 
+// Real bug found by live click-test, 16 Sep 2026: shared/navigation.js
+// calls initializeJCSHWorkspace() on panel entry, but neither that
+// function nor its jcshWorkspaceInitInProgress guard were ever ported —
+// Portal's automated file split scattered them into shared/typeahead.js
+// and design/update-boq.js respectively, two files with no obvious
+// connection to Job Card Sheet, so the port (which correctly brought
+// over resetJCSHWorkspace/handleJCSHProjectChange, the two functions
+// that visibly "belong" here) missed both. Consolidated into this file
+// instead of replicating Portal's scatter.
+let jcshWorkspaceInitInProgress = false;
+
+async function initializeJCSHWorkspace() {
+  jcshWorkspaceInitInProgress = false; // clear any stuck guard from an abandoned prior load
+  resetJCSHWorkspace();                // guarantee first-time-like state on every entry
+  jcshWorkspaceInitInProgress = true;
+  try {
+    const data = await fetchWithStaleCache({ action: "pullLiveActiveProjectCodes" });
+    window.jcshProjectMeta = data.projectMeta || {};
+    // Same shared typeahead component Create BOQ uses (handleSharedProjectTypeaheadInput /
+    // selectSharedProjectTypeahead) — it filters window.sharedActiveProjectCodes /
+    // window.sharedProjectMeta, so this screen must keep those populated too.
+    window.sharedActiveProjectCodes = data.projects || [];
+    window.sharedProjectMeta = data.projectMeta || {};
+    handleJCSHProjectChange("");
+  } catch(e) {
+    // Typeahead input just stays empty/unresponsive on failure — no dropdown to fall back to.
+  } finally {
+    jcshWorkspaceInitInProgress = false;
+  }
+}
+
 function resetJCSHWorkspace() {
   // Full clean-slate wipe: dropdown state, cached lookups, and read-only autofill fields.
   jcshAllJobCardsForProject = [];

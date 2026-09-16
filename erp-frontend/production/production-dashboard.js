@@ -28,6 +28,19 @@
 let pd2CurrentPeriod     = "today";
 let pd2CurrentCustomType = "customday";
 let pd2JCNData = [], pd2JCNFiltered = [], pd2JCNCurrentPage = 1;
+// Real bug found by live click-test, 16 Sep 2026: this declaration lives
+// in Portal's marketing/marketing-dashboard.js, not store-dashboard.js —
+// a THIRD file the automated split scattered pd2* globals into that this
+// port's own header comment above didn't account for. Without it, the
+// dashboard's own chart-drawing code threw "pd2ChartDept is not defined"
+// the moment any chart tried to render (a bare identifier assignment with
+// no prior declaration throws in an ES module / strict-adjacent context;
+// this codebase's classic-script global scope let it silently create an
+// implicit global on first assignment in some paths, but the `if
+// (pd2ChartDept)` read immediately before that assignment still threw
+// ReferenceError, since a read of an undeclared identifier always throws,
+// unlike a write).
+let pd2ChartDept = null, pd2ChartTrend = null, pd2ChartCompletion = null;
 const PD2_JCN_PAGE_SIZE = 8;
 
 const PD2_CUSTOM_TYPE_SUFFIX = {

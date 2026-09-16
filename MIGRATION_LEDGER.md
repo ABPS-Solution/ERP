@@ -1380,8 +1380,14 @@ migration-201 counter tables were never queried live (see follow-ups).
 
 ## Batch 7 — Production
 
-**Status: ported, not yet deployed** (16 Sep 2026). Local edits only —
-nothing pushed, no `gcloud run deploy` run.
+**Status: ported, pushed, deployed, and live click-tested (16 Sep 2026).**
+Code was committed the same day this batch was ported, then carried live
+by the many `erp-backend`/`erp-frontend` deploys done for unrelated fixes
+later in that same session — by the time anyone checked, Batch 7 had
+already been serving in production for hours without anyone having
+actually clicked through it. A dedicated click-test pass (logged in as
+Ashwin Kumar, PIN 2310) covered all 6 screens + Dashboard and found two
+real bugs, both fixed and deployed the same day — see below.
 
 `routes/production.js` (24 routes, replacing the Batch 5/6 partial),
 `routes/productionPlanning.js` (14 routes, new file),
@@ -1704,19 +1710,63 @@ generated, no FG entry was created or approved, and
 credentials were available in this session, so the live click-test the
 brief asked for could not be done — see follow-ups.
 
-### Flagged for human follow-up (deliberately NOT touched)
+### ★★★ Live click-test (16 Sep 2026, later the same day) — two real bugs found and fixed
 
-- **★★★ Batch 7 has had NO live click-test.** This is the same gap the
-  16 Sep audit criticised in Batches 2-3, and it is being reported rather
-  than glossed: no browser/login was available. Production Planning in
-  particular has **never been click-tested in EITHER system** — Portal's
-  own CLAUDE.md §43.9 says Stage 4 has never been exercised end to end
-  there either. Priority order for a first click-through: Production
-  Planning (submit initial plan → revise target → mark a Job Card done
-  and undone → confirm the sub-department gate actually refuses a
-  wrong-department user), then Add to Finished Goods Store (a real Drive
-  upload, now that OAuth is confirmed working), then Job Card Sheet PDF,
-  then the two MRD screens, then the Dashboard.
+Logged in as Ashwin Kumar (Admin, PIN 2310). Covered: Production
+Dashboard, Assign Material Requirement Date, Revise Material Requirement
+Date (both tabs), Production Planning (both tabs), Job Card Sheet, Add to
+Finished Goods Store, Create Material Issue Ticket (the menu-card-only
+entry point into Store's own screen). Both bugs below are the exact
+failure shape this whole batch's own header comment warned about —
+Portal's Aug 2026 automated file split scattering one screen's
+functions/state across 2-3 unrelated files, so a "port this file" pass
+correctly brings over the functions that visibly belong to a screen but
+misses the ones a search of that screen's own file would never surface.
+
+1. **`pd2ChartDept is not defined`** — Production Dashboard threw the
+   instant any chart tried to render. Portal declares
+   `let pd2ChartDept = null, pd2ChartTrend = null, pd2ChartCompletion =
+   null;` in **`marketing/marketing-dashboard.js`**, not
+   `store/store-dashboard.js` (the file this port's own header comment
+   says it drew the pd2* globals from) — a third scattered location the
+   port missed. Fixed by adding the declaration directly into ERP's
+   `production/production-dashboard.js`, with a comment explaining why.
+2. **`initializeJCSHWorkspace is not defined`** — Job Card Sheet threw on
+   entry, every time, never rendering the panel-open project-typeahead
+   priming. Portal splits this one screen's support code across THREE
+   files: `resetJCSHWorkspace`/`handleJCSHProjectChange` correctly landed
+   in `production/job-card-sheet.js` (the file that visibly "is" Job Card
+   Sheet), but `initializeJCSHWorkspace` itself lives in
+   `shared/typeahead.js` and its `jcshWorkspaceInitInProgress` guard
+   variable lives in `design/update-boq.js` — neither an obvious home for
+   Job Card Sheet code, so both were missed. Fixed by consolidating both
+   into ERP's `production/job-card-sheet.js` instead of replicating
+   Portal's own scatter.
+
+Also investigated and confirmed **NOT a bug**: typing into "Project ID or
+Customer Name" on Revise MRD's "Other Requirement Dates Revisions" tab
+showed no typeahead matches. `pullLiveActiveProjectCodes` genuinely
+returns zero rows — a live `SELECT * FROM project.projects` against the
+`erp` database confirmed the table is completely empty. This is expected:
+**Project department hasn't been ported to ERP yet** (a future batch,
+separate from Production), so nothing has ever inserted a real row into
+`project.projects` here — every BOQ/PRN/PO/PPS test project id used this
+session so far was a bare string with no backing project row. Nothing to
+fix; this closes once Project department is built.
+
+Everything else rendered cleanly with no console errors: the Dashboard's
+own stat tiles (all correctly `0` against empty test data), both MRD
+screens' tab bars and locked-history blocks, Production Planning's two
+tabs, Add to Finished Goods Store's full field set including the FG
+Documents upload zones, and Create Material Issue Ticket's Outgoing
+Use/BOQ/Job Card cascade.
+
+**Still not exercised end to end** (no real data existed to drive it):
+Production Planning's actual submit initial plan → revise target → mark
+a Job Card done/undone flow, and the sub-department write-gate refusing
+a wrong-department user — needs a real BOQ authorized into a Stage-4-
+tracked flow first. Same gap Portal's own CLAUDE.md §43.9 documents for
+Stage 4 there.
 - **★★ The Sheets API is in a quota storm on `erp-backend` right now.**
   Immediately after the OAuth fix, `invalid_grant` was replaced by
   continuous `Quota exceeded for ... sheets.googleapis.com` on nearly every
