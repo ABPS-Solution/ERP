@@ -35,6 +35,23 @@ const ERP_LOCAL_STORAGE_KEYS = [
   // COLLIDE with Portal on this shared origin, hence the erp prefix.
   // Cleared on logout/session expiry like every other identity value.
   "erpUserDepartment", "erpUserProductionSubDept",
+  // erp_abps_cpo_draft_v1 (Batch 5, purchase/po.js's CPO_DRAFT_STORAGE_KEY)
+  // — RM PO's own draft persistence, a separate mechanism from
+  // shared/drafts.js's erpAbpsDraft: prefix (same split Portal's own
+  // persistCPODraft/loadPinvDraft have vs. shared/drafts.js — see CLAUDE.md).
+  // Registered here (16 Sep 2026 audit) so it's actually cleared on logout
+  // instead of silently surviving forever.
+  "erp_abps_cpo_draft_v1",
+];
+
+// ERP_LOCAL_STORAGE_PREFIXES — section-collapse UI state keyed per-type, so
+// it can't sit in the fixed list above (one key per material/spare/BOQ-item
+// type). erp_rm_section_*/erp_spare_section_* (store/live-stock.js),
+// erp_ml_section_* (purchase/material-list.js). Swept the same way
+// erpAbpsDraft: already is. Registered 16 Sep 2026 audit — these were
+// previously never cleared on logout.
+const ERP_LOCAL_STORAGE_PREFIXES = [
+  "erp_rm_section_", "erp_spare_section_", "erp_ml_section_",
 ];
 
 // clearAppLocalStorageKeepingDeviceKeys — a bare localStorage.clear() must
@@ -68,6 +85,18 @@ function clearAppLocalStorageKeepingDeviceKeys(options) {
   // preserved-across-logout treatment Portal gives its own abpsDeviceToken.
   const googleDeviceToken = localStorage.getItem("erpDeviceToken");
   ERP_LOCAL_STORAGE_KEYS.forEach(k => localStorage.removeItem(k));
+  // Section-collapse UI state (ERP_LOCAL_STORAGE_PREFIXES) always clears,
+  // regardless of keepDrafts — it's a display preference, not an
+  // in-progress form, so there's no reason to preserve it across a
+  // session expiry the way drafts are.
+  {
+    const doomedPrefixed = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && ERP_LOCAL_STORAGE_PREFIXES.some(p => k.startsWith(p))) doomedPrefixed.push(k);
+    }
+    doomedPrefixed.forEach(k => { try { localStorage.removeItem(k); } catch (_) {} });
+  }
   if (!keepDrafts) {
     // Draft keys are prefix-generated (one per form), so they can't sit in
     // the fixed ERP_LOCAL_STORAGE_KEYS list — swept by prefix instead.
