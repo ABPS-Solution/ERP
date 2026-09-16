@@ -32,37 +32,20 @@
 //      actually returns means every permission the backend sends is always
 //      shown, under a label built from its own department string, with no
 //      guessed key that can drift out of sync.
-//   4. saFormatDateTimeDMY/saFormatTime12h (used by Login Log / Trusted
-//      Devices) don't exist in ERP's shared/format.js — Portal's copies
-//      live in purchase/pps-tracking.js. They WERE defined here under
-//      Portal's own bare names (formatDateTimeDMY/formatTime12h) on the
-//      assumption ERP had no Purchase module. Batch 5 (16 Sep 2026)
-//      ported Purchase, so pps-tracking.js now declares both names too —
-//      and since this file loads LAST, its copies silently won globally,
-//      which would have handed PPS Tracking the DD/MM/YYYY versions in
-//      place of Portal's own (formatOrdinalDateTime, the house
-//      convention since 7 Sep 2026). Two `function` declarations of the
-//      same name are not a fatal SyntaxError the way two top-level
-//      `let`s are — they just silently shadow — so this had no visible
-//      symptom beyond wrong-looking dates. Renamed with an `sa` prefix
-//      here (behaviour for this screen unchanged) rather than touching
-//      pps-tracking.js, which must stay byte-identical to Portal's.
+//   4. Dates on this screen now use shared/format.js's formatOrdinalDate/
+//      formatOrdinalDateTime (both already exist in ERP's format.js, used
+//      throughout Accounts) — matches Portal's own house-wide convention
+//      since 7 Sep 2026. An earlier version of this file defined local
+//      saFormatDateTimeDMY/saFormatTime12h shims to avoid a duplicate-
+//      declaration clash with an older, bare-named copy that used to live
+//      in purchase/pps-tracking.js; that copy is gone (pps-tracking.js now
+//      uses formatOrdinalDateTime directly, matching Portal), so the shims
+//      were removed here too — this file just calls the shared helpers
+//      like every other screen.
 // ═══════════════════════════════════════════════════════════════════════
 let saAllUsers = [];
 let saAllPinUsers = [];
 let saAllLoginLogEntries = [];
-
-// saFormatTime12h/saFormatDateTimeDMY — see adaptation note 4 above.
-function saFormatTime12h(value) {
-  if (!value) return "";
-  const d = new Date(value);
-  if (isNaN(d.getTime())) return "";
-  return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-}
-function saFormatDateTimeDMY(value) {
-  if (!value) return "";
-  return `${formatDateDMY(value)}, ${saFormatTime12h(value)}`;
-}
 
 async function initializeSecurityAdminPanel() {
   switchSecurityAdminTab('permissions');
@@ -99,7 +82,7 @@ function switchSecurityAdminTab(tab) {
   // table. sa-panel-devices/loadTrustedDevices/submitDeleteTrustedDevice
   // and the backend fetchTrustedDevices/deleteTrustedDevice routes are
   // flagged, not deleted, per house convention.
-  ['permissions', 'users', 'networks', 'holidays', 'log', 'settings', 'pins', 'registeredpcs'].forEach(t => {
+  ['permissions', 'users', 'networks', 'holidays', 'log', 'pins', 'registeredpcs'].forEach(t => {
     document.getElementById(`sa-panel-${t}`).style.display = (t === tab) ? 'block' : 'none';
     document.getElementById(`sa-tab-${t}`).style.background = (t === tab) ? 'var(--brand)' : '#e2e8f0';
     document.getElementById(`sa-tab-${t}`).style.color = (t === tab) ? '#fff' : '#334155';
@@ -228,7 +211,7 @@ async function loadAllowedNetworks() {
         <td style="padding:8px; font-family:monospace;">${n.cidr}</td>
         <td style="padding:8px;">${n.label}</td>
         <td style="padding:8px;">${n.active ? 'Active' : 'Inactive'}</td>
-        <td style="padding:8px;">${formatDateDMY ? formatDateDMY(n.created_at) : new Date(n.created_at).toLocaleDateString()}</td>
+        <td style="padding:8px;">${formatOrdinalDate(n.created_at)}</td>
         <td style="padding:8px;">${n.active ? `<button class="nav-btn-styled" style="padding:4px 10px; font-size:0.78rem;" onclick="deactivateNetwork(${n.network_id})">Deactivate</button>` : '—'}</td>
       </tr>`).join('') || `<tr><td colspan="5" style="padding:14px; text-align:center; color:var(--muted);">No networks configured.</td></tr>`;
   } catch (e) { console.error("loadAllowedNetworks failed:", e); }
@@ -324,9 +307,9 @@ async function loadTrustedDevices() {
       <tr style="border-top:1px solid var(--border);">
         <td style="padding:8px;">${d.user_name || '—'}</td>
         <td style="padding:8px; font-size:0.78rem; color:var(--muted); max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${d.device_label || '—'}</td>
-        <td style="padding:8px;">${formatDateDMY(d.created_at)}</td>
-        <td style="padding:8px;">${d.last_used_at ? formatDateDMY(d.last_used_at) : '—'}</td>
-        <td style="padding:8px;">${formatDateDMY(d.expires_at)}</td>
+        <td style="padding:8px;">${formatOrdinalDate(d.created_at)}</td>
+        <td style="padding:8px;">${d.last_used_at ? formatOrdinalDate(d.last_used_at) : '—'}</td>
+        <td style="padding:8px;">${formatOrdinalDate(d.expires_at)}</td>
         <td style="padding:8px;">${d.revoked ? 'Revoked' : 'Active'}</td>
         <td style="padding:8px;"><button class="nav-btn-styled" style="padding:4px 10px; font-size:0.78rem;" onclick="submitDeleteTrustedDevice(${d.device_id})">Delete</button></td>
       </tr>`).join('') || `<tr><td colspan="7" style="padding:14px; text-align:center; color:var(--muted);">No trusted devices yet.</td></tr>`;
@@ -360,7 +343,7 @@ function renderLoginLog() {
   const filtered = saAllLoginLogEntries.filter(l => !q || (l.user_name || "").toLowerCase().includes(q));
   tbody.innerHTML = filtered.map(l => `
       <tr style="border-top:1px solid var(--border); ${l.allowed ? '' : 'background:#fef2f2;'}">
-        <td style="padding:8px; white-space:nowrap;">${saFormatDateTimeDMY(l.created_at)}</td>
+        <td style="padding:8px; white-space:nowrap;">${formatOrdinalDateTime(l.created_at)}</td>
         <td style="padding:8px;">${l.user_name || '—'}</td>
         <td style="padding:8px; font-family:monospace;">${l.ip || '—'}</td>
         <td style="padding:8px; font-weight:700; color:${l.allowed ? '#16a34a' : '#dc2626'};">${l.allowed ? 'Allowed' : 'Blocked'}</td>
@@ -370,29 +353,25 @@ function renderLoginLog() {
       </tr>`).join('') || `<tr><td colspan="7" style="padding:14px; text-align:center; color:var(--muted);">No login attempts recorded yet.</td></tr>`;
 }
 
-// ── Settings ──────────────────────────────────────────────────────────
+// ── Outage Mode (Office Networks tab) ────────────────────────────────────
+// The standalone Settings tab was removed (mirrors Portal, 8 Sep 2026) — it
+// held Business Hours Start/End fields that were saved
+// (admin_db.security_settings) but never read by anything (no login-gating
+// logic ever checked them), plus this Outage Mode block, which DOES matter
+// and moved to Office Networks since it's an office-network concern.
+// fetchSecuritySettings is still called here purely for the outage-mode
+// fields on that same row.
 async function loadSecuritySettings() {
   try {
     const data = await apFetch({ action: "fetchSecuritySettings" });
-    if (data.success && data.settings) {
-      document.getElementById("sa-settings-hours-start").value = (data.settings.business_hours_start || '').slice(0, 5);
-      document.getElementById("sa-settings-hours-end").value = (data.settings.business_hours_end || '').slice(0, 5);
-      renderOutageModeStatus(data.settings);
-    }
+    if (data.success && data.settings) renderOutageModeStatus(data.settings);
   } catch (e) { console.error("loadSecuritySettings failed:", e); }
 }
 
-async function submitSecuritySettings() {
-  const businessHoursStart = document.getElementById("sa-settings-hours-start").value;
-  const businessHoursEnd = document.getElementById("sa-settings-hours-end").value;
-  try {
-    const data = await apFetch({ action: "updateSecuritySettings", businessHoursStart, businessHoursEnd });
-    if (data.success) showBOQBanner("sa-feedback", "Settings saved.", "success");
-    else showBOQBanner("sa-feedback", data.error || "Failed to save settings.", "error");
-  } catch (e) {
-    showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
-  }
-}
+// submitSecuritySettings/updateSecuritySettings (routes/security.js) are
+// now unreachable — their only caller was the removed Settings tab's Save
+// button. Flagged, not deleted, per house convention; the business-hours
+// columns themselves are untouched in the DB.
 
 function renderOutageModeStatus(settings) {
   const box = document.getElementById("sa-outage-mode-status");
@@ -400,7 +379,7 @@ function renderOutageModeStatus(settings) {
   if (active) {
     box.innerHTML = `
       <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
-        <div style="line-height:1.5;">⚠️ <strong>Outage Mode is ACTIVE</strong> — activated by ${escapeHtml(settings.outage_mode_activated_by || 'unknown')} at ${saFormatDateTimeDMY(settings.outage_mode_started_at)}, expires ${saFormatDateTimeDMY(settings.outage_mode_expires_at)}.</div>
+        <div style="line-height:1.5;">⚠️ <strong>Outage Mode is ACTIVE</strong> — activated by ${escapeHtml(settings.outage_mode_activated_by || 'unknown')} at ${formatOrdinalDateTime(settings.outage_mode_started_at)}, expires ${formatOrdinalDateTime(settings.outage_mode_expires_at)}.</div>
         <button class="nav-btn-styled" style="padding:6px 16px; font-size:0.8rem; flex-shrink:0; white-space:nowrap;" onclick="deactivateOutageModeNow()">Deactivate Now</button>
       </div>`;
     box.style.background = '#fef3c7'; box.style.borderLeftColor = '#f59e0b'; box.style.color = '#78350f';
@@ -665,8 +644,8 @@ function renderRegisteredDevicesList(devices) {
       <td style="padding:8px; font-size:0.78rem;">${(d.allowed_users || []).join(', ') || '—'}</td>
       <td style="padding:8px;">${d.status}</td>
       <td style="padding:8px; font-size:0.78rem;">${restrictedLabel}</td>
-      <td style="padding:8px;">${formatDateDMY(d.created_at)}</td>
-      <td style="padding:8px;">${d.last_used_at ? formatDateDMY(d.last_used_at) : '—'}</td>
+      <td style="padding:8px;">${formatOrdinalDate(d.created_at)}</td>
+      <td style="padding:8px;">${d.last_used_at ? formatOrdinalDate(d.last_used_at) : '—'}</td>
       <td style="padding:8px; white-space:nowrap;">
         <button class="nav-btn-styled" style="padding:4px 10px; font-size:0.78rem;" onclick="openAddDevicePersonModal(${d.device_id})">Add Person</button>
         <button class="nav-btn-styled" style="padding:4px 10px; font-size:0.78rem;" onclick="openDeviceRestrictionModal(${d.device_id})">Restrict Access</button>
