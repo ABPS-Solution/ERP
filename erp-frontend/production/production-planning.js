@@ -72,9 +72,11 @@ function pplanToday() {
 // ERP adaptation: the three keys are erp-prefixed (shared origin with
 // Portal — see pplanIsAdmin above), and erpUserDepartment /
 // erpUserProductionSubDept are written at LOGIN time from the login
-// response rather than refreshed on every page load the way Portal's
-// applyServerRoleFlags does (ERP has no getSessionPermissions route yet).
-// So this deliberately FAILS OPEN when the department is unknown — a
+// response AND — since 17 Sep 2026 — refreshed on every page load by
+// shared/apFetch.js's applyServerRoleFlags, exactly as in Portal. (The
+// note that used to sit here, "ERP has no getSessionPermissions route
+// yet", was stale; that route was ported in Batch 6.)
+// This still deliberately FAILS OPEN when the department is unknown — a
 // session that predates those keys existing would otherwise have every
 // control hidden with no way to tell why. The server's own
 // assertCanWriteLane (routes/productionPlanning.js) is unchanged and is

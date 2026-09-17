@@ -140,9 +140,47 @@ async function loadSecurityAdminUsers() {
   } catch (e) { console.error("loadSecurityAdminUsers failed:", e); }
 }
 
-// Reactor/Capacitor/Panel is Portal's Project Timeline Stage 4 attribute —
-// ERP has no Project Timeline screen, so no PROD_SUB_DEPTS pills are
-// rendered here. Kept out entirely rather than porting dead UI.
+// ★ CORRECTED 17 Sep 2026 — this used to say "ERP has no Project Timeline
+// screen, so no PROD_SUB_DEPTS pills are rendered here". That was stale:
+// ERP has Project Timeline AND Production Planning (Batches 3 and 7), and
+// routes/productionPlanning.js's assertCanWriteLane gates Stage 4 writes on
+// admin_db.users.production_sub_dept — which is a real, populated column in
+// the live `erp` database. Nothing in the app could SET it until now.
+//
+// Rendered on a Production person's Login PINs card (alongside the PIN
+// itself, not Login Anywhere — this is a role assignment, not a login
+// permission). Not a toggle: clicking a pill that's already selected clears
+// it (nobody set), any other pill switches to it. Verbatim from Portal.
+const PROD_SUB_DEPTS = ['Reactor', 'Capacitor', 'Panel'];
+
+function laSubDeptPillsHtml(u) {
+  return `
+    <div style="display:flex; gap:4px; margin-top:6px; justify-content:center;">
+      ${PROD_SUB_DEPTS.map(sd => {
+        const active = u.productionSubDept === sd;
+        return `<button onclick="event.stopPropagation(); handleProductionSubDeptClick('${u.personKey}', '${sd}')"
+          title="${active ? `Click to clear ${sd}` : `Set Stage 4 role to ${sd}`}"
+          style="border:${active ? '2px solid #b45309' : '1px solid #dde3ea'}; background:${active ? '#b4530918' : '#fff'};
+                 color:${active ? '#b45309' : '#64748b'}; border-radius:8px; padding:3px 8px; cursor:pointer;
+                 font-size:0.68rem; font-weight:${active ? 800 : 600};">${sd}</button>`;
+      }).join('')}
+    </div>`;
+}
+
+async function handleProductionSubDeptClick(personKey, subDept) {
+  const u = saAllPinUsers.find(x => x.personKey === personKey);
+  if (!u) return;
+  const newValue = u.productionSubDept === subDept ? null : subDept;
+  try {
+    const data = await apFetch({ action: "setProductionSubDepartment", personKey, subDept: newValue });
+    if (data.success) {
+      u.productionSubDept = newValue;
+      renderSecurityAdminPinUsers();
+    } else {
+      showBOQBanner("sa-feedback", data.error || "Failed to update.", "error");
+    }
+  } catch (e) { showBOQBanner("sa-feedback", "Network error: " + e.message, "error"); }
+}
 
 function laPersonButtonHtml(u, color) {
   const granted = !!u.perm_login_anywhere;
@@ -519,6 +557,7 @@ function pinFlipCardHtml(u, color) {
         </div>
       </div>
       ${pinLockBadgeHtml(u)}
+      ${u.department === 'Production' ? laSubDeptPillsHtml(u) : ''}
     </div>`;
 }
 

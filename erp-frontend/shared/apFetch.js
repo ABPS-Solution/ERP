@@ -118,15 +118,101 @@ function clearAppLocalStorageKeepingDeviceKeys(options) {
   if (googleDeviceToken) localStorage.setItem("erpDeviceToken", googleDeviceToken);
 }
 
-// driveLink — kept for parity with Portal's convention even though no
-// ERP screen serves a Drive-backed document link yet; any future Item
-// Code / Accounts doc link should route through this the same way Portal
-// does, rather than a bare Drive URL.
+// driveLink — backend-generated document links (BOQ/PRN/PO PDFs, tour
+// voucher bills, project invoices...) point at this app's own
+// authenticated proxy (GET /api/driveFile/:fileId), not a public Drive
+// URL. It used to append the raw, session-lifetime erpSessionToken as
+// ?token= here — that put a long-lived credential into every href,
+// meaning browser history, any Referer header, and view-source all
+// carried it. Fixed (ported from Portal, 17 Sep 2026): this now returns
+// the BARE proxy URL, unchanged, and the delegated click handler below
+// mints a short-lived, single-purpose file token AT CLICK TIME and
+// appends it then — so every existing call site needed zero changes.
 function driveLink(url) {
-  if (!url) return url;
-  const token = localStorage.getItem("erpSessionToken") || "";
-  return url + (url.includes("?") ? "&" : "?") + "token=" + encodeURIComponent(token);
+  return url;
 }
+
+// applyServerRoleFlags — writes the AUTHORITATIVE, server-computed
+// isAdmin/isSuperAdmin/department/productionSubDept from a
+// getSessionPermissions response into localStorage. Ported from Portal
+// (17 Sep 2026), which added it after a real bug: `isUserAdminGlobal` used
+// to be set ONLY at login time and never corrected again for the rest of
+// that browser session — so an account moved OUT of the Admin department
+// (or out of a Production sub-department) kept showing admin-only controls
+// until a fresh login, because nothing ever re-derived it from the real
+// perm_admin column. This is called every time getSessionPermissions is
+// (window.onload, on every page load), so it self-corrects on the next
+// reload — the same freshness guarantee that fetch already gives
+// permissions generally.
+//
+// ERP note: these are UX-only. Every route behind an admin/super-admin/
+// sub-department control is separately gated server-side
+// (requirePermission, assertCanWriteLane, canAccessLd), which is the real
+// enforcement regardless of what these flags say.
+function applyServerRoleFlags(permData) {
+  localStorage.setItem("erpIsUserAdminGlobal", permData.isAdmin ? "true" : "false");
+  localStorage.setItem("erpIsUserSuperAdminGlobal", permData.isSuperAdmin ? "true" : "false");
+  localStorage.setItem("erpUserDepartment", permData.department || "");
+  localStorage.setItem("erpUserProductionSubDept", permData.productionSubDept || "");
+}
+
+// refreshServerRoleFlags — same as applyServerRoleFlags, but fetches its
+// own getSessionPermissions first. Used right after login, where the login
+// response does carry these fields but a later revocation would not be
+// picked up otherwise — fire-and-forget, non-blocking, so it never delays
+// showAppView(); until it resolves, the flags keep whatever
+// completeSuccessfulLogin already wrote from the login response itself.
+async function refreshServerRoleFlags() {
+  try {
+    const data = await apFetch({ action: "getSessionPermissions" });
+    if (data.success) applyServerRoleFlags(data);
+  } catch (e) { /* best-effort — the next page load's refresh will catch up */ }
+}
+
+// ── File-token click handler (driveFile proxy auth) ─────────────────────
+// Mints a short-lived signed token (lib/fileToken.js, ~2min TTL) on demand
+// and appends it to the clicked link's href, then opens it — rather than
+// caching one on a timer, which would have a staleness window (tab left
+// open for hours, clicked right after login before a timer fires). Minting
+// fresh at the moment of the click has none of that: it's always valid at
+// the instant it's used, and the tiny TTL means a captured/copied link
+// stops working almost immediately instead of for the rest of the session.
+//
+// Delegated (one listener, capture phase) rather than touching each
+// driveLink() call site — every one of them renders a plain <a href>.
+// Scoped tightly to anchors whose href already points at the driveFile
+// proxy, so it never intercepts any other link in the app.
+let _fileTokenCache = null; // { token, mintedAt }
+async function ensureFileToken() {
+  // Reuse a just-minted token for a burst of clicks (e.g. opening several
+  // documents from a search results table in a row) — refresh with margin
+  // well before the server-side ~120s expiry rather than cutting it close.
+  if (_fileTokenCache && (Date.now() - _fileTokenCache.mintedAt) < 60000) {
+    return _fileTokenCache.token;
+  }
+  const data = await apFetch({ action: "mintFileToken" });
+  if (!data.success) throw new Error(data.error || "Could not open document.");
+  _fileTokenCache = { token: data.fileToken, mintedAt: Date.now() };
+  return data.fileToken;
+}
+
+document.addEventListener("click", async (e) => {
+  const a = e.target.closest && e.target.closest('a[href*="/api/driveFile/"]');
+  if (!a) return;
+  e.preventDefault();
+  // Open the tab synchronously, before the await, so popup blockers (which
+  // key off "was this triggered directly by a user gesture") don't eat it
+  // — then point it at the real URL once the token is minted.
+  const w = window.open('', '_blank');
+  try {
+    const ft = await ensureFileToken();
+    const href = a.href + (a.href.includes("?") ? "&" : "?") + "ft=" + encodeURIComponent(ft);
+    if (w) w.location = href; else window.open(href, '_blank');
+  } catch (err) {
+    if (w) w.close();
+    alert("Could not open document: " + err.message);
+  }
+}, true);
 
 async function apFetch(payload) {
   payload.sessionToken = localStorage.getItem("erpSessionToken");
@@ -221,20 +307,33 @@ window.onload = async function() {
   }
 
   if (token && expires && new Date() < new Date(expires) && cachedOperator) {
-    // Portal re-fetches permissions fresh from the server on every load
-    // (its getSessionPermissions route) rather than trusting localStorage.
-    // erp-backend doesn't have that route yet (no feature routers are
-    // mounted — see server.js's own comment), so for now this trusts the
-    // permissions cached at login time. Re-check this once
-    // getSessionPermissions (or equivalent) exists on the ERP backend —
-    // a permission revoked mid-session won't take effect here until the
-    // next fresh login.
+    // ★ CHANGED 17 Sep 2026 — this block used to trust the permissions
+    // cached in localStorage at login time, with a comment saying
+    // "erp-backend doesn't have getSessionPermissions yet". That comment
+    // was stale: the route was ported in Batch 6 (routes/utility.js) and
+    // returns the same shape Portal's does, including isAdmin/
+    // isSuperAdmin/department/productionSubDept. Now matching Portal's own
+    // D1 rule — ALWAYS fetch permissions fresh from the server on every
+    // page load, never trust localStorage — which is what makes a
+    // mid-session permission revocation (and a department / Production
+    // sub-department change) actually take effect on the next reload
+    // instead of surviving until a fresh login.
     appActiveOperatorIdentityString = cachedOperator;
-    const savedPerms = localStorage.getItem("erpUserPermissions");
-    if (savedPerms) {
-      try { userPermissions = JSON.parse(savedPerms); } catch (e) { userPermissions = {}; }
-      showAppView();
-    } else {
+    try {
+      const permData = await apFetch({ action: "getSessionPermissions" });
+      if (permData.success) {
+        userPermissions = permData.permissions;
+        // Refresh localStorage with the server's authoritative copy.
+        localStorage.setItem("erpUserPermissions", JSON.stringify(userPermissions));
+        applyServerRoleFlags(permData);
+        showAppView();
+      } else {
+        clearAppLocalStorageKeepingDeviceKeys({ keepDrafts: true });
+        syncPlatformPersonnelDropdownOptionsList();
+        initializeLoginScreen();
+      }
+    } catch (e) {
+      if (e.message === "SESSION_EXPIRED") return; // apFetch already handled redirect + clear
       clearAppLocalStorageKeepingDeviceKeys({ keepDrafts: true });
       syncPlatformPersonnelDropdownOptionsList();
       initializeLoginScreen();
@@ -359,18 +458,26 @@ function completeSuccessfulLogin(data, activeOperatorDisplayName, isUserAdminGlo
   // the authoritative, server-computed values off the login response, used
   // by Production Planning's pplanCanWriteLane to mirror the server's own
   // write gate so a user is never shown a control the server will refuse.
-  // Portal keeps these fresh on EVERY page load via applyServerRoleFlags /
-  // getSessionPermissions; ERP has no such route yet, so these are
-  // login-time only and go stale if someone's department changes
-  // mid-session. That is why pplanCanWriteLane fails OPEN when they are
-  // missing/unknown and the server gate stays the real enforcement — but
-  // when a getSessionPermissions equivalent does land here, refresh these
-  // two alongside erpIsUserAdminGlobal (Portal's 4 Sep 2026 staleness bug).
+  // ★ UPDATED 17 Sep 2026 — this comment used to say "ERP has no such
+  // route yet, so these are login-time only and go stale". That is no
+  // longer true: getSessionPermissions exists (routes/utility.js, Batch 6)
+  // and window.onload now calls applyServerRoleFlags on EVERY page load,
+  // so these four flags self-correct on the next reload rather than
+  // surviving a department change until a fresh login (Portal's 4 Sep 2026
+  // staleness bug). The login response's own values are still written
+  // here, so the very first render after login has them immediately.
   localStorage.setItem("erpUserDepartment", data.department || "");
   localStorage.setItem("erpUserProductionSubDept", data.productionSubDept || "");
   appActiveOperatorIdentityString = activeOperatorDisplayName;
   userPermissions = data.permissions;
   showAppView();
+  // Fire-and-forget, deliberately NOT awaited — showAppView() must not be
+  // delayed by a second round trip. Re-derives the same four flags from
+  // the server's authoritative getSessionPermissions response, which also
+  // applies the device-restriction mask; until it resolves the values
+  // written above (from the login response, already masked the same way)
+  // are in place, so there is no window where they are unset.
+  refreshServerRoleFlags();
 }
 
 function executeLogout() {
