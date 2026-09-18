@@ -64,10 +64,10 @@ function mdPopulateYearSelects() {
   const EARLIEST_YEAR = 2026;
   const calYears = []; for (let y = curCalYear; y >= EARLIEST_YEAR; y--) calYears.push(y);
   const fyYears = []; for (let y = curFY; y >= EARLIEST_YEAR; y--) fyYears.push(y);
-  document.querySelectorAll("#md-body .dash-cal-year-select").forEach(sel => {
+  document.querySelectorAll(".dash-cal-year-select").forEach(sel => {
     sel.innerHTML = calYears.map(y => `<option value="${y}">${y}</option>`).join("");
   });
-  document.querySelectorAll("#md-body .dash-fy-year-select").forEach(sel => {
+  document.querySelectorAll(".dash-fy-year-select").forEach(sel => {
     sel.innerHTML = fyYears.map(y => `<option value="${y}">${y}-${String((y + 1) % 100).padStart(2, "0")}</option>`).join("");
   });
 }

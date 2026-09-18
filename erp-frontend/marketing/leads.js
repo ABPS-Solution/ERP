@@ -21,7 +21,7 @@ async function fetchAndPopulateUploadLeadDropdowns() {
     const d = await apFetch({ action: "getLeadsForDocumentUploadDropdown", activeEngineer: appActiveOperatorIdentityString });
     if (!d.success) return;
     cachedUploadLeadsList = d.leads;
-    ["dispatch-bill-lead-dropdown", "purchase-order-lead-dropdown"].forEach(id => {
+    ["purchase-order-lead-dropdown"].forEach(id => {
       const el = document.getElementById(id);
       if (!el) return;
       const prevVal = el.value;
@@ -641,7 +641,7 @@ function buildMultiContactDirectoryInterface(leadsList, targetSearchName, contai
       wrapperCard.className += " search-highlighted-focus-node";
     }
 
-    const isAdminUser = localStorage.getItem("erpIsUserAdminGlobal") === "true";
+    const isAdminUser = localStorage.getItem("erpIsUserSuperAdminGlobal") === "true";
     const deleteButtonHtml = isAdminUser
       ? `<button class="nav-btn-styled" style="font-size:1rem; padding:9px 18px; background:var(--warn);" onclick="removeLeadRowEntirely('${tRef}', '${encodeURIComponent(companyLabelName)}', '${encodeURIComponent(cardDisplayName)}')">Delete Record</button>`
       : ""; // Non-admins get absolutely nothing rendered
@@ -1586,26 +1586,6 @@ async function triggerQualificationSearch() {
     } catch(e) { alert(e.message); } finally { btn.classList.remove("loading"); btn.textContent = "Search Type of Customer"; }
 }
 
-async function triggerStatusSearch() {
-    document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
-    const btn = document.getElementById("status-search-btn");
-    const statusVal = document.getElementById("status-filter-select").value;
-    if(!statusVal) return alert("Please select a status.");
-    btn.classList.add("loading"); btn.textContent = "Searching...";
-    try {
-        const data = await apFetch({ action: "searchByStatus", activeEngineer: appActiveOperatorIdentityString, statusValue: statusVal });
-        if (data.success) {
-            const canvas = document.getElementById("step2-inline-interaction-canvas");
-            document.getElementById("canvas-back-btn-enclosure-row").innerHTML = `<div class="qualification-status-bar">Status: ${statusVal}</div>`;
-            document.getElementById("global-direct-inline-create-entry-btn").style.display = "none";
-            globalFollowUpsCacheMap = data.followups; globalTasksCacheMap = data.tasks;
-            buildMultiContactDirectoryInterface(data.leads, "");
-            canvasLastParentWorkspaceId = "workspace-searchStatus";
-            canvas.style.display = "block"; document.getElementById("workspace-searchStatus").appendChild(canvas);
-        } else { alert(data.error || "No leads found with this status."); }
-    } catch(e) { alert(e.message); } finally { btn.classList.remove("loading"); btn.textContent = "Search Leads"; }
-}
-
 async function triggerEngineerSearch() {
     const btn = document.getElementById("eng-search-btn");
     const engSelect = document.getElementById("engineer-filter-select");
@@ -2207,15 +2187,12 @@ async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
               targetDispatchBillFileObj = null;
               targetCommissioningReportFileObj = null;
               targetPurchaseOrderFileObj = null;
-              document.getElementById('dispatch-bill-raw-file').value = '';
               document.getElementById('commissioning-report-raw-file').value = '';
               document.getElementById('commissioning-report-project-ta-input').value = '';
               document.getElementById('commissioning-report-customer-name').value = '';
               document.getElementById('purchase-order-raw-file').value = '';
-              const b1 = document.getElementById('dispatch-bill-upload-box');
               const b2 = document.getElementById('commissioning-report-upload-box');
               const b3 = document.getElementById('purchase-order-upload-box');
-              if (b1) { b1.textContent = '📋 Select Dispatch Bill'; b1.classList.remove('done'); }
               if (b2) { b2.textContent = '📋 Select Commissioning Report'; b2.classList.remove('done'); }
               if (b3) { b3.textContent = '📋 Select Purchase Order'; b3.classList.remove('done'); }
               document.getElementById('purchase-order-acceptance-date').value = '';
@@ -2223,10 +2200,8 @@ async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
               document.getElementById('purchase-order-contract-review-file').value = '';
               const b4 = document.getElementById('purchase-order-contract-review-box');
               if (b4) { b4.textContent = '📋 Select Contract Review Document *'; b4.classList.remove('done'); }
-              document.getElementById('dispatch-bill-feedback-banner').style.display = 'none';
               document.getElementById('commissioning-report-feedback-banner').style.display = 'none';
               document.getElementById('purchase-order-feedback-banner').style.display = 'none';
-              document.getElementById('dispatch-bill-inputs-container').style.display = 'block';
               document.getElementById('commissioning-report-inputs-container').style.display = 'block';
               document.getElementById('purchase-order-inputs-container').style.display = 'block';
             " style="background:#15803d; color:white; padding:8px 14px; font-weight:700; flex-shrink:0; align-self:flex-start;">+ Process Another</button>
