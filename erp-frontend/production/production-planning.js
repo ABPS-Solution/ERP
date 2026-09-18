@@ -87,7 +87,10 @@ function pplanCanWriteLane(lane) {
   const dept = localStorage.getItem("erpUserDepartment");
   if (dept === null || dept === "") return true; // unknown — let the server decide
   if (dept === "Project") return true;
-  if (dept === "Production" && (localStorage.getItem("erpUserProductionSubDept") || "") === lane.ownerDept) return true;
+  // erpUserProductionSubDept is comma-joined (a person can belong to more
+  // than one sub-department, 19 Sep 2026) — membership check, not equality.
+  const subDepts = (localStorage.getItem("erpUserProductionSubDept") || "").split(",").filter(Boolean);
+  if (dept === "Production" && subDepts.includes(lane.ownerDept)) return true;
   return false;
 }
 

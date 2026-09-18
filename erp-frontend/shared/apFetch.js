@@ -153,7 +153,12 @@ function applyServerRoleFlags(permData) {
   localStorage.setItem("erpIsUserAdminGlobal", permData.isAdmin ? "true" : "false");
   localStorage.setItem("erpIsUserSuperAdminGlobal", permData.isSuperAdmin ? "true" : "false");
   localStorage.setItem("erpUserDepartment", permData.department || "");
-  localStorage.setItem("erpUserProductionSubDept", permData.productionSubDept || "");
+  // productionSubDept is a TEXT[] column now (19 Sep 2026 — a Production
+  // person can belong to more than one sub-department) — stored as a
+  // comma-joined string here since localStorage only holds strings; every
+  // consumer must split(",") and check membership, not do a single-value
+  // equality compare (see production-planning.js's pplanCanWriteLane).
+  localStorage.setItem("erpUserProductionSubDept", (permData.productionSubDept || []).join(","));
 }
 
 // refreshServerRoleFlags — same as applyServerRoleFlags, but fetches its
@@ -467,7 +472,7 @@ function completeSuccessfulLogin(data, activeOperatorDisplayName, isUserAdminGlo
   // staleness bug). The login response's own values are still written
   // here, so the very first render after login has them immediately.
   localStorage.setItem("erpUserDepartment", data.department || "");
-  localStorage.setItem("erpUserProductionSubDept", data.productionSubDept || "");
+  localStorage.setItem("erpUserProductionSubDept", (data.productionSubDept || []).join(","));
   appActiveOperatorIdentityString = activeOperatorDisplayName;
   userPermissions = data.permissions;
   showAppView();

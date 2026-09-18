@@ -19,19 +19,17 @@
 //      predates the HR department; ERP's login screen already has an HR
 //      button, so the tree must too or a person in HR would silently
 //      never appear in Login Anywhere / Login PINs).
-//   3. Permissions Matrix card grouping (PM_CARD_ORDER in Portal) is
-//      DATA-DRIVEN here instead of hardcoded — see getPmCardOrder() below.
-//      Portal hardcodes its 7 department keys because it knows them in
-//      advance; ERP's backend catalog is being scoped down to just 4
-//      permissions by a concurrent session and this file has no reliable
-//      way to know in advance which department key(s) that catalog will
-//      tag them with. Hardcoding a guessed list risks a permission
-//      silently never rendering (exactly the failure class CLAUDE.md's
-//      "6 places" / permission-catalog landmine warns about) if the guess
-//      is wrong. Deriving the card list from whatever fetchPermissionCatalog
-//      actually returns means every permission the backend sends is always
-//      shown, under a label built from its own department string, with no
-//      guessed key that can drift out of sync.
+//   3. Permissions Matrix card grouping now uses the SAME hardcoded
+//      PM_CARD_ORDER as Portal (19 Sep 2026 — ERP's backend catalog has
+//      since caught up to Portal's full 8-department shape, per
+//      lib/permissionCatalog.js's DEPARTMENT_META, so the drift risk that
+//      justified the earlier data-driven getPmCardOrder() no longer
+//      applies; the user explicitly asked for the two systems' matrix
+//      order to match). getPmCardOrder() is kept as a fallback ONLY for a
+//      department the hardcoded list doesn't know about yet — it appends
+//      any such department after the known ones, in first-seen order,
+//      so a future permission can never silently fail to render even if
+//      PM_CARD_ORDER isn't updated in the same pass.
 //   4. Dates on this screen now use shared/format.js's formatOrdinalDate/
 //      formatOrdinalDateTime (both already exist in ERP's format.js, used
 //      throughout Accounts) — matches Portal's own house-wide convention
@@ -149,17 +147,19 @@ async function loadSecurityAdminUsers() {
 //
 // Rendered on a Production person's Login PINs card (alongside the PIN
 // itself, not Login Anywhere — this is a role assignment, not a login
-// permission). Not a toggle: clicking a pill that's already selected clears
-// it (nobody set), any other pill switches to it. Verbatim from Portal.
+// permission). A person can now belong to MORE than one sub-department
+// (19 Sep 2026, e.g. Reactor AND Panel) — each pill toggles independently,
+// any combination of the three can be active at once. Verbatim from Portal.
 const PROD_SUB_DEPTS = ['Reactor', 'Capacitor', 'Panel'];
 
 function laSubDeptPillsHtml(u) {
+  const activeList = u.productionSubDept || [];
   return `
     <div style="display:flex; gap:4px; margin-top:6px; justify-content:center;">
       ${PROD_SUB_DEPTS.map(sd => {
-        const active = u.productionSubDept === sd;
+        const active = activeList.includes(sd);
         return `<button onclick="event.stopPropagation(); handleProductionSubDeptClick('${u.personKey}', '${sd}')"
-          title="${active ? `Click to clear ${sd}` : `Set Stage 4 role to ${sd}`}"
+          title="${active ? `Click to remove ${sd}` : `Add ${sd} to this person's Stage 4 role(s)`}"
           style="border:${active ? '2px solid #b45309' : '1px solid #dde3ea'}; background:${active ? '#b4530918' : '#fff'};
                  color:${active ? '#b45309' : '#64748b'}; border-radius:8px; padding:3px 8px; cursor:pointer;
                  font-size:0.68rem; font-weight:${active ? 800 : 600};">${sd}</button>`;
@@ -170,11 +170,12 @@ function laSubDeptPillsHtml(u) {
 async function handleProductionSubDeptClick(personKey, subDept) {
   const u = saAllPinUsers.find(x => x.personKey === personKey);
   if (!u) return;
-  const newValue = u.productionSubDept === subDept ? null : subDept;
   try {
-    const data = await apFetch({ action: "setProductionSubDepartment", personKey, subDept: newValue });
+    // The server toggles this one value's membership in the array —
+    // just send which pill was clicked, not a computed replacement.
+    const data = await apFetch({ action: "setProductionSubDepartment", personKey, subDept });
     if (data.success) {
-      u.productionSubDept = newValue;
+      u.productionSubDept = data.productionSubDept || [];
       renderSecurityAdminPinUsers();
     } else {
       showBOQBanner("sa-feedback", data.error || "Failed to update.", "error");
@@ -947,20 +948,32 @@ const PM_KNOWN_CARD_META = {
 };
 const PM_SYSTEM_COLOR = '#334155';
 
+// PM_CARD_ORDER — identical to Portal's, same 8 department keys/labels/
+// colors (see the header comment above for why this is now hardcoded
+// rather than derived).
+const PM_CARD_ORDER = [
+  { key: 'marketing', label: 'Marketing', color: '#be185d' },
+  { key: 'project', label: 'Project', color: '#2563eb' },
+  { key: 'design', label: 'Design', color: '#2563eb' },
+  { key: 'purchase', label: 'Purchase', color: '#7c3aed' },
+  { key: 'store', label: 'Store', color: '#0369a1' },
+  { key: 'qa', label: 'Quality Assurance', color: '#dc2626' },
+  { key: 'production', label: 'Production', color: '#b45309' },
+  { key: 'accounts', label: 'Accounts', color: '#0f766e' },
+];
+
 function getPmCardOrder() {
-  const seen = [];
+  const known = PM_CARD_ORDER.map(c => c.key);
+  const extra = [];
   (pmCatalog || []).forEach(p => {
     const dept = (p.department || '').replace(/^dashboard-/, '');
-    if (dept && !seen.includes(dept)) seen.push(dept);
+    if (dept && !known.includes(dept) && !extra.includes(dept)) extra.push(dept);
   });
-  return seen.map(key => {
-    const known = PM_KNOWN_CARD_META[key];
-    return {
-      key,
-      label: known ? known.label : (key.charAt(0).toUpperCase() + key.slice(1)),
-      color: known ? known.color : PM_SYSTEM_COLOR,
-    };
+  const extraCards = extra.map(key => {
+    const meta = PM_KNOWN_CARD_META[key];
+    return { key, label: meta ? meta.label : (key.charAt(0).toUpperCase() + key.slice(1)), color: meta ? meta.color : PM_SYSTEM_COLOR };
   });
+  return [...PM_CARD_ORDER, ...extraCards];
 }
 
 let pmCatalog = [];
