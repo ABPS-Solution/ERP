@@ -324,6 +324,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
 
   if (document.getElementById("mod-purchase-material-list")) document.getElementById("mod-purchase-material-list").style.display = canViewMaterialListPurchase ? "block" : "none";
   if (document.getElementById("mod-purchase-create-po"))     document.getElementById("mod-purchase-create-po").style.display     = canCreatePO ? "block" : "none";
+  if (document.getElementById("mod-purchase-edit-po"))       document.getElementById("mod-purchase-edit-po").style.display       = canCreatePO ? "block" : "none";
   if (document.getElementById("mod-purchase-authorize-po"))  document.getElementById("mod-purchase-authorize-po").style.display  = canAuthorizePO ? "block" : "none";
   if (document.getElementById("mod-purchase-pps-tracking"))  document.getElementById("mod-purchase-pps-tracking").style.display  = canPPSTracking ? "block" : "none";
   if (document.getElementById("mod-purchase-rejected-material")) document.getElementById("mod-purchase-rejected-material").style.display = canViewRejectedMaterial ? "block" : "none";
