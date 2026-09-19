@@ -270,6 +270,30 @@ async function removeIsolatedTaskItem(leadRef, taskId, event) {
   }
 }
 
+// renderTaskMatrixEngineerCheckboxes — mirrors leads.js's own
+// renderLeadMatrixEngineerCheckboxes (Search Leads by ABPS Engineer Name
+// and Status). This one never existed at all: the mount point
+// (#task-matrix-engineer-checkboxes) sat in index.html since this screen
+// was built, but nothing ever called into it, and cachedEngineers itself
+// was never populated anywhere in ERP until fixed in shared/apFetch.js's
+// showAppView() — see that fix's comment for the full root cause.
+function renderTaskMatrixEngineerCheckboxes() {
+  const mountPoint = document.getElementById("task-matrix-engineer-checkboxes");
+  if (!mountPoint) return;
+
+  mountPoint.innerHTML = '<p style="font-size:0.75rem; color:var(--brand); font-weight:600; margin:0; display:flex; align-items:center; gap:6px;"><span class="spinner" style="display:inline-block; width:10px; height:10px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite;"></span> Loading Engineers...</p>';
+  setTimeout(() => {
+    mountPoint.innerHTML = "";
+    cachedEngineers.forEach(eng => {
+      const cleanId = `chk_tm_eng_${eng.personKey.replace(/[^a-zA-Z0-9]/g, '_')}`;
+      mountPoint.innerHTML += `
+        <input type="checkbox" name="taskMatrixEngineer" value="${eng.personKey}" id="${cleanId}">
+        <label for="${cleanId}">${eng.name}</label>
+      `;
+    });
+  }, 50);
+}
+
 async function executeTaskMatrixSearch() {
   const btn = document.getElementById("task-matrix-search-btn");
   const outputNode = document.getElementById("task-matrix-results-output-node");

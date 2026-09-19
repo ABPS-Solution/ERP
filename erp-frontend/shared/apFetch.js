@@ -518,6 +518,17 @@ async function showAppView() {
     console.error("showAppView: userPermissions is empty — every section will render hidden.", userPermissions);
   }
   enforceDynamicModuleRoleGateways(userPermissions || {});
+  // cachedEngineers (marketing/leads.js) was never populated anywhere in
+  // ERP — the backend's getEngineers route existed but nothing called it,
+  // so every consumer (Search Leads/Tasks by Engineer filter pills, the
+  // Upload PO Owner of Order dropdown, the Section-5 self-lock check) sat
+  // permanently empty. Fire-and-forget, same convention as
+  // refreshServerRoleFlags() above — must not delay showAppView().
+  if (typeof apFetch === "function") {
+    apFetch({ action: "getEngineers" }).then(d => {
+      if (d && d.success && Array.isArray(d.engineers)) cachedEngineers = d.engineers;
+    }).catch(() => { /* non-fatal — dependent dropdowns just stay empty */ });
+  }
 }
 
 // ── Stale-but-usable reference data (ported from Portal's shared/apFetch.js,

@@ -129,6 +129,11 @@ async function navigateToModule(key) {
         // session's Review Extracted Purchase Order screen instead of
         // the blank upload form.
         if (typeof resetPurchaseOrderWorkspace === "function") resetPurchaseOrderWorkspace();
+        // Populate Select Lead / Company dropdown — defined in leads.js since
+        // the ERP port, but never actually called anywhere, so it always sat
+        // on its placeholder even when real leads existed (e.g. Century
+        // Rayon). See fetchAndPopulateUploadLeadDropdowns's own comment.
+        if (typeof fetchAndPopulateUploadLeadDropdowns === "function") fetchAndPopulateUploadLeadDropdowns();
         // Populate owner dropdown with marketing engineers
         const poOwnerDrop = document.getElementById("po-owner-of-order-dropdown");
         if (poOwnerDrop) {
@@ -223,6 +228,14 @@ async function navigateToModule(key) {
       renderLeadMatrixEngineerCheckboxes();
       const fd = document.getElementById("lead-matrix-active-filters-display");
       if (fd) { fd.style.display = "none"; fd.textContent = ""; }
+    } else if (key === "searchTasks") {
+      // Filter By Engineers pills were never rendered here at all — see
+      // renderTaskMatrixEngineerCheckboxes's own comment (tasks-followups.js)
+      // for the full root cause.
+      document.querySelectorAll('input[name="taskMatrixStatus"]').forEach(cb => cb.checked = false);
+      if (typeof renderTaskMatrixEngineerCheckboxes === "function") renderTaskMatrixEngineerCheckboxes();
+      const tfd = document.getElementById("task-matrix-active-filters-display");
+      if (tfd) { tfd.style.display = "none"; tfd.textContent = ""; }
     } else if (key === "searchEngineer") {
       const engineerSelectNode = document.getElementById("engineer-filter-select");
       if (engineerSelectNode && engineerSelectNode.value) triggerEngineerSearch();
