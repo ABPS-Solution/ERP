@@ -323,8 +323,13 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canViewPurchaseDashboard = userPermissionsObject.viewPurchaseDashboard === true;
 
   if (document.getElementById("mod-purchase-material-list")) document.getElementById("mod-purchase-material-list").style.display = canViewMaterialListPurchase ? "block" : "none";
+  // Edit Raw Material Purchase Order is a tab inside Create Raw Material
+  // Purchase Order now (19 Sep 2026 — folded in from its own dashboard
+  // card, cleaner than a separate section), gated by the same card's
+  // visibility. It reuses perm_create_rm_po rather than a new permission
+  // column (18 Sep 2026, Checking Draft loop) — editing a pending PO is
+  // strictly weaker than creating one, so the same gate applies.
   if (document.getElementById("mod-purchase-create-po"))     document.getElementById("mod-purchase-create-po").style.display     = canCreatePO ? "block" : "none";
-  if (document.getElementById("mod-purchase-edit-po"))       document.getElementById("mod-purchase-edit-po").style.display       = canCreatePO ? "block" : "none";
   if (document.getElementById("mod-purchase-authorize-po"))  document.getElementById("mod-purchase-authorize-po").style.display  = canAuthorizePO ? "block" : "none";
   if (document.getElementById("mod-purchase-pps-tracking"))  document.getElementById("mod-purchase-pps-tracking").style.display  = canPPSTracking ? "block" : "none";
   if (document.getElementById("mod-purchase-rejected-material")) document.getElementById("mod-purchase-rejected-material").style.display = canViewRejectedMaterial ? "block" : "none";
