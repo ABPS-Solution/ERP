@@ -410,7 +410,11 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canQaInspectionTimeline  = userPermissionsObject.qaInspectionTimeline === true;
   const canProductSerialTracking = userPermissionsObject.productSerialTracking === true;
   const canViewQaDashboard       = userPermissionsObject.viewQaDashboard === true;
+  const canRepairQa              = userPermissionsObject.repairQa === true;
   if (document.getElementById("mod-store-grn"))              document.getElementById("mod-store-grn").style.display              = canQaCheck ? "block" : "none";
+  // Currently Being Repaired at ABPS — split out of Raw Materials Q/A
+  // Check into its own section/permission (19 Sep 2026).
+  if (document.getElementById("mod-repair-qa"))               document.getElementById("mod-repair-qa").style.display               = canRepairQa ? "block" : "none";
   if (document.getElementById("mod-fg-approval"))             document.getElementById("mod-fg-approval").style.display             = canFgApproval ? "block" : "none";
   if (document.getElementById("mod-in-process-sheet"))        document.getElementById("mod-in-process-sheet").style.display        = canInProcessSheet ? "block" : "none";
   if (document.getElementById("mod-qa-inspection-timeline"))  document.getElementById("mod-qa-inspection-timeline").style.display  = canQaInspectionTimeline ? "block" : "none";
@@ -788,6 +792,11 @@ function navigateToStoreWorkspacePanel(targetPanelModuleId) {
     if (grnBanner) { grnBanner.style.display = "none"; grnBanner.innerHTML = ""; }
     window.activeQAToggle = "pending";
     initializeStoreGrnWorkspaceQueue('pending');
+  } else if (targetPanelModuleId === 'repair-qa') {
+    show("canvas-module-store-repair-qa");
+    const repairBanner = document.getElementById("store-repair-qa-runtime-feedback-banner");
+    if (repairBanner) { repairBanner.style.display = "none"; repairBanner.innerHTML = ""; }
+    initializeStoreRepairQAWorkspace();
   } else if (targetPanelModuleId === 'stock-sweep') {
     show("canvas-module-stock-sweep");
     initializeStockSweepPanel();
