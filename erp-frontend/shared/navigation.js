@@ -361,12 +361,9 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   // is folded into the Store block's OR-gate accordingly.
   const canManufacturingClearance = userPermissionsObject.manufacturingClearance === true;
   const canProjectStatus = userPermissionsObject.projectStatus === true;
-  const canProjectInvoiceGeneration = userPermissionsObject.projectInvoiceGeneration === true;
   // Project Dispatch Invoice's four permissions (19 Sep 2026, ported from
-  // Portal's migrations 208-209) replace canProjectInvoiceGeneration above
-  // for the four new cards -- that old flag is kept only because its
-  // legacy column still exists during the two-phase rename, unused by
-  // any live route/card now.
+  // Portal's migrations 208-210) replace the old single
+  // perm_project_invoice_generation flag, whose column is now dropped.
   const canCreateProjectDispatchInvoice = userPermissionsObject.createProjectDispatchInvoice === true;
   const canAuthorizeProjectDispatchInvoice = userPermissionsObject.authorizeProjectDispatchInvoice === true;
   const canReviseProjectDispatchInvoice = userPermissionsObject.reviseProjectDispatchInvoice === true;
