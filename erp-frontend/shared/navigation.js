@@ -362,6 +362,15 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canManufacturingClearance = userPermissionsObject.manufacturingClearance === true;
   const canProjectStatus = userPermissionsObject.projectStatus === true;
   const canProjectInvoiceGeneration = userPermissionsObject.projectInvoiceGeneration === true;
+  // Project Dispatch Invoice's four permissions (19 Sep 2026, ported from
+  // Portal's migrations 208-209) replace canProjectInvoiceGeneration above
+  // for the four new cards -- that old flag is kept only because its
+  // legacy column still exists during the two-phase rename, unused by
+  // any live route/card now.
+  const canCreateProjectDispatchInvoice = userPermissionsObject.createProjectDispatchInvoice === true;
+  const canAuthorizeProjectDispatchInvoice = userPermissionsObject.authorizeProjectDispatchInvoice === true;
+  const canReviseProjectDispatchInvoice = userPermissionsObject.reviseProjectDispatchInvoice === true;
+  const canAuthorizeProjectDispatchInvoiceRevision = userPermissionsObject.authorizeProjectDispatchInvoiceRevision === true;
   const canProjectTimeline = userPermissionsObject.projectTimeline === true;
   const canDailyTimeline = userPermissionsObject.dailyTimeline === true;
   const canViewAdminDashboard = userPermissionsObject.viewAdminDashboard === true;
@@ -370,7 +379,10 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-project-timeline")) document.getElementById("mod-project-timeline").style.display = canProjectTimeline ? "block" : "none";
   if (document.getElementById("mod-daily-timeline")) document.getElementById("mod-daily-timeline").style.display = canDailyTimeline ? "block" : "none";
   if (document.getElementById("mod-project-status")) document.getElementById("mod-project-status").style.display = canProjectStatus ? "block" : "none";
-  if (document.getElementById("mod-project-invoice")) document.getElementById("mod-project-invoice").style.display = canProjectInvoiceGeneration ? "block" : "none";
+  if (document.getElementById("mod-create-project-dispatch-invoice")) document.getElementById("mod-create-project-dispatch-invoice").style.display = canCreateProjectDispatchInvoice ? "block" : "none";
+  if (document.getElementById("mod-authorize-project-dispatch-invoice")) document.getElementById("mod-authorize-project-dispatch-invoice").style.display = canAuthorizeProjectDispatchInvoice ? "block" : "none";
+  if (document.getElementById("mod-revise-project-dispatch-invoice")) document.getElementById("mod-revise-project-dispatch-invoice").style.display = canReviseProjectDispatchInvoice ? "block" : "none";
+  if (document.getElementById("mod-authorize-project-dispatch-invoice-revision")) document.getElementById("mod-authorize-project-dispatch-invoice-revision").style.display = canAuthorizeProjectDispatchInvoiceRevision ? "block" : "none";
   // mod-admin-dashboard-wrapper's own visibility is set below via dashMap,
   // alongside the other dashboard pills — it moved out of the Project
   // block into the Admin block (16 Sep 2026), same as Portal.
@@ -500,7 +512,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   // Batch 6 (16 Sep 2026): Store's own screens landed, so this is no
   // longer keyed on Project Invoice Generation alone.
   const storeBlock = document.getElementById("dashboard-store-department-header-block");
-  if (storeBlock) storeBlock.style.display = (canProjectInvoiceGeneration || canPurchaseRequestNote || canAuthorizePRN
+  if (storeBlock) storeBlock.style.display = (canCreateProjectDispatchInvoice || canAuthorizeProjectDispatchInvoice || canReviseProjectDispatchInvoice || canAuthorizeProjectDispatchInvoiceRevision || canPurchaseRequestNote || canAuthorizePRN
     || canRevisePRN || canAuthorizePRNRevision || canReserveStoreStock || canGateEntry || canStoreEntryAndGrn
     || canExpectedInbounds || canApproveBOQIncrease || canReleaseTicket || canSearchStoreMat || canViewLiveStock
     || canViewLiveFinishedStock || canLiveSpareStoreStock || canMaterialOutward || canViewStoreDashboard)
@@ -712,7 +724,15 @@ function switchActiveDashboardModule(targetSectionId) {
   if (targetSectionId === "project-timeline" && typeof initializeProjectTimelinePanel === "function") initializeProjectTimelinePanel();
   if (targetSectionId === "daily-timeline" && typeof initializeDailyTimelinePanel === "function") initializeDailyTimelinePanel();
   if (targetSectionId === "project-status" && typeof initializeProjectStatusPanel === "function") initializeProjectStatusPanel();
-  if (targetSectionId === "project-invoice" && typeof initializePinvWorkspace === "function") initializePinvWorkspace();
+  // Project Dispatch Invoice's four sections (19 Sep 2026, ported from
+  // Portal's migrations 208-209 -- was one "project-invoice" screen/
+  // permission). Each is a plain top-level panel via the generic
+  // canvas-module-<targetSectionId> path above, same as project-invoice
+  // always was here -- no Store-enclosure routing needed.
+  if (targetSectionId === "create-project-dispatch-invoice" && typeof switchCreatePdiTab === "function") switchCreatePdiTab('new');
+  if (targetSectionId === "authorize-project-dispatch-invoice" && typeof initializeApdiWorkspace === "function") initializeApdiWorkspace();
+  if (targetSectionId === "revise-project-dispatch-invoice" && typeof switchRevisePdiTab === "function") switchRevisePdiTab('select');
+  if (targetSectionId === "authorize-project-dispatch-invoice-revision" && typeof initializeArpdiWorkspace === "function") initializeArpdiWorkspace();
   // QA department (Batch 8, 16 Sep 2026) — same init-on-open convention.
   // qa-dashboard is reached via its own dept-dash-pill (navigateToQaDashboard),
   // not through this generic path, so it needs no entry here.
