@@ -293,6 +293,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   // ERP's permMap.js key is "marketingDashboard", not Portal's
   // "viewMarketingDashboard" — ERP's own dedicated key, not a rename.
   const canViewMarketingDashboard  = userPermissionsObject.marketingDashboard === true;
+  const canOrderPaymentProgress    = userPermissionsObject.orderPaymentProgress === true;
 
   if (document.getElementById("mod-card")) document.getElementById("mod-card").style.display = canEnterCard ? "block" : "none";
   if (document.getElementById("mod-email-whatsapp")) document.getElementById("mod-email-whatsapp").style.display = canViewEmailLeads ? "block" : "none";
@@ -304,6 +305,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-qual")) document.getElementById("mod-qual").style.display = canSearchQual ? "block" : "none";
   if (document.getElementById("mod-city-state")) document.getElementById("mod-city-state").style.display = canSearchCityState ? "block" : "none";
   if (document.getElementById("mod-meeting-prep")) document.getElementById("mod-meeting-prep").style.display = canMeetingPreparation ? "block" : "none";
+  if (document.getElementById("mod-order-payment")) document.getElementById("mod-order-payment").style.display = canOrderPaymentProgress ? "block" : "none";
 
   // ── Design (BOQ + Catalog & Drawings), ported from Portal's
   // shared/navigation.js — same camelCase permission keys, same card ids
@@ -503,7 +505,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const adminBlock = document.getElementById("dashboard-admin-department-header-block");
   if (adminBlock) adminBlock.style.display = (canSecurity || canViewAdminDashboard) ? "block" : "none";
   const marketingBlock = document.getElementById("dashboard-marketing-department-header-block");
-  if (marketingBlock) marketingBlock.style.display = (canEnterCard || canViewEmailLeads || canUploadCommissioning || canUploadPurchaseOrder || canSearchCompany || canSearchTasks || canSearchStatus || canSearchQual || canSearchCityState || canMeetingPreparation) ? "block" : "none";
+  if (marketingBlock) marketingBlock.style.display = (canEnterCard || canViewEmailLeads || canUploadCommissioning || canUploadPurchaseOrder || canSearchCompany || canSearchTasks || canSearchStatus || canSearchQual || canSearchCityState || canMeetingPreparation || canOrderPaymentProgress) ? "block" : "none";
   const projectBlock = document.getElementById("dashboard-project-department-header-block");
   if (projectBlock) projectBlock.style.display = (canManufacturingClearance || canProjectTimeline || canDailyTimeline || canProjectStatus) ? "block" : "none";
   // Batch 6 (16 Sep 2026): Store's own screens landed, so this is no
@@ -721,6 +723,7 @@ function switchActiveDashboardModule(targetSectionId) {
   if (targetSectionId === "project-timeline" && typeof initializeProjectTimelinePanel === "function") initializeProjectTimelinePanel();
   if (targetSectionId === "daily-timeline" && typeof initializeDailyTimelinePanel === "function") initializeDailyTimelinePanel();
   if (targetSectionId === "project-status" && typeof initializeProjectStatusPanel === "function") initializeProjectStatusPanel();
+  if (targetSectionId === "order-payment" && typeof initializeOrderPaymentPanel === "function") initializeOrderPaymentPanel();
   // Project Dispatch Invoice's four sections (19 Sep 2026, ported from
   // Portal's migrations 208-209 -- was one "project-invoice" screen/
   // permission). Each is a plain top-level panel via the generic
