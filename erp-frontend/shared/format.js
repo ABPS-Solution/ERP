@@ -142,7 +142,11 @@ function enhanceOneDateInputForDMY(input) {
   input.dataset.dmyEnhanced = "1";
 
   const wrap = document.createElement('span');
-  wrap.style.cssText = 'position:relative; display:inline-block; width:100%; vertical-align:middle;';
+  // min-width:0 matters on a narrow (mobile) grid column — a flex/grid
+  // item's default min-width is its content's min-content size, which for
+  // an inline-block can refuse to shrink below that and silently overflow
+  // its column instead of respecting width:100%.
+  wrap.style.cssText = 'position:relative; display:inline-block; width:100%; min-width:0; max-width:100%; vertical-align:middle; box-sizing:border-box;';
   input.parentNode.insertBefore(wrap, input);
   wrap.appendChild(input);
   input.style.width = '100%';
@@ -151,8 +155,11 @@ function enhanceOneDateInputForDMY(input) {
   input.style.position = 'relative';
   input.style.zIndex = '1';
 
+  // overflow:hidden + nowrap/ellipsis is defensive — the formatted text
+  // should always fit, but a narrow mobile column must never let it
+  // visually spill past the box's own border.
   const overlay = document.createElement('span');
-  overlay.style.cssText = 'position:absolute; left:1px; top:0; right:26px; bottom:0; display:flex; align-items:center; padding-left:9px; pointer-events:none; font:inherit; z-index:2;';
+  overlay.style.cssText = 'position:absolute; left:1px; top:0; right:26px; bottom:0; display:flex; align-items:center; padding-left:9px; pointer-events:none; font:inherit; z-index:2; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;';
   wrap.appendChild(overlay);
 
   const sync = () => {
