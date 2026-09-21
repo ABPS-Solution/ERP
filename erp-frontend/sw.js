@@ -53,7 +53,7 @@
 // avoid needing every user to clear site data by hand.
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'erp-v32';
+const CACHE_VERSION = 'erp-v33';
 const CACHE_NAME = `erp-shell-${CACHE_VERSION}`;
 
 self.addEventListener('install', (event) => {
