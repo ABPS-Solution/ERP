@@ -527,7 +527,28 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
     || canQaInspectionTimeline || canProductSerialTracking || canViewQaDashboard)
     ? "block" : "none";
 
+  // A department's sub-heading (.sec-label) sits right before its own
+  // .dashboard-grid of .menu-card tiles — every card's display was just
+  // set above purely from permissions, so a user holding none of the
+  // permissions in one sub-section would otherwise see a bare label with
+  // an empty grid under it (e.g. "Catalog & Drawings" with no cards).
+  // Hide the pair together whenever every card in that grid ended up
+  // hidden. Ported from Portal's shared/navigation.js.
+  hideEmptyDashboardSections();
+
   refreshDepartmentTabsBar();
+}
+
+function hideEmptyDashboardSections() {
+  document.querySelectorAll(".sec-label").forEach((label) => {
+    const grid = label.nextElementSibling;
+    if (!grid || !grid.classList.contains("dashboard-grid")) return;
+    const cards = grid.querySelectorAll(".menu-card");
+    const anyVisible = Array.from(cards).some((c) => c.style.display !== "none");
+    const show = cards.length === 0 || anyVisible;
+    label.style.display = show ? "" : "none";
+    grid.style.display = show ? "" : "none";
+  });
 }
 
 // ── Department tab bar ───────────────────────────────────────────────────
