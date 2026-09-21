@@ -523,6 +523,7 @@ function revealNewEntryFormDropdown() {
   const rowNode = document.getElementById("staged-back-button-row");
   if (rowNode) rowNode.style.display = "flex";
 
+  wireCityAutoFillStateCountry("dropform-city", "dropform-state", "dropform-country");
   applyEngineerFieldLockState();
   dropdownEl.style.display = "block";
   window.scrollTo(0,0);
@@ -568,6 +569,7 @@ function revealNewEntryFormDropdownFromBanner() {
   const rowNode = document.getElementById("staged-back-button-row");
   if (rowNode) rowNode.style.display = "flex";
 
+  wireCityAutoFillStateCountry("dropform-city", "dropform-state", "dropform-country");
   applyEngineerFieldLockState();
   dropdownEl.style.display = "block";
   window.scrollTo(0,0);
