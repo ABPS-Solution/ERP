@@ -281,6 +281,21 @@ function formatCleanDateOnly(rawStr) {
   return formatDateDMY(rawStr);
 }
 
+// Extracts the YYYY-MM-DD portion from a raw date/timestamp value so it can
+// be assigned directly to a native <input type="date">.value -- that input
+// ONLY accepts YYYY-MM-DD; assigning it a DD-MM-YYYY string (e.g. from
+// formatCleanDateOnly) silently fails and leaves the field blank. Was
+// missing from this file entirely (never ported from Portal) -- every
+// caller (marketing/tasks-followups.js's Edit Task flow and its own
+// Task Matrix "Overdue"/date-bucket logic) threw
+// "toDateInputValue is not defined" for every filter EXCEPT the two whose
+// bucket math happened not to call it.
+function toDateInputValue(rawStr) {
+  if (!rawStr) return "";
+  const m = rawStr.toString().match(/^(\d{4}-\d{2}-\d{2})/);
+  return m ? m[1] : "";
+}
+
 // Combines a plain event_date + event_time pair (see formatPlainTimeOfDay)
 // into "h:mm am/pm DD-MM-YYYY" for a created/last-edited timestamp column.
 function formatFollowUpTimestamp(dateVal, timeVal) {
