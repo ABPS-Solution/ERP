@@ -90,15 +90,15 @@ function renderIsolatedTaskItemsList(leadRef, list, scopeNode) {
     const centered = "text-align:center;";
     return `
       <tr style="border-bottom:2px solid var(--border);">
-        <td style="width:6%; padding:6px 4px; font-size:0.85rem; color:#000; vertical-align:middle; ${centered}">${escapeHtml(t.status)}</td>
-        <td style="width:6%; padding:6px 4px; font-size:0.85rem; color:#000; vertical-align:middle; ${centered} ${colBorder}">${escapeHtml(t.type)}</td>
+        <td style="width:9%; padding:6px 4px; font-size:0.85rem; color:#000; vertical-align:middle; overflow-wrap:anywhere; ${centered}">${escapeHtml(t.status)}</td>
+        <td style="width:9%; padding:6px 4px; font-size:0.85rem; color:#000; vertical-align:middle; overflow-wrap:anywhere; ${centered} ${colBorder}">${escapeHtml(t.type)}</td>
         <td style="width:7.5%; padding:6px 4px; font-size:0.85rem; color:#000; overflow-wrap:anywhere; vertical-align:middle; ${centered} ${colBorder}">${escapeHtml(t.eng)}</td>
         <td style="width:7.5%; padding:6px 4px; font-size:0.85rem; color:#000; overflow-wrap:anywhere; vertical-align:middle; ${centered} ${colBorder}">${escapeHtml(t.assigner || "System")}</td>
         <td style="width:6%; padding:6px 4px; font-size:0.85rem; color:#000; vertical-align:middle; ${centered} ${colBorder}">${escapeHtml(t.shift)}</td>
         <td style="width:6%; padding:6px 4px; font-size:0.85rem; color:#000; vertical-align:middle; ${centered} ${colBorder}">${formatOrdinalDate(t.targetDate)}</td>
         <td style="width:6%; padding:6px 4px; vertical-align:middle; ${centered} ${colBorder}"><span style="font-size:0.72rem; font-weight:700; color:#fff; background:${priorityColor}; padding:1px 6px; border-radius:3px;">${escapeHtml(t.priority || "Medium")}</span></td>
         <td style="width:30%; padding:6px 4px; font-size:0.85rem; color:#000; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap; vertical-align:middle; ${colBorder}">${escapeHtml(t.desc || 'None')}</td>
-        <td style="width:17.5%; padding:6px 4px; font-size:0.85rem; color:#000; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap; vertical-align:middle; ${colBorder}">${escapeHtml(t.completionNotes || '—')}</td>
+        <td style="width:11.5%; padding:6px 4px; font-size:0.85rem; color:#000; word-wrap:break-word; overflow-wrap:break-word; white-space:pre-wrap; vertical-align:middle; ${colBorder}">${escapeHtml(t.completionNotes || '—')}</td>
         <td style="width:7.5%; padding:6px 4px; vertical-align:middle; ${colBorder}">
           <div style="display:flex; justify-content:center; gap:6px;">
             <button class="nav-btn-styled" id="trigger-inner-edit-task-${leadRef}-${t.id}" style="font-size:0.7rem; padding:3px 6px;">Edit</button>
@@ -114,15 +114,15 @@ function renderIsolatedTaskItemsList(leadRef, list, scopeNode) {
       <table class="mobile-scroll-table" style="width:100%; border-collapse:collapse; table-layout:fixed;">
         <thead>
           <tr style="background:#f0fdf4; border-bottom:2px solid var(--border);">
-            <th style="width:6%; padding:6px 4px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted);">Status</th>
-            <th style="width:6%; padding:6px 4px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}">Type</th>
+            <th style="width:9%; padding:6px 4px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted);">Status</th>
+            <th style="width:9%; padding:6px 4px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}">Type</th>
             <th style="width:7.5%; padding:6px 4px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}">Assigned To</th>
             <th style="width:7.5%; padding:6px 4px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}">Assigned By</th>
             <th style="width:6%; padding:6px 4px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}">Target Time</th>
             <th style="width:6%; padding:6px 4px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}">Target Date</th>
             <th style="width:6%; padding:6px 4px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}">Priority</th>
             <th style="width:30%; padding:6px 4px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}">Task Description</th>
-            <th style="width:17.5%; padding:6px 4px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}">Completion Notes / Outcome</th>
+            <th style="width:11.5%; padding:6px 4px; text-align:left; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}">Completion Notes / Outcome</th>
             <th style="width:7.5%; padding:6px 4px; text-align:center; font-size:0.72rem; text-transform:uppercase; color:var(--muted); ${headerColBorder}"></th>
           </tr>
         </thead>
