@@ -206,13 +206,13 @@
        screen with room to spare. On a phone the Cancel button (which
        flows normally, left-aligned, right after +Log Follow-Up/+Add Task)
        sits at roughly that same horizontal position, so the two visually
-       collided ("Cancel" text overlapping "Logging Follow-up"). Stack the
-       label below the buttons instead of centering it over them. */
+       collided ("Cancel" text overlapping "Logging Follow-up"). Drop the
+       absolute centering so it just flows in-line after the button
+       instead of sitting on top of it. */
     .fup-status-label, .task-status-label {
       position:static !important; left:auto !important; transform:none !important;
-      flex-basis:100%; width:100%; margin-top:6px; text-align:left; font-size:1rem !important;
+      margin-left:6px; font-size:1rem !important;
     }
-    #reusable-child-modules-template > div[style*="position:relative"] { flex-wrap:wrap; }
 
     /* Follow-Up/Task history — a fixed-layout table with 6-10 columns at
        tiny percentage widths (e.g. 5%) genuinely cannot be read on a phone
