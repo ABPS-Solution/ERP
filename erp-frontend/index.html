@@ -80,6 +80,15 @@
     #canvas-module-store-gate-entry { padding:12px !important; }
     #canvas-module-store-gate-entry h2 { font-size:1.05rem; }
     .gate-upload-row { flex-direction:column; gap:8px; }
+    /* .gate-upload-col's flex:1 1 200px sets a 200px FLEX-BASIS -- on the
+       row's normal (horizontal) flex direction that's a width basis, but
+       once the row switches to flex-direction:column right above, the same
+       200px basis applies to the main axis again, which is now HEIGHT. Each
+       upload column was stretching to a 200px-tall (and growing further via
+       flex-grow:1) box regardless of its actual ~60px content, leaving a
+       large dead gap between the Invoice and Challan upload boxes on phone.
+       Reset the flex sizing to the content's own height when stacked. */
+    .gate-upload-col { flex:0 0 auto; }
     .gate-upload-col .card-box { min-height:48px !important; padding:10px 6px !important; font-size:0.78rem !important; line-height:1.3; }
     .gate-meta-grid { grid-template-columns:repeat(2,1fr); }
     .gate-verification-footer { flex-direction:column-reverse; }
