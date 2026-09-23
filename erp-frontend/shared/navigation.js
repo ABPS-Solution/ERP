@@ -476,6 +476,8 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-live-finished-store-stock")) document.getElementById("mod-live-finished-store-stock").style.display = canViewLiveFinishedStock ? "block" : "none";
   if (document.getElementById("mod-live-spare-store-stock")) document.getElementById("mod-live-spare-store-stock").style.display = canLiveSpareStoreStock ? "block" : "none";
   if (document.getElementById("mod-material-outward"))       document.getElementById("mod-material-outward").style.display       = canMaterialOutward ? "block" : "none";
+  const canAuthorizeMaterialOutward = userPermissionsObject.authorizeMaterialOutward === true;
+  if (document.getElementById("mod-authorize-material-outward")) document.getElementById("mod-authorize-material-outward").style.display = canAuthorizeMaterialOutward ? "block" : "none";
 
   // Production cards (Batch 7, 16 Sep 2026)
   if (document.getElementById("mod-assign-material-requirement-date")) document.getElementById("mod-assign-material-requirement-date").style.display = canAssignMRD ? "block" : "none";
@@ -530,7 +532,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (storeBlock) storeBlock.style.display = (canCreateProjectDispatchInvoice || canAuthorizeProjectDispatchInvoice || canReviseProjectDispatchInvoice || canAuthorizeProjectDispatchInvoiceRevision || canPurchaseRequestNote || canAuthorizePRN
     || canRevisePRN || canAuthorizePRNRevision || canReserveStoreStock || canGateEntry || canStoreEntryAndGrn
     || canExpectedInbounds || canApproveBOQIncrease || canReleaseTicket || canSearchStoreMat || canViewLiveStock
-    || canViewLiveFinishedStock || canLiveSpareStoreStock || canMaterialOutward || canViewStoreDashboard)
+    || canViewLiveFinishedStock || canLiveSpareStoreStock || canMaterialOutward || canAuthorizeMaterialOutward || canViewStoreDashboard)
     ? "block" : "none";
   // Production department block (Batch 7, 16 Sep 2026)
   const productionBlock = document.getElementById("dashboard-production-department-header-block");
@@ -737,6 +739,17 @@ function switchActiveDashboardModule(targetSectionId) {
     }
     document.getElementById("canvas-module-store-live-spare").style.display = "block";
     triggerLiveSpareStoreStockMetricsSync();
+    return;
+  }
+  if (targetSectionId === "authorize-material-outward") {
+    document.getElementById("module-store-workspace-enclosure-panel").style.display = "block";
+    document.querySelectorAll("#module-store-workspace-enclosure-panel .workspace-panel").forEach(p => p.style.display = "none");
+    const leftControlsAMO = document.getElementById("store-panel-left-controls");
+    const centerTitleAMO  = document.getElementById("store-panel-center-title");
+    if (leftControlsAMO) leftControlsAMO.style.visibility = "hidden";
+    if (centerTitleAMO)  centerTitleAMO.style.visibility  = "hidden";
+    document.getElementById("canvas-module-authorize-material-outward").style.display = "block";
+    initializeAuthorizeMaterialOutwardWorkspace();
     return;
   }
   if (targetSectionId === "material-outward") {
