@@ -59,6 +59,11 @@
   .leads-editable-fields-box-canvas input,
   .leads-editable-fields-box-canvas select,
   .leads-editable-fields-box-canvas textarea { border: 1.5px solid #8492a6; }
+  /* Upload Purchase Order (first screen + review) — same heavier borders;
+     !important because these inputs carry their own inline border. */
+  #workspace-purchaseOrder input:not([type="file"]):not([type="checkbox"]):not([type="radio"]),
+  #workspace-purchaseOrder select,
+  #workspace-purchaseOrder textarea { border: 1.5px solid #8492a6 !important; }
 
   .card-row { display: flex; gap: 6px; margin-bottom: 4px; }
   .card-box { flex: 1; border: 2px dashed var(--border); padding: 20px 10px; text-align: center; font-size: .85rem; cursor: pointer; border-radius: 4px; min-height: 46px; display: flex; align-items: center; justify-content: center; }
