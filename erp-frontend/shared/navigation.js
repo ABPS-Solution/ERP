@@ -521,9 +521,9 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const adminBlock = document.getElementById("dashboard-admin-department-header-block");
   if (adminBlock) adminBlock.style.display = (canSecurity || canViewAdminDashboard) ? "block" : "none";
   const marketingBlock = document.getElementById("dashboard-marketing-department-header-block");
-  if (marketingBlock) marketingBlock.style.display = (canEnterCard || canViewEmailLeads || canUploadCommissioning || canUploadPurchaseOrder || canSearchCompany || canSearchTasks || canSearchStatus || canSearchQual || canSearchCityState || canMeetingPreparation || canOrderPaymentProgress) ? "block" : "none";
+  if (marketingBlock) marketingBlock.style.display = (canEnterCard || canViewEmailLeads || canUploadCommissioning || canUploadPurchaseOrder || canSearchCompany || canSearchTasks || canSearchStatus || canSearchQual || canSearchCityState || canMeetingPreparation) ? "block" : "none";
   const projectBlock = document.getElementById("dashboard-project-department-header-block");
-  if (projectBlock) projectBlock.style.display = (canManufacturingClearance || canProjectTimeline || canDailyTimeline || canProjectStatus) ? "block" : "none";
+  if (projectBlock) projectBlock.style.display = (canManufacturingClearance || canProjectTimeline || canDailyTimeline || canProjectStatus || canOrderPaymentProgress) ? "block" : "none";
   // Batch 6 (16 Sep 2026): Store's own screens landed, so this is no
   // longer keyed on Project Invoice Generation alone.
   const storeBlock = document.getElementById("dashboard-store-department-header-block");
