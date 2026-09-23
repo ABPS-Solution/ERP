@@ -150,6 +150,10 @@ function driveLink(url) {
 // (requirePermission, assertCanWriteLane, canAccessLd), which is the real
 // enforcement regardless of what these flags say.
 function applyServerRoleFlags(permData) {
+  // A device restricted to a few sections (Registered Devices > Restrict
+  // Access) never shows the Docs button.
+  const docsBtn = document.getElementById("header-docs-btn");
+  if (docsBtn) docsBtn.style.display = permData.deviceRestricted ? "none" : "";
   localStorage.setItem("erpIsUserAdminGlobal", permData.isAdmin ? "true" : "false");
   localStorage.setItem("erpIsUserSuperAdminGlobal", permData.isSuperAdmin ? "true" : "false");
   localStorage.setItem("erpUserDepartment", permData.department || "");
