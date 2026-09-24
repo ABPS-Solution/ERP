@@ -123,6 +123,7 @@ function jcshTodayLocalISO() {
 // that visibly "belong" here) missed both. Consolidated into this file
 // instead of replicating Portal's scatter.
 let jcshWorkspaceInitInProgress = false;
+let jcshSubmitInProgress = false;
 
 async function initializeJCSHWorkspace() {
   jcshWorkspaceInitInProgress = false; // clear any stuck guard from an abandoned prior load
