@@ -1,3 +1,4 @@
+let globalOperatorsDatabasePayloadCache = [];
 let dynamicTicketShoppingBasketArray = [];
 /**
  * INITIALIZE MATERIAL REQUEST WORKSPACE

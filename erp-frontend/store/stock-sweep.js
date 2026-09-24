@@ -1,3 +1,4 @@
+let sweepBasket = [];
 function initializeStockSweepPanel() {
   sweepBasket = [];
   document.getElementById("sweep-feedback").style.display = "none";

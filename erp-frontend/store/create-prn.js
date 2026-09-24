@@ -1,3 +1,5 @@
+let prnCurrentData = null;
+let prnStoreQtyLocked = false;
 async function openCPOAllocationPicker(rowId) {
   const row = window.cpoMaterialRows.find(r => r.id === rowId);
   if (!row) return;

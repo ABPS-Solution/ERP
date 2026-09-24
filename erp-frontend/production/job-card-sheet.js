@@ -124,6 +124,7 @@ function jcshTodayLocalISO() {
 // instead of replicating Portal's scatter.
 let jcshWorkspaceInitInProgress = false;
 let jcshSubmitInProgress = false;
+let jcshAllJobCardsForProject = [];
 
 async function initializeJCSHWorkspace() {
   jcshWorkspaceInitInProgress = false; // clear any stuck guard from an abandoned prior load
