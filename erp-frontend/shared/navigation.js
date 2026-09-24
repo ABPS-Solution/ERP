@@ -478,6 +478,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-material-outward"))       document.getElementById("mod-material-outward").style.display       = canMaterialOutward ? "block" : "none";
   const canAuthorizeMaterialOutward = userPermissionsObject.authorizeMaterialOutward === true;
   if (document.getElementById("mod-authorize-material-outward")) document.getElementById("mod-authorize-material-outward").style.display = canAuthorizeMaterialOutward ? "block" : "none";
+  if (document.getElementById("mod-search-material-outward")) document.getElementById("mod-search-material-outward").style.display = userPermissionsObject.searchMaterialOutward === true ? "block" : "none";
 
   // Production cards (Batch 7, 16 Sep 2026)
   if (document.getElementById("mod-assign-material-requirement-date")) document.getElementById("mod-assign-material-requirement-date").style.display = canAssignMRD ? "block" : "none";
@@ -750,6 +751,17 @@ function switchActiveDashboardModule(targetSectionId) {
     if (centerTitleAMO)  centerTitleAMO.style.visibility  = "hidden";
     document.getElementById("canvas-module-authorize-material-outward").style.display = "block";
     initializeAuthorizeMaterialOutwardWorkspace();
+    return;
+  }
+  if (targetSectionId === "search-material-outward") {
+    document.getElementById("module-store-workspace-enclosure-panel").style.display = "block";
+    document.querySelectorAll("#module-store-workspace-enclosure-panel .workspace-panel").forEach(p => p.style.display = "none");
+    const leftControlsSMO = document.getElementById("store-panel-left-controls");
+    const centerTitleSMO  = document.getElementById("store-panel-center-title");
+    if (leftControlsSMO) leftControlsSMO.style.visibility = "hidden";
+    if (centerTitleSMO)  centerTitleSMO.style.visibility  = "hidden";
+    document.getElementById("canvas-module-search-material-outward").style.display = "block";
+    initializeSearchMaterialOutwardWorkspace();
     return;
   }
   if (targetSectionId === "material-outward") {
