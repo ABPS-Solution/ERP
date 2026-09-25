@@ -2068,7 +2068,7 @@ function triggerStoreTicketMatrixSearch() {
 document.getElementById('commissioning-report-raw-file').onchange = (e) => {
   targetCommissioningReportFileObj = e.target.files[0];
   const box = document.getElementById('commissioning-report-upload-box');
-  if (box && targetCommissioningReportFileObj) { box.textContent = "Commissioning Report Document Added ✅"; box.classList.add('done'); }
+  if (box && targetCommissioningReportFileObj) { box.textContent = "Commissioning Report Document Added "; box.classList.add('done'); }
 };
 
 // Purchase Order no longer calls this — it now goes through the two-step
@@ -2710,7 +2710,7 @@ function renderPurchaseOrderReview() {
   // engineer dropdown in this app uses), not the auto-filled logged-in
   // operator this used to be. Deliberately submits the display NAME here,
   // not personKey — abps_owner_of_order is a plain text column (no FK to
-  // admin_db.users) that several places (the lead's own "📄 Documents"
+  // admin_db.users) that several places (the lead's own "Documents"
   // card, in particular) render raw with no name-resolution step, and it
   // has always held a readable name (previously the logged-in operator's
   // own display name). Storing a person_key here would silently break
@@ -2984,7 +2984,7 @@ function renderGateFileList(boxId) {
   const files = isInvoice ? targetGateInvoiceFiles : targetGateChallanFiles;
   const box = document.getElementById(boxId);
   if (box) {
-    if (files.length > 0) { box.textContent = `✅ ${label} Attached — ${files.length} page${files.length > 1 ? 's' : ''}, click to add more`; box.classList.add('done'); }
+    if (files.length > 0) { box.textContent = `${label} Attached — ${files.length} page${files.length > 1 ? 's' : ''}, click to add more`; box.classList.add('done'); }
     else { box.textContent = `📷 Select ${label} Image`; box.classList.remove('done'); }
   }
   const list = document.getElementById(boxId + '-filelist');
@@ -3066,7 +3066,7 @@ async function renderIsolatedDocumentInfoSection(leadRef, leadId, scopeNode) {
         </div>`;
       mount.innerHTML = `
         <div style="border-top:2px solid var(--border); padding-top:12px; margin-top:4px;">
-          <div style="font-size:0.78rem; font-weight:800; text-transform:uppercase; color:var(--text); margin-bottom:10px; letter-spacing:0.5px;">📄 Documents</div>
+          <div style="font-size:0.78rem; font-weight:800; text-transform:uppercase; color:var(--text); margin-bottom:10px; letter-spacing:0.5px;">Documents</div>
           ${renderEmptyPlaceholder("Purchase Order", "#0056b3")}
           ${renderEmptyPlaceholder("Project Invoice", "#059669")}
           ${renderEmptyPlaceholder("Commissioning Report", "#7c3aed")}
@@ -3205,7 +3205,7 @@ async function renderIsolatedDocumentInfoSection(leadRef, leadId, scopeNode) {
 
     mount.innerHTML = `
       <div style="border-top:2px solid var(--border); padding-top:12px; margin-top:4px;">
-        <div style="font-size:0.78rem; font-weight:800; text-transform:uppercase; color:var(--text); margin-bottom:10px; letter-spacing:0.5px;">📄 Documents</div>
+        <div style="font-size:0.78rem; font-weight:800; text-transform:uppercase; color:var(--text); margin-bottom:10px; letter-spacing:0.5px;">Documents</div>
         ${hasPO ? renderSection("Purchase Order", "#0056b3", poFields, poDocLink) : renderEmptySection("Purchase Order", "#0056b3")}
         ${hasInvoice ? `
           <div style="margin-bottom:12px;">

@@ -806,7 +806,7 @@ async function submitIcfSaveFormat() {
       operatorName: appActiveOperatorIdentityString
     });
     if (!data.success) return showBOQBanner("itemcode-feedback-banner", "⚠️ " + data.error, "error");
-    showBOQBanner("itemcode-feedback-banner", `✅ Format "${subOption}" saved.`, "success");
+    showBOQBanner("itemcode-feedback-banner", `Format "${subOption}" saved.`, "success");
     closeIcfFormatEditor();
     handleIcfFormatTypeChange(icfFmtCurrentType);
   } catch (e) {
@@ -821,7 +821,7 @@ async function submitIcfDeactivateFormat() {
   try {
     const data = await apFetch({ action: "deactivateItemCodeFormat", formatId, operatorName: appActiveOperatorIdentityString });
     if (!data.success) return showBOQBanner("itemcode-feedback-banner", "⚠️ " + data.error, "error");
-    showBOQBanner("itemcode-feedback-banner", "✅ Format deactivated.", "success");
+    showBOQBanner("itemcode-feedback-banner", "Format deactivated.", "success");
     closeIcfFormatEditor();
     handleIcfFormatTypeChange(icfFmtCurrentType);
   } catch (e) {
