@@ -441,6 +441,7 @@ async function oppSaveSchedule(projectId) {
   try {
     const data = await apFetch({
       action: "saveOrderPaymentSchedule", projectId,
+      baseSignature: (window.oppScheduleDataCache[projectId] || {}).scheduleSignature || null,
       tranches: list.map(t => ({
         paymentId: t.paymentId, expectedAmount: t.expectedAmount, expectedDate: t.expectedDate,
         receivedAmount: t.receivedAmount || 0, receivedDate: t.receivedDate || null,
