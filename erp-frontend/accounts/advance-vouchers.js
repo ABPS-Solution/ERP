@@ -118,7 +118,7 @@ function advHandleCompanySearch(query) {
   const matches = advCachedCompanies.filter(c => c.companyName.toLowerCase().includes(q)).slice(0, 15);
   const exactHit = advCachedCompanies.some(c => c.companyName.trim().toLowerCase() === q);
   let html = matches.map(c => `
-    <div onmousedown="event.preventDefault(); advSelectCompany('${c.companyName.replace(/'/g, "\\'")}')"
+    <div onmousedown="event.preventDefault(); advSelectCompany(${jsArg(c.companyName)})"
       style="padding:8px 10px; cursor:pointer; font-size:0.85rem; border-bottom:1px solid #f1f5f9;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${escapeHtml(c.companyName)}</div>`).join("");
   if (!exactHit && query.trim()) {

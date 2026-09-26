@@ -223,10 +223,44 @@ document.addEventListener("click", async (e) => {
   }
 }, true);
 
+// Safe retry (same rule as Portal's): only a TypeError from fetch, i.e. the
+// request never reached the server. Never our own timeout and never any HTTP
+// response — a 5xx can arrive after the server already committed, and a
+// retry there would duplicate a PRN/ticket/invoice.
+const ERP_RETRY_MAX = 2;
+const ERP_RETRY_BASE_MS = 400;
+async function erpFetchWithRetry(url, init) {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await fetch(url, init);
+    } catch (err) {
+      const retriable = err instanceof TypeError && err.name !== "AbortError";
+      if (!retriable || attempt >= ERP_RETRY_MAX) throw err;
+      const delay = ERP_RETRY_BASE_MS * Math.pow(3, attempt) * (0.75 + Math.random() * 0.5);
+      await new Promise(r => setTimeout(r, delay));
+    }
+  }
+}
+
 async function apFetch(payload) {
   payload.sessionToken = localStorage.getItem("erpSessionToken");
-  const res  = await fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) });
+  const res = await erpFetchWithRetry(GAS_URL, {
+    method: "POST",
+    body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(60000),
+  });
+  // A non-JSON body (Cloud Run 502/503 page, 413 too large) becomes a
+  // readable error instead of "Unexpected token <".
+  const contentType = res.headers.get("content-type") || "";
+  if (!contentType.includes("application/json")) {
+    return { success: false, error: res.status === 413
+      ? "The upload is too large. Please use smaller files."
+      : "Server error (HTTP " + res.status + "). Please try again." };
+  }
   const data = await res.json();
+  if (!res.ok && data && typeof data.error !== "string") {
+    return { success: false, error: "Server error (HTTP " + res.status + ")" };
+  }
   if (!data.success && data.code === "SESSION_EXPIRED") {
     clearAppLocalStorageKeepingDeviceKeys({ keepDrafts: true });
     document.getElementById("app-container").style.display   = "none";
@@ -610,7 +644,7 @@ function handleCompanySearchTypeaheadInput(query, inputId = "lookup-module-compa
     .slice(0, 10);
   if (matches.length === 0) { dd.style.display = "none"; return; }
   dd.innerHTML = matches.map(item => `
-    <div onmousedown="event.preventDefault(); selectCompanySearchTypeahead('${item.companyValue.replace(/'/g, "\\'")}', '${inputId}', '${ddId}')"
+    <div onmousedown="event.preventDefault(); selectCompanySearchTypeahead(${jsArg(item.companyValue)}, '${inputId}', '${ddId}')"
       style="padding:9px 12px; cursor:pointer; font-size:0.88rem; border-bottom:1px solid var(--border);"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background=''">${escapeHtml(item.displayLabel)}</div>
   `).join("");

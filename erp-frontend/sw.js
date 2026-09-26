@@ -53,7 +53,7 @@
 // avoid needing every user to clear site data by hand.
 // ═══════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'erp-v218';
+const CACHE_VERSION = 'erp-v219';
 const CACHE_NAME = `erp-shell-${CACHE_VERSION}`;
 
 self.addEventListener('message', (event) => {
@@ -108,7 +108,7 @@ self.addEventListener('fetch', (event) => {
         // browser's 10-min HTTP cache so a new deploy's markup shows at once.
         const fresh = await fetch(req.url, { cache: 'no-cache', credentials: 'same-origin' });
         const cache = await caches.open(CACHE_NAME);
-        cache.put(req, fresh.clone());
+        if (fresh.ok) cache.put(req, fresh.clone()); // never keep an error page
         return fresh;
       } catch (_) {
         const cached = await caches.match(req);
@@ -133,14 +133,14 @@ self.addEventListener('fetch', (event) => {
         try {
           const fresh = await fetch(req, { cache: 'no-cache' }); // revalidate past the HTTP cache (Pages sends max-age=600)
           const cache = await caches.open(CACHE_NAME);
-          await cache.put(req, fresh);
+          if (fresh.ok) await cache.put(req, fresh);
         } catch (_) { /* offline — keep serving the cached copy */ }
       })());
       return cached;
     }
     const fresh = await fetch(req, { cache: 'no-cache' }); // revalidate past the HTTP cache (Pages sends max-age=600)
     const cache = await caches.open(CACHE_NAME);
-    cache.put(req, fresh.clone());
+    if (fresh.ok) cache.put(req, fresh.clone());
     return fresh;
   })());
 });
