@@ -1803,7 +1803,7 @@ async function eiDelivRunSearch(params, label) {
   const results = document.getElementById("ei-delivered-results");
   results.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">Searching...</div>`;
   try {
-    const data = await apFetch({ action: "fetchExpectedDeliveries", filterMode: "delivered", todayOverride: localStorage.getItem("ptlTodayOverride") || "", ...params });
+    const data = await apFetch({ action: "fetchExpectedDeliveries", filterMode: "delivered", todayOverride: localStorage.getItem("erpPtlTodayOverride") || "", ...params });
     if (!data.success) { results.innerHTML = `<div style="color:var(--warn); padding:12px;">${escapeHtml(data.error)}</div>`; return; }
     if (!data.delivered || data.delivered.length === 0) {
       results.innerHTML = `<div style="text-align:center;padding:30px;color:var(--muted);background:#fff;border:1px solid var(--border);border-radius:6px;">No delivered POs match.</div>`;
@@ -1843,7 +1843,7 @@ async function loadExpectedInbounds() {
   </div>`;
 
   try {
-    const data = await apFetch({ action: "fetchExpectedDeliveries", filterMode: expectedInboundsFilterMode, todayOverride: localStorage.getItem("ptlTodayOverride") || "" });
+    const data = await apFetch({ action: "fetchExpectedDeliveries", filterMode: expectedInboundsFilterMode, todayOverride: localStorage.getItem("erpPtlTodayOverride") || "" });
     if (!data.success) {
       zone.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">${escapeHtml(data.error)}</div>`;
       return;
@@ -2007,7 +2007,7 @@ function renderExpectedInboundsPOCard(po, scheme, cardId, defaultExpanded) {
         </div>
 
         <div style="overflow-x:auto;">
-          <table style="width:100%; border-collapse:collapse; min-width:900px; table-layout:fixed;">
+          <table class="prn-view-table" style="width:100%; border-collapse:collapse; min-width:900px; table-layout:fixed;">
             <colgroup>
               <col style="width:8%;">
               <col style="width:37%;">
