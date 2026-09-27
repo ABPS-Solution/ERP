@@ -40,20 +40,6 @@ function navigateToDesignWorkspacePanel(targetModuleId) {
     if (el) el.style.display = "none";
   });
 
-  // Wipe operational dropzone feedback notes caches — same reset Portal's
-  // version performs on every design nav call, ported verbatim.
-  const dropzoneUpload = document.getElementById("boq-upload-file-dropzone");
-  const dropzoneRevision = document.getElementById("boq-revision-file-dropzone");
-  const resultsViewport = document.getElementById("boq-update-search-results-viewport");
-  if (dropzoneUpload) {
-    dropzoneUpload.textContent = "📷 Select or Capture Bill of Quantity Document Page Image";
-    dropzoneUpload.classList.remove("done");
-  }
-  if (dropzoneRevision) {
-    dropzoneRevision.textContent = "📷 Select Revised BOQ Document Page Image";
-    dropzoneRevision.classList.remove("done");
-  }
-  if (resultsViewport) resultsViewport.style.display = "none";
   if (typeof targetBOQUploadFileRawObject !== "undefined") targetBOQUploadFileRawObject = null;
 
   if (targetModuleId === 'design-create-boq') {
