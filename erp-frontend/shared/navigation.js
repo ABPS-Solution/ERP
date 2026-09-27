@@ -509,6 +509,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
     // Login Access, matching Portal's identical move the same day.
     "mod-admin-dashboard-wrapper":     canViewAdminDashboard,
     "mod-qa-dashboard-wrapper":        canViewQaDashboard,
+    "mod-project-dashboard-wrapper":   userPermissionsObject.viewProjectDashboard === true,
   };
   Object.keys(dashMap).forEach(function(id) {
     const el = document.getElementById(id);
@@ -527,7 +528,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const marketingBlock = document.getElementById("dashboard-marketing-department-header-block");
   if (marketingBlock) marketingBlock.style.display = (canEnterCard || canViewEmailLeads || canUploadCommissioning || canUploadPurchaseOrder || canSearchCompany || canSearchTasks || canSearchStatus || canSearchQual || canSearchCityState || canMeetingPreparation) ? "block" : "none";
   const projectBlock = document.getElementById("dashboard-project-department-header-block");
-  if (projectBlock) projectBlock.style.display = (canManufacturingClearance || canProjectTimeline || canDailyTimeline || canProjectStatus || canOrderPaymentProgress) ? "block" : "none";
+  if (projectBlock) projectBlock.style.display = (canManufacturingClearance || canProjectTimeline || canDailyTimeline || canProjectStatus || canOrderPaymentProgress || userPermissionsObject.viewProjectDashboard === true) ? "block" : "none";
   // Batch 6 (16 Sep 2026): Store's own screens landed, so this is no
   // longer keyed on Project Invoice Generation alone.
   const storeBlock = document.getElementById("dashboard-store-department-header-block");
