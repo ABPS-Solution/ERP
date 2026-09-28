@@ -2,7 +2,7 @@ let sweepBasket = [];
 function initializeStockSweepPanel() {
   sweepBasket = [];
   document.getElementById("sweep-feedback").style.display = "none";
-  document.getElementById("sweep-material-search").value = "";
+  document.getElementById("sweep-material-search").value = ""; document.getElementById("sweep-material-search").style.height = "";
   document.getElementById("sweep-material-dropdown").style.display = "none";
   const st = document.getElementById("sweep-type");
   if (st) st.value = "Production Return";
@@ -120,7 +120,7 @@ function addSweepSearchMatch(i) {
 }
 
 function addToSweepBasket(itemCode, materialName, rating, unitType) {
-  document.getElementById("sweep-material-search").value = "";
+  document.getElementById("sweep-material-search").value = ""; document.getElementById("sweep-material-search").style.height = "";
   document.getElementById("sweep-material-dropdown").style.display = "none";
   if (sweepBasket.some(b => b.itemCode === itemCode)) { alert("This item is already in the sweep list — edit its quantity below instead."); return; }
   sweepBasket.push({ itemCode, materialName, rating: rating || "", unitType: unitType || "NOS", quantity: "", isBlockedExit: false });
