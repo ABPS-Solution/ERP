@@ -41,7 +41,7 @@ let pd2JCNData = [], pd2JCNFiltered = [], pd2JCNCurrentPage = 1;
 // ReferenceError, since a read of an undeclared identifier always throws,
 // unlike a write).
 let pd2ChartDept = null, pd2ChartTrend = null, pd2ChartCompletion = null;
-const PD2_JCN_PAGE_SIZE = 8;
+const PD2_JCN_PAGE_SIZE = 3;
 
 const PD2_CUSTOM_TYPE_SUFFIX = {
   customday: "day", customrange: "range", custommonth: "month",
