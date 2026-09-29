@@ -1216,6 +1216,8 @@ function toggleFGReleaseSelection(itemCode, fgId, checked, needQty) {
   window._fgReleaseSelections[itemCode] = checked ? [...new Set([...sel, fgId])] : sel.filter(id => id !== fgId);
 }
 
+// DEAD CODE (29 Sep 2026): never called, and its server route
+// resolveTicketShortfall is retired. Flagged, not deleted.
 function showShortfallResolutionModal(ticketId, projectId, coverageReport) {
   const shortfallItems = coverageReport.filter(r => r.shortfall > 0);
 
