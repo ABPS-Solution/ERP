@@ -210,7 +210,7 @@ async function runCashExpenseSearch() {
 // this regardless of what got sent.
 async function cesDeleteVoucher(expenseId) {
   const reason = prompt("Reason for deleting this voucher (optional):") || null;
-  if (!confirm("Permanently delete this voucher? This cannot be undone — the employee will need a new one.")) return;
+  if (!await abpsConfirm("Permanently delete this voucher? This cannot be undone — the employee will need a new one.")) return;
   showBlockingOverlay("Deleting voucher...");
   try {
     const data = await apFetch({ action: "deleteCashExpenseVoucher", expenseId, reason });

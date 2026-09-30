@@ -483,7 +483,7 @@ function tvsRenderCard(v) {
 // regardless of what the button's own visibility already enforces.
 async function tvsDeleteVoucher(voucherId) {
   const reason = prompt("Reason for deleting this voucher (optional):") || null;
-  if (!confirm("Permanently delete this Unchecked voucher? This cannot be undone — the employee will need to resubmit.")) return;
+  if (!await abpsConfirm("Permanently delete this Unchecked voucher? This cannot be undone — the employee will need to resubmit.")) return;
   showBlockingOverlay("Deleting voucher...");
   try {
     const data = await apFetch({ action: "deleteTourVoucher", voucherId, reason });
@@ -494,7 +494,7 @@ async function tvsDeleteVoucher(voucherId) {
 }
 
 async function tvsUnlinkTicket(voucherId, travellerId) {
-  if (!confirm("Unlink this travel ticket from the voucher? This regenerates the voucher PDF.")) return;
+  if (!await abpsConfirm("Unlink this travel ticket from the voucher? This regenerates the voucher PDF.")) return;
   showBlockingOverlay("Unlinking travel ticket...");
   try {
     const data = await apFetch({ action: "unlinkTravelTicketFromVoucher", voucherId, travellerId });
