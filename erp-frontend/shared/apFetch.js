@@ -556,6 +556,8 @@ async function showAppView() {
     console.error("showAppView: userPermissions is empty — every section will render hidden.", userPermissions);
   }
   enforceDynamicModuleRoleGateways(userPermissions || {});
+  setTimeout(openDeepLinkModule, 0);
+  setTimeout(openDeepLinkModule, 1500);
   // cachedEngineers (marketing/leads.js) was never populated anywhere in
   // ERP — the backend's getEngineers route existed but nothing called it,
   // so every consumer (Search Leads/Tasks by Engineer filter pills, the
@@ -567,6 +569,20 @@ async function showAppView() {
       if (d && d.success && Array.isArray(d.engineers)) cachedEngineers = d.engineers;
     }).catch(() => { /* non-fatal — dependent dropdowns just stay empty */ });
   }
+}
+
+// ?module= deep link (e.g. "+ Create Item Code" opens a new tab). ERP had no
+// handler, so the new tab stayed on the main dashboard (1 Oct 2026). The links
+// say "design-itemcode" (Portal's id); ERP's section is "itemcode".
+function openDeepLinkModule() {
+  const urlParams = new URLSearchParams(window.location.search);
+  let deepModule = urlParams.get("module");
+  if (!deepModule) return;
+  if (deepModule === "design-itemcode") deepModule = "itemcode";
+  const dash = document.getElementById("dashboard-view");
+  if (window._deepLinkOpened && !(dash && dash.style.display !== "none")) return;
+  window._deepLinkOpened = true;
+  try { switchActiveDashboardModule(deepModule); } catch (e) { console.error("Deep link open failed:", e); }
 }
 
 // ── Stale-but-usable reference data (ported from Portal's shared/apFetch.js,
