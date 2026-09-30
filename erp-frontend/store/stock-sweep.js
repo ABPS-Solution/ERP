@@ -7,7 +7,7 @@ function initializeStockSweepPanel() {
   const st = document.getElementById("sweep-type");
   if (st) st.value = "Production Return";
   const cdOpt = document.getElementById("sweep-type-countdown-opt");
-  if (cdOpt) { const isAdmin = localStorage.getItem("isUserAdminGlobal") === "true"; cdOpt.hidden = !isAdmin; cdOpt.disabled = !isAdmin; }
+  if (cdOpt) { const isAdmin = localStorage.getItem("erpIsUserAdminGlobal") === "true"; cdOpt.hidden = !isAdmin; cdOpt.disabled = !isAdmin; }
   const cdWrap = document.getElementById("sweep-countdown-reason-wrap");
   if (cdWrap) cdWrap.style.display = "none";
   const cdReason = document.getElementById("sweep-countdown-reason");
