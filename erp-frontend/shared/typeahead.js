@@ -16,19 +16,23 @@ async function ensureSharedProjectTypeaheadData(forceRefresh = false) {
     window.sharedActiveProjectCodes = data.projects || [];
     window.sharedProjectMeta = data.projectMeta || {};
     window._sharedProjectTypeaheadLoaded = true;
+    const all = await fetchWithStaleCache({ action: "pullLiveActiveProjectCodes", includeComplete: true });
+    window.sharedAllProjectCodes = all.projects || [];
+    Object.assign(window.sharedProjectMeta, all.projectMeta || {});
   } catch(e) {
     window.sharedActiveProjectCodes = [];
     window.sharedProjectMeta = {};
   }
 }
 
-function handleSharedProjectTypeaheadInput(query, inputId, dropdownId) {
+function handleSharedProjectTypeaheadInput(query, inputId, dropdownId, includeComplete) {
   const dd = document.getElementById(dropdownId);
   if (!dd) return;
   if (!query || query.trim().length < 1) { dd.style.display = "none"; return; }
   const q = query.trim().toLowerCase();
   const meta = window.sharedProjectMeta || {};
-  const matches = (window.sharedActiveProjectCodes || []).filter(p => {
+  const pool = includeComplete ? (window.sharedAllProjectCodes || window.sharedActiveProjectCodes || []) : (window.sharedActiveProjectCodes || []);
+  const matches = pool.filter(p => {
     const companyName = (meta[p] && meta[p].companyName) || "";
     return p.toLowerCase().includes(q) || companyName.toLowerCase().includes(q);
   }).slice(0, 10);
