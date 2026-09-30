@@ -924,6 +924,16 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
   #wrapper-ticket-add-item-zone > div[style*="flex"] > div:first-child { flex: 1 1 100% !important; }
   #wrapper-ticket-add-item-zone > div[style*="flex"] > div:nth-child(2) { flex: 1 1 auto !important; }
 }
+/* Accounts tables: PPS-weight grid borders on every row and column */
+#canvas-module-tourexpense table,
+#canvas-module-cashexpenses table,
+#canvas-module-traveltickets table { border-collapse:collapse !important; border:2px solid #94a3b8 !important; }
+#canvas-module-tourexpense table th,
+#canvas-module-cashexpenses table th,
+#canvas-module-traveltickets table th,
+#canvas-module-tourexpense table td,
+#canvas-module-cashexpenses table td,
+#canvas-module-traveltickets table td { border:1.5px solid var(--border) !important; border-bottom:2px solid #94a3b8 !important; }
 </style>
 
 </head>
