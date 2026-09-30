@@ -31,7 +31,25 @@ function handleSharedProjectTypeaheadInput(query, inputId, dropdownId, includeCo
   if (!query || query.trim().length < 1) { dd.style.display = "none"; return; }
   const q = query.trim().toLowerCase();
   const meta = window.sharedProjectMeta || {};
-  const pool = includeComplete ? (window.sharedAllProjectCodes || window.sharedActiveProjectCodes || []) : (window.sharedActiveProjectCodes || []);
+  // Active + Complete list is loaded on first use (other screens replace
+  // the Active list with their own, so it can't be relied on here).
+  if (includeComplete && !window.sharedAllProjectCodes) {
+    if (!window._sharedAllProjectsLoading) {
+      window._sharedAllProjectsLoading = fetchWithStaleCache({ action: "pullLiveActiveProjectCodes", includeComplete: true })
+        .then(all => {
+          window.sharedAllProjectCodes = all.projects || [];
+          window.sharedProjectMeta = Object.assign(window.sharedProjectMeta || {}, all.projectMeta || {});
+        })
+        .catch(() => {})
+        .finally(() => { window._sharedAllProjectsLoading = null; });
+    }
+    window._sharedAllProjectsLoading && window._sharedAllProjectsLoading.then(() => {
+      const el = document.getElementById(inputId);
+      if (el && window.sharedAllProjectCodes) handleSharedProjectTypeaheadInput(el.value, inputId, dropdownId, true);
+    });
+    return;
+  }
+  const pool = includeComplete ? (window.sharedAllProjectCodes || []) : (window.sharedActiveProjectCodes || []);
   const matches = pool.filter(p => {
     const companyName = (meta[p] && meta[p].companyName) || "";
     return p.toLowerCase().includes(q) || companyName.toLowerCase().includes(q);
