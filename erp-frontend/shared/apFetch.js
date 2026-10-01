@@ -243,11 +243,14 @@ async function erpFetchWithRetry(url, init) {
 }
 
 async function apFetch(payload) {
+  // _timeoutMs: a longer wait for one slow call (e.g. AI reading a PO); never sent.
+  const apTimeoutMs = payload._timeoutMs || 60000;
+  delete payload._timeoutMs;
   payload.sessionToken = localStorage.getItem("erpSessionToken");
   const res = await erpFetchWithRetry(GAS_URL, {
     method: "POST",
     body: JSON.stringify(payload),
-    signal: AbortSignal.timeout(60000),
+    signal: AbortSignal.timeout(apTimeoutMs),
   });
   // A non-JSON body (Cloud Run 502/503 page, 413 too large) becomes a
   // readable error instead of "Unexpected token <".
