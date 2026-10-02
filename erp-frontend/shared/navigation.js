@@ -127,6 +127,8 @@ async function navigateToModule(key) {
         const crCustomerName = document.getElementById("commissioning-report-customer-name");
         if (crProjectInput) crProjectInput.value = "";
         if (crCustomerName) crCustomerName.value = "";
+    } else if (key === "uploadRevisedPo") {
+        if (typeof crpoInitPanel === "function") crpoInitPanel();
     } else if (key === "purchaseOrder") {
         targetPanelKeyIdStr = "purchaseOrder";
         // Always start fresh — otherwise leaving via Return to Main
@@ -305,6 +307,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canViewEmailLeads          = userPermissionsObject.emailLeads === true;
   const canUploadCommissioning     = userPermissionsObject.commissioningReport === true;
   const canUploadPurchaseOrder     = userPermissionsObject.purchaseOrder === true;
+  const canUploadRevisedPo         = userPermissionsObject.uploadRevisedPo === true;
   const canSearchCompany           = userPermissionsObject.searchCompany === true;
   const canSearchTasks             = userPermissionsObject.searchTasks === true;
   const canSearchStatus            = userPermissionsObject.searchStatus === true;
@@ -320,6 +323,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-email-whatsapp")) document.getElementById("mod-email-whatsapp").style.display = canViewEmailLeads ? "block" : "none";
   if (document.getElementById("mod-commissioning-report")) document.getElementById("mod-commissioning-report").style.display = canUploadCommissioning ? "block" : "none";
   if (document.getElementById("mod-purchase-order")) document.getElementById("mod-purchase-order").style.display = canUploadPurchaseOrder ? "block" : "none";
+  if (document.getElementById("mod-upload-revised-po")) document.getElementById("mod-upload-revised-po").style.display = canUploadRevisedPo ? "block" : "none";
   if (document.getElementById("mod-company")) document.getElementById("mod-company").style.display = canSearchCompany ? "block" : "none";
   if (document.getElementById("mod-tasks")) document.getElementById("mod-tasks").style.display = canSearchTasks ? "block" : "none";
   if (document.getElementById("mod-status")) document.getElementById("mod-status").style.display = canSearchStatus ? "block" : "none";
@@ -531,7 +535,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const adminBlock = document.getElementById("dashboard-admin-department-header-block");
   if (adminBlock) adminBlock.style.display = (canSecurity || canViewAdminDashboard) ? "block" : "none";
   const marketingBlock = document.getElementById("dashboard-marketing-department-header-block");
-  if (marketingBlock) marketingBlock.style.display = (canEnterCard || canViewEmailLeads || canUploadCommissioning || canUploadPurchaseOrder || canSearchCompany || canSearchTasks || canSearchStatus || canSearchQual || canSearchCityState || canMeetingPreparation) ? "block" : "none";
+  if (marketingBlock) marketingBlock.style.display = (canEnterCard || canViewEmailLeads || canUploadCommissioning || canUploadPurchaseOrder || canUploadRevisedPo || canSearchCompany || canSearchTasks || canSearchStatus || canSearchQual || canSearchCityState || canMeetingPreparation) ? "block" : "none";
   const projectBlock = document.getElementById("dashboard-project-department-header-block");
   if (projectBlock) projectBlock.style.display = (canManufacturingClearance || canProjectTimeline || canDailyTimeline || canProjectStatus || canOrderPaymentProgress || userPermissionsObject.viewProjectDashboard === true) ? "block" : "none";
   // Batch 6 (16 Sep 2026): Store's own screens landed, so this is no

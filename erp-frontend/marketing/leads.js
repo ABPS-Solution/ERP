@@ -3033,7 +3033,7 @@ function isMarketingAccessRestrictedToCardDetailsOnly() {
   const broaderMarketingPerms = [
     "searchCompany", "searchTasks", "searchStatus", "searchQualification",
     "searchCityState", "emailLeads", "meetingPreparation",
-    "orderPaymentProgress", "commissioningReport", "purchaseOrder"
+    "orderPaymentProgress", "commissioningReport", "purchaseOrder", "uploadRevisedPo"
   ];
   return !broaderMarketingPerms.some(key => userPermissions[key] === true);
 }
