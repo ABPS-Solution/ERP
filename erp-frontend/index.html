@@ -2131,11 +2131,11 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         <!-- ROW 1: Live snapshots -->
         <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; flex:0 0 80px; min-height:0;">
           <div class="dd-stat-card stat-live">
-            <div class="dd-stat-label">Email Leads Awaiting Action</div>
+            <div class="dd-stat-label">Email Awaiting Action</div>
             <div class="dd-stat-val" id="md-s-emailleads" style="color:#b45309;">—</div>
           </div>
           <div class="dd-stat-card stat-live">
-            <div class="dd-stat-label">Open Tasks</div>
+            <div class="dd-stat-label">Pending Tasks</div>
             <div class="dd-stat-val" id="md-s-opentasks">—</div>
           </div>
           <div class="dd-stat-card stat-live">
@@ -2156,7 +2156,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
             <div class="dd-stat-val" id="md-s-newleads">—</div>
           </div>
           <div class="dd-stat-card stat-period">
-            <div class="dd-stat-label">Email Offers Sent</div>
+            <div class="dd-stat-label">Offers Sent</div>
             <div class="dd-stat-val" id="md-s-offerssent">—</div>
           </div>
           <div class="dd-stat-card stat-period">
@@ -2180,7 +2180,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         <!-- ROW 3: 3 Charts -->
         <div class="dd-chart-row" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; flex:0 0 230px; min-height:0;">
           <div class="dd-stat-card" style="display:flex; flex-direction:column;">
-            <div class="dd-stat-label" style="margin-bottom:6px;">Lead Status Funnel (all leads, current)</div>
+            <div class="dd-stat-label" style="margin-bottom:6px;">Lead Status Funnel</div>
             <div style="flex:1; min-height:0; position:relative;"><canvas id="md-chart-funnel" style="position:absolute; width:100%; height:100%;"></canvas></div>
           </div>
           <div class="dd-stat-card" style="display:flex; flex-direction:column;">
@@ -2188,7 +2188,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
             <div style="flex:1; min-height:0; position:relative;"><canvas id="md-chart-potential" style="position:absolute; width:100%; height:100%;"></canvas></div>
           </div>
           <div class="dd-stat-card" style="display:flex; flex-direction:column;">
-            <div class="dd-stat-label" style="margin-bottom:6px;">Business Vertical (active leads, current)</div>
+            <div class="dd-stat-label" style="margin-bottom:6px;">Number of Leads for each Business Vertical</div>
             <div style="flex:1; min-height:0; position:relative;"><canvas id="md-chart-vertical" style="position:absolute; width:100%; height:100%;"></canvas></div>
           </div>
         </div>
@@ -3023,7 +3023,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <div id="dd-body" class="dd-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
 
         <!-- ROW 1: Live snapshots -->
-        <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; flex:0 0 80px; min-height:0;">
+        <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; flex:0 0 80px; min-height:0;">
           <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Design Work Overdue in Project Timeline</div>
             <div class="dd-stat-val" id="dd-s-overdue" style="color:#b91c1c;">—</div>
@@ -3036,14 +3036,10 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
             <div class="dd-stat-label">Pending BOQ Revision Authorizations</div>
             <div class="dd-stat-val" id="dd-s-pendingrevisions" style="color:#b45309;">—</div>
           </div>
-          <div class="dd-stat-card stat-live">
-            <div class="dd-stat-label">Average BOQs per Active Project</div>
-            <div class="dd-stat-val" id="dd-s-avgboqs">—</div>
-          </div>
         </div>
 
         <!-- ROW 2: Period throughput/averages -->
-        <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(6,1fr); gap:10px; flex:0 0 80px; min-height:0;">
+        <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
           <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">New Item Codes Added</div>
             <div class="dd-stat-val" id="dd-s-itemcodes">—</div>
@@ -3061,13 +3057,8 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
             <div class="dd-stat-val" id="dd-s-revised">—</div>
           </div>
           <div class="dd-stat-card stat-period">
-            <div class="dd-stat-label">Average Drawing Sent → Approved Days</div>
+            <div class="dd-stat-label">Average Days between Drawing Sent and Approved</div>
             <div class="dd-stat-val" id="dd-s-drawingturnaround">—</div>
-          </div>
-          <div class="dd-stat-card stat-period">
-            <div class="dd-stat-label">BOQ Revision Rate</div>
-            <div class="dd-stat-val" id="dd-s-revrate">—</div>
-            <div class="dd-stat-sub">by Revise BOQ, not auto-revisions</div>
           </div>
         </div>
 
@@ -3075,7 +3066,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         <div class="dd-chart-row" style="display:grid; grid-template-columns:1.2fr 1fr 1fr; gap:10px; flex:0 0 230px; min-height:0;">
           <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column; min-height:0; height:100%;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px; flex-shrink:0;">
-              <div class="dd-card-title" style="margin:0;">Products Cleared at MFC, Still Awaiting a BOQ</div>
+              <div class="dd-card-title" style="margin:0;">MFC Received but BOQ Pending</div>
               <span id="dd-mfcawaiting-count" style="font-size:0.62rem; font-weight:700; background:#fee2e2; color:#b91c1c; padding:1px 6px; border-radius:8px;"></span>
             </div>
             <div style="overflow-y:auto; flex:1;">
@@ -3090,7 +3081,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
             </div>
           </div>
           <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column;">
-            <div class="dd-card-title">BOQs by Department</div>
+            <div class="dd-card-title">BOQs by Production Department</div>
             <div style="flex:1; min-height:0; position:relative;"><canvas id="dd-chart-dept" style="position:absolute; width:100%; height:100%;"></canvas></div>
           </div>
           <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column;">
@@ -4903,7 +4894,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
     <div id="qad-body" class="dd-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
 
       <!-- ROW 1: Live Queues -->
-      <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
+      <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; flex:0 0 80px; min-height:0;">
         <div class="dd-stat-card stat-live">
           <div class="dd-stat-label">Raw Materials Pending Q/A Check</div>
           <div class="dd-stat-val" id="qad-s-pendingqa" style="color:#b45309;">—</div>
@@ -4918,20 +4909,16 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
           <div class="dd-stat-val" id="qad-s-dueoverdue" style="color:#b91c1c;">—</div>
         </div>
         <div class="dd-stat-card stat-live">
-          <div class="dd-stat-label">Currently Being Repaired at ABPS</div>
+          <div class="dd-stat-label">Rejected Raw Material Currently Being Repaired at ABPS</div>
           <div class="dd-stat-val" id="qad-s-repairing" style="color:#b45309;">—</div>
           <div class="dd-stat-sub" id="qad-s-repairing-sub"></div>
-        </div>
-        <div class="dd-stat-card stat-live">
-          <div class="dd-stat-label">Inspection Documents Pending Upload</div>
-          <div class="dd-stat-val" id="qad-s-docgap" style="color:#b45309;">—</div>
         </div>
       </div>
 
       <!-- ROW 2: Period Throughput / Rates -->
-      <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
+      <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; flex:0 0 80px; min-height:0;">
         <div class="dd-stat-card stat-period">
-          <div class="dd-stat-label">Materials QA-Checked</div>
+          <div class="dd-stat-label">GRNs QA-Checked</div>
           <div class="dd-stat-val" id="qad-s-checked">—</div>
         </div>
         <div class="dd-stat-card stat-period">
@@ -4939,27 +4926,19 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
           <div class="dd-stat-val" id="qad-s-rejrate">—</div>
         </div>
         <div class="dd-stat-card stat-period">
-          <div class="dd-stat-label">FG Units Approved</div>
+          <div class="dd-stat-label">FG Products Approved</div>
           <div class="dd-stat-val" id="qad-s-fgapproved">—</div>
-        </div>
-        <div class="dd-stat-card stat-period">
-          <div class="dd-stat-label">Repair QA Resolved</div>
-          <div class="dd-stat-val" id="qad-s-repairresolved">—</div>
-        </div>
-        <div class="dd-stat-card stat-period">
-          <div class="dd-stat-label">Average QA Turnaround Time</div>
-          <div class="dd-stat-val" id="qad-s-turnaround">—</div>
         </div>
       </div>
 
       <!-- ROW 3: Charts -->
       <div class="dd-chart-row" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; flex:0 0 230px; min-height:0;">
         <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column;">
-          <div class="dd-card-title">QA Rejection Rate Trend</div>
+          <div class="dd-card-title">QA GRN Material Rejection Rate Trend</div>
           <div style="flex:1; min-height:0; position:relative;"><canvas id="qad-chart-rejtrend" style="position:absolute; width:100%; height:100%;"></canvas></div>
         </div>
         <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column;">
-          <div class="dd-card-title">Materials QA-Checked Volume Over Time</div>
+          <div class="dd-card-title">GRNs QA-Checked Over Time (OK vs Rejected / Missing)</div>
           <div style="flex:1; min-height:0; position:relative;"><canvas id="qad-chart-volume" style="position:absolute; width:100%; height:100%;"></canvas></div>
         </div>
       </div>
@@ -4968,7 +4947,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <div class="dd-detail-row" style="display:grid; grid-template-columns:1.2fr 1fr 1fr; gap:10px; flex:1; min-height:0;">
 
         <div class="dd-card" style="padding:12px 16px; display:flex; flex-direction:column; min-height:0;">
-          <div class="dd-card-title" style="margin-bottom:6px;">Aging Rejection Queue</div>
+          <div class="dd-card-title" style="margin-bottom:6px;">Rejected / Missing Material Awaiting Action (oldest first)</div>
           <div style="overflow-y:auto; flex:1;">
             <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
               <thead><tr style="color:var(--muted); font-size:0.68rem; border-bottom:1.5px solid var(--border); position:sticky; top:0; background:var(--card);">
@@ -5030,7 +5009,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
             <div class="dd-stat-val" id="pd2-s-activejcn">—</div>
           </div>
           <div class="dd-stat-card stat-period">
-            <div class="dd-stat-label">Job Cards Products Add to FG</div>
+            <div class="dd-stat-label">Job Cards Added to FG</div>
             <div class="dd-stat-val" id="pd2-s-finished" style="color:#15803d;">—</div>
           </div>
           <div class="dd-stat-card stat-live">
@@ -5038,11 +5017,11 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
             <div class="dd-stat-val" id="pd2-s-inprogress" style="color:#b45309;">—</div>
           </div>
           <div class="dd-stat-card stat-live">
-            <div class="dd-stat-label">PRNs Awaiting MRD</div>
+            <div class="dd-stat-label">PRNs Awaiting Material Requirement Date</div>
             <div class="dd-stat-val" id="pd2-s-mrd-awaiting" style="color:#b45309;">—</div>
           </div>
           <div class="dd-stat-card stat-live">
-            <div class="dd-stat-label">PRNs Needing MRD Revision</div>
+            <div class="dd-stat-label">PRNs Needing Material Requirement Date Revision</div>
             <div class="dd-stat-val" id="pd2-s-mrd-revision" style="color:#b45309;">—</div>
           </div>
         </div>
@@ -5054,11 +5033,11 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
             <div class="dd-stat-val" id="pd2-s-tickets">—</div>
           </div>
           <div class="dd-stat-card stat-live">
-            <div class="dd-stat-label">Currently Being Repaired at ABPS</div>
+            <div class="dd-stat-label">Rejected Raw Material Currently Being Repaired at ABPS</div>
             <div class="dd-stat-val" id="pd2-s-repair-qty" style="color:#b91c1c;">—</div>
           </div>
           <div class="dd-stat-card stat-live">
-            <div class="dd-stat-label">Overdue Expected Deliveries</div>
+            <div class="dd-stat-label">Overdue Expected RM Deliveries</div>
             <div class="dd-stat-val" id="pd2-s-overdue-deliveries" style="color:#b91c1c;">—</div>
           </div>
           <div class="dd-stat-card stat-live">
@@ -5180,7 +5159,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
             <div class="dd-stat-sub" id="sd-s-qaawaiting-sub"></div>
           </div>
           <div class="dd-stat-card stat-live">
-            <div class="dd-stat-label">Unactioned Material Outward on Delivery Challan</div>
+            <div class="dd-stat-label">Pending Delivery Challan</div>
             <div class="dd-stat-val" id="sd-s-outward" style="color:#b45309;">—</div>
           </div>
           <div class="dd-stat-card stat-live">
@@ -5196,11 +5175,11 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
             <div class="dd-stat-val" id="sd-s-tickets">—</div>
           </div>
           <div class="dd-stat-card stat-period">
-            <div class="dd-stat-label">GRNs</div>
+            <div class="dd-stat-label">Number of GRNs</div>
             <div class="dd-stat-val" id="sd-s-grns">—</div>
           </div>
-          <div class="dd-stat-card stat-period">
-            <div class="dd-stat-label">Average GRN Turnaround</div>
+          <div class="dd-stat-card stat-live">
+            <div class="dd-stat-label">Current Value of Stock</div>
             <div class="dd-stat-val" id="sd-s-rejrate">—</div>
           </div>
           <div class="dd-stat-card stat-period">
@@ -5216,7 +5195,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         <!-- ROW 3: Charts -->
         <div class="dd-chart-row" style="display:grid; grid-template-columns:1fr 1.4fr 1fr; gap:10px; flex:0 0 230px; min-height:0;">
           <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column;">
-            <div class="dd-card-title">Tickets by Department</div>
+            <div class="dd-card-title">Tickets by Production Department</div>
             <div style="flex:1; min-height:0; position:relative;"><canvas id="sd-chart-dept" style="position:absolute; width:100%; height:100%;"></canvas></div>
           </div>
           <div class="dd-card" style="padding:8px 10px; display:flex; flex-direction:column;">
@@ -5234,11 +5213,11 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 
           <!-- Inbound Pipeline Aging -->
           <div class="dd-card" style="padding:12px 16px; display:flex; flex-direction:column; min-height:0;">
-            <div class="dd-card-title" style="margin-bottom:6px;">Incoming Pipeline Aging</div>
+            <div class="dd-card-title" style="margin-bottom:6px;">Material Waiting for GRN / QA</div>
             <div style="overflow-y:auto; flex:1;">
               <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
                 <thead><tr style="color:var(--muted); font-size:0.68rem; border-bottom:1.5px solid var(--border); position:sticky; top:0; background:var(--card);">
-                  <th style="text-align:left; padding:3px 6px; font-weight:700;">Stage</th>
+                  <th style="text-align:left; padding:3px 6px; font-weight:700;">Waiting For</th>
                   <th style="text-align:left; padding:3px 6px; font-weight:700;">Vendor</th>
                   <th style="text-align:left; padding:3px 6px; font-weight:700;">Invoice</th>
                   <th style="text-align:left; padding:3px 6px; font-weight:700;">Material</th>
@@ -5288,11 +5267,11 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         <!-- ROW 1: PRN coverage / scheduling / rejection health -->
         <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
           <div class="dd-stat-card stat-live">
-            <div class="dd-stat-label">PRNs With No Materials Assigned in a PO</div>
+            <div class="dd-stat-label">PRNs With No PO Released</div>
             <div class="dd-stat-val" id="pd-s-noassign" style="color:#b91c1c;">—</div>
           </div>
           <div class="dd-stat-card stat-live">
-            <div class="dd-stat-label">PRNs With Partial Materials Assigned in a PO</div>
+            <div class="dd-stat-label">PRNs With Partial PO Released</div>
             <div class="dd-stat-val" id="pd-s-partassign" style="color:#b45309;">—</div>
           </div>
           <div class="dd-stat-card stat-live">
@@ -5310,7 +5289,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         </div>
 
         <!-- ROW 2: PO lifecycle throughput -->
-        <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
+        <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; flex:0 0 80px; min-height:0;">
           <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Pending PO Authorizations</div>
             <div class="dd-stat-val" id="pd-s-pendingpo" style="color:#b45309;">—</div>
@@ -5320,16 +5299,12 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
             <div class="dd-stat-val" id="pd-s-pendingporev" style="color:#b45309;">—</div>
           </div>
           <div class="dd-stat-card stat-period">
-            <div class="dd-stat-label">RM POs Created</div>
+            <div class="dd-stat-label">Number of POs Created</div>
             <div class="dd-stat-val" id="pd-s-pos">—</div>
           </div>
           <div class="dd-stat-card stat-period">
             <div class="dd-stat-label">On-Time Delivery Rate</div>
             <div class="dd-stat-val" id="pd-s-ontime" style="color:#15803d;">—</div>
-          </div>
-          <div class="dd-stat-card stat-live">
-            <div class="dd-stat-label">Action in Progress GRNs with Missing/Rejected Material</div>
-            <div class="dd-stat-val" id="pd-s-actioninprogress" style="color:var(--warn);">—</div>
           </div>
         </div>
 
