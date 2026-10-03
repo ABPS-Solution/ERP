@@ -424,7 +424,7 @@ function renderRawMaterialsStockGrid() {
   const q = window.rawStockSearchQuery || "";
   const filteredCollection = !q ? (cachedInventoryStockCollection || []) :
     (cachedInventoryStockCollection || []).filter(item =>
-      liveStockSearchMatches([item.materialName, item.itemCode, "make", item.make], q));
+      liveStockSearchMatches([liveStockDisplayName(item), item.itemCode, "make", item.make], q));
 
   if (!cachedInventoryStockCollection || cachedInventoryStockCollection.length === 0) {
     mountZone.innerHTML = `
@@ -533,10 +533,10 @@ function renderRawMaterialsStockGrid() {
           const card = document.createElement("div");
           card.style.cssText = "background:#f8fafc; border:2px solid #94a3b8; padding:12px; border-radius:var(--radius); display:flex; flex-direction:column; gap:6px; box-shadow:0 1px 3px rgba(0,0,0,0.02); width:180px; flex-shrink:0; cursor:pointer;";
           card.title = "Click to see how Reserved stock is assigned across BOQs";
-          card.onclick = () => showStockAssignmentBreakdownModal(item.itemCode, item.materialName, item.unitType, item.availableStock, 'raw', item.reservedStock, item.make);
+          card.onclick = () => showStockAssignmentBreakdownModal(item.itemCode, liveStockDisplayName(item), item.unitType, item.availableStock, 'raw', item.reservedStock, item.make);
           card.innerHTML = `
             <div style="font-size:0.8rem; font-weight:700; color:#334155; line-height:1.4; word-break:break-word;">
-              ${escapeHtml(item.materialName)}
+              ${escapeHtml(liveStockDisplayName(item))}
             </div>
             ${(item.make && !/Make:/i.test(item.materialName || '')) ? `<div style="font-size:0.72rem; font-weight:600; color:#64748b;">Make: ${escapeHtml(item.make)}</div>` : ''}
             <div style="text-align:right; margin-top:auto;">
@@ -598,7 +598,7 @@ function renderSpareStoreStockGrid() {
 
   const q = window.spareStockSearchQuery || "";
   const filteredStock = !q ? fullStock : fullStock.filter(item =>
-    liveStockSearchMatches([item.materialName, item.itemCode, "make", item.make], q));
+    liveStockSearchMatches([liveStockDisplayName(item), item.itemCode, "make", item.make], q));
 
   if (filteredStock.length === 0) {
     mountZone.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:30px 20px; background:var(--card); border:1px solid var(--border); border-radius:var(--radius);"><div style="font-size:0.9rem; font-weight:700; color:var(--muted);">No materials matched "${q}".</div></div>`;
@@ -655,10 +655,10 @@ function renderSpareStoreStockGrid() {
         const card = document.createElement("div");
         card.style.cssText = "background:#f8fafc; border:2px solid #94a3b8; padding:12px; border-radius:var(--radius); display:flex; flex-direction:column; gap:6px; box-shadow:0 1px 3px rgba(0,0,0,0.02); width:180px; flex-shrink:0; cursor:pointer;";
         card.title = "Click to see how Reserved stock is assigned across BOQs";
-        card.onclick = () => showStockAssignmentBreakdownModal(item.itemCode, item.materialName, item.unitType, item.availableStock, 'spare', item.reservedStock, item.make);
+        card.onclick = () => showStockAssignmentBreakdownModal(item.itemCode, liveStockDisplayName(item), item.unitType, item.availableStock, 'spare', item.reservedStock, item.make);
         card.innerHTML = `
           <div style="font-size:0.8rem; font-weight:700; color:#334155; line-height:1.4; word-break:break-word;">
-            ${escapeHtml(item.materialName)}
+            ${escapeHtml(liveStockDisplayName(item))}
           </div>
           ${(item.make && !/Make:/i.test(item.materialName || '')) ? `<div style="font-size:0.72rem; font-weight:600; color:#64748b;">Make: ${escapeHtml(item.make)}</div>` : ''}
           <div style="text-align:right; margin-top:auto;">
@@ -1517,6 +1517,13 @@ function updatePRNPurchaseQtyCell(inputEl, idx) {
   prnCurrentData.lineItems[idx].currentUnassignedStoreQty = storeQty;
   const cell = document.getElementById(`prn-purchase-qty-cell-${idx}`);
   if (cell) { cell.textContent = trimNum(purchaseQty); cell.style.color = "#1a2332"; }
+}
+
+// Live RM / Spare stock cards: "Name - Rating" (stored names are bare).
+function liveStockDisplayName(item) {
+  const name = item.materialName || "";
+  const rating = (item.rating || "").trim();
+  return rating && !name.includes(rating) ? name + " - " + rating : name;
 }
 
 async function showStockAssignmentBreakdownModal(itemCode, materialName, unit, availableQty, storeType, reservedQty, make) {
