@@ -294,6 +294,8 @@ let deptTabVisibleKeys = DEPT_TAB_KEYS.slice();
 // tab is visible if any of its tiles are (an OR across the department's
 // own tiles only, same as Portal's per-department dashboard logic).
 function enforceDynamicModuleRoleGateways(userPermissionsObject) {
+  const driveBtn = document.getElementById("header-drive-btn");
+  if (driveBtn) driveBtn.style.display = userPermissionsObject && userPermissionsObject.viewDocuments === true ? "" : "none";
   const canTourExpense = userPermissionsObject.tourExpense === true;
   const canCashExpenses = userPermissionsObject.cashExpenses === true;
   const canTravelTickets = userPermissionsObject.travelTickets === true;
@@ -837,6 +839,7 @@ function switchActiveDashboardModule(targetSectionId) {
   // "Docs" button, not a menu card, so it has no permission gate here; the
   // nav rendered inside the panel is filtered server-side.
   if (targetSectionId === "documentation" && typeof initializeDocumentationPanel === "function") initializeDocumentationPanel();
+  if (targetSectionId === "drive-documents" && typeof initializeDriveDocumentsPanel === "function") initializeDriveDocumentsPanel();
 }
 
 // ── navigateToStoreWorkspacePanel (Batch 6, 16 Sep 2026) ──────────────
