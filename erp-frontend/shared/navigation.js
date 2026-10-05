@@ -481,6 +481,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-expected-inbounds"))      document.getElementById("mod-expected-inbounds").style.display      = canExpectedInbounds ? "block" : "none";
   if (document.getElementById("mod-stock-sweep"))            document.getElementById("mod-stock-sweep").style.display            = canReserveStoreStock ? "block" : "none";
   if (document.getElementById("mod-boq-increase-approvals")) document.getElementById("mod-boq-increase-approvals").style.display = canApproveBOQIncrease ? "block" : "none";
+  if (document.getElementById("mod-consumable-purchase-approvals")) document.getElementById("mod-consumable-purchase-approvals").style.display = userPermissionsObject.approveConsumablePurchase === true ? "block" : "none";
   if (document.getElementById("mod-store-approvals"))        document.getElementById("mod-store-approvals").style.display        = canReleaseTicket ? "block" : "none";
   if (document.getElementById("mod-store-matrix"))           document.getElementById("mod-store-matrix").style.display           = canSearchStoreMat ? "block" : "none";
   if (document.getElementById("mod-live-store-stock"))       document.getElementById("mod-live-store-stock").style.display       = canViewLiveStock ? "block" : "none";
@@ -861,7 +862,7 @@ function navigateToStoreWorkspacePanel(targetPanelModuleId) {
   // Approve Excess Material Requests and Gate Entry are their own focused
   // workflows — the "A BOQ has been revised, check Revise PRN" reminder
   // isn't actionable from either screen, just noise on top of them.
-  if (["boq-increase-approvals", "store-gate-entry"].includes(targetPanelModuleId)) {
+  if (["boq-increase-approvals", "consumable-purchase-approvals", "store-gate-entry"].includes(targetPanelModuleId)) {
     const banner = document.getElementById("store-prn-revision-reminder-banner");
     if (banner) banner.style.display = "none";
   } else {
@@ -900,6 +901,9 @@ function navigateToStoreWorkspacePanel(targetPanelModuleId) {
   } else if (targetPanelModuleId === 'boq-increase-approvals') {
     show("canvas-module-boq-increase-approvals");
     initializeBOQIncreaseApprovalsWorkspace();
+  } else if (targetPanelModuleId === 'consumable-purchase-approvals') {
+    show("canvas-module-consumable-purchase-approvals");
+    initializeConsumablePurchaseApprovalsWorkspace();
   } else if (targetPanelModuleId === 'store-manager-approvals') {
     show("canvas-module-store-manager-approvals");
     initializeStoreManagerApprovalsWorkspace();

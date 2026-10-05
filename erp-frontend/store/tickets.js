@@ -630,6 +630,38 @@ async function addItemToShoppingBasketRow() {
     return;
   }
 
+  // --- CONSUMABLE (Raw Materials Store, outside the BOQ) ---
+  {
+    const jobCardForCons = document.getElementById("ticket-job-card-dropdown")?.value || "";
+    await ticketEnsureJcmCache_("Raw Materials Store", jobCardForCons, projectId);
+    const consMatch = (window._ticketJobCardMaterialsCache.records || []).find(r =>
+      r.isConsumable && (r.materialName || "").replace(/\s+/g, '').toLowerCase() === cleanSearchKey);
+    if (consMatch) {
+      const existingCons = ticketFindBasketLine_(consMatch.itemCode, cleanSearchKey);
+      const totalCons = quantity + (existingCons ? existingCons.quantity : 0);
+      const canIssue = Number(consMatch.remainingQty) || 0;
+      if (totalCons > canIssue) {
+        restoreAddBtn();
+        alert(`Only ${fmtQty(canIssue)} ${consMatch.unitType || 'units'} of ${materialName} can be issued now. Reduce the quantity, or use "Request Purchase" for the rest.`);
+        return;
+      }
+      if (existingCons) {
+        existingCons.quantity = totalCons;
+        existingCons.allottedRemainingLimit = canIssue;
+      } else {
+        dynamicTicketShoppingBasketArray.push({
+          materialName: consMatch.materialName, itemCode: consMatch.itemCode, quantity: totalCons,
+          unitType: consMatch.unitType || "NOS", requiresBOQIncreaseFlag: false,
+          allottedRemainingLimit: canIssue, boqId: consMatch.boqId || "", isConsumable: true,
+        });
+      }
+      qtyInput.value = ""; ticketItemTaClear();
+      restoreAddBtn();
+      renderDraftBasketTableViewportRows();
+      return;
+    }
+  }
+
   // --- RAW MATERIALS STORE: inventory + BOQ check ---
   let activeCacheCollection = cachedInventoryStockCollection;
   
@@ -1789,7 +1821,7 @@ async function loadItemCatalogForSelectedProjectAndStore() {
         jcmFetchService.records.forEach(r => {
           const opt = document.createElement("option");
           opt.value = r.materialName;
-          opt.textContent = r.materialName;
+          opt.textContent = r.isConsumable ? r.materialName + "  · Consumable" : r.materialName;
           // Two Spare Store items can legitimately share the same Name +
           // Rating and differ only by Make (e.g. SIEMENS vs L&T variants) —
           // the dropdown option text/value alone can't tell them apart.
@@ -1842,7 +1874,7 @@ async function loadItemCatalogForSelectedProjectAndStore() {
       window._ticketJobCardMaterialsCache = { key: jcmCacheKeySpare, records: jcmFetchSpare.records || [] };
 
       const spareRecordsForCard = (jcmFetchSpare.records || []).filter(r =>
-        (r.typeOfStore || "").toString().trim() !== "Finished Goods Store"
+        (r.typeOfStore || "").toString().trim() !== "Finished Goods Store" && !r.isConsumable
       );
 
       if (jcmFetchSpare.success && spareRecordsForCard.length > 0) {
@@ -1948,8 +1980,9 @@ async function loadItemCatalogForSelectedProjectAndStore() {
       // so both dropdowns list the same set — but Finished Goods items are
       // a genuinely separate pool (their own dropdown branch above) and
       // must never appear here.
+      const isProcessingDept = document.getElementById("ticket-department-outgoing-dropdown")?.value === "Processing";
       const rawRecordsForCard = (jcmFetch.records || []).filter(r =>
-        (r.typeOfStore || "").toString().trim() !== "Finished Goods Store"
+        (r.typeOfStore || "").toString().trim() !== "Finished Goods Store" && !(isProcessingDept && r.isConsumable)
       );
 
       if (jcmFetch.success && rawRecordsForCard.length > 0) {
@@ -1960,7 +1993,8 @@ async function loadItemCatalogForSelectedProjectAndStore() {
             uniqueMaterialsMap[r.materialName] = true;
             let opt = document.createElement("option");
             opt.value = r.materialName;
-            opt.textContent = r.materialName;
+            opt.textContent = r.isConsumable ? r.materialName + "  · Consumable" : r.materialName;
+            if (r.itemCode) opt.dataset.itemcode = r.itemCode;
             itemDrop.appendChild(opt);
           }
         });
