@@ -878,7 +878,7 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
       // Display-only relabel — the underlying key/dataset.headerKey stays
       // "Engineer Name" to match the backend's column alias unchanged.
       const displayKeyText = (key === "Engineer Name") ? "ABPS Engineer Name" : key;
-      label.textContent = (["Date of Meeting", "ABPS Business Vertical"].indexOf(key) !== -1) ? displayKeyText + " *" : displayKeyText;
+      label.textContent = (["ABPS Business Vertical"].indexOf(key) !== -1) ? displayKeyText + " *" : displayKeyText;
       cell.appendChild(label);
 
       // --- 1. CORE PIPELINE CONTROLLER ROUTINES ---
@@ -1198,7 +1198,6 @@ async function commitTargetedLeadsMutationsRows(leadRef) {
 
   // Compulsory field checks — same rule as lead creation, enforced here too so an
   // edit can't silently blank out a required field.
-  if (!fieldsPayload["Date of Meeting"]) { alert("Date of Meeting is compulsory and cannot be left blank."); return; }
   if (!fieldsPayload["ABPS Business Vertical"]) { alert("ABPS Business Vertical is compulsory and cannot be left blank."); return; }
 
   if(btn) { btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Saving...'; }
@@ -1387,8 +1386,6 @@ async function submitLead() {
   
   if (!statusField.value) { alert("Lead Status is compulsory."); return; }
 
-  const meetingDateField = document.getElementById('meetingDate');
-  if (!meetingDateField || !meetingDateField.value) { alert("Please select a Date of Meeting."); return; }
 
   const businessVerticalCheck = getRadioStrict('businessVertical');
   if (!businessVerticalCheck) { alert("ABPS Business Vertical is a compulsory question."); return; }
@@ -1432,7 +1429,7 @@ async function submitLead() {
 
     const qualChecked = getChecks('qualification');
     const qualFinal = qualChecked.map(v => v === 'Others' ? ((qOtherNode && qOtherNode.value) ? qOtherNode.value : 'Others') : v);
-
+    if (!qualFinal.filter(v => String(v).trim()).length) { alert("Type of Customer is compulsory. Please tick at least one."); return; }
     const prodChecked = getChecks('prod');
     const prodFinal = prodChecked.map(v => v === 'Others' ? ((pdoNode && pdoNode.value) ? pdoNode.value : 'Others') : v);
 
