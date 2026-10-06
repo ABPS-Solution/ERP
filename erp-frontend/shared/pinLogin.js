@@ -250,3 +250,30 @@ async function submitDeviceEnrollmentCode() {
     showFeedback("Connection error: " + e.message, true);
   }
 }
+
+
+// TEMPORARY maintenance lock (6 Oct 2026). Driven entirely by the server
+// (env ERP_MAINTENANCE_LOCK, sent with the personnel directory): when it is
+// off, window.erpMaintenanceLock is null and this does nothing at all.
+window.erpMaintenanceLock = window.erpMaintenanceLock || null;
+function applyErpMaintenanceLock() {
+  const lock = window.erpMaintenanceLock;
+  const wrap = document.getElementById('pin-login-input-wrap');
+  if (!wrap) return;
+  let msg = document.getElementById('erp-maintenance-msg');
+  if (!lock) { if (msg) msg.style.display = 'none'; if (wrap.dataset.maintHidden) { wrap.style.display = 'flex'; delete wrap.dataset.maintHidden; } return; }
+  if (!msg) {
+    msg = document.createElement('div');
+    msg.id = 'erp-maintenance-msg';
+    msg.style.cssText = 'display:none; text-align:center; background:#fef3c7; border:1px solid #f59e0b; color:#78350f; padding:14px; border-radius:8px; font-weight:700; font-size:0.92rem;';
+    wrap.parentNode.insertBefore(msg, wrap);
+  }
+  msg.textContent = lock.message;
+  const sel = document.getElementById('app-auth-active-engineer-identity');
+  const key = sel && sel.value ? resolvePersonKeyForSelectedEngineerName(sel.value) : null;
+  const allowed = !!key && (lock.allowedPersonKeys || []).map(k => String(k).toLowerCase()).includes(String(key).toLowerCase());
+  wrap.style.display = allowed ? 'flex' : 'none';
+  if (!allowed) wrap.dataset.maintHidden = '1'; else delete wrap.dataset.maintHidden;
+  msg.style.display = allowed || !(sel && sel.value) ? 'none' : 'block';
+}
+setInterval(applyErpMaintenanceLock, 400);

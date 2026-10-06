@@ -406,6 +406,7 @@ async function syncPlatformPersonnelDropdownOptionsList() {
 
     if (data.success && data.departmentsList && data.personnelTree) {
       globalPersonnelKeyLookupCache = data.people || [];
+      window.erpMaintenanceLock = data.maintenanceLock || null; // TEMPORARY maintenance lock, see shared/pinLogin.js
       window._personnelTree = data.personnelTree;
 
       deptSelect.innerHTML = '<option value="">— Select Department —</option>';
