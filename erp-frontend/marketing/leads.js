@@ -1913,10 +1913,14 @@ async function triggerEmailLeadDatabaseActionPipeline(index) {
   actionBtn.textContent = "Checking Database...";
 
   try {
+    // Another spelling of a company we already have? (lib/companyMatch.js)
+    const resolvedCompany = await resolveCompanyNameForSearch(mailObject.extractedCompany, {
+      email: mailObject.senderEmail, city: mailObject.extractedCity, contactName: mailObject.extractedContactName });
+    if (resolvedCompany && resolvedCompany !== mailObject.extractedCompany) mailObject.matchedCompanyName = resolvedCompany;
     const data = await apFetch({
       action: "searchCompanyData",
       activeEngineer: appActiveOperatorIdentityString,
-      companyName: mailObject.extractedCompany,
+      companyName: resolvedCompany || mailObject.extractedCompany,
       contactName: mailObject.extractedContactName
     });
 
