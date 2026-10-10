@@ -314,13 +314,6 @@ function toDateInputValue(rawStr) {
 
 // Combines a plain event_date + event_time pair (see formatPlainTimeOfDay)
 // into "h:mm am/pm DD-MM-YYYY" for a created/last-edited timestamp column.
-function formatFollowUpTimestamp(dateVal, timeVal) {
-  const datePart = formatCleanDateOnly(dateVal);
-  const timePart = formatPlainTimeOfDay(timeVal);
-  if (!datePart && !timePart) return "";
-  return `${timePart} ${datePart}`.trim();
-}
-
 // Item-code search: matches the full "Name - Rating - Make" text (so a
 // name copied from another screen finds its item), ignoring extra spaces.
 // Gate Entry's uploaded Invoice / Challan as "open in new tab" links.

@@ -64,7 +64,7 @@ async function triggerSequentialSearch(triggerSourceMode) {
     
     if (data.success) {
       activeSearchCompany = comp.toString().trim();
-      globalFollowUpsCacheMap = data.followups;
+      
       globalTasksCacheMap = data.tasks;
 
       // A prior "Create New Entry"/"Create New Lead" click for a different
@@ -161,7 +161,7 @@ async function globalExecutionScopeReloader(leadRef, scopeNode) {
       activeEngineer: appActiveOperatorIdentityString,
       companyName: activeSearchCompany 
     });
-    if (data.success) { globalFollowUpsCacheMap = data.followups; globalTasksCacheMap = data.tasks; currentFollowUpCount = data.followups[leadRef] ? data.followups[leadRef].length : 0; renderIsolatedFollowUpTimeline(leadRef, data.followups[leadRef] || [], scopeNode); renderIsolatedTaskItemsList(leadRef, data.tasks[leadRef] || [], scopeNode); }
+    if (data.success) { globalTasksCacheMap = data.tasks;  renderIsolatedTaskItemsList(leadRef, data.tasks[leadRef] || [], scopeNode); }
   } catch(e) { console.error(e.message); }
 }
 
@@ -275,7 +275,7 @@ async function toggleTaskCompanyExpand(taskId, encodedCompany, encodedPerson) {
       return;
     }
 
-    globalFollowUpsCacheMap = data.followups;
+    
     globalTasksCacheMap = data.tasks;
 
     // Sort — matching person first
