@@ -529,6 +529,7 @@ function completeSuccessfulLogin(data, activeOperatorDisplayName, isUserAdminGlo
 }
 
 function executeLogout() {
+  if (typeof abpsDraftFlushAll === "function") abpsDraftFlushAll();
   const outgoingSessionToken = localStorage.getItem("erpSessionToken");
   if (outgoingSessionToken) {
     fetch(GAS_URL, {
@@ -545,6 +546,7 @@ function executeLogout() {
 }
 
 async function showAppView() {
+  if (typeof abpsDraftSyncFromServer === "function") abpsDraftSyncFromServer();
   document.getElementById("auth-container").style.display = "none";
   document.getElementById("app-container").style.display = "block";
   document.getElementById("dashboard-view").style.display = "flex";
