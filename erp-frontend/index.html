@@ -1327,6 +1327,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         <div class="menu-card" id="mod-purchase-pps-tracking" onclick="navigateToPurchaseWorkspacePanel('purchase-pps-tracking')"><span class="mc-label">PPS Tracking</span></div>
         <div class="menu-card" id="mod-search-rm-po" onclick="navigateToPurchaseWorkspacePanel('purchase-search-po')"><span class="mc-label">Search Raw Material Purchase Order</span></div>
         <div class="menu-card" id="mod-search-vendor-costing-info" onclick="navigateToPurchaseWorkspacePanel('purchase-vendor-costing')"><span class="mc-label">Search Vendor Costing Information</span></div>
+        <div class="menu-card" id="mod-vendor-directory" style="display:none;" onclick="navigateToPurchaseWorkspacePanel('purchase-vendor-directory')"><span class="mc-label">Vendor Directory</span></div>
       </div>
       <div class="sec-label">Store Inward Rejected & Missing Material</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
@@ -3556,6 +3557,11 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 
       <div id="srchpo-search-label" style="display:none; font-weight:700; margin-bottom:10px; font-size:0.9rem; line-height:1.7;"></div>
       <div id="srchpo-results" style="display:flex; flex-direction:column; gap:12px;"></div>
+    </div>
+
+    <div id="canvas-module-purchase-vendor-directory" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Vendor Directory</h2>
+      <div id="vd-root"></div>
     </div>
 
     <div id="canvas-module-purchase-vendor-costing" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
@@ -6293,6 +6299,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 <script src="purchase/revise-po.js"></script>
 <script src="purchase/pps-tracking.js"></script>
 <script src="purchase/material-list.js"></script>
+<script src="purchase/vendor-directory.js"></script>
 <script src="purchase/purchase-dashboard.js"></script>
 <!-- production/job-cards.js is entirely Create Material Issue Ticket
      helpers despite its path — ported in Batch 6 (Store), not Batch 7.

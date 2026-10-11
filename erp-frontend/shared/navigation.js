@@ -380,6 +380,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-authorize-rm-po-revision")) document.getElementById("mod-authorize-rm-po-revision").style.display = canAuthorizeRMPORevision ? "block" : "none";
   if (document.getElementById("mod-search-rm-po")) document.getElementById("mod-search-rm-po").style.display = canSearchRMPO ? "block" : "none";
   if (document.getElementById("mod-search-vendor-costing-info")) document.getElementById("mod-search-vendor-costing-info").style.display = canSearchVendorCostingInfo ? "block" : "none";
+  if (document.getElementById("mod-vendor-directory")) document.getElementById("mod-vendor-directory").style.display = userPermissionsObject.vendorDirectory === true ? "block" : "none";
 
   // ── Project (15 Sep 2026, Batch 3) — ported from Portal's shared/
   // navigation.js, same camelCase permission keys (erp-backend's
@@ -536,7 +537,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const designBlock = document.getElementById("dashboard-design-department-header-block");
   if (designBlock) designBlock.style.display = (canItemCode || canCreateBOQ || canAuthorizeBOQ || canUpdateBOQ || canAuthorizeBOQUpdate || canUploadDrawings) ? "block" : "none";
   const purchaseBlock = document.getElementById("dashboard-purchase-department-header-block");
-  if (purchaseBlock) purchaseBlock.style.display = (canViewMaterialListPurchase || canViewRejectedMaterial || canCreatePO || canAuthorizePO || canPPSTracking || canSearchVendorCostingInfo || canReviseRMPO || canAuthorizeRMPORevision || canSearchRMPO || canViewPurchaseDashboard) ? "block" : "none";
+  if (purchaseBlock) purchaseBlock.style.display = (canViewMaterialListPurchase || canViewRejectedMaterial || canCreatePO || canAuthorizePO || canPPSTracking || canSearchVendorCostingInfo || userPermissionsObject.vendorDirectory === true || canReviseRMPO || canAuthorizeRMPORevision || canSearchRMPO || canViewPurchaseDashboard) ? "block" : "none";
   const adminBlock = document.getElementById("dashboard-admin-department-header-block");
   if (adminBlock) adminBlock.style.display = (canSecurity || canViewAdminDashboard) ? "block" : "none";
   const marketingBlock = document.getElementById("dashboard-marketing-department-header-block");
