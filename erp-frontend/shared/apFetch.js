@@ -6,7 +6,14 @@
 // exist here. Only Accounts / Add-Check Item Code / Security & Login
 // Access are real sections; everything else is a placeholder panel.
 
-const GAS_URL = "https://erp-backend-244281871074.asia-south1.run.app/exec";
+// On Firebase Hosting the API is same-origin: firebase.json rewrites /exec
+// and /api/** to the erp-backend Cloud Run service. GitHub Pages can't, so
+// it keeps the direct URL. Firebase's rewrite times out at 60s, so calls
+// that need longer (AI PO reading) always go direct (apFetch).
+const API_DIRECT_URL = "https://erp-backend-244281871074.asia-south1.run.app/exec";
+const API_SAME_ORIGIN = !location.hostname.endsWith("github.io") && location.hostname !== "erp.abpowerindia.com"
+  && location.protocol === "https:";
+const GAS_URL = API_SAME_ORIGIN ? "/exec" : API_DIRECT_URL;
 
 // All localStorage keys ERP writes are prefixed "erp" (31 Aug 2026,
 // fixing a real cross-app bug — see below) — collected here as one list
@@ -248,7 +255,7 @@ async function apFetch(payload) {
   const apTimeoutMs = payload._timeoutMs || 60000;
   delete payload._timeoutMs;
   payload.sessionToken = localStorage.getItem("erpSessionToken");
-  const res = await erpFetchWithRetry(GAS_URL, {
+  const res = await erpFetchWithRetry(apTimeoutMs > 55000 ? API_DIRECT_URL : GAS_URL, {
     method: "POST",
     body: JSON.stringify(payload),
     signal: AbortSignal.timeout(apTimeoutMs),

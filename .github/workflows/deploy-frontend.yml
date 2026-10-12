@@ -1,13 +1,14 @@
 # Publishes erp-frontend/ to GitHub Pages on every push to main.
 # Same shape as ABPS-Solution/Portal's deploy-frontend.yml — see that
 # repo if this ever needs changing, keep both in sync.
-name: Deploy frontend to GitHub Pages
+name: Deploy frontend (GitHub Pages + Firebase Hosting)
 
 on:
   push:
     branches: [main]
     paths:
       - 'erp-frontend/**'
+      - 'firebase.json'
       - '.github/workflows/deploy-frontend.yml'
       - '.github/scripts/**'
   workflow_dispatch:
@@ -22,11 +23,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  checks:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -74,6 +72,16 @@ jobs:
           /tmp/smoke/node_modules/.bin/playwright install --with-deps chromium
           NODE_PATH=/tmp/smoke/node_modules node .github/scripts/smoke-frontend.js erp-frontend
 
+  # Pages runs only after the checks above pass. Remove this job (and the
+  # Pages permissions) once erp.abpowerindia.com points at Firebase.
+  pages:
+    needs: checks
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
       - name: Upload erp-frontend as the site
         uses: actions/upload-pages-artifact@v3
@@ -81,3 +89,22 @@ jobs:
           path: erp-frontend
       - id: deployment
         uses: actions/deploy-pages@v4
+
+  # Firebase Hosting (erp.abpowerindia.com after the DNS switch). Keyless:
+  # GitHub's OIDC token is exchanged for the firebase-deployer service
+  # account through the "github" workload identity pool, which only trusts
+  # this repository.
+  firebase:
+    needs: checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/244281871074/locations/global/workloadIdentityPools/github/providers/github-oidc
+          service_account: firebase-deployer@project-15d88a41-e103-405f-8fa.iam.gserviceaccount.com
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Deploy to Firebase Hosting
+        run: npx --yes firebase-tools@15 deploy --only hosting --project project-15d88a41-e103-405f-8fa --non-interactive
