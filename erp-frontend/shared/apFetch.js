@@ -259,6 +259,28 @@ async function erpFetchWithRetry(url, init) {
   }
 }
 
+// Starts the call as a job, then asks for its result (each ask waits up to
+// ~25s on the server). Returns a Response so apFetch's checks apply as usual.
+async function erpRunAsJob(payload, timeoutMs) {
+  const post = (body) => erpFetchWithRetry(GAS_URL, { method: "POST", body: JSON.stringify(body), signal: AbortSignal.timeout(40000) });
+  const startRes = await post({ ...payload, action: "startAsyncJob", jobAction: payload.action });
+  if (!startRes.ok) return startRes;
+  const started = await startRes.json();
+  const asResponse = (body, status) => new Response(JSON.stringify(body), { status: status || 200, headers: { "Content-Type": "application/json" } });
+  if (!started.success) return asResponse(started);
+  const until = Date.now() + timeoutMs;
+  while (Date.now() < until) {
+    let s;
+    try {
+      const r = await post({ action: "asyncJobStatus", jobId: started.jobId, sessionToken: payload.sessionToken });
+      s = await r.json();
+    } catch (e) { await new Promise(r => setTimeout(r, 3000)); continue; }
+    if (!s.success) return asResponse(s);
+    if (s.done) return asResponse(s.result, s.httpStatus);
+  }
+  return asResponse({ success: false, error: "This is taking too long. Please check later whether it was saved before trying again." });
+}
+
 async function apFetch(payload) {
   // _timeoutMs: a longer wait for one slow call (e.g. AI reading a PO); never sent.
   const apTimeoutMs = payload._timeoutMs || 60000;
@@ -266,11 +288,10 @@ async function apFetch(payload) {
   payload.sessionToken = localStorage.getItem("erpSessionToken");
   const init = () => ({ method: "POST", body: JSON.stringify(payload), signal: AbortSignal.timeout(apTimeoutMs) });
   let res;
-  if (apTimeoutMs > 55000) {
-    // Long calls go straight to Cloud Run (Firebase cuts at 60s). Where
-    // run.app can't be resolved the request never left, so the proxy is safe.
-    try { res = await erpFetchWithRetry(API_DIRECT_URL, init()); }
-    catch (e) { if (e instanceof TypeError) res = await erpFetchWithRetry(GAS_URL, init()); else throw e; }
+  if (apTimeoutMs > 60000) {
+    // Long calls run as a server job (lib/asyncJobs.js) so no single request
+    // lasts long enough for Firebase's 60s cut.
+    res = await erpRunAsJob(payload, apTimeoutMs);
   } else {
     res = await erpFetchWithRetry(GAS_URL, init());
   }
