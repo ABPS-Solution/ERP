@@ -213,8 +213,10 @@ async function commitIsolatedTaskItem(leadRef, scopeNode) {
       // lead, or a logged follow-up, not merely a task (explicit request,
       // 6 Sep 2026). Follow-up creation just above (commitIsolatedFollowUpItem)
       // and new-lead creation (leads.js) still call it.
+    } else {
+      alert(r.error || "Could not save the task.");
     }
-  } catch(e) { alert(e.message); } finally { btn.disabled = false; btn.innerHTML = "Save Task"; }
+  } catch(e) { if (e.message !== "SESSION_EXPIRED") alert(e.message); } finally { btn.disabled = false; btn.innerHTML = "Save Task"; }
 }
 
 async function removeIsolatedTaskItem(leadRef, taskId, event) {
@@ -467,9 +469,16 @@ async function commitMatrixTaskMutations(formNode, fallbackLeadId, btnNode) {
     });
     if (r.success) {
       alert("Task modifications saved successfully.");
-      executeTaskMatrixSearch(); 
+      executeTaskMatrixSearch();
+    } else {
+      alert(r.error || "Could not save the task.");
+      btnNode.disabled = false; btnNode.innerHTML = "Save Task";
     }
-  } catch(e) { alert("Matrix Update Error: " + e.message); }
+  } catch(e) {
+    if (e.message === "SESSION_EXPIRED") return;
+    alert("Matrix Update Error: " + e.message);
+    btnNode.disabled = false; btnNode.innerHTML = "Save Task";
+  }
 }
 
 async function removeMatrixTaskFromEngine(taskId, event) {
