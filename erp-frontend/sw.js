@@ -1,17 +1,17 @@
-// ═══════════════════════════════════════════════════════════════════════
-// sw.js — offline app-shell caching.
+﻿// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// sw.js â€” offline app-shell caching.
 //
 // Ported from Portal's abps-frontend/sw.js (17 Sep 2026). The only
 // ERP-specific changes are the cache-name prefix (`erp-shell-` instead of
 // `abps-shell-`) and the CACHE_VERSION value starting fresh at v1.
 //
-// ★★★ THE CACHE-NAME PREFIX IS LOAD-BEARING, NOT COSMETIC ★★★
+// â˜…â˜…â˜… THE CACHE-NAME PREFIX IS LOAD-BEARING, NOT COSMETIC â˜…â˜…â˜…
 // abps-solution.github.io/Portal/ and .../ERP/ are the SAME ORIGIN (same
-// scheme+host, different path only) — see CLAUDE.md §3 for the identical
+// scheme+host, different path only) â€” see CLAUDE.md Â§3 for the identical
 // localStorage hazard. The CacheStorage API is partitioned by origin too,
 // so Portal's service worker and this one share one cache namespace. Every
 // cache name here MUST start with `erp-shell-`, and every cleanup/kill
-// -switch filter below MUST filter on that prefix — filtering on
+// -switch filter below MUST filter on that prefix â€” filtering on
 // `abps-shell-` (or on nothing at all) would delete Portal's caches from
 // inside ERP's service worker, and vice versa. Portal's own sw.js already
 // filters strictly on `abps-shell-`, so the two do not collide as written.
@@ -22,13 +22,13 @@
 // WHAT THIS DOES: keeps a copy of the app itself (index.html + its script
 // files) so that losing connectivity shows the working app instead of a
 // blank tab or a browser error page. It does NOT make any API call work
-// offline — every apFetch request goes straight to the network and fails
+// offline â€” every apFetch request goes straight to the network and fails
 // normally when there isn't one. Writes in this system are
 // server-authoritative on purpose (stock counts, invoice numbers, session
 // state all decided under DB locks), so nothing here queues or replays
 // them.
 //
-// ★ THE STALE-DEPLOY TRAP ★
+// â˜… THE STALE-DEPLOY TRAP â˜…
 // index.html deliberately sends `Cache-Control: no-cache, no-store,
 // must-revalidate`. Those meta tags become INERT once a service worker is
 // installed: the SW is the cache authority from then on. So this file has
@@ -39,7 +39,7 @@
 //   2. JS is cache-first (that's what makes offline work), so it is only
 //      safe while CACHE_VERSION rotates on every deploy that changes a
 //      script. `.github/workflows/deploy-frontend.yml` fails the build if
-//      erp-frontend/** changed and this constant did not — that guard is
+//      erp-frontend/** changed and this constant did not â€” that guard is
 //      the thing standing between us and repeating Portal's original bug.
 //
 // NO PRECACHE LIST, deliberately: caching happens at runtime as files are
@@ -47,13 +47,13 @@
 // drift the first time someone adds a file. One normal online visit
 // populates everything the app uses.
 //
-// KILL SWITCH: set CACHE_VERSION to the string "OFF" and redeploy — the
+// KILL SWITCH: set CACHE_VERSION to the string "OFF" and redeploy â€” the
 // SW then unregisters itself and deletes its caches on next activation.
 // A broken service worker is sticky in users' browsers, so this exists to
 // avoid needing every user to clear site data by hand.
-// ═══════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-const CACHE_VERSION = 'erp-v475';
+const CACHE_VERSION = 'erp-v476';
 const CACHE_NAME = `erp-shell-${CACHE_VERSION}`;
 
 self.addEventListener('message', (event) => {
@@ -62,7 +62,7 @@ self.addEventListener('message', (event) => {
 
 self.addEventListener('install', (event) => {
   // Take over as soon as this version is installed rather than waiting
-  // for every existing tab to close — paired with clients.claim() below.
+  // for every existing tab to close â€” paired with clients.claim() below.
   self.skipWaiting();
 });
 
@@ -76,7 +76,7 @@ self.addEventListener('activate', (event) => {
     }
     // Drop every cache from a previous CACHE_VERSION. Scoped to the
     // `erp-shell-` prefix so Portal's sibling caches on the same origin
-    // are never touched — see the header comment.
+    // are never touched â€” see the header comment.
     const names = await caches.keys();
     await Promise.all(
       names.filter(n => n.startsWith('erp-shell-') && n !== CACHE_NAME).map(n => caches.delete(n))
@@ -93,7 +93,7 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return; // Google/CDN scripts stay untouched
   // The backend is a different origin, so API traffic never reaches here
-  // — but be explicit in case that ever changes.
+  // â€” but be explicit in case that ever changes.
   if (url.pathname.startsWith('/api/') || url.pathname === '/exec') return;
 
   const isHTML = req.mode === 'navigate' ||
@@ -113,7 +113,7 @@ self.addEventListener('fetch', (event) => {
       } catch (_) {
         const cached = await caches.match(req);
         if (cached) return cached;
-        // Nothing cached and no network — fall back to the app shell if
+        // Nothing cached and no network â€” fall back to the app shell if
         // we have it, so a deep link still renders something usable.
         const shell = await caches.match('./index.html');
         if (shell) return shell;
@@ -134,7 +134,7 @@ self.addEventListener('fetch', (event) => {
           const fresh = await fetch(req, { cache: 'no-cache' }); // revalidate past the HTTP cache (Pages sends max-age=600)
           const cache = await caches.open(CACHE_NAME);
           if (fresh.ok) await cache.put(req, fresh);
-        } catch (_) { /* offline — keep serving the cached copy */ }
+        } catch (_) { /* offline â€” keep serving the cached copy */ }
       })());
       return cached;
     }

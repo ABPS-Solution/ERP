@@ -13,7 +13,15 @@
 const API_DIRECT_URL = "https://erp-backend-244281871074.asia-south1.run.app/exec";
 const API_SAME_ORIGIN = !location.hostname.endsWith("github.io") && location.hostname !== "erp.abpowerindia.com"
   && location.protocol === "https:";
-const GAS_URL = API_SAME_ORIGIN ? "/exec" : API_DIRECT_URL;
+// Some networks (the office ISP, 12 Oct 2026) refuse to resolve *.run.app and
+// *.web.app, so pages not on Firebase reach the API through Firebase's
+// firebaseapp.com address, which resolves and rewrites to the same backend.
+const API_PROXY_ORIGIN = API_SAME_ORIGIN ? location.origin : "https://project-15d88a41-e103-405f-8fa.firebaseapp.com";
+const GAS_URL = API_PROXY_ORIGIN + "/exec";
+// Stored document links point at the run.app address; send them through the proxy too.
+function apiProxyHref(u) {
+  return String(u || "").replace(/^https:\/\/erp-backend-[a-z0-9-]+(\.[a-z0-9-]+)*\.run\.app/i, API_PROXY_ORIGIN);
+}
 
 // All localStorage keys ERP writes are prefixed "erp" (31 Aug 2026,
 // fixing a real cross-app bug — see below) — collected here as one list
@@ -223,7 +231,8 @@ document.addEventListener("click", async (e) => {
   try {
     const fileId = (a.href.split('/api/driveFile/')[1] || '').split(/[?#/]/)[0];
     const ft = await ensureFileToken(fileId);
-    const href = a.href + (a.href.includes("?") ? "&" : "?") + "ft=" + encodeURIComponent(ft);
+    const base = apiProxyHref(a.href);
+    const href = base + (base.includes("?") ? "&" : "?") + "ft=" + encodeURIComponent(ft);
     if (w) w.location = href; else window.open(href, '_blank');
   } catch (err) {
     if (w) w.close();
@@ -255,11 +264,16 @@ async function apFetch(payload) {
   const apTimeoutMs = payload._timeoutMs || 60000;
   delete payload._timeoutMs;
   payload.sessionToken = localStorage.getItem("erpSessionToken");
-  const res = await erpFetchWithRetry(apTimeoutMs > 55000 ? API_DIRECT_URL : GAS_URL, {
-    method: "POST",
-    body: JSON.stringify(payload),
-    signal: AbortSignal.timeout(apTimeoutMs),
-  });
+  const init = () => ({ method: "POST", body: JSON.stringify(payload), signal: AbortSignal.timeout(apTimeoutMs) });
+  let res;
+  if (apTimeoutMs > 55000) {
+    // Long calls go straight to Cloud Run (Firebase cuts at 60s). Where
+    // run.app can't be resolved the request never left, so the proxy is safe.
+    try { res = await erpFetchWithRetry(API_DIRECT_URL, init()); }
+    catch (e) { if (e instanceof TypeError) res = await erpFetchWithRetry(GAS_URL, init()); else throw e; }
+  } else {
+    res = await erpFetchWithRetry(GAS_URL, init());
+  }
   // A non-JSON body (Cloud Run 502/503 page, 413 too large) becomes a
   // readable error instead of "Unexpected token <".
   const contentType = res.headers.get("content-type") || "";
