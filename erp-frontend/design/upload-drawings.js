@@ -1,4 +1,4 @@
-let uploadDrawingsSelectedFile = null;
+﻿let uploadDrawingsSelectedFile = null;
 let uploadDrawingsSelectedType = null;
 const UPLOAD_DRAWINGS_TYPES = ['Customer Approved', 'Working Drawing'];
 
@@ -9,7 +9,7 @@ async function initializeUploadDrawingsPanel() {
   document.getElementById("upload-drawings-upload-zone").style.display = "none";
   document.getElementById("upload-drawings-feedback").style.display = "none";
   uploadDrawingsSelectedType = null;
-  // Start fresh on every entry — the previously typed project used to stay.
+  // Start fresh on every entry â€” the previously typed project used to stay.
   if (projDrop) projDrop.value = "";
   const projDropList = document.getElementById("upload-drawings-project-ta-dropdown");
   if (projDropList) projDropList.style.display = "none";
@@ -59,7 +59,7 @@ function handleUploadDrawingsProjectChange(projectId) {
   }
 
   typeZone.style.display = "block";
-  // Default to Customer Approved every time a (new) project is picked —
+  // Default to Customer Approved every time a (new) project is picked â€”
   // never carry the previous project's selected type forward silently.
   selectUploadDrawingsType('Customer Approved');
 }
@@ -75,7 +75,7 @@ function selectUploadDrawingsType(drawingType) {
   approvedBtn.style.cssText = drawingType === 'Customer Approved' ? activeStyle : inactiveStyle;
   workingBtn.style.cssText  = drawingType === 'Working Drawing'   ? activeStyle : inactiveStyle;
 
-  document.getElementById("upload-drawings-list-heading").textContent = `Already Uploaded — ${drawingType}`;
+  document.getElementById("upload-drawings-list-heading").textContent = `Already Uploaded â€” ${drawingType}`;
 
   const uploadZone = document.getElementById("upload-drawings-upload-zone");
   uploadZone.style.display = "block";
@@ -100,12 +100,31 @@ async function refreshUploadDrawingsList(projectId, drawingType) {
     }
 
     mount.innerHTML = data.documents.map(doc => `
-      <a href="${driveLink(doc.url)}" target="_blank" style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); text-decoration:none; color:var(--text); font-size:0.85rem; font-weight:600;">
-        <span>${escapeHtml(doc.name)}</span>
-        <span style="font-size:0.72rem; color:var(--muted); font-weight:400;">${formatOrdinalDateTime(doc.lastUpdated) || doc.lastUpdated}</span>
-      </a>`).join("");
+      <div style="display:flex; align-items:center; gap:8px;">
+        <a href="${driveLink(doc.url)}" target="_blank" style="flex:1; min-width:0; display:flex; justify-content:space-between; align-items:center; gap:8px; padding:8px 12px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); text-decoration:none; color:var(--text); font-size:0.85rem; font-weight:600;">
+          <span style="overflow-wrap:anywhere;">${escapeHtml(doc.name)}</span>
+          <span style="font-size:0.72rem; color:var(--muted); font-weight:400; white-space:nowrap;">${formatOrdinalDateTime(doc.lastUpdated) || doc.lastUpdated}</span>
+        </a>
+        <button type="button" class="btn" style="width:auto; padding:6px 12px; background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; font-size:0.78rem;"
+          onclick="deleteUploadedDrawing(${jsArg(projectId)}, ${jsArg(drawingType)}, ${jsArg(doc.fileId)}, ${jsArg(doc.name)}, this)">Delete</button>
+      </div>`).join("");
   } catch(e) {
     mount.innerHTML = '<div style="color:var(--warn); font-size:0.82rem;">Failed to load documents.</div>';
+  }
+}
+
+async function deleteUploadedDrawing(projectId, drawingType, fileId, name, btn) {
+  if (!await abpsConfirm(`Delete the ${drawingType} drawing "${name}"?`, { title: "Delete drawing", okLabel: "Delete" })) return;
+  btn.disabled = true; btn.textContent = "Deleting...";
+  try {
+    const data = await apFetch({ action: "deleteDrawingDocument", projectId, drawingType, fileId });
+    if (!data.success) throw new Error(data.error || "Delete failed.");
+    showBOQBanner("upload-drawings-feedback", `Deleted "${name}".`, "success");
+    refreshUploadDrawingsList(projectId, drawingType);
+  } catch (e) {
+    if (e.message === "SESSION_EXPIRED") return;
+    btn.disabled = false; btn.textContent = "Delete";
+    showBOQBanner("upload-drawings-feedback", e.message, "error");
   }
 }
 
@@ -181,7 +200,7 @@ async function submitUploadDrawing() {
     uploadDrawingsSelectedFile = null;
     document.getElementById("upload-drawings-input").value = "";
     const box = document.getElementById("upload-drawings-dropzone");
-    box.textContent = "📋 Select Drawing Documents *";
+    box.textContent = "ðŸ“‹ Select Drawing Documents *";
     box.title = "";
     box.classList.remove("done");
     await refreshUploadDrawingsList(projectId, uploadDrawingsSelectedType);
