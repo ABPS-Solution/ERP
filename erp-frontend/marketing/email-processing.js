@@ -463,6 +463,7 @@ function renderEmailLeadsFeedInterface(emailLeadsList, emptyMessageOverride) {
         <span title="The customer's email address">From <span style="font-family:monospace; font-size:0.78rem;">${escapeHtml(mail.senderEmail || "Not recorded yet")}</span></span>
         <span>${formatOrdinalDate(mail.receivedDate)}${receivedTimeLabel}</span>
       </div>
+      ${mail.ccAddresses ? `<div style="font-size:0.78rem; color:var(--muted); overflow-wrap:anywhere;" title="Everyone else this email was sent to or CC'd">CC <span style="font-family:monospace;">${mail.ccAddresses.split(/,\s*/).map(a => escapeHtml(a)).join(", ")}</span></div>` : ""}
 
       <div style="font-size:0.85rem; background:var(--highlight-bg); border:1px solid var(--border); border-radius:6px; padding:10px 12px; line-height:1.5; color:var(--text);">
         <strong>AI Summary —</strong> ${escapeHtml(mail.aiSummaryText)}

@@ -1,4 +1,4 @@
-// Upload Revised Purchase Order (Marketing). Pick an Active project, view its
+// Upload Revised Purchase Order (Marketing). Pick an Active or Inactive project, view its
 // current customer PO, upload the revised PO, review the AI extraction (map
 // each row to an existing PO row or New), then commit.
 let crpoProjects = [];
@@ -53,8 +53,8 @@ async function crpoInitPanel() {
     const data = await apFetch({ action: 'fetchActiveProjectsForPoRevision' });
     if (!data.success) { sel.innerHTML = '<option value="">Could not load projects</option>'; crpoBanner(escapeHtml(data.error || 'Failed to load projects.')); return; }
     crpoProjects = data.projects || [];
-    sel.innerHTML = '<option value="">— Select an Active project —</option>' + crpoProjects.map(p =>
-      `<option value="${escapeHtml(p.projectId)}">${escapeHtml(p.companyName || '')} · ${escapeHtml(p.projectId)}${p.poNumber ? ' · PO ' + escapeHtml(p.poNumber) : ''}</option>`).join('');
+    sel.innerHTML = '<option value="">— Select a project —</option>' + crpoProjects.map(p =>
+      `<option value="${escapeHtml(p.projectId)}">${escapeHtml(p.companyName || '')} · ${escapeHtml(p.projectId)}${p.poNumber ? ' · PO ' + escapeHtml(p.poNumber) : ''} · ${escapeHtml(p.projectStatus || '')}</option>`).join('');
     if (taInput) taInput.placeholder = 'Start typing a company name, project ID or PO number...';
   } catch (e) {
     if (e.message !== 'SESSION_EXPIRED') sel.innerHTML = '<option value="">Network error</option>';
@@ -74,7 +74,7 @@ function handleCrpoProjectTypeaheadInput(query) {
   if (!words.length) { dd.style.display = 'none'; return; }
   const matches = [...sel.options].filter(o => o.value && words.every(w => o.text.toLowerCase().includes(w))).slice(0, 15);
   if (!matches.length) {
-    dd.innerHTML = '<div style="padding:9px 12px; font-size:0.85rem; color:var(--muted);">No matching Active project.</div>';
+    dd.innerHTML = '<div style="padding:9px 12px; font-size:0.85rem; color:var(--muted);">No matching Active or Inactive project.</div>';
   } else {
     dd.innerHTML = matches.map(o => `
       <div onmousedown="event.preventDefault(); selectCrpoProjectTypeahead(${jsArg(o.value)})"
