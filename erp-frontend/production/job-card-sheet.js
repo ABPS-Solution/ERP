@@ -27,7 +27,8 @@ function jcshBOQDisplayEnable() {
 function jcshBOQPopulate(options) {
   const list = document.getElementById("jcsh-boq-dropdown-list");
   if (!list) return;
-  list.innerHTML = options.map(o => `
+  list.innerHTML = options.map(o => o.pending ? `
+    <div style="padding:8px 10px; border-bottom:1px solid #f1f5f9; font-size:0.82rem; line-height:1.35; color:var(--muted); background:#f8fafc; cursor:not-allowed;">${o.label} <span style="font-size:0.7rem; font-weight:800; color:#475569; background:#e2e8f0; padding:2px 8px; border-radius:999px; white-space:nowrap;">BOQ authorization pending</span></div>` : `
     <div onclick="event.stopPropagation(); selectJCSHBOQ('${o.value.replace(/'/g,"\\'")}', \`${o.label.replace(/\`/g,"'")}\`)"
       style="padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem; line-height:1.35;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${o.label}</div>`).join("");
@@ -206,8 +207,14 @@ async function handleJCSHProjectChange(projectId) {
       }
     });
 
-    jcshBOQDisplayReset("— Select BOQ ID —");
-    jcshBOQPopulate(boqOptions.map(jc => ({ value: jc.boqId, label: `${jc.boqId} | ${jc.productName}${jc.productRating ? " " + jc.productRating : ""}` })));
+    // BOQs not authorized yet have no Job Cards; list them greyed with a note.
+    let pendingBoqs = [];
+    try { const pd = await apFetch({ action: "fetchPendingBoqsForProject", projectId }); pendingBoqs = (pd && pd.boqs) || []; } catch (e) {}
+    const options = boqOptions.map(jc => ({ value: jc.boqId, label: `${jc.boqId} | ${jc.productName}${jc.productRating ? " " + jc.productRating : ""}` }))
+      .concat(pendingBoqs.map(b => ({ pending: true, value: b.boqId, label: escapeHtml(`${b.boqId} | ${b.productName}${b.productRating ? " " + b.productRating : ""}`) })));
+    if (!options.length) { jcshBOQDisplayReset("— No authorized BOQ yet for this project —"); return; }
+    jcshBOQDisplayReset(boqOptions.length ? "— Select BOQ ID —" : "— BOQ authorization pending —");
+    jcshBOQPopulate(options);
     jcshBOQDisplayEnable();
   } catch(e) {
     jcshBOQDisplayReset("Error loading BOQs");

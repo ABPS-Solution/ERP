@@ -207,11 +207,31 @@ async function loadProductionPlanningQueue() {
     if (!data.success) { zone.innerHTML = ""; return; }
     zone.innerHTML =
       pplanRenderNeedQueueList("Overdue — Production Planning", data.overdue || [], "Nothing overdue.") +
-      pplanRenderNeedQueueList("Due / Upcoming — Production Planning", data.due || [], "Nothing else due yet.");
+      pplanRenderNeedQueueList("Due / Upcoming — Production Planning", data.due || [], "Nothing else due yet.") +
+      pplanRenderAwaitingBoqList(data.awaitingBoq || []);
     if (typeof checkProductionPlanningReminder === "function") checkProductionPlanningReminder();
   } catch (e) {
     zone.innerHTML = "";
   }
+}
+
+// Activated projects whose BOQs aren't authorized yet: listed so they don't
+// look missing, but nothing can be planned until the BOQ is authorized.
+function pplanRenderAwaitingBoqList(items) {
+  if (!items.length) return "";
+  const rows = items.map(item => `
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:8px 12px; border-bottom:1px solid #f1f5f9;">
+      <div style="min-width:0;">
+        <span style="font-family:monospace; font-weight:700; font-size:0.8rem; color:var(--brand);">${escapeHtml(item.projectId)}</span>
+        <div style="font-size:0.76rem; color:var(--muted); margin-top:2px;">${escapeHtml(item.companyName || "")}${(item.pendingProducts || []).length ? ` <strong> | </strong> ${escapeHtml(item.pendingProducts.join(", "))}` : ""}</div>
+      </div>
+      <span style="flex-shrink:0; font-size:0.72rem; font-weight:800; color:#475569; background:#e2e8f0; padding:4px 10px; border-radius:999px; white-space:nowrap;">${escapeHtml(item.message)}</span>
+    </div>`).join("");
+  return `
+    <div style="background:#f8fafc; border:1.5px solid #cbd5e1; border-radius:var(--radius); overflow:hidden; margin-bottom:12px;">
+      <div style="padding:10px 14px; font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#475569; letter-spacing:0.5px; background:#f1f5f9;">Waiting for BOQ authorization (${items.length})</div>
+      ${rows}
+    </div>`;
 }
 
 function pplanRenderNeedQueueList(title, items, emptyMessage) {
