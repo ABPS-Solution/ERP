@@ -354,7 +354,8 @@ function basketIssueItems(store) {
 function basketExcessItems(store) { return basketNormalItems().filter(r => basketIsExcessRow(r, store)); }
 function basketMemoPurchaseItems() {
   return (dynamicTicketShoppingBasketArray || []).filter(r => r.isMemoPurchase || Number(r.memoQty) > 0)
-    .map(r => ({ itemCode: r.itemCode, quantity: r.isMemoPurchase ? r.quantity : r.memoQty }));
+    .map(r => ({ itemCode: r.itemCode, quantity: r.isMemoPurchase ? r.quantity : r.memoQty,
+                 shortQty: r.isMemoPurchase ? null : (r.shortQty != null ? r.shortQty : null) }));
 }
 function basketMaterialChanges() {
   return (dynamicTicketShoppingBasketArray || []).filter(r => r.isMaterialChange).map(r => ({

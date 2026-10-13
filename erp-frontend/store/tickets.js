@@ -639,7 +639,15 @@ async function addItemToShoppingBasketRow() {
       const totalCons = quantity + (existingCons ? (Number(existingCons.quantity) || 0) + (Number(existingCons.memoQty) || 0) : 0);
       const canIssue = Math.max(0, Number(consMatch.remainingQty) || 0);
       const issueQty = Math.min(totalCons, canIssue);
-      const memoQty = Math.round((totalCons - issueQty) * 1000) / 1000;
+      const shortQty = Math.round((totalCons - issueQty) * 1000) / 1000;
+      // Already requested / on order through Production Memo for this Job Card
+      // is still coming, so only the rest is asked again (13 Oct 2026).
+      const memoComing = Math.max(0, Number(consMatch.memoComing) || 0);
+      const memoQty = Math.max(0, Math.round((shortQty - memoComing) * 1000) / 1000);
+      if (shortQty > 0 && memoComing > 0) {
+        alert(`${fmtQty(memoComing)} ${consMatch.unitType || 'units'} of ${materialName} is already requested / on order through Production Memo for this Job Card.`
+          + (memoQty > 0 ? ` Only ${fmtQty(memoQty)} more will be asked.` : ` Nothing more will be asked; issue the rest when it arrives.`));
+      }
       const deptForMemo = document.getElementById("ticket-department-outgoing-dropdown")?.value || "";
       if (memoQty > 0 && !deptForMemo) {
         restoreAddBtn();
@@ -649,10 +657,11 @@ async function addItemToShoppingBasketRow() {
       if (existingCons) {
         existingCons.quantity = issueQty;
         existingCons.memoQty = memoQty;
+        existingCons.shortQty = shortQty;
         existingCons.allottedRemainingLimit = canIssue;
       } else {
         dynamicTicketShoppingBasketArray.push({
-          materialName: consMatch.materialName, itemCode: consMatch.itemCode, quantity: issueQty, memoQty,
+          materialName: consMatch.materialName, itemCode: consMatch.itemCode, quantity: issueQty, memoQty, shortQty,
           unitType: consMatch.unitType || "NOS", requiresBOQIncreaseFlag: false,
           allottedRemainingLimit: canIssue, boqId: consMatch.boqId || "", isConsumable: true,
         });
