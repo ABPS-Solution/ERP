@@ -174,6 +174,7 @@ async function authorizeBOQRevision(updateId) {
   try {
     const data = await apFetch({
       action: "submitBOQUpdateAuthorize",
+      _timeoutMs: 300000, // runs as a server job (lib/asyncJobs.js)
       updateId,
       editedMaterialRows: uboqRevRows,
       editedOrderQuantity: reqItem.newOrderQuantity,
@@ -746,6 +747,7 @@ async function submitEBOQAuthorize() {
   try {
     const data = await apFetch({
       action,
+      _timeoutMs: 300000, // runs as a server job (lib/asyncJobs.js)
       boqId: eboqCurrentDraft.boqId,
       productName, productRating, department,
       orderQuantity: orderQty,
