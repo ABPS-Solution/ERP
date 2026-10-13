@@ -213,6 +213,13 @@ function crpoStartFromCurrentPo() {
     matchLineId: l.lineId,
   }));
   crpoReview = { projectId, base64Data: null, header, lineItems, removeLineIds: new Set(), withoutDocument: true };
+  // Keep the saved PO Amounts if they differ from the rows' sum (set by hand before).
+  const savedHdr = crpoDetails.amounts || {};
+  let rowBasic = 0, rowGst = 0;
+  lineItems.forEach(li => { rowBasic += crpoNum(li.quantity) * crpoNum(li.ratePerQuantity); rowGst += crpoNum(li.gstAmount); });
+  if (savedHdr.poBasicAmount != null && (Math.abs(crpoNum(savedHdr.poBasicAmount) - rowBasic) > 0.005 || Math.abs(crpoNum(savedHdr.poGstAmount) - rowGst) > 0.005)) {
+    crpoReview.amounts = { edited: true, basic: String(savedHdr.poBasicAmount ?? ''), gst: String(savedHdr.poGstAmount ?? ''), total: String(savedHdr.poTotalAmount ?? '') };
+  }
   crpoRenderReview();
 }
 
@@ -305,16 +312,36 @@ function crpoRenderReview() {
   crpoRenderLines();
 }
 
-// Basic / GST / Total PO Amount are worked out from the product rows (the
-// server recomputes them the same way on save), so they are shown, not typed.
+// Basic / GST / Total PO Amount start as the sum of the product rows and
+// follow them, until someone types one (13 Oct 2026): then the typed values
+// are kept and saved (crpoReview.amounts). Typing Basic or GST updates Total.
 function crpoRenderAmounts() {
   const el = document.getElementById('crpo-amounts');
   if (!el) return;
   let basic = 0, gst = 0;
   crpoReview.lineItems.forEach(li => { basic += crpoNum(li.quantity) * crpoNum(li.ratePerQuantity); gst += crpoNum(li.gstAmount); });
-  const box = (label, v) => `<div class="grid-cell-item" style="background:#f1f5f9; grid-column: span 4;"><label style="font-size:0.72rem;">${label}</label>
-    <div style="padding:6px 8px; font-weight:600; font-size:0.95rem; border:1.5px solid #8492a6; border-radius:4px; background:#f8fafc;">${crpoMoney(v)}</div></div>`;
-  el.innerHTML = box('Basic PO Amount', basic) + box('PO GST Amount', gst) + box('PO Total Amount', basic + gst);
+  const a = crpoReview.amounts || (crpoReview.amounts = { edited: false });
+  if (!a.edited) { a.basic = String(Math.round(basic * 100) / 100); a.gst = String(Math.round(gst * 100) / 100); a.total = String(Math.round((basic + gst) * 100) / 100); }
+  const focused = document.activeElement && document.activeElement.id && document.activeElement.id.startsWith('crpo-amt-');
+  if (focused && el.children.length) return; // don't redraw under the cursor
+  const box = (label, k) => `<div class="grid-cell-item" style="grid-column: span 4;"><label style="font-size:0.72rem;">${label}</label>
+    <input id="crpo-amt-${k}" type="text" inputmode="decimal" value="${escapeHtml(formatIndianCurrencyInput(a[k] ?? ''))}"
+      oninput="crpoAmountTyped('${k}', sanitizeAmountInput(this))"
+      onfocus="this.value = (crpoReview.amounts['${k}'] ?? '').toString();"
+      onblur="this.value = formatIndianCurrencyInput(crpoReview.amounts['${k}']);"
+      style="padding:6px 8px; font-weight:600; font-size:0.95rem; border:1.5px solid #8492a6; border-radius:4px; text-align:right; width:100%; box-sizing:border-box;" /></div>`;
+  el.innerHTML = box('Basic PO Amount', 'basic') + box('PO GST Amount', 'gst') + box('PO Total Amount', 'total');
+}
+
+function crpoAmountTyped(k, value) {
+  const a = crpoReview.amounts;
+  a.edited = true;
+  a[k] = value;
+  if (k !== 'total') {
+    a.total = String(Math.round((crpoNum(a.basic) + crpoNum(a.gst)) * 100) / 100);
+    const t = document.getElementById('crpo-amt-total');
+    if (t) t.value = formatIndianCurrencyInput(a.total);
+  }
 }
 
 function crpoLineWarning(li) {
@@ -347,10 +374,9 @@ function crpoRenderLines() {
   const rows = crpoReview.lineItems.map((li, i) => {
     const basic = crpoNum(li.quantity) * crpoNum(li.ratePerQuantity);
     return `<tr>
-      <td style="vertical-align:middle;"><select onchange="crpoUpdateLine(${i}, 'matchLineId', this.value, true)" style="${cell}">${opts(i, li.matchLineId)}</select><div id="crpo-warn-${i}">${crpoLineWarning(li)}</div></td>
       <td style="vertical-align:middle;">${wrapTxt(i, 'itemCode', 'center')}</td>
       <td style="vertical-align:middle;">${wrapTxt(i, 'hsnNumber', 'center')}</td>
-      <td style="vertical-align:middle;">${wrapTxt(i, 'description', 'left')}</td>
+      <td style="vertical-align:middle;">${wrapTxt(i, 'description', 'left')}<div id="crpo-warn-${i}">${crpoLineWarning(li)}</div></td>
       <td style="vertical-align:middle;"><input type="number" value="${escapeHtml(String(li.quantity ?? ''))}" oninput="crpoUpdateLine(${i}, 'quantity', this.value)" style="${cell} text-align:right;" /></td>
       <td style="vertical-align:middle;">${wrapTxt(i, 'unit', 'center')}</td>
       <td style="vertical-align:middle;">${amt(i, 'ratePerQuantity')}</td>
@@ -364,14 +390,14 @@ function crpoRenderLines() {
   el.innerHTML = `
     <div class="po-li-table-wrap" style="overflow-x:auto;">
     <table class="store-basket-data-table" style="width:100%; min-width:1100px; table-layout:fixed;">
-      <colgroup><col style="width:15%"><col style="width:7.5%"><col style="width:6.5%"><col style="width:23%"><col style="width:6%"><col style="width:5%"><col style="width:8.5%"><col style="width:8.5%"><col style="width:8.5%"><col style="width:8.5%"><col style="width:3%"></colgroup>
+      <colgroup><col style="width:9%"><col style="width:8%"><col style="width:35%"><col style="width:6%"><col style="width:5%"><col style="width:8.5%"><col style="width:8.5%"><col style="width:8.5%"><col style="width:8.5%"><col style="width:3%"></colgroup>
       <thead><tr>
-        <th style="text-align:left;">Revises Current Row</th><th style="text-align:center;">Customer Item Code</th><th style="text-align:center;">HSN Number</th>
+        <th style="text-align:center;">Customer Item Code</th><th style="text-align:center;">HSN Number</th>
         <th style="text-align:left;">Order Product Description *</th><th style="text-align:right;">Order Quantity *</th><th style="text-align:center;">UOM</th>
         <th style="text-align:right;">Rate / Quantity</th><th style="text-align:right;">Total Basic Price</th><th style="text-align:right;">GST Amount</th>
         <th style="text-align:right;">Total Amount (incl. GST)</th><th></th>
       </tr></thead>
-      <tbody>${rows || '<tr><td colspan="11" style="text-align:center; color:var(--muted);">No rows. Click + Add Row.</td></tr>'}</tbody>
+      <tbody>${rows || '<tr><td colspan="10" style="text-align:center; color:var(--muted);">No rows. Click + Add Row.</td></tr>'}</tbody>
     </table></div>`;
   el.querySelectorAll('textarea').forEach(autoGrowPoField);
   crpoRenderUnmapped();
@@ -452,6 +478,8 @@ async function crpoSubmit() {
       action: 'commitRevisedPurchaseOrder', _timeoutMs: 180000,
       projectId: crpoReview.projectId, header: h, lineItems: lines,
       removeLineIds: [...crpoReview.removeLineIds],
+      poAmounts: crpoReview.amounts && crpoReview.amounts.edited
+        ? { basic: crpoNum(crpoReview.amounts.basic), gst: crpoNum(crpoReview.amounts.gst), total: crpoNum(crpoReview.amounts.total) } : null,
       fileName: crpoFile ? crpoFile.name : 'Revised_PO', base64Data: crpoReview.base64Data,
       mimeType: crpoFile ? (crpoFile.type || 'application/octet-stream') : 'application/octet-stream',
     });
