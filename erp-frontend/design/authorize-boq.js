@@ -182,6 +182,7 @@ async function authorizeBOQRevision(updateId) {
     });
     hideBlockingOverlay();
     if (data.success) {
+      if (typeof abpsDraftClear === "function") abpsDraftClear(authBoqDraftKey("authBOQRev", updateId));
       const cardsFeed = document.getElementById("auth-boq-upd-queue-cards-feed");
       if (cardsFeed) { cardsFeed.style.display = "none"; cardsFeed.innerHTML = ""; }
 
@@ -239,6 +240,7 @@ async function rejectBOQRevision(updateId) {
   try {
     const data = await apFetch({ action: "submitBOQUpdateReject", updateId });
     if (data.success) {
+      if (typeof abpsDraftClear === "function") abpsDraftClear(authBoqDraftKey("authBOQRev", updateId));
       showBOQBanner("auth-boq-upd-feedback", `Revision request for ${reqItem.boqId} was rejected.`, "success");
       await initializeAuthorizeBOQRevisionPanel();
     } else {
@@ -264,6 +266,7 @@ async function rejectBOQDraft(boqId) {
   try {
     const data = await apFetch({ action: "submitBOQReject", boqId, rejectedBy: appActiveOperatorIdentityString || "" });
     if (data.success) {
+      if (typeof abpsDraftClear === "function") abpsDraftClear(authBoqDraftKey("authBOQ-" + eboqMode, boqId));
       showBOQBanner("auth-boq-feedback", `BOQ ${boqId} was rejected.`, "success");
       await initializeAuthorizeBOQPanel("authorize");
     } else {
@@ -753,6 +756,7 @@ async function submitEBOQAuthorize() {
     hideBlockingOverlay();
 
     if (data.success) {
+      if (typeof abpsDraftClear === "function" && eboqCurrentDraft) abpsDraftClear(authBoqDraftKey("authBOQ-" + eboqMode, eboqCurrentDraft.boqId));
       const _lastDraft = eboqCurrentDraft;
       eboqCurrentDraft = null;
       eboqMaterialRows = [];
@@ -811,3 +815,43 @@ async function submitEBOQAuthorize() {
 // ═══════════════════════════════════════════════════════
 
 
+
+// ── Pick up where you left off (13 Oct 2026) ─────────────────────────────
+// Authorize BOQ / Authorize BOQ Revision save the working rows (edits and
+// Costing Verified ticks) and header fields per BOQ as you go, against your
+// login (shared/drafts.js). Reopening the same BOQ loads them back silently,
+// but only if the BOQ itself hasn't changed since (otherwise old ticks could
+// land on rows that are now different). Cleared on authorize / reject.
+function authBoqDraftKey(kind, id) { return `${kind}:${id}`; }
+function authBoqBaseSig(rows, extra) {
+  return JSON.stringify([extra || "", (rows || []).map(r => [r.itemCode || "", r.materialName || "", String(r.quantityFor1Set ?? ""), String(r.designRatePerQuantity ?? ""), r.typeOfStore || "", r.descriptionId || ""])]);
+}
+function authBoqDraftWatch(containerEl, key, base, getRows) {
+  if (!containerEl || typeof abpsDraftSave !== "function") return;
+  let t = null;
+  const save = () => {
+    clearTimeout(t);
+    t = setTimeout(() => {
+      if (!containerEl.isConnected) return;
+      abpsDraftSave(key, { fields: abpsCaptureFields(containerEl.id), state: { base, rows: getRows() } });
+    }, 500);
+  };
+  ["input", "change", "click"].forEach(ev => containerEl.addEventListener(ev, save));
+}
+// Returns the saved rows if a matching draft exists (and puts the header
+// fields back via restoreFieldsLater), else null.
+function authBoqDraftLoad(key, base) {
+  if (typeof abpsDraftRead !== "function") return null;
+  const d = abpsDraftRead(key);
+  const st = d && d.payload && d.payload.state;
+  if (!st || !Array.isArray(st.rows)) return null;
+  if (st.base !== base) { abpsDraftClear(key); return null; }
+  return { rows: st.rows, fields: d.payload.fields || null };
+}
+function authBoqDraftNote(containerEl) {
+  if (!containerEl) return;
+  const note = document.createElement("div");
+  note.style.cssText = "background:#ecfdf5; border:1px solid #6ee7b7; color:#065f46; padding:8px 12px; border-radius:6px; font-size:0.82rem; font-weight:700; margin-bottom:12px;";
+  note.textContent = "Continuing where you left off: your earlier edits and Costing Verified ticks on this BOQ are back.";
+  containerEl.prepend(note);
+}

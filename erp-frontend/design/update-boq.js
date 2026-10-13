@@ -40,6 +40,11 @@ async function toggleBOQRevisionExpansion(updateId) {
   // Rows whose costing is unchanged from the live BOQ arrive pre-ticked;
   // new or changed ones must be ticked by the authorizer.
   uboqRevRows = (reqItem.newMaterialRows || []).map(r => ({ ...r, costingVerified: !boqRevisionRowNeedsTick(reqItem.oldMaterialRows, r) }));
+  // Pick up earlier unsaved work on this revision (authorize-boq.js helpers).
+  const revDraftKey = authBoqDraftKey("authBOQRev", updateId);
+  const revDraftBase = authBoqBaseSig(reqItem.newMaterialRows, String(reqItem.newOrderQuantity ?? "") + "|" + authBoqBaseSig(reqItem.oldMaterialRows));
+  const revDraftSaved = authBoqDraftLoad(revDraftKey, revDraftBase);
+  if (revDraftSaved) uboqRevRows = revDraftSaved.rows;
 
   // Build a plain-text diff summary from old vs new for the reviewer.
   let summaryText = "Generating change summary...";
@@ -114,7 +119,10 @@ async function toggleBOQRevisionExpansion(updateId) {
   `;
   bodyEl.querySelectorAll('textarea').forEach(autoGrowPoField);
 
+  if (revDraftSaved && revDraftSaved.fields) abpsRestoreFields(bodyEl.id, revDraftSaved.fields);
   renderBOQRevisionRows(updateId);
+  if (revDraftSaved) authBoqDraftNote(bodyEl);
+  authBoqDraftWatch(bodyEl, revDraftKey, revDraftBase, () => uboqRevRows);
 
   try {
     const sumData = await apFetch({

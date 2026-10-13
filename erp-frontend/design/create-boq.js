@@ -993,6 +993,11 @@ async function toggleAuthBOQCardExpansion(boqId, mode) {
     eboqCurrentDraft = data.draft;
     // Every row starts unticked: the authorizer checks each one's costing here.
     eboqMaterialRows = (data.draft.materialRows || []).map(r => ({ ...r, costingVerified: false }));
+    // Pick up earlier unsaved work on this BOQ (authorize-boq.js helpers).
+    const authDraftKey = authBoqDraftKey("authBOQ-" + mode, boqId);
+    const authDraftBase = authBoqBaseSig(data.draft.materialRows, String(data.draft.version ?? "") + "|" + String(data.draft.orderQuantity ?? ""));
+    const authDraftSaved = authBoqDraftLoad(authDraftKey, authDraftBase);
+    if (authDraftSaved) eboqMaterialRows = authDraftSaved.rows;
 
     let summaryHtml = "";
     if (mode === "authorize-update") {
@@ -1006,6 +1011,13 @@ async function toggleAuthBOQCardExpansion(boqId, mode) {
     bodyEl.innerHTML = summaryHtml + `<div id="eboq-form-mount-${safeBoqId}"></div>`;
 
     renderEBOQForm(`eboq-form-mount-${safeBoqId}`);
+    if (authDraftSaved) {
+      if (authDraftSaved.fields) abpsRestoreFields(`eboq-form-mount-${safeBoqId}`, authDraftSaved.fields);
+      renderEBOQMaterialRows();
+      if (typeof updateEBOQTotals === "function") updateEBOQTotals();
+      authBoqDraftNote(document.getElementById(`eboq-form-mount-${safeBoqId}`));
+    }
+    authBoqDraftWatch(document.getElementById(`eboq-form-mount-${safeBoqId}`), authDraftKey, authDraftBase, () => eboqMaterialRows);
 
     if (mode === "authorize-update") {
       try {
