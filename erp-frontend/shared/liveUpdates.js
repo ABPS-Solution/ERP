@@ -18,7 +18,11 @@
 // Hosting cuts long responses at 60s.
 
 const LIVE_TOKEN_KEY = (typeof ERP_LOCAL_STORAGE_KEYS !== "undefined") ? "erpSessionToken" : "sessionToken";
-const LIVE_STREAM_URL = ((typeof API_DIRECT_URL !== "undefined") ? API_DIRECT_URL : GAS_URL).replace(/\/exec$/, "/api/liveEvents");
+// Through the same route as every other call (Firebase / proxy), which some
+// networks need; the server ends each stream after 50s and replays what was
+// missed in the gap (lib/liveEvents.js).
+const LIVE_STREAM_URL = GAS_URL.replace(/\/exec$/, "/api/liveEvents");
+let liveServerSeen = 0; // latest server time seen on the stream
 const LIVE_OWN_WRITE_QUIET_MS = 2500;
 const LIVE_READ_ACTION = /^(fetch|search|get|check|pull|load|mint|list|download|match|resolve|preview|extract|generate)/i;
 
@@ -92,7 +96,11 @@ if (typeof apFetch === "function" && !apFetch.__liveWrapped) {
     const action = payload && payload.action;
     const isWrite = action && !LIVE_READ_ACTION.test(action);
     const data = await liveInnerApFetch(payload);
-    if (isWrite && data && data.success !== false) { liveLastOwnWrite = Date.now(); liveClearDirty(); }
+    if (isWrite && data && data.success !== false) {
+      liveLastOwnWrite = Date.now(); liveClearDirty();
+      // Redraw this tab's own lists too (e.g. the summary row above an edited lead).
+      setTimeout(() => { for (const s of liveScreens) s.pending = true; liveRunPending(false); }, 400);
+    }
     return data;
   };
   apFetch.__liveWrapped = true;
@@ -169,7 +177,7 @@ async function liveConnect(token) {
     const res = await fetch(LIVE_STREAM_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sessionToken: token }),
+      body: JSON.stringify({ sessionToken: token, since: liveConnectedOnce ? liveServerSeen : 0 }),
       signal: ctrl.signal,
     });
     if (res.status === 401 || res.status === 403) { liveToken = "__rejected__:" + token; return; }
@@ -187,10 +195,11 @@ async function liveConnect(token) {
         buf = buf.slice(nl + 1);
         if (!line) continue;
         let msg; try { msg = JSON.parse(line); } catch (_) { continue; }
+        const seen = Number(msg.now || msg.at) || 0;
+        if (seen > liveServerSeen) liveServerSeen = seen;
         if (msg.t === "hello") {
           gotHello = true; liveBackoffMs = 1000;
-          // Anything may have changed while we were reconnecting.
-          if (liveConnectedOnce) liveOnChange(null);
+          // Missed changes are replayed (or a resync sent) by the server.
           liveConnectedOnce = true;
         } else if (msg.t === "resync") {
           liveOnChange(null);

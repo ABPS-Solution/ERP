@@ -508,9 +508,9 @@ function renderEmailLeadsFeedInterface(emailLeadsList, emptyMessageOverride) {
 function renderEmailLeadNotesStrip(notes) {
   if (!Array.isArray(notes) || notes.length === 0) return "";
   return notes.map(n => `
-    <div style="flex:0 0 auto; max-width:200px; background:var(--highlight-bg); border:1px solid var(--border); border-radius:6px; padding:5px 9px;" title="${escapeHtml(n.noteText)}">
+    <div style="flex:0 0 auto; max-width:320px; min-width:0; overflow:hidden; background:var(--highlight-bg); border:1px solid var(--border); border-radius:6px; padding:5px 9px;" title="${escapeHtml(n.noteText)}">
       <div style="font-size:0.76rem; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(n.noteText)}</div>
-      <div style="font-size:0.64rem; color:var(--muted); white-space:nowrap; margin-top:1px;">${escapeHtml(n.createdBy || "")}${n.createdAt ? " · " + formatOrdinalDateTime(n.createdAt) : ""}</div>
+      <div style="font-size:0.64rem; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:1px;">${escapeHtml(n.createdBy || "")}${n.createdAt ? " · " + formatOrdinalDateTime(n.createdAt) : ""}</div>
     </div>`).join("");
 }
 
