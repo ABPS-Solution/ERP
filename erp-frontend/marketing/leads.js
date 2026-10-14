@@ -856,6 +856,7 @@ function buildTargetedLeadsFormCanvas(leadRef, leadMap) {
       // --- 1. CORE PIPELINE CONTROLLER ROUTINES ---
       if (key === "Status") {
         let sel = document.createElement("select"); sel.className = 'live-lead-field-input-' + leadRef; sel.dataset.headerKey = key;
+        sel.dataset.original = leadMap[key] || "";
         [
           "New Lead", "Technical Discussion", "Inquire Received", "Offer Sent", 
           "Order Received", "Order Dispatched", "Product Commissioned", "Order not Received"
@@ -1186,6 +1187,8 @@ async function commitTargetedLeadsMutationsRows(leadRef) {
   if (fieldsPayload["Status"] === "Order not Received" && !(fieldsPayload["Reason for Order Lost"] || "").trim()) {
     alert("Please enter the reason the order was not received before saving."); return;
   }
+  const statusSel = Array.from(document.querySelectorAll('.live-lead-field-input-' + leadRef)).find(el => el.dataset.headerKey === "Status");
+  if (statusSel && statusSel.dataset.original !== undefined && statusSel.value === statusSel.dataset.original) delete fieldsPayload["Status"];
   if (!fieldsPayload["ABPS Business Vertical"]) { alert("ABPS Business Vertical is compulsory and cannot be left blank."); return; }
 
   if(btn) { btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Saving...'; }
@@ -1259,7 +1262,7 @@ async function commitTargetedLeadsMutationsRows(leadRef) {
     if (r.success) {
       if (companySaveOk) alert("Modifications Saved Successfully.");
       // FIXED: Point to renamed structural data attributes identifiers
-      const updatedStatusText = fieldsPayload["Status"] || "N/A";
+      const updatedStatusText = fieldsPayload["Status"] || (statusSel ? statusSel.value : "") || "N/A";
       if (document.getElementById(`card-lbl-status-${leadRef}`)) document.getElementById(`card-lbl-status-${leadRef}`).textContent = updatedStatusText;
       if (typeof mmPatchLeadAfterSave === "function") mmPatchLeadAfterSave(leadRef, fieldsPayload);
 
