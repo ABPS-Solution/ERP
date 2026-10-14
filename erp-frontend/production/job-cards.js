@@ -278,14 +278,23 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
 
     const cleanSearchKey = selectedMaterial.replace(/\s*\(\d+\s+\w+\s+available\)/i, "").trim().replace(/\s+/g, '').toLowerCase();
     
+    // Resolve the selected material's item code first (13 Oct 2026): matching
+    // the stock list by the first 20 characters of the name picked the wrong
+    // material whenever several start alike, so the count flicked between
+    // that material's figure and the live one every 5 seconds.
+    const selJcm = (jcmCacheData.records || []).find(r => r.typeOfStore === "Raw Materials Store"
+      && (r.materialName || "").replace(/\s+/g, '').toLowerCase() === cleanSearchKey);
+    const selItemCode = selJcm ? selJcm.itemCode : "";
     let inventoryMatch;
     if (liveStockOverride) {
-      inventoryMatch = { availableStock: liveStockOverride.availableStock, reservedStock: liveStockOverride.reservedStock, unitType: liveStockOverride.unitType };
+      inventoryMatch = { itemCode: selItemCode, availableStock: liveStockOverride.availableStock, reservedStock: liveStockOverride.reservedStock,
+                         totalStock: liveStockOverride.totalStock, unitType: liveStockOverride.unitType };
     } else {
       const _inv = window.cachedInventoryStockCollection || cachedInventoryStockCollection || [];
-      inventoryMatch = _inv.find(i => i.materialName.replace(/\s+/g, '').toLowerCase() === cleanSearchKey)
-        || _inv.find(i => i.materialName.replace(/\s+/g, '').toLowerCase().includes(cleanSearchKey.substring(0, 20)))
-        || _inv.find(i => cleanSearchKey.includes(i.materialName.replace(/\s+/g, '').toLowerCase().substring(0, 20)));
+      inventoryMatch = (selItemCode && _inv.find(i => i.itemCode === selItemCode))
+        || _inv.find(i => i.materialName.replace(/\s+/g, '').toLowerCase() === cleanSearchKey)
+        || (!selItemCode && (_inv.find(i => i.materialName.replace(/\s+/g, '').toLowerCase().includes(cleanSearchKey.substring(0, 20)))
+            || _inv.find(i => cleanSearchKey.includes(i.materialName.replace(/\s+/g, '').toLowerCase().substring(0, 20)))));
     }
 
     function findJcmMatchForPill_(recs) {

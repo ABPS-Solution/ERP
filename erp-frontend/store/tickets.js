@@ -318,7 +318,7 @@ function startLiveStockPolling() {
   _liveStockPollTimer = setInterval(async () => {
     const selectedMaterial = document.getElementById("ticket-item-selection-dropdown")?.value;
     if (!selectedMaterial) { stopLiveStockPolling(); return; }
-    await refreshLiveStockForSelectedMaterial();
+    await refreshLiveStockForSelectedMaterial({ poll: true });
   }, 5000); // refresh every 5 seconds
 }
 
@@ -326,7 +326,8 @@ function stopLiveStockPolling() {
   if (_liveStockPollTimer) { clearInterval(_liveStockPollTimer); _liveStockPollTimer = null; }
 }
 
-async function refreshLiveStockForSelectedMaterial() {
+async function refreshLiveStockForSelectedMaterial(opts) {
+  const isPoll = !!(opts && opts.poll);
   const activeStoreScope   = document.getElementById("ticket-selected-store-scope-toggle")?.value || "Raw Materials Store";
   const selectedMaterial   = document.getElementById("ticket-item-selection-dropdown")?.value;
   const projectId          = document.getElementById("ticket-project-id-dropdown-ta-input")?.value;
@@ -342,7 +343,9 @@ async function refreshLiveStockForSelectedMaterial() {
     // Goods Store belongs in this immediate render too — it was left out, which meant the whole
     // FG pill (including ALLOTTED/USED/REMAINING, which don't need any live network call at all)
     // silently never appeared until the live-count fetch below succeeded.
-    if (projectId && (activeStoreScope === "Raw Materials Store" || activeStoreScope === "Spare Store" || activeStoreScope === "Finished Goods Store")) {
+    // Only on the first draw: on the 5-second refresh the box keeps its last
+    // live figures until the new live ones arrive (no cached-then-live flicker).
+    if (!isPoll && projectId && (activeStoreScope === "Raw Materials Store" || activeStoreScope === "Spare Store" || activeStoreScope === "Finished Goods Store")) {
       await updateSelectedLiveStockPillCounter(null);
     }
 
@@ -676,9 +679,15 @@ async function addItemToShoppingBasketRow() {
   // --- RAW MATERIALS STORE: inventory + BOQ check ---
   let activeCacheCollection = cachedInventoryStockCollection;
   
-  const itemData = activeCacheCollection.find(i => i.materialName.replace(/\s+/g, '').toLowerCase() === cleanSearchKey)
-    || activeCacheCollection.find(i => i.materialName.replace(/\s+/g, '').toLowerCase().includes(cleanSearchKey.substring(0, 20)))
-    || activeCacheCollection.find(i => cleanSearchKey.includes(i.materialName.replace(/\s+/g, '').toLowerCase().substring(0, 20)));
+  // The picked option is a Job Card line's full name: resolve its item code
+  // first and find the stock row by item code (13 Oct 2026). Matching stock by
+  // the first 20 characters of the name could pick a different material.
+  const pickedJcm = ((window._ticketJobCardMaterialsCache && window._ticketJobCardMaterialsCache.records) || [])
+    .find(r => (r.materialName || "").replace(/\s+/g, '').toLowerCase() === cleanSearchKey);
+  const itemData = (pickedJcm && pickedJcm.itemCode && activeCacheCollection.find(i => i.itemCode === pickedJcm.itemCode))
+    || activeCacheCollection.find(i => i.materialName.replace(/\s+/g, '').toLowerCase() === cleanSearchKey)
+    || (!pickedJcm && (activeCacheCollection.find(i => i.materialName.replace(/\s+/g, '').toLowerCase().includes(cleanSearchKey.substring(0, 20)))
+        || activeCacheCollection.find(i => cleanSearchKey.includes(i.materialName.replace(/\s+/g, '').toLowerCase().substring(0, 20)))));
 
   if (!itemData) {
     restoreAddBtn();
@@ -764,7 +773,8 @@ async function addItemToShoppingBasketRow() {
     existingLineItem.allottedRemainingLimit = allottedLimit;
   } else {
     dynamicTicketShoppingBasketArray.push({
-      materialName: itemData.materialName,
+      // Full Name - Rating - Description - Make (the Job Card line's name), not the stock row's bare name.
+      materialName: jcmMatch.materialName || materialName || itemData.materialName,
       quantity: totalRequestedQuantity,
       unitType: itemData.unitType || "NOS",
       requiresBOQIncreaseFlag: isOverAllottedBOQLimit,

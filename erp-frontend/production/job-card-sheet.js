@@ -299,22 +299,23 @@ async function submitJCSHDownload() {
   const jobCardNumber = document.getElementById("jcsh-jobcard").value.trim();
   const productType   = document.getElementById("jcsh-product-type").value.trim();
   const sheetDate      = document.getElementById("jcsh-sheet-date").value.trim();
+  const fileType       = (document.getElementById("jcsh-file-type")?.value || "pdf");
 
   showBlockingOverlay("Downloading Job Card Sheet...");
 
   try {
     const data = await apFetch({
       action: "generateJobCardSheetPdf",
-      projectId, customerName, productName, productRating, descriptionOfMaterial, make, jobCardNumber, productType, sheetDate
+      projectId, customerName, productName, productRating, descriptionOfMaterial, make, jobCardNumber, productType, sheetDate, fileType
     });
     if (data.success) {
       const link = document.createElement("a");
-      link.href = "data:application/pdf;base64," + data.base64;
-      link.download = data.fileName || "Job_Card_Sheet.pdf";
+      link.href = "data:" + (data.mimeType || "application/pdf") + ";base64," + data.base64;
+      link.download = data.fileName || (fileType === "excel" ? "Job_Card_Sheet.xlsx" : "Job_Card_Sheet.pdf");
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      showBOQBanner("jcsh-feedback", "Job Card Sheet PDF downloaded.", "success");
+      showBOQBanner("jcsh-feedback", `Job Card Sheet ${fileType === "excel" ? "Excel" : "PDF"} downloaded.`, "success");
     } else {
       showBOQBanner("jcsh-feedback", data.error || "Failed to generate PDF.", "error");
     }
