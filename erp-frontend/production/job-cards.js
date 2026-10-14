@@ -282,7 +282,9 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
     // the stock list by the first 20 characters of the name picked the wrong
     // material whenever several start alike, so the count flicked between
     // that material's figure and the live one every 5 seconds.
-    const selJcm = (jcmCacheData.records || []).find(r => r.typeOfStore === "Raw Materials Store"
+    const pickedCodeForPill = typeof ticketSelectedItemCode === "function" ? ticketSelectedItemCode() : "";
+    const selJcm = (pickedCodeForPill && (jcmCacheData.records || []).find(r => r.typeOfStore === "Raw Materials Store" && r.itemCode === pickedCodeForPill))
+      || (jcmCacheData.records || []).find(r => r.typeOfStore === "Raw Materials Store"
       && (r.materialName || "").replace(/\s+/g, '').toLowerCase() === cleanSearchKey);
     const selItemCode = selJcm ? selJcm.itemCode : "";
     let inventoryMatch;
@@ -299,7 +301,8 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
 
     function findJcmMatchForPill_(recs) {
       const scoped = (recs || []).filter(r => r.typeOfStore === "Raw Materials Store");
-      return scoped.find(r => (r.itemCode || "").replace(/\s+/g, '').toLowerCase() === (inventoryMatch?.itemCode || "").replace(/\s+/g, '').toLowerCase() && inventoryMatch?.itemCode)
+      return (pickedCodeForPill && scoped.find(r => r.itemCode === pickedCodeForPill))
+        || scoped.find(r => (r.itemCode || "").replace(/\s+/g, '').toLowerCase() === (inventoryMatch?.itemCode || "").replace(/\s+/g, '').toLowerCase() && inventoryMatch?.itemCode)
         || scoped.find(r => (r.materialName || "").replace(/\s+/g, '').toLowerCase() === cleanSearchKey)
         || scoped.find(r => (r.materialName || "").replace(/\s+/g, '').toLowerCase().includes(cleanSearchKey.substring(0, 20)))
         || scoped.find(r => cleanSearchKey.includes((r.materialName || "").replace(/\s+/g, '').toLowerCase().substring(0, 20)));
