@@ -150,7 +150,9 @@ function updateEmailLeadsFilteringForText() {
       : resolveEmailLeadEngineerName(engineerEmail) + " — " + engineerEmail;
   }
   const DATE_LABELS = { all: "All Time", today: "Today", yesterday: "Yesterday", beforeYesterday: "Before Yesterday", thisWeek: "This Week", thisMonth: "This Month" };
-  display.textContent = `Filtering for: ${engineerLabel} | for ${DATE_LABELS[dateFilter] || "All Time"}`;
+  const n = window._emailLeadsShownCount;
+  display.textContent = `Filtering for: ${engineerLabel} | for ${DATE_LABELS[dateFilter] || "All Time"}`
+    + (typeof n === "number" ? ` | ${n} email${n === 1 ? "" : "s"}` : "");
 }
 
 // Filters cachedInboundEmailLeadsArray by the current Company Name Search
@@ -178,6 +180,7 @@ function handleEmailLeadsCompanySearchInput(value) {
 // opts.silent: quiet refresh without the Loading message (shared/liveUpdates.js).
 async function refetchEmailLeadsListWithFilters(opts) {
   const silent = !!(opts && opts.silent);
+  if (!silent) window._emailLeadsShownCount = undefined; // no stale count while loading
   updateEmailLeadsFilteringForText();
   const feedCanvas = document.getElementById("email-leads-inbound-feed-canvas");
   if (feedCanvas && !silent) feedCanvas.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted); font-size:0.85rem;">Loading...</div>`;
@@ -381,6 +384,9 @@ const EMAIL_LEAD_AGE_COLORS = {
 function renderEmailLeadsFeedInterface(emailLeadsList, emptyMessageOverride) {
   const canvas = document.getElementById("email-leads-inbound-feed-canvas");
   if (!canvas) return;
+  // Count shown in the "Filtering for" line (13 Oct 2026).
+  window._emailLeadsShownCount = Array.isArray(emailLeadsList) ? emailLeadsList.length : 0;
+  updateEmailLeadsFilteringForText();
   // The shared New Lead form may be sitting inside a card; move it out
   // before the cards are wiped, or it is destroyed and "Add in CRM" stops
   // working until a page reload (10 Oct 2026).
