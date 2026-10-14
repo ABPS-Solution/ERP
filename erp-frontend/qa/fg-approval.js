@@ -28,7 +28,16 @@ async function initializeFGApprovalWorkspace() {
       return;
     }
     feed.innerHTML = "";
-    data.items.forEach(item => feed.appendChild(renderFGApprovalCard(item)));
+    // Units of one batch (bulk Add to FG, 13 Oct 2026) show as one card.
+    const seenBatch = {};
+    data.items.forEach(item => {
+      if (item.batchId) {
+        if (seenBatch[item.batchId]) { seenBatch[item.batchId].batchCount++; return; }
+        item.batchCount = 1; seenBatch[item.batchId] = item;
+      }
+    });
+    data.items.filter(item => !item.batchId || seenBatch[item.batchId] === item)
+      .forEach(item => feed.appendChild(renderFGApprovalCard(item)));
   } catch(e) {
     if (e.message !== "SESSION_EXPIRED") {
       feed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">Network error: ${e.message}</div>`;
@@ -50,6 +59,7 @@ function renderFGApprovalCard(item) {
           <span style="font-weight:700; color:var(--muted); text-transform:uppercase; font-size:0.7rem;">Dept</span>
           <strong style="color:#111827;">${escapeHtml(item.department || "—")}</strong>
         </span>
+        ${item.batchId ? `<span style="padding:3px 10px; border-radius:999px; background:#dbeafe; color:#1e3a8a; font-size:0.78rem; font-weight:800;">Batch ${escapeHtml(item.batchId)} · ${item.batchCount} units</span>` : ""}
         <span id="fg-approval-caret-${item.fgId}" style="margin-left:auto; font-weight:700; color:var(--brand); font-size:1rem;">▸</span>
       </div>
       <div style="display:grid; grid-template-columns:1fr auto; font-size:0.86rem;">
@@ -124,6 +134,8 @@ async function toggleFGApprovalCardBody(fgId) {
       fg: data.fg,
       docs: (data.documents || []).map(d => ({ ...d, qaChecked: false })),
       newRows: [],
+      batchUnits: (data.batchUnits || []).length > 1
+        ? data.batchUnits.map(u => ({ ...u, include: true, serial: "" })) : null,
     };
     body.innerHTML = renderFGApprovalDetailBody(fgId);
     updateFGApprovalSubmitState(fgId);
@@ -149,18 +161,23 @@ function renderFGApprovalDetailBody(fgId) {
         ${field("Project ID", fg.projectId)}
         ${field("Department", fg.department, true)}
         ${field("Unit", fg.unit, true)}
+        ${st.batchUnits ? `
+        <div style="padding:10px 14px; border-left:${B}; background:#eff6ff;">
+          <div style="font-size:0.68rem; font-weight:800; color:#1e3a8a; text-transform:uppercase; margin-bottom:4px;">Batch</div>
+          <div style="font-size:0.88rem; font-weight:700; color:#1e3a8a;">${escapeHtml(fg.batchId || "")} · ${st.batchUnits.length} units</div>
+        </div>` : `
         <div style="padding:10px 14px; border-left:${B}; background:#fffbeb;">
           <div style="font-size:0.68rem; font-weight:800; color:#b45309; text-transform:uppercase; margin-bottom:4px;">Product Serial Number *</div>
           <input type="text" id="fg-approval-serial-${fgId}" value="${escapeHtml(fgApprovalSerialValue(fgId))}"
             oninput="window._fgApprovalState[${fgId}].serial = this.value; updateFGApprovalSubmitState(${fgId});"
             placeholder="Enter product serial number..." style="padding:7px 9px; border:2px solid #94a3b8; border-radius:var(--radius); font-size:0.88rem; font-weight:600; background:#fff;" />
-        </div>
+        </div>`}
       </div>
       <div style="display:grid; grid-template-columns:1fr 2fr; border-bottom:${B};">
         ${field("Product Name", fg.productName)}
         ${field("Product Rating", fg.productRating, true)}
       </div>
-      <div style="${fg.descriptionOfMaterial ? "border-bottom:" + B + ";" : ""}">${field("Job Card Number", fg.jobCardNumber)}</div>
+      ${st.batchUnits ? "" : `<div style="${fg.descriptionOfMaterial ? "border-bottom:" + B + ";" : ""}">${field("Job Card Number", fg.jobCardNumber)}</div>`}
       ${fg.descriptionOfMaterial ? field("Description of Material", fg.descriptionOfMaterial) : ""}
     </div>
 
@@ -170,8 +187,10 @@ function renderFGApprovalDetailBody(fgId) {
       <div style="font-size:0.85rem; color:#111827; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:8px 10px;">${escapeHtml(fg.additionalRemarks)}</div>
     </div>` : ""}
 
+    ${st.batchUnits ? `<div id="fg-batch-units-${fgId}">${renderFGBatchUnits(fgId)}</div>` : ""}
+
     <hr style="border:none; border-top:2px solid #94a3b8; margin:4px 0 16px;" />
-    <div style="font-size:0.95rem; font-weight:800; text-transform:uppercase; color:#0056b3; letter-spacing:0.5px; margin-bottom:10px;">Quality Assurance Documents</div>
+    <div style="font-size:0.95rem; font-weight:800; text-transform:uppercase; color:#0056b3; letter-spacing:0.5px; margin-bottom:10px;">Quality Assurance Documents${st.batchUnits ? ` <span style="font-size:0.75rem; font-weight:600; text-transform:none; color:var(--muted);">(one set for the whole batch)</span>` : ""}</div>
     <div id="fg-approval-dedicated-zones-${fgId}">${renderFGDedicatedDocZones(fgId)}</div>
 
     <hr style="border:none; border-top:2px solid #94a3b8; margin:4px 0 16px;" />
@@ -186,7 +205,7 @@ function renderFGApprovalDetailBody(fgId) {
       <button class="nav-btn-styled" onclick="submitFGApprovalDecision(${fgId}, 'reject')" style="background:#dc2626;">Reject</button>
       <button class="nav-btn-styled" id="fg-approval-submit-${fgId}" disabled onclick="submitFGApprovalDecision(${fgId}, 'approve')"
         style="background:var(--accent); padding:8px 20px; font-weight:700; opacity:0.5; cursor:not-allowed;">
-        Approve & Add to FG Store
+        ${st.batchUnits ? "Approve Batch & Add to FG Store" : "Approve & Add to FG Store"}
       </button>
     </div>
   `;
@@ -526,7 +545,9 @@ function updateFGApprovalSubmitState(fgId) {
   const btn = document.getElementById(`fg-approval-submit-${fgId}`);
   if (!btn) return;
   const st = window._fgApprovalState[fgId];
-  const hasSerial = !!fgApprovalSerialValue(fgId).trim();
+  const bu = st.batchUnits;
+  const included = bu ? bu.filter(u => u.include) : null;
+  const hasSerial = bu ? (included.length > 0 && included.every(u => u.serial.trim())) : !!fgApprovalSerialValue(fgId).trim();
   const presentTypes = new Set(st.docs.map(d => d.docType));
   const missingTypes = FG_APPROVAL_REQUIRED_DOC_TYPES.filter(t => !presentTypes.has(t));
   const hasEveryRequiredType = missingTypes.length === 0;
@@ -543,7 +564,7 @@ function updateFGApprovalSubmitState(fgId) {
   // "deleted a doc to replace it, forgot to actually re-upload" case
   // this whole gate exists to catch.
   const reasons = [];
-  if (!hasSerial) reasons.push('Product Serial Number is required');
+  if (!hasSerial) reasons.push(bu ? (included.length ? `${included.filter(u => !u.serial.trim()).length} unit(s) need a serial number` : 'Tick at least one unit to approve') : 'Product Serial Number is required');
   if (missingTypes.length > 0) {
     reasons.push(`Missing: ${missingTypes.map(t => FG_DOC_TYPE_LABELS[t] || t).join(', ')}`);
   }
@@ -562,6 +583,7 @@ async function submitFGApprovalDecision(fgId, action) {
   if (action === "reject" && !await abpsConfirm(`Reject this Finished Goods submission? The Job Card will need Add to Finished Goods Store redone from scratch.`)) return;
 
   const fg = window._fgApprovalState[fgId]?.fg || {};
+  if (window._fgApprovalState[fgId]?.batchUnits) return submitFGBatchDecision(fgId, action);
   const productSerialNumber = fgApprovalSerialValue(fgId).trim();
   if (action === "approve" && !productSerialNumber) {
     feedback.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #b91c1c; background:#fef2f2; color:#b91c1c; border-radius:var(--radius);";
@@ -642,3 +664,112 @@ document.addEventListener("click", (e) => {
   const dd = document.getElementById("fg-doctype-shared-dd");
   if (dd) dd.style.display = "none";
 });
+
+
+// ── Batch approval (13 Oct 2026) ─────────────────────────────────────────
+// A batch from bulk Add to Finished Goods Store: QA documents are uploaded
+// once (on this card) and copied to every unit on approval; each unit gets
+// its own serial number; un-ticked units are sent back to Production.
+function renderFGBatchUnits(fgId) {
+  const st = window._fgApprovalState[fgId];
+  const rows = st.batchUnits.map((u, i) => `
+    <tr style="${u.include ? "" : "background:#fef2f2;"}">
+      <td style="padding:6px 8px; border-bottom:1px solid #cbd5e1; text-align:center;"><input type="checkbox" style="width:auto;" ${u.include ? "checked" : ""} onchange="fgBatchSet(${fgId}, ${i}, 'include', this.checked)"></td>
+      <td style="padding:6px 8px; border-bottom:1px solid #cbd5e1; font-weight:600;">Set ${escapeHtml(String(u.setNumber ?? ""))}</td>
+      <td style="padding:6px 8px; border-bottom:1px solid #cbd5e1; font-size:0.78rem; color:var(--muted); overflow-wrap:anywhere;">${escapeHtml(u.jobCardNumber)}</td>
+      <td style="padding:6px 8px; border-bottom:1px solid #cbd5e1;"><input type="text" id="fg-batch-serial-${fgId}-${i}" value="${escapeHtml(u.serial)}" ${u.include ? "" : "disabled"}
+        oninput="fgBatchSet(${fgId}, ${i}, 'serial', this.value)" placeholder="Serial number" style="padding:6px 8px; border:1.5px solid #94a3b8; border-radius:4px; font-weight:600;"></td>
+    </tr>`).join("");
+  const n = st.batchUnits.length, inc = st.batchUnits.filter(u => u.include).length;
+  return `
+    <div style="border:2px solid #94a3b8; border-radius:var(--radius); background:#fff; margin-bottom:16px; overflow:hidden;">
+      <div style="padding:8px 14px; border-bottom:2px solid #94a3b8; font-size:0.78rem; font-weight:800; text-transform:uppercase; color:#1e3a8a;">
+        Units in this batch · ${inc} of ${n} to approve${inc < n ? ` · <span style="color:#b91c1c;">${n - inc} sent back to Production</span>` : ""}</div>
+      <div style="padding:10px 14px; display:flex; flex-wrap:wrap; gap:8px; align-items:center; border-bottom:1px solid #cbd5e1; background:#f8fafc;">
+        <span style="font-size:0.8rem; font-weight:700;">Fill serials:</span>
+        <input type="text" id="fg-batch-prefix-${fgId}" placeholder="Prefix, e.g. ABPS/CAP/26/" style="width:220px; padding:6px 8px;">
+        <input type="number" id="fg-batch-start-${fgId}" placeholder="Start no." min="0" style="width:110px; padding:6px 8px;">
+        <input type="number" id="fg-batch-width-${fgId}" placeholder="Digits" min="1" max="8" value="4" style="width:80px; padding:6px 8px;" title="Pad numbers to this many digits">
+        <button type="button" class="nav-btn-styled" style="width:auto; padding:6px 12px; font-size:0.78rem;" onclick="fgBatchFillSequence(${fgId})">Fill in order</button>
+        <span style="font-size:0.8rem; color:var(--muted);">or</span>
+        <button type="button" class="nav-btn-styled" style="width:auto; padding:6px 12px; font-size:0.78rem; background:#475569;" onclick="fgBatchPasteList(${fgId})">Paste a list</button>
+      </div>
+      <div style="max-height:360px; overflow-y:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:0.85rem; table-layout:fixed;">
+          <colgroup><col style="width:9%"><col style="width:12%"><col style="width:44%"><col style="width:35%"></colgroup>
+          <thead><tr style="background:#e0e7ff; color:#1e3a8a;">
+            <th style="padding:7px 8px; text-align:center;">Approve</th><th style="padding:7px 8px; text-align:left;">Set</th>
+            <th style="padding:7px 8px; text-align:left;">Job Card</th><th style="padding:7px 8px; text-align:left;">Serial Number *</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+function fgBatchRefresh(fgId) {
+  const w = document.getElementById(`fg-batch-units-${fgId}`);
+  if (w) w.innerHTML = renderFGBatchUnits(fgId);
+  updateFGApprovalSubmitState(fgId);
+}
+function fgBatchSet(fgId, i, key, value) {
+  const u = window._fgApprovalState[fgId].batchUnits[i];
+  if (!u) return;
+  u[key] = value;
+  if (key === 'include') fgBatchRefresh(fgId); else updateFGApprovalSubmitState(fgId);
+}
+function fgBatchFillSequence(fgId) {
+  const st = window._fgApprovalState[fgId];
+  const prefix = document.getElementById(`fg-batch-prefix-${fgId}`).value;
+  const start = parseInt(document.getElementById(`fg-batch-start-${fgId}`).value, 10);
+  const width = Math.max(1, parseInt(document.getElementById(`fg-batch-width-${fgId}`).value, 10) || 1);
+  if (isNaN(start)) return alert("Enter the start number.");
+  let n = start;
+  st.batchUnits.forEach(u => { if (u.include) u.serial = prefix + String(n++).padStart(width, "0"); });
+  fgBatchRefresh(fgId);
+}
+async function fgBatchPasteList(fgId) {
+  const st = window._fgApprovalState[fgId];
+  const inc = st.batchUnits.filter(u => u.include);
+  const text = window.prompt(`Paste ${inc.length} serial numbers, one per line (or separated by commas), in Set order:`);
+  if (text == null) return;
+  const list = text.split(/[\r\n,;\t]+/).map(x => x.trim()).filter(Boolean);
+  if (list.length !== inc.length && !(await abpsConfirm(`You pasted ${list.length} serial numbers for ${inc.length} units. Fill as many as match, in order?`, { okLabel: "Fill" }))) return;
+  inc.forEach((u, i) => { if (list[i] != null) u.serial = list[i]; });
+  fgBatchRefresh(fgId);
+}
+
+async function submitFGBatchDecision(fgId, action) {
+  const st = window._fgApprovalState[fgId];
+  const feedback = document.getElementById("fg-approval-feedback");
+  const units = action === "approve" ? st.batchUnits.filter(u => u.include).map(u => ({ fgId: u.fgId, serial: u.serial.trim() })) : [];
+  const rejectFgIds = action === "approve" ? st.batchUnits.filter(u => !u.include).map(u => u.fgId) : st.batchUnits.map(u => u.fgId);
+  const msg = action === "approve"
+    ? `Approve ${units.length} unit(s) into the Finished Goods Store${rejectFgIds.length ? ` and send ${rejectFgIds.length} back to Production` : ""}?`
+    : `Send the whole batch (${rejectFgIds.length} units) back to Production? Add to Finished Goods Store will need to be redone for them.`;
+  if (!await abpsConfirm(msg, { okLabel: action === "approve" ? "Approve" : "Send back" })) return;
+  showBlockingOverlay(action === "approve" ? "Approving batch..." : "Sending back...");
+  try {
+    const data = await apFetch({ action: "approveFinishedGoodsBatch", leadFgId: fgId, units, rejectFgIds, operatorName: appActiveOperatorIdentityString });
+    hideBlockingOverlay();
+    if (!data.success) {
+      feedback.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #dc2626; background:#fef2f2; color:#b91c1c; border-radius:var(--radius); font-weight:600;";
+      feedback.textContent = data.error || "Failed.";
+      feedback.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+    delete window._fgApprovalState[fgId];
+    const feed = document.getElementById("fg-approval-queue-feed");
+    if (feed) feed.style.display = "none";
+    feedback.style.cssText = "display:block; margin-bottom:12px; border:2px solid #86efac; border-radius:var(--radius); background:#fff; padding:14px 16px;";
+    feedback.innerHTML = `
+      <div style="font-size:1.05rem; font-weight:800; color:#14532d;">Batch ${escapeHtml(data.batchId || "")}: ${data.approvedCount} approved${data.rejectedCount ? `, ${data.rejectedCount} sent back to Production` : ""}</div>
+      ${data.approvedCount ? `<div style="font-size:0.8rem; color:#166534; margin-top:4px;">Serials: ${escapeHtml((data.approved || []).map(a => a.serial).join(", "))}</div>` : ""}
+      <button onclick="document.getElementById('fg-approval-feedback').style.display='none'; initializeFGApprovalWorkspace();"
+        style="margin-top:12px; background:var(--accent); color:#fff; border:none; padding:9px 20px; border-radius:var(--radius); font-weight:700; font-size:0.86rem; cursor:pointer;">+ Approve Another FG Store Product</button>`;
+    feedback.scrollIntoView({ behavior: "smooth", block: "center" });
+  } catch (e) {
+    hideBlockingOverlay();
+    if (e.message === "SESSION_EXPIRED") return;
+    feedback.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #dc2626; background:#fef2f2; color:#b91c1c; border-radius:var(--radius); font-weight:600;";
+    feedback.textContent = "Network error: " + e.message;
+  }
+}

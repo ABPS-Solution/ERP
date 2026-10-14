@@ -398,6 +398,7 @@ function fgJobCardDisplayReset(text) {
   const list = document.getElementById("fg-add-jobcard-dropdown-list");
   if (textEl) textEl.textContent = text;
   if (hidden) hidden.value = "";
+  window.fgSelectedJobCards = [];
   if (list) { list.style.display = "none"; list.innerHTML = ""; }
   if (disp) { disp.dataset.disabled = "1"; disp.style.opacity = "0.5"; disp.style.cursor = "not-allowed"; disp.style.color = "var(--muted)"; disp.style.background = "#f1f5f9"; }
 }
@@ -405,13 +406,43 @@ function fgJobCardDisplayEnable() {
   const disp = document.getElementById("fg-add-jobcard-display");
   if (disp) { disp.dataset.disabled = "0"; disp.style.opacity = "1"; disp.style.cursor = "pointer"; disp.style.color = "var(--text)"; disp.style.background = "#fff"; }
 }
+// Job Cards are ticked (13 Oct 2026): one ticked = a single entry as before;
+// two or more = a batch, added together with one set of documents.
 function fgJobCardPopulate(options) {
   const list = document.getElementById("fg-add-jobcard-dropdown-list");
   if (!list) return;
-  list.innerHTML = options.map(o => `
-    <div onclick="event.stopPropagation(); selectFGJobCard('${o.value.replace(/'/g,"\\'")}', \`${o.label.replace(/\`/g,"'")}\`)"
-      style="padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem; line-height:1.35;"
-      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${o.label}</div>`).join("");
+  window.fgJobCardOptions = options;
+  const sel = new Set(window.fgSelectedJobCards || []);
+  const allOn = options.length > 0 && options.every(o => sel.has(o.value));
+  const row = (o, i) => `
+    <label onclick="event.stopPropagation();" style="display:flex; align-items:center; gap:8px; padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem; line-height:1.35;">
+      <input type="checkbox" style="width:auto;" ${sel.has(o.value) ? "checked" : ""} onchange="fgToggleJobCard(${i}, this.checked)"> ${escapeHtml(o.label)}</label>`;
+  list.innerHTML = (options.length > 1 ? `
+    <label onclick="event.stopPropagation();" style="display:flex; align-items:center; gap:8px; padding:8px 10px; cursor:pointer; border-bottom:2px solid #cbd5e1; font-size:0.82rem; font-weight:700; background:#f8fafc;">
+      <input type="checkbox" style="width:auto;" ${allOn ? "checked" : ""} onchange="fgToggleAllJobCards(this.checked)"> Select all (${options.length})</label>` : "")
+    + options.map(row).join("");
+}
+function fgToggleJobCard(i, on) {
+  const o = (window.fgJobCardOptions || [])[i];
+  if (!o) return;
+  const sel = new Set(window.fgSelectedJobCards || []);
+  if (on) sel.add(o.value); else sel.delete(o.value);
+  fgApplyJobCardSelection([...(window.fgJobCardOptions || [])].map(x => x.value).filter(v => sel.has(v)));
+}
+function fgToggleAllJobCards(on) {
+  fgApplyJobCardSelection(on ? (window.fgJobCardOptions || []).map(o => o.value) : []);
+}
+function fgApplyJobCardSelection(values) {
+  const prevFirst = (window.fgSelectedJobCards || [])[0] || "";
+  window.fgSelectedJobCards = values;
+  const first = values[0] || "";
+  document.getElementById("fg-add-jobcard").value = first;
+  const opt = (window.fgJobCardOptions || []).find(o => o.value === first);
+  document.getElementById("fg-add-jobcard-display-text").textContent =
+    values.length === 0 ? "— Select Job Card Number —" : values.length === 1 ? (opt ? opt.label : first) : `${values.length} Job Cards selected (batch)`;
+  fgJobCardPopulate(window.fgJobCardOptions || []);
+  document.getElementById("fg-add-jobcard-dropdown-list").style.display = "block";
+  if (first !== prevFirst) handleFGJobCardChange(first);
 }
 function toggleFGJobCardDropdown() {
   const disp = document.getElementById("fg-add-jobcard-display");
@@ -662,8 +693,11 @@ async function submitFGAddItem() {
 
     btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Submitting...';
 
+    const selectedJcs = (window.fgSelectedJobCards || []).length ? window.fgSelectedJobCards : [jobCard];
+    const isBatch = selectedJcs.length > 1;
     const data = await apFetch({
-      action: "addFinishedGoodsItem",
+      action: isBatch ? "addFinishedGoodsBatch" : "addFinishedGoodsItem",
+      jobCardNumbers: isBatch ? selectedJcs : undefined,
       department, projectId, customerName, productName,
       itemCode, productRating: rating, jobCardNumber: jobCard,
       unit, additionalRemarks: remarks,
@@ -681,7 +715,8 @@ async function submitFGAddItem() {
         `<div style="display:grid; grid-template-columns:1.3fr 2.6fr 0.6fr 0.7fr 1fr; gap:10px; margin-bottom:6px;">${[
           prnSuccessTile("Project ID", escapeHtml(projectId)),
           prnSuccessTile("Product Name", escapeHtml([productName, rating].filter(Boolean).join(" - "))),
-          prnSuccessTile("Job Card", `<span title="${escapeHtml(jobCard)}">${escapeHtml(jcSet ? jcSet.replace("-", " ") : jobCard)}</span>`),
+          isBatch ? prnSuccessTile("Batch", `${escapeHtml(data.batchId || "")} · ${selectedJcs.length} units`)
+                  : prnSuccessTile("Job Card", `<span title="${escapeHtml(jobCard)}">${escapeHtml(jcSet ? jcSet.replace("-", " ") : jobCard)}</span>`),
           prnSuccessTile("Department", escapeHtml(department)),
           prnSuccessTile("Use", escapeHtml(finishedGoodUse)),
         ].join("")}</div>` +
