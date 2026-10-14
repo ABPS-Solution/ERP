@@ -267,6 +267,8 @@ async function navigateToModule(key) {
       loadCityStateFilterOptions();
     } else if (key === "emailLeads") {
       executeInboundEmailSyncPipelineFetch();
+    } else if (key === "morningMeeting") {
+      if (typeof mmInit === "function") mmInit();
     } else if (key === "meetingPreparation") {
       if (typeof mprepResetScreen === "function") mprepResetScreen();
       triggerCompanyDropdownArrayFetch();
@@ -317,6 +319,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canSearchQual              = userPermissionsObject.searchQualification === true;
   const canSearchCityState         = userPermissionsObject.searchCityState === true;
   const canMeetingPreparation      = userPermissionsObject.meetingPreparation === true;
+  const canMorningMeeting         = userPermissionsObject.morningMeeting === true;
   // ERP's permMap.js key is "marketingDashboard", not Portal's
   // "viewMarketingDashboard" — ERP's own dedicated key, not a rename.
   const canViewMarketingDashboard  = userPermissionsObject.marketingDashboard === true;
@@ -333,6 +336,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-qual")) document.getElementById("mod-qual").style.display = canSearchQual ? "block" : "none";
   if (document.getElementById("mod-city-state")) document.getElementById("mod-city-state").style.display = canSearchCityState ? "block" : "none";
   if (document.getElementById("mod-meeting-prep")) document.getElementById("mod-meeting-prep").style.display = canMeetingPreparation ? "block" : "none";
+  if (document.getElementById("mod-morning-meeting")) document.getElementById("mod-morning-meeting").style.display = canMorningMeeting ? "block" : "none";
   if (document.getElementById("mod-order-payment")) document.getElementById("mod-order-payment").style.display = canOrderPaymentProgress ? "block" : "none";
 
   // ── Design (BOQ + Catalog & Drawings), ported from Portal's
@@ -541,7 +545,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const adminBlock = document.getElementById("dashboard-admin-department-header-block");
   if (adminBlock) adminBlock.style.display = (canSecurity || canViewAdminDashboard) ? "block" : "none";
   const marketingBlock = document.getElementById("dashboard-marketing-department-header-block");
-  if (marketingBlock) marketingBlock.style.display = (canEnterCard || canViewEmailLeads || canUploadCommissioning || canUploadPurchaseOrder || canUploadRevisedPo || canSearchCompany || canSearchTasks || canSearchStatus || canSearchQual || canSearchCityState || canMeetingPreparation) ? "block" : "none";
+  if (marketingBlock) marketingBlock.style.display = (canEnterCard || canViewEmailLeads || canUploadCommissioning || canUploadPurchaseOrder || canUploadRevisedPo || canSearchCompany || canSearchTasks || canSearchStatus || canSearchQual || canSearchCityState || canMeetingPreparation || canMorningMeeting) ? "block" : "none";
   const projectBlock = document.getElementById("dashboard-project-department-header-block");
   if (projectBlock) projectBlock.style.display = (canManufacturingClearance || canProjectTimeline || canDailyTimeline || canProjectStatus || canOrderPaymentProgress || userPermissionsObject.viewProjectDashboard === true) ? "block" : "none";
   // Batch 6 (16 Sep 2026): Store's own screens landed, so this is no

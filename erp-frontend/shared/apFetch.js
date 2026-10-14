@@ -367,7 +367,7 @@ let appActiveOperatorIdentityString = "";
 let userPermissions = {
   itemCodeAccess: false, tourExpense: false, cashExpenses: false, travelTickets: false,
   viewAccountsDashboard: false, securityLoginAccess: false,
-  cardDetails: false, searchCompany: false, emailLeads: false, meetingPreparation: false,
+  cardDetails: false, searchCompany: false, emailLeads: false, meetingPreparation: false, morningMeeting: false,
   purchaseOrder: false, commissioningReport: false, searchTasks: false, searchStatus: false,
   searchQualification: false, searchCityState: false, marketingDashboard: false,
 };
