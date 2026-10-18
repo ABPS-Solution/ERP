@@ -851,6 +851,7 @@ function switchActiveDashboardModule(targetSectionId) {
   // nav rendered inside the panel is filtered server-side.
   if (targetSectionId === "documentation" && typeof initializeDocumentationPanel === "function") initializeDocumentationPanel();
   if (targetSectionId === "drive-documents" && typeof initializeDriveDocumentsPanel === "function") initializeDriveDocumentsPanel();
+  if (targetSectionId === "current-projects" && typeof initializeCurrentProjectsPanel === "function") initializeCurrentProjectsPanel();
 }
 
 // ── navigateToStoreWorkspacePanel (Batch 6, 16 Sep 2026) ──────────────

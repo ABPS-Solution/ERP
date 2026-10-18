@@ -169,6 +169,8 @@ function applyServerRoleFlags(permData) {
   // Access) never shows the Docs button.
   const docsBtn = document.getElementById("header-docs-btn");
   if (docsBtn) docsBtn.style.display = permData.deviceRestricted ? "none" : "";
+  const curProjBtn = document.getElementById("header-curproj-btn");
+  if (curProjBtn) curProjBtn.style.display = (permData.deviceRestricted || (typeof cpbIsPhone === "function" && cpbIsPhone())) ? "none" : "";
   localStorage.setItem("erpIsUserAdminGlobal", permData.isAdmin ? "true" : "false");
   localStorage.setItem("erpIsUserSuperAdminGlobal", permData.isSuperAdmin ? "true" : "false");
   localStorage.setItem("erpUserDepartment", permData.department || "");
