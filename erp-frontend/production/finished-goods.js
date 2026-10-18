@@ -131,6 +131,7 @@ async function submitFinishedGoodsAddEntry(department, canvasId) {
             <strong>Added to ${department} Finished Goods Store.</strong><br/>
             <span style="font-size:0.88rem; font-weight:600;">Project: <strong>${projectId}</strong> · Customer: ${escapeHtml(customerName)} · Qty: ${totalStock}</span>
           </div>
+          <!-- unreachable: initializeFinishedGoodsAddWorkspace is not defined in ERP -->
           <button class="nav-btn-styled" onclick="initializeFinishedGoodsAddWorkspace('${department}', '${canvasId}')" style="background:#15803d; color:white; padding:10px 18px; font-weight:700;">
             + Add Another Item
           </button>
