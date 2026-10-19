@@ -25,8 +25,8 @@ function buildMaterialDisplayLabel(materialName, rating, descriptionOfMaterial, 
 // department mirror. In Portal this lives in shared/format.js.
 function boqRowMaterialDisplayText(row) {
   const name = (row && row.materialName || "").toString();
-  const make = (row && row.make || "").toString().trim();
-  return make ? `${name} - Make: ${make}` : name;
+  // Make has its own column on the BOQ screens (19 Oct 2026).
+  return name;
 }
 
 // autoGrowPoField used to be stubbed here ("marketing/leads.js doesn't

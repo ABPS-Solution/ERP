@@ -396,7 +396,8 @@ function renderEBOQForm(containerId) {
             <tr style="background:#f8fafc;">
               <th style="width:40px; text-align:center; padding:8px; font-size:0.82rem;">Sr No</th>
               <th style="width:110px; padding:8px; font-size:0.82rem;">Type of Store *</th>
-              <th style="width:350px; padding:8px; font-size:0.82rem;">Material Name *</th>
+              <th style="width:280px; padding:8px; font-size:0.82rem;">Material Name *</th>
+              <th style="width:110px; padding:8px; font-size:0.82rem; text-align:center;">Make</th>
               <th style="width:76px; padding:8px; font-size:0.82rem; text-align:center;">Item Code</th>
               <th style="width:80px; padding:8px; font-size:0.82rem; text-align:center;">Qty / Set *</th>
               <th style="width:56px; padding:8px; font-size:0.82rem; text-align:center;">Unit</th>
@@ -630,7 +631,7 @@ function renderEBOQMaterialRows() {
   if (!tbody) return;
   tbody.innerHTML = "";
   if (eboqMaterialRows.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:20px; color:var(--muted); font-size:0.82rem;">No material rows. Click "+ Add Row".</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="11" style="text-align:center; padding:20px; color:var(--muted); font-size:0.82rem;">No material rows. Click "+ Add Row".</td></tr>';
     updateEBOQTotals();
     return;
   }
@@ -657,6 +658,10 @@ function renderEBOQMaterialRows() {
           style="padding:5px; font-size:0.82rem; width:100%; border:1px solid var(--border); border-radius:3px; resize:none; overflow:hidden; font-family:inherit; line-height:1.3; display:block;"
         >${boqRowMaterialDisplayText(row)}</textarea>`}
         <div id="eboq-mat-dropdown-${idx}" style="display:none; position:fixed; background:#fff; border:1.5px solid var(--brand); border-radius:6px; overflow-y:auto; z-index:9999; box-shadow:0 8px 24px rgba(0,0,0,0.18); min-width:320px;"></div>
+      </td>
+      <td style="padding:4px;">
+        <input type="text" value="${escapeHtml(row.make || "")}" readonly placeholder="—"
+          style="padding:5px; font-size:0.78rem; font-weight:600; text-align:center; background:#f1f5f9; color:var(--text); cursor:not-allowed; border-radius:3px; border:1px solid var(--border); width:100%;" />
       </td>
       <td style="padding:4px;">
         <input type="text" value="${row.itemCode || ""}" readonly 
@@ -693,7 +698,7 @@ function renderEBOQMaterialRows() {
       descTr.style.borderBottom = "1px solid #f1f5f9";
       descTr.innerHTML = `
         <td></td>
-        <td colspan="9" style="padding:4px 4px 8px 4px; position:relative;">
+        <td colspan="10" style="padding:4px 4px 8px 4px; position:relative;">
           <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; display:block; margin-bottom:3px;">Description of Material (optional, for this Finished Goods row)</label>
           <input type="text" id="eboq-row-desc-${idx}" value="${escapeHtml(row.descriptionOfMaterial || "")}" placeholder="Type to search or create a description..." autocomplete="off"
             oninput="handleMaterialDescriptionTypeaheadInput(this.value, 'eboq-row-desc-${idx}', 'eboq-row-desc-dropdown-${idx}', 'eboq-row-desc-id-${idx}', 'boqRowDescOnSelect', 'eboq:${idx}'); eboqMaterialRows[${idx}].descriptionOfMaterial=this.value; eboqMaterialRows[${idx}].descriptionId=null;"

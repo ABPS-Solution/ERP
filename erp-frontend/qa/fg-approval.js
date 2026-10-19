@@ -651,7 +651,7 @@ async function submitFGApprovalDecision(fgId, action) {
             </div>
             <div style="margin-left:auto; text-align:right; padding:6px 14px; border:2px solid #16a34a; border-radius:var(--radius); background:#fff;">
               <div style="font-size:0.65rem; font-weight:800; color:#15803d; text-transform:uppercase;">Product Serial Number</div>
-              <div style="font-size:1.1rem; font-weight:800; color:#14532d;">${escapeHtml(productSerialNumber || "—")}</div>
+              <div style="font-size:1.1rem; font-weight:800; color:#14532d;">${escapeHtml(fgSerialIsNA(productSerialNumber) ? "N/A" : (productSerialNumber || "—"))}</div>
             </div>
           </div>
           <div style="display:grid; grid-template-columns:1.2fr 1fr 0.6fr; border-bottom:${G};">
@@ -818,12 +818,37 @@ async function submitFGBatchDecision(fgId, action) {
     delete window._fgApprovalState[fgId];
     const feed = document.getElementById("fg-approval-queue-feed");
     if (feed) feed.style.display = "none";
-    feedback.style.cssText = "display:block; margin-bottom:12px; border:2px solid #86efac; border-radius:var(--radius); background:#fff; padding:14px 16px;";
+    feedback.style.cssText = "display:block; margin-bottom:12px; border:2px solid #86efac; border-radius:var(--radius); background:#fff; overflow:hidden;";
+    const fgB = st.fg || {};
+    const G = "2px solid #bbf7d0";
+    const setOf = {}; (st.batchUnits || []).forEach(u => { setOf[u.fgId] = u.setNumber; });
+    const okCell = (label, val, left) => `<div style="padding:10px 14px; ${left ? "border-left:" + G + ";" : ""}">
+        <div style="font-size:0.68rem; font-weight:800; color:#15803d; text-transform:uppercase; margin-bottom:4px;">${label}</div>
+        <div style="font-size:0.9rem; font-weight:700; color:#111827; word-break:break-word;">${escapeHtml(val || "—")}</div></div>`;
+    const th = "padding:7px 10px; border:" + G + "; background:#f0fdf4; color:#14532d; font-size:0.74rem; font-weight:800; text-transform:uppercase; text-align:left;";
+    const td = "padding:7px 10px; border:" + G + "; font-size:0.85rem;";
+    const unitRows = (data.approved || []).map(a => `<tr>
+        <td style="${td} font-weight:700;">Set ${escapeHtml(String(setOf[a.fgId] ?? ""))}</td>
+        <td style="${td} color:#475569; overflow-wrap:anywhere;">${escapeHtml(a.jobCardNumber || "")}</td>
+        <td style="${td} font-weight:700;">${a.serial ? escapeHtml(a.serial) : '<span style="color:#64748b;">N/A</span>'}</td></tr>`).join("");
     feedback.innerHTML = `
-      <div style="font-size:1.05rem; font-weight:800; color:#14532d;">Batch ${escapeHtml(data.batchId || "")}: ${data.approvedCount} approved${data.rejectedCount ? `, ${data.rejectedCount} sent back to Production` : ""}</div>
-      ${data.approvedCount ? `<div style="font-size:0.8rem; color:#166534; margin-top:4px;">Serials: ${escapeHtml((data.approved || []).map(a => a.serial).join(", "))}</div>` : ""}
+      <div style="padding:14px 16px; background:#dcfce7; border-bottom:2px solid #86efac;">
+        <div style="font-size:1.05rem; font-weight:800; color:#14532d;">${data.approvedCount} unit${data.approvedCount === 1 ? "" : "s"} approved and added to the Finished Goods Store</div>
+        <div style="font-size:0.8rem; color:#166534; margin-top:2px;">Batch ${escapeHtml(data.batchId || "")}${data.rejectedCount ? ` · <strong style="color:#b91c1c;">${data.rejectedCount} sent back to Production</strong>` : ""}</div>
+      </div>
+      <div style="display:grid; grid-template-columns:1.4fr 1.2fr 0.6fr; border-bottom:${G};">
+        ${okCell("Product Name", fgB.productName)}
+        ${okCell("Product Rating", fgB.productRating, true)}
+        ${okCell("Department", fgB.department, true)}
+      </div>
+      <div style="border-bottom:${G};">${okCell("Project ID", fgB.projectId)}</div>
+      ${unitRows ? `<div style="padding:12px 16px 0;"><table style="width:100%; border-collapse:collapse; table-layout:fixed;">
+        <colgroup><col style="width:12%"><col style="width:58%"><col style="width:30%"></colgroup>
+        <thead><tr><th style="${th}">Set</th><th style="${th}">Job Card</th><th style="${th}">Serial Number</th></tr></thead>
+        <tbody>${unitRows}</tbody></table></div>` : ""}
+      <div style="padding:12px 16px;">
       <button onclick="document.getElementById('fg-approval-feedback').style.display='none'; initializeFGApprovalWorkspace();"
-        style="margin-top:12px; background:var(--accent); color:#fff; border:none; padding:9px 20px; border-radius:var(--radius); font-weight:700; font-size:0.86rem; cursor:pointer;">+ Approve Another FG Store Product</button>`;
+        style="background:var(--accent); color:#fff; border:none; padding:9px 20px; border-radius:var(--radius); font-weight:700; font-size:0.86rem; cursor:pointer;">+ Approve Another FG Store Product</button></div>`;
     feedback.scrollIntoView({ behavior: "smooth", block: "center" });
   } catch (e) {
     hideBlockingOverlay();

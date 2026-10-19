@@ -492,7 +492,7 @@ function deleteCBOQMaterialRow(idx) {
 function renderCBOQMaterialRows() {
   const tbody = document.getElementById("cboq-material-rows-body");
   if (cboqMaterialRows.length === 0) {
-    tbody.innerHTML = '<tr id="cboq-empty-row"><td colspan="9" style="text-align:center; padding:20px; color:var(--muted); font-size:0.82rem;">No material rows added yet. Click "+ Add Row" to begin.</td></tr>';
+    tbody.innerHTML = '<tr id="cboq-empty-row"><td colspan="10" style="text-align:center; padding:20px; color:var(--muted); font-size:0.82rem;">No material rows added yet. Click "+ Add Row" to begin.</td></tr>';
     updateCBOQTotals();
     return;
   }
@@ -520,6 +520,10 @@ function renderCBOQMaterialRows() {
           style="padding:5px; font-size:0.82rem; width:100%; border:1px solid var(--border); border-radius:3px; resize:none; overflow:hidden; font-family:inherit; line-height:1.3; display:block;"
         >${boqRowMaterialDisplayText(row)}</textarea>`}
         <div id="cboq-mat-dropdown-${idx}" onmousedown="event.stopPropagation();" style="display:none; position:fixed; background:#fff; border:1.5px solid var(--brand); border-radius:6px; overflow-y:auto; z-index:9999; box-shadow:0 8px 24px rgba(0,0,0,0.18); min-width:320px;"></div>
+      </td>
+      <td style="padding:4px;">
+        <input type="text" value="${escapeHtml(row.make || "")}" readonly placeholder="—"
+          style="padding:5px; font-size:0.78rem; font-weight:600; text-align:center; background:#f1f5f9; color:var(--text); cursor:not-allowed; border-radius:3px; border:1px solid var(--border); width:100%;" />
       </td>
       <td style="padding:4px;">
         <input type="text" value="${row.itemCode || ""}" readonly 
@@ -555,7 +559,7 @@ function renderCBOQMaterialRows() {
       descTr.style.borderBottom = "1px solid #f1f5f9";
       descTr.innerHTML = `
         <td></td>
-        <td colspan="8" style="padding:4px 4px 8px 4px; position:relative;">
+        <td colspan="9" style="padding:4px 4px 8px 4px; position:relative;">
           <label style="font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; display:block; margin-bottom:3px;">Description of Material (optional, for this Finished Goods row)</label>
           <input type="text" id="cboq-row-desc-${idx}" value="${escapeHtml(row.descriptionOfMaterial || "")}" placeholder="Type to search or create a description..." autocomplete="off"
             oninput="handleMaterialDescriptionTypeaheadInput(this.value, 'cboq-row-desc-${idx}', 'cboq-row-desc-dropdown-${idx}', 'cboq-row-desc-id-${idx}', 'boqRowDescOnSelect', 'cboq:${idx}'); cboqMaterialRows[${idx}].descriptionOfMaterial=this.value; cboqMaterialRows[${idx}].descriptionId=null;"
