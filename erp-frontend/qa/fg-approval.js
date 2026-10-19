@@ -168,9 +168,12 @@ function renderFGApprovalDetailBody(fgId) {
         </div>` : `
         <div style="padding:10px 14px; border-left:${B}; background:#fffbeb;">
           <div style="font-size:0.68rem; font-weight:800; color:#b45309; text-transform:uppercase; margin-bottom:4px;">Product Serial Number *</div>
-          <input type="text" id="fg-approval-serial-${fgId}" value="${escapeHtml(fgApprovalSerialValue(fgId))}"
+          <input type="text" id="fg-approval-serial-${fgId}" value="${escapeHtml(fgApprovalSerialValue(fgId))}" ${fgSerialIsNA(fgApprovalSerialValue(fgId)) ? "disabled" : ""}
             oninput="window._fgApprovalState[${fgId}].serial = this.value; updateFGApprovalSubmitState(${fgId});"
             placeholder="Enter product serial number..." style="padding:7px 9px; border:2px solid #94a3b8; border-radius:var(--radius); font-size:0.88rem; font-weight:600; background:#fff;" />
+          <label style="display:flex; align-items:center; gap:6px; margin-top:6px; font-size:0.8rem; font-weight:700; color:#475569; cursor:pointer;">
+            <input type="checkbox" style="width:auto;" ${fgSerialIsNA(fgApprovalSerialValue(fgId)) ? "checked" : ""} onchange="fgApprovalToggleSerialNA(${fgId}, this.checked)"> N/A (no serial number for this product)
+          </label>
         </div>`}
       </div>
       <div style="display:grid; grid-template-columns:1fr 2fr; border-bottom:${B};">
@@ -239,7 +242,12 @@ function renderFGDedicatedDocZones(fgId) {
   return `
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
       ${renderFGDedicatedDocZone(fgId, "testCert", true)}
-      ${renderFGDedicatedDocZone(fgId, "inProcessInspection", true)}
+      <div>
+        ${renderFGDedicatedDocZone(fgId, "inProcessInspection", !window._fgApprovalState[fgId].ipNotEligible)}
+        <label style="display:flex; align-items:center; gap:6px; margin-top:6px; font-size:0.8rem; font-weight:700; color:#475569; cursor:pointer;">
+          <input type="checkbox" style="width:auto;" ${window._fgApprovalState[fgId].ipNotEligible ? "checked" : ""} onchange="fgApprovalToggleIpNotEligible(${fgId}, this.checked)"> Not Eligible (no In Process Inspection Sheet for this product)
+        </label>
+      </div>
     </div>
     <div style="display:grid; grid-template-columns:1fr; gap:14px; margin-bottom:16px;">
       ${renderFGDedicatedDocZone(fgId, "otherDocuments", false)}
@@ -541,6 +549,25 @@ function fgApprovalSerialValue(fgId) {
   return st.serial;
 }
 
+// "N/A" = the product has no serial number; the server saves no serial for it.
+function fgSerialIsNA(v) { return /^\s*n\s*\/?\s*a\s*$/i.test(v || ""); }
+function fgApprovalToggleSerialNA(fgId, on) {
+  const st = window._fgApprovalState[fgId];
+  st.serial = on ? "N/A" : "";
+  const inp = document.getElementById(`fg-approval-serial-${fgId}`);
+  if (inp) { inp.value = st.serial; inp.disabled = on; }
+  updateFGApprovalSubmitState(fgId);
+}
+function fgApprovalToggleIpNotEligible(fgId, on) {
+  window._fgApprovalState[fgId].ipNotEligible = on;
+  refreshFGApprovalDedicatedZones(fgId);
+  updateFGApprovalSubmitState(fgId);
+}
+function fgApprovalMissingTypes(st) {
+  const presentTypes = new Set(st.docs.map(d => d.docType));
+  return FG_APPROVAL_REQUIRED_DOC_TYPES.filter(t => !presentTypes.has(t) && !(t === "inProcessInspection" && st.ipNotEligible));
+}
+
 function updateFGApprovalSubmitState(fgId) {
   const btn = document.getElementById(`fg-approval-submit-${fgId}`);
   if (!btn) return;
@@ -548,8 +575,7 @@ function updateFGApprovalSubmitState(fgId) {
   const bu = st.batchUnits;
   const included = bu ? bu.filter(u => u.include) : null;
   const hasSerial = bu ? (included.length > 0 && included.every(u => u.serial.trim())) : !!fgApprovalSerialValue(fgId).trim();
-  const presentTypes = new Set(st.docs.map(d => d.docType));
-  const missingTypes = FG_APPROVAL_REQUIRED_DOC_TYPES.filter(t => !presentTypes.has(t));
+  const missingTypes = fgApprovalMissingTypes(st);
   const hasEveryRequiredType = missingTypes.length === 0;
   const uncheckedCount = st.docs.filter(d => !d.qaChecked).length;
   const allChecked = st.docs.length > 0 && uncheckedCount === 0 && st.newRows.length === 0;
@@ -594,7 +620,7 @@ async function submitFGApprovalDecision(fgId, action) {
   showBlockingOverlay(action === "approve" ? "Approving..." : "Rejecting...");
   try {
     const actionName = action === "approve" ? "approveFinishedGoodsItem" : "rejectFinishedGoodsItem";
-    const data = await apFetch({ action: actionName, activeEngineer: appActiveOperatorIdentityString, fgId, productSerialNumber, operatorName: appActiveOperatorIdentityString });
+    const data = await apFetch({ action: actionName, activeEngineer: appActiveOperatorIdentityString, fgId, productSerialNumber, inProcessNotEligible: !!window._fgApprovalState[fgId]?.ipNotEligible, operatorName: appActiveOperatorIdentityString });
     hideBlockingOverlay();
     if (data.success) {
       delete window._fgApprovalState[fgId];
@@ -693,6 +719,8 @@ function renderFGBatchUnits(fgId) {
         <button type="button" class="nav-btn-styled" style="width:auto; padding:6px 12px; font-size:0.78rem;" onclick="fgBatchFillSequence(${fgId})">Fill in order</button>
         <span style="font-size:0.8rem; color:var(--muted);">or</span>
         <button type="button" class="nav-btn-styled" style="width:auto; padding:6px 12px; font-size:0.78rem; background:#475569;" onclick="fgBatchPasteList(${fgId})">Paste a list</button>
+        <span style="font-size:0.8rem; color:var(--muted);">or</span>
+        <button type="button" class="nav-btn-styled" style="width:auto; padding:6px 12px; font-size:0.78rem; background:#64748b;" onclick="fgBatchAllNA(${fgId})" title="These products have no serial number (you can also type N/A on a single unit)">All N/A</button>
       </div>
       <div style="max-height:360px; overflow-y:auto;">
         <table style="width:100%; border-collapse:collapse; font-size:0.85rem; table-layout:fixed;">
@@ -726,6 +754,10 @@ function fgBatchFillSequence(fgId) {
   st.batchUnits.forEach(u => { if (u.include) u.serial = prefix + String(n++).padStart(width, "0"); });
   fgBatchRefresh(fgId);
 }
+function fgBatchAllNA(fgId) {
+  window._fgApprovalState[fgId].batchUnits.forEach(u => { if (u.include) u.serial = "N/A"; });
+  fgBatchRefresh(fgId);
+}
 async function fgBatchPasteList(fgId) {
   const st = window._fgApprovalState[fgId];
   const inc = st.batchUnits.filter(u => u.include);
@@ -748,7 +780,7 @@ async function submitFGBatchDecision(fgId, action) {
   if (!await abpsConfirm(msg, { okLabel: action === "approve" ? "Approve" : "Send back" })) return;
   showBlockingOverlay(action === "approve" ? "Approving batch..." : "Sending back...");
   try {
-    const data = await apFetch({ action: "approveFinishedGoodsBatch", leadFgId: fgId, units, rejectFgIds, operatorName: appActiveOperatorIdentityString });
+    const data = await apFetch({ action: "approveFinishedGoodsBatch", leadFgId: fgId, units, rejectFgIds, inProcessNotEligible: !!st.ipNotEligible, operatorName: appActiveOperatorIdentityString });
     hideBlockingOverlay();
     if (!data.success) {
       feedback.style.cssText = "display:block; padding:12px; margin-bottom:12px; border-left:4px solid #dc2626; background:#fef2f2; color:#b91c1c; border-radius:var(--radius); font-weight:600;";
