@@ -124,16 +124,17 @@ async function submitMaterialRequestTicketToBackend() {
   // ticket's Purpose (outward_purpose) is the department itself.
   // Processing is a Job Card issue sent to an outside vendor (29 Sep 2026):
   // it keeps its Purpose, but picks a Job Card like Reactor/Capacitor/Panel.
-  const isServiceSubmit = departmentVal === "Service";
-  const hasPurposeSubmit = departmentVal === "Service" || departmentVal === "Processing";
+  const isSampleSubmit = departmentVal === "Sample";
+  const isServiceSubmit = departmentVal === "Service" || isSampleSubmit;
+  const hasPurposeSubmit = departmentVal === "Service" || departmentVal === "Processing" || isSampleSubmit;
   const departmentSubmitVal = departmentVal;
   // Legacy/pre-system ticket is available under any Outgoing Use as of
   // go-live (was Service-only) — a pre-system project still in production,
   // or a plain stock-count correction, can be raised from any department.
-  const isLegacySubmit = !!document.getElementById("ticket-legacy-project-toggle")?.checked;
+  const isLegacySubmit = !isSampleSubmit && !!document.getElementById("ticket-legacy-project-toggle")?.checked;
   const legacyCompanyNameVal = isLegacySubmit ? (document.getElementById("ticket-legacy-company-name")?.value || "").trim() : "";
-  const projectId = isLegacySubmit ? "" : projectIdField.value;
-  const boqIdVal = document.getElementById("ticket-boq-dropdown")?.value || "";
+  const projectId = (isLegacySubmit || isSampleSubmit) ? "" : projectIdField.value;
+  const boqIdVal = isSampleSubmit ? "" : (document.getElementById("ticket-boq-dropdown")?.value || "");
   const operatorSignatureName = appActiveOperatorIdentityString;
   const ticketTypeVal = typeDropdownField ? typeDropdownField.value : "Request Material";
 
@@ -147,7 +148,9 @@ async function submitMaterialRequestTicketToBackend() {
     return;
   }
 
-  if (isLegacySubmit) {
+  if (isSampleSubmit) {
+    // A Sample ticket has no project, company, BOQ or Job Card.
+  } else if (isLegacySubmit) {
     if (!legacyCompanyNameVal) {
       if (feedbackBanner) {
         feedbackBanner.style.cssText = "display: block; background: #fff3c7; border-color: #b45309; color: #b45309; padding: 10px; margin-bottom: 12px; border-left: 4px solid #b45309; text-align: left;";
@@ -1602,6 +1605,10 @@ function applyCmitDepartmentLock(lock) {
 
 async function handleCreateTicketDepartmentChange(chosenDepartmentVal) {
   ticketBulkClose();
+  const isSample = chosenDepartmentVal === "Sample";
+  // Sample (19 Oct 2026): no Project / company / BOQ / Job Card rows at all.
+  const projectRow = document.getElementById("wrapper-ticket-project-id")?.parentElement;
+  if (projectRow) projectRow.style.display = isSample ? "none" : "grid";
   const isService = chosenDepartmentVal === "Service";
   const hasPurpose = isService || chosenDepartmentVal === "Processing";
 
@@ -1632,7 +1639,7 @@ async function handleCreateTicketDepartmentChange(chosenDepartmentVal) {
   if (customerNameField) customerNameField.value = "";
   // Legacy toggle is available under any Outgoing Use as of go-live (was
   // Service-only) — see handleTicketLegacyToggleChange's own header comment.
-  if (legacyToggleWrapper) legacyToggleWrapper.style.display = "block";
+  if (legacyToggleWrapper) legacyToggleWrapper.style.display = isSample ? "none" : "block";
   window.ticketJobCardsCache = [];
 
   // Reset BOQ/Job Card
@@ -1640,6 +1647,7 @@ async function handleCreateTicketDepartmentChange(chosenDepartmentVal) {
   ticketJobCardDisplayReset("— Choose BOQ First —");
   const jobCardWrapper = document.getElementById("wrapper-ticket-job-card");
   const boqJobCardRow = document.getElementById("wrapper-ticket-boq-jobcard-row");
+  if (boqJobCardRow) boqJobCardRow.style.display = isSample ? "none" : "grid";
   if (jobCardWrapper) jobCardWrapper.style.display = isService ? "none" : "";
   if (boqJobCardRow) boqJobCardRow.style.gridTemplateColumns = isService ? "1fr" : "1fr 1fr";
   const boqWrapper = document.getElementById("wrapper-ticket-boq");
@@ -1649,6 +1657,19 @@ async function handleCreateTicketDepartmentChange(chosenDepartmentVal) {
 
   if (!chosenDepartmentVal) {
     if (projectInput) { projectInput.disabled = true; projectInput.style.opacity = "0.5"; projectInput.style.cursor = "not-allowed"; projectInput.style.background = "#f1f5f9"; }
+    return;
+  }
+  if (isSample) {
+    // Free Raw Materials stock only: Choose Store is fixed to Raw Materials Store.
+    const storeScopeDrop = document.getElementById("ticket-selected-store-scope-toggle");
+    const storeScopeLabel = document.getElementById("lbl-store-scope-title");
+    if (storeScopeDrop) {
+      storeScopeDrop.innerHTML = '<option value="Raw Materials Store">Raw Materials Store</option>';
+      storeScopeDrop.value = "Raw Materials Store";
+      storeScopeDrop.disabled = false; storeScopeDrop.style.opacity = "1"; storeScopeDrop.style.cursor = "pointer";
+    }
+    if (storeScopeLabel) storeScopeLabel.style.color = "var(--brand)";
+    handleTicketStoreScopeSelectionChange("Raw Materials Store");
     return;
   }
 
@@ -1829,7 +1850,7 @@ function handleCreateTicketBOQChange(chosenBoqId) {
 // "free pool, no Job Card", not literally "Service".
 function ticketIsServiceItemMode_() {
   const dept = document.getElementById("ticket-department-outgoing-dropdown")?.value;
-  return dept === "Service" || !!document.getElementById("ticket-legacy-project-toggle")?.checked;
+  return dept === "Service" || dept === "Sample" || !!document.getElementById("ticket-legacy-project-toggle")?.checked;
 }
 function ticketJcmCacheKeyFor_(activeStoreScope, jobCardNumberVal, projectId) {
   return ticketIsServiceItemMode_() ? ("SERVICE|" + activeStoreScope + "|" + projectId) : (jobCardNumberVal + "|" + projectId);
@@ -1855,7 +1876,8 @@ async function loadItemCatalogForSelectedProjectAndStore() {
   const addZone = document.getElementById("wrapper-ticket-add-item-zone");
   const feedbackBanner = document.getElementById("store-ticket-runtime-inline-feedback-banner");
   const isLegacyTicketMode = document.getElementById("ticket-legacy-project-toggle")?.checked;
-  const chosenProjectVal = isLegacyTicketMode
+  const isSampleMode = document.getElementById("ticket-department-outgoing-dropdown")?.value === "Sample";
+  const chosenProjectVal = isSampleMode ? "SAMPLE" : isLegacyTicketMode
     ? (document.getElementById("ticket-legacy-company-name")?.value || "").trim()
     : document.getElementById("ticket-project-id-dropdown-ta-input").value;
 

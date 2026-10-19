@@ -274,6 +274,8 @@ function renderDraftChallanCard(draft, collapsible) {
         <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:12px 16px; margin-bottom:12px; border:1px solid var(--border); border-radius:var(--radius); padding:14px; background:#f8fafc;">
           ${draft.outward_type === 'Processing'
             ? mowVendorPickerFor(challanId, draft.vendor_name || '')
+            : draft.outward_type === 'Sample'
+            ? mowSamplePickerFor(challanId, draft.consignee_name || '')
             : mowFieldFor(challanId, 'Company Name', 'company', draft.consignee_name, true)}
           ${mowFieldFor(challanId, 'Contact Name', 'contact-name', draft.contact_person_name, true)}
           ${mowFieldFor(challanId, 'Contact Number', 'contact-number', draft.contact_number, false)}
@@ -406,9 +408,10 @@ function mowValidateDraftCard(challanId) {
   if (!status) errors.push('Select a Status (Returnable / Non-Returnable).');
   const isProcessingCard = !!document.getElementById(`mow-vendor-${challanId}`);
   const consignee = document.getElementById(isProcessingCard ? `mow-vendor-${challanId}` : `mow-company-${challanId}`)?.value.trim() || '';
-  if (!consignee) errors.push(isProcessingCard ? 'Vendor Name is required.' : 'Company Name is required.');
+  const isSampleCard = !!document.querySelector(`#mow-company-${challanId}[data-sample="1"]`);
+  if (!consignee) errors.push(isProcessingCard ? 'Vendor Name is required.' : isSampleCard ? 'Vendor or Person Name is required.' : 'Company Name is required.');
   const contactName = document.getElementById(`mow-contact-name-${challanId}`)?.value.trim() || '';
-  if (!contactName) errors.push('Contact Name is required.');
+  if (!contactName && !isSampleCard) errors.push('Contact Name is required.');
   const address = document.getElementById(`mow-address-${challanId}`)?.value.trim() || '';
   if (!address) errors.push('Address is required.');
   const hsnInputs = card.querySelectorAll('.mow-hsn-input');
@@ -737,6 +740,57 @@ function mowVendorPickerFor(challanId, value) {
       style="width:100%; padding:8px; border:1.5px solid #94a3b8; background:#fff; border-radius:var(--radius); font-family:inherit; font-size:inherit;" />
     <div id="mow-vendor-dd-${challanId}" style="display:none; position:fixed; z-index:9999; background:#fff; border:1.5px solid var(--brand); border-radius:4px; max-height:240px; overflow-y:auto; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div></div>`;
 }
+
+// Sample challan (19 Oct 2026): sent to a vendor or a person. Typed freely;
+// vendor suggestions fill the address when it is a vendor.
+function mowSamplePickerFor(challanId, value) {
+  return `<div style="position:relative;"><label class="field-label" style="margin-top:0;">Vendor or Person Name *</label>
+    <input type="text" id="mow-company-${challanId}" data-sample="1" value="${escapeHtml(value || "")}" autocomplete="off" placeholder="Type a person's name, or search a vendor..."
+      oninput="mowSampleSearch(${challanId}, this.value); mowValidateDraftCard(${challanId});"
+      style="width:100%; padding:8px; border:1.5px solid #94a3b8; background:#fff; border-radius:var(--radius); font-family:inherit; font-size:inherit;" />
+    <div id="mow-sample-dd-${challanId}" style="display:none; position:fixed; z-index:9999; background:#fff; border:1.5px solid var(--brand); border-radius:4px; max-height:240px; overflow-y:auto; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div></div>`;
+}
+let mowSampleSearchSeq = 0;
+async function mowSampleSearch(challanId, query) {
+  const input = document.getElementById(`mow-company-${challanId}`);
+  const dd = document.getElementById(`mow-sample-dd-${challanId}`);
+  if (!input || !dd) return;
+  if (!(query || "").trim()) { dd.style.display = "none"; return; }
+  const seq = ++mowSampleSearchSeq;
+  try {
+    const data = await apFetch({ action: "searchVendorNamesForMaterialOutward", query });
+    if (seq !== mowSampleSearchSeq) return;
+    const vendors = (data.success ? data.vendors : []) || [];
+    window._mowVendorDetails = window._mowVendorDetails || {};
+    (data.vendorDetails || []).forEach(v => { window._mowVendorDetails[v.name] = v; });
+    if (!vendors.length) { dd.style.display = "none"; return; }
+    const r = input.getBoundingClientRect();
+    dd.style.left = r.left + "px"; dd.style.top = r.bottom + "px"; dd.style.width = Math.max(r.width, 260) + "px";
+    dd.innerHTML = vendors.map(v => `<div onmousedown="event.preventDefault(); mowPickSampleVendor(${challanId}, this.dataset.v)" data-v="${escapeHtml(v)}"
+        style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.85rem;"
+        onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#fff'">${escapeHtml(v)} <span style="color:var(--muted); font-size:0.75rem;">(vendor)</span></div>`).join("");
+    dd.style.display = "block";
+  } catch (e) { dd.style.display = "none"; }
+}
+function mowPickSampleVendor(challanId, name) {
+  const input = document.getElementById(`mow-company-${challanId}`);
+  if (input) input.value = name;
+  const vd = (window._mowVendorDetails || {})[name];
+  if (vd) {
+    const addr = document.getElementById(`mow-address-${challanId}`);
+    const st = document.getElementById(`mow-state-${challanId}`);
+    if (addr && vd.address) { addr.value = vd.address; autoGrowTextField(addr); }
+    if (st && vd.state) { st.value = vd.state; autoGrowTextField(st); }
+  }
+  const dd = document.getElementById(`mow-sample-dd-${challanId}`);
+  if (dd) dd.style.display = "none";
+  mowValidateDraftCard(challanId);
+  mowSaveCardLocal(challanId);
+}
+document.addEventListener("click", (e) => {
+  if (e.target.closest && (e.target.closest('[id^="mow-sample-dd-"]') || e.target.closest('input[data-sample="1"]'))) return;
+  document.querySelectorAll('[id^="mow-sample-dd-"]').forEach(d => { d.style.display = "none"; });
+});
 
 let mowVendorSearchSeq = 0;
 async function mowVendorSearch(challanId, query) {

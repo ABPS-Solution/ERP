@@ -106,20 +106,28 @@ function epmrRender() {
   feed.innerHTML = shown.map(([key, tickets]) => {
     const r = tickets[0];
     const status = statusOf(tickets);
-    const open = epmrExpandedTicketId === key;
-    const sent = mergeLines(tickets.flatMap(t => t.items || []), i => i.released ?? i.quantity ?? 0, i => i.unitType);
-    const expected = mergeLines(tickets.flatMap(t => t.expectedReturnItems || []), i => i.quantity ?? 0, i => i.unit);
     const receivedByCode = {};
     tickets.forEach(t => (t.returnProgress || []).forEach(p => { receivedByCode[p.itemCode] = (receivedByCode[p.itemCode] || 0) + (parseFloat(p.receivedQty) || 0); }));
+    const open = epmrExpandedTicketId === key;
+    const sent = mergeLines(tickets.flatMap(t => t.items || []), i => i.released ?? i.quantity ?? 0, i => i.unitType);
+    const isSample = r.outwardPurpose === "Sample";
+    // A returnable Sample expects back what was sent (its return lines).
+    const expected = isSample
+      ? mergeLines(tickets.flatMap(t => (t.returnProgress || []).map(p => {
+          const it = (t.items || []).find(x => x.itemCode === p.itemCode) || {};
+          return { itemCode: p.itemCode, materialName: it.materialName, unit: it.unitType, quantity: p.expectedQty };
+        })), i => i.quantity ?? 0, i => i.unit)
+      : mergeLines(tickets.flatMap(t => t.expectedReturnItems || []), i => i.quantity ?? 0, i => i.unit);
+    const anyLeft = expected.some(i => (parseFloat(i.qty) || 0) - (receivedByCode[i.itemCode] || 0) > 1e-9);
     const tickets_ = tickets.map(t => t.ticketId);
     const challan = r.challanNumber
       ? (r.challanUrl ? `<a href="${driveLink(r.challanUrl)}" target="_blank" rel="noopener" onclick="event.stopPropagation();" style="color:var(--brand);">${escapeHtml(r.challanNumber)} ↗</a>` : escapeHtml(r.challanNumber))
       : "—";
     return `<div style="border:1px solid ${open ? "var(--brand)" : "var(--border)"}; border-left:4px solid #15803d; border-radius:var(--radius); background:#fff;">
       <div onclick="epmrToggle(${jsArg(key)})" style="cursor:pointer; padding:12px 14px; background:#eaf1fb; border-radius:${open ? "var(--radius) var(--radius) 0 0" : "var(--radius)"}; display:grid; grid-template-columns:1.5fr 1.1fr 1.4fr 1.3fr 1fr 1fr 1fr 24px; gap:10px 14px; align-items:center;">
-        ${cell("Project", escapeHtml(uniqJoin(tickets.map(t => t.projectId || t.companyName)) || "—"))}
+        ${cell(isSample ? "Purpose" : "Project", isSample ? "Sample" : escapeHtml(uniqJoin(tickets.map(t => t.projectId || t.companyName)) || "—"))}
         ${cell("Ticket ID", `<span style="font-family:monospace;">${escapeHtml(tickets_.join(", "))}</span>`)}
-        ${cell("Vendor Name", escapeHtml(r.vendorName || "—"))}
+        ${cell(isSample ? "Sent To" : "Vendor Name", escapeHtml((isSample ? (r.consigneeName || r.vendorName) : r.vendorName) || "—"))}
         ${cell("Delivery Challan", challan)}
         ${cell("Ticket Raised On", escapeHtml(uniqJoin(tickets.map(t => t.dateCreated ? formatOrdinalDate(t.dateCreated) : "")) || "—"))}
         ${cell("Ticket Raised By", escapeHtml(uniqJoin(tickets.map(t => t.requestedBy)) || "—"))}
@@ -127,9 +135,26 @@ function epmrRender() {
         <div style="font-size:1rem; color:var(--muted); text-align:right;">${open ? "▲" : "▼"}</div>
       </div>
       ${open ? `<div class="epmr-tables" style="display:grid; grid-template-columns:1fr 1fr; gap:16px; padding:0 14px 14px; border-top:1px solid var(--border); padding-top:12px;">
-        ${table("Materials Sent for Processing", rowsOf(sent, i => i.qty, i => i.unit))}
-        ${table("Expected Processing Material Return (received / expected, left)", rowsOf(expected, i => { const rc = receivedByCode[i.itemCode] || 0; const left = Math.max(0, i.qty - rc); return `${fmtQty(rc)} / ${fmtQty(i.qty)}${left > 1e-9 ? ` · ${fmtQty(left)} left` : " · done"}`; }, i => i.unit))}
-      </div>` : ""}
+        ${table(isSample ? "Materials Sent as Sample" : "Materials Sent for Processing", rowsOf(sent, i => i.qty, i => i.unit))}
+        ${table(isSample ? "Expected Sample Return (received / expected, left)" : "Expected Processing Material Return (received / expected, left)", rowsOf(expected, i => { const rc = receivedByCode[i.itemCode] || 0; const left = Math.max(0, i.qty - rc); return `${fmtQty(rc)} / ${fmtQty(i.qty)}${left > 1e-9 ? ` · ${fmtQty(left)} left` : " · done"}`; }, i => i.unit))}
+      </div>
+      ${isSample && anyLeft ? `<div style="display:flex; justify-content:flex-end; padding:0 14px 14px;">
+        <button class="nav-btn-styled" style="width:auto; background:#b45309; padding:7px 14px; font-size:0.8rem;" onclick="epmrCloseSample(${jsArg(tickets_.join(","))})">Rest is not coming back</button></div>` : ""}` : ""}
     </div>`;
   }).join("");
+}
+
+// A returnable sample that will not (all) come back: close what is left.
+async function epmrCloseSample(ticketIdList) {
+  const ticketIds = String(ticketIdList || "").split(",").filter(Boolean);
+  if (!await abpsConfirm("Mark the rest of this sample as not coming back? Material still waiting at GRN stays expected.", { okLabel: "Mark not coming back" })) return;
+  showBlockingOverlay("Updating...");
+  try {
+    for (const ticketId of ticketIds) {
+      const d = await apFetch({ action: "closeSampleReturn", ticketId, operatorName: appActiveOperatorIdentityString });
+      if (!d.success) throw new Error(d.error || "Failed.");
+    }
+    hideBlockingOverlay();
+    await initializeExpectedProcessingReturnsWorkspace();
+  } catch (e) { hideBlockingOverlay(); await abpsConfirm(e.message, { title: "Could not update", okLabel: "OK" }); }
 }
