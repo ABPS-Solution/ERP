@@ -601,7 +601,7 @@ function renderPORevisionCard() {
 
     const _grow = Number(li.newRequiredQty) > Number(li.orderedQty);
     return poRevRowHtml({
-      idx, itemCode: li.itemCode, description: li.description, unit: li.unit,
+      idx, itemCode: li.itemCode, description: li.description, unit: li.unit, poNo: po.poNo,
       oldQty: Number(li.orderedQty) || 0, newQty: Number(li.newRequiredQty) || 0, received: Number(li.receivedQty) || 0,
       vdq: vdqNow, designRate: hasDesignRate ? designRate : null, costingDiff,
       headBg: li.isNew ? '#dbeafe' : (li.changed ? (_grow ? '#dcfce7' : '#fef3c7') : '#e0f2fe'), headColor: li.isNew ? '#1e3a8a' : (li.changed ? (_grow ? '#166534' : '#78350f') : 'var(--brand)'),
@@ -1525,7 +1525,7 @@ function renderAPORCard(r) {
     const _isNewRow = !currentByItem[line.itemCode];
     const _isRemovedRow = !_isNewRow && vdqNow <= 1e-9;
     return poRevRowHtml({
-      idx, itemCode: line.itemCode, description: line.description, unit: line.unit,
+      idx, itemCode: line.itemCode, description: line.description, unit: line.unit, poNo: r.poNo,
       oldQty, newQty, received, vdq: vdqNow, designRate: hasDesignRate ? designRate : null, costingDiff,
       headBg: _isNewRow ? '#dbeafe' : (_isRemovedRow ? '#fee2e2' : (!_changedQty ? '#e0f2fe' : (vdqNow > oldQty ? '#dcfce7' : '#fef3c7'))),
       headColor: _isNewRow ? '#1e3a8a' : (_isRemovedRow ? '#991b1b' : (!_changedQty ? 'var(--brand)' : (vdqNow > oldQty ? '#166534' : '#78350f'))),
@@ -2016,7 +2016,9 @@ function poRevRowHtml(o) {
           <div style="${calcCell}"><div style="${lbl}">New Required Qty</div><div style="${val} color:${o.newQty > o.oldQty ? '#15803d' : '#b91c1c'};">${fmt(o.newQty)}</div></div>
           <div style="${calcCell}"><div style="${lbl}">Already Received</div><div style="${val} color:${o.received > 0 ? '#b45309' : 'var(--muted)'};">${fmt(o.received)}</div></div>
           <div style="${inCell}"><div style="${lbl}">Vendor Discussed Qty *</div><input type="number" step="any" ${o.vdqAttrs} style="${inp} border-color:#15803d;"></div>
+          <div style="${calcCell}"><div style="${lbl}">Unit</div><div style="${val} font-family:inherit; color:#334155;">${esc(o.unit || '—')}</div></div>
           <div style="${calcCell}"><div style="${lbl}">Design Rate / Qty</div><div style="${val} color:#334155;">${o.designRate != null ? fmt(o.designRate) : '—'}</div></div>
+          <div style="${calcCell}"><div style="${lbl}">Last Ordered Rate</div>${rmpoLastOrderedCell(o.itemCode, o.poNo)}</div>
           <div style="${inCell}"><div style="${lbl}">Rate / Qty *</div><input type="number" min="0" step="any" ${o.rateAttrs} style="${inp}"></div>
           <div style="${inCell}"><div style="${lbl}">Disc %</div><input type="number" min="0" max="100" step="any" ${o.discAttrs} style="${inp}"></div>
           <div style="${calcCell}"><div style="${lbl}">Costing Diff</div><div style="${val} color:${diff > 0 ? '#dc2626' : (diff < 0 ? '#15803d' : '#475569')};"><span ${o.diffAttrs}>${diffTxt}</span></div></div>

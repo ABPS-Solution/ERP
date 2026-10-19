@@ -1132,6 +1132,44 @@ function removeCPOMaterialRow(id) {
   persistCPODraft();
 }
 
+// Last Ordered (reference only): latest Authorized Material RM PO rate for the
+// row's item code, after line discount. Fetched once per item code and filled
+// into every .rmpo-last-ordered cell showing that code.
+window._rmpoLastRates = window._rmpoLastRates || {};
+function rmpoLastOrderedText(itemCode, excludePoNo) {
+  if (!itemCode) return '<span style="color:var(--muted);">—</span>';
+  const v = window._rmpoLastRates[itemCode + '|' + (excludePoNo || '')];
+  if (v === undefined) return '<span style="color:var(--muted);">…</span>';
+  if (v === null) return '<span style="font-size:0.78rem; font-weight:700; color:#b45309;">Never ordered before</span>';
+  return `<div style="line-height:1.15;"><div style="font-family:monospace; font-weight:700; font-size:1rem; color:#334155;">₹${(Number(v.rate) || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 })}</div>
+    <div style="font-size:0.68rem; color:#64748b;" title="${escapeHtml((v.poNo || '') + (v.vendorName ? ' · ' + v.vendorName : ''))}">${escapeHtml(formatOrdinalDate(v.date) || v.date || '')}</div></div>`;
+}
+function rmpoLastOrderedCell(itemCode, excludePoNo) {
+  rmpoEnsureLastRates([itemCode], excludePoNo);
+  return `<div class="rmpo-last-ordered" data-code="${escapeHtml(itemCode || '')}" data-ex="${escapeHtml(excludePoNo || '')}" style="min-height:36px; display:flex; align-items:center; justify-content:center; text-align:center;">${rmpoLastOrderedText(itemCode, excludePoNo)}</div>`;
+}
+const _rmpoLastRatePending = {};
+function rmpoEnsureLastRates(codes, excludePoNo) {
+  const ex = excludePoNo || '';
+  const need = [...new Set((codes || []).filter(c => c && window._rmpoLastRates[c + '|' + ex] === undefined))];
+  if (!need.length) return;
+  const key = ex;
+  (_rmpoLastRatePending[key] = _rmpoLastRatePending[key] || new Set());
+  need.forEach(c => _rmpoLastRatePending[key].add(c));
+  clearTimeout(_rmpoLastRatePending[key]._t);
+  _rmpoLastRatePending[key]._t = setTimeout(async () => {
+    const batch = [..._rmpoLastRatePending[key]]; _rmpoLastRatePending[key] = new Set();
+    try {
+      const d = await apFetch({ action: "fetchRmPoLastOrderedRates", itemCodes: batch, excludePoNo: ex || null });
+      if (!d.success) return;
+      batch.forEach(c => { window._rmpoLastRates[c + '|' + ex] = (d.rates || {})[c] || null; });
+      document.querySelectorAll('.rmpo-last-ordered').forEach(el => {
+        if ((el.dataset.ex || '') === ex && batch.includes(el.dataset.code)) el.innerHTML = rmpoLastOrderedText(el.dataset.code, ex);
+      });
+    } catch (e) { /* reference only */ }
+  }, 50);
+}
+
 function renderCPOMaterialRows() {
   const body = document.getElementById("cpo-rows-body");
   if (window.cpoMaterialRows.length === 0) {
@@ -1215,11 +1253,14 @@ function renderCPOMaterialRows() {
       </div>
       <div style="padding:10px 12px; display:flex; flex-direction:column; gap:10px;">
         ${nameBlock}
-        <div style="display:grid; grid-template-columns:repeat(6, minmax(0, 1fr)); border:1.5px solid #cbd5e1; border-radius:6px; overflow:hidden;">
-          <div style="${cellIn}"><div style="${cellLbl}">Quantity *${row.unit ? ` (${esc(row.unit)})` : ""}</div>
+        <div style="display:grid; grid-template-columns:repeat(8, minmax(0, 1fr)); border:1.5px solid #cbd5e1; border-radius:6px; overflow:hidden;">
+          <div style="${cellIn}"><div style="${cellLbl}">Quantity *</div>
             <input type="number" min="0" step="any" class="cpo-qty" data-rowid="${row.id}" value="${row.quantity}" oninput="updateCPORowField(${row.id},'quantity',this.value)" onblur="handleCPOQtyBlur(${row.id})" style="${inputCss}"></div>
+          <div style="${cellCalc}"><div style="${cellLbl}">Unit</div>
+            <div style="height:36px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.95rem; color:#334155;">${row.unit ? esc(row.unit) : '—'}</div></div>
           <div style="${cellCalc}"><div style="${cellLbl}">Design Rate / Qty</div>
             <div style="height:36px; display:flex; align-items:center; justify-content:center; font-family:monospace; font-weight:700; font-size:1.02rem; color:#334155;">${hasDesignRate ? fmtQty(designRate) : '—'}</div></div>
+          <div style="${cellCalc} border-left:1px solid #cbd5e1;"><div style="${cellLbl}">Last Ordered Rate</div>${rmpoLastOrderedCell(row.itemCode)}</div>
           <div style="${cellIn} border-left:1px solid #cbd5e1;"><div style="${cellLbl}">Rate / Qty *</div>
             <input type="number" min="0" step="any" class="cpo-rate" data-rowid="${row.id}" value="${row.rate}" oninput="updateCPORowField(${row.id},'rate',this.value)"
               ${rateLocked ? 'disabled title="Enter Quantity and Allocate to PRNs first"' : ''}

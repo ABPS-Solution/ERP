@@ -700,10 +700,10 @@ function renderFGBatchUnits(fgId) {
   const st = window._fgApprovalState[fgId];
   const rows = st.batchUnits.map((u, i) => `
     <tr style="${u.include ? "" : "background:#fef2f2;"}">
-      <td style="padding:6px 8px; border-bottom:1px solid #cbd5e1; text-align:center;"><input type="checkbox" style="width:auto;" ${u.include ? "checked" : ""} onchange="fgBatchSet(${fgId}, ${i}, 'include', this.checked)"></td>
-      <td style="padding:6px 8px; border-bottom:1px solid #cbd5e1; font-weight:600;">Set ${escapeHtml(String(u.setNumber ?? ""))}</td>
-      <td style="padding:6px 8px; border-bottom:1px solid #cbd5e1; font-size:0.78rem; color:var(--muted); overflow-wrap:anywhere;">${escapeHtml(u.jobCardNumber)}</td>
-      <td style="padding:6px 8px; border-bottom:1px solid #cbd5e1;"><input type="text" id="fg-batch-serial-${fgId}-${i}" value="${escapeHtml(u.serial)}" ${u.include ? "" : "disabled"}
+      <td style="padding:6px 8px; border-bottom:2px solid #94a3b8; text-align:center;"><input type="checkbox" style="width:auto;" ${u.include ? "checked" : ""} onchange="fgBatchSet(${fgId}, ${i}, 'include', this.checked)"></td>
+      <td style="padding:6px 8px; border-bottom:2px solid #94a3b8; border-left:2px solid #94a3b8; font-weight:600;">Set ${escapeHtml(String(u.setNumber ?? ""))}</td>
+      <td style="padding:6px 8px; border-bottom:2px solid #94a3b8; border-left:2px solid #94a3b8; font-size:0.78rem; color:var(--muted); overflow-wrap:anywhere;">${escapeHtml(u.jobCardNumber)}</td>
+      <td style="padding:6px 8px; border-bottom:2px solid #94a3b8; border-left:2px solid #94a3b8;"><input type="text" id="fg-batch-serial-${fgId}-${i}" value="${escapeHtml(u.serial)}" ${u.include ? "" : "disabled"}
         oninput="fgBatchSet(${fgId}, ${i}, 'serial', this.value)" placeholder="Serial number" style="padding:6px 8px; border:1.5px solid #94a3b8; border-radius:4px; font-weight:600;"></td>
     </tr>`).join("");
   const n = st.batchUnits.length, inc = st.batchUnits.filter(u => u.include).length;
@@ -711,7 +711,7 @@ function renderFGBatchUnits(fgId) {
     <div style="border:2px solid #94a3b8; border-radius:var(--radius); background:#fff; margin-bottom:16px; overflow:hidden;">
       <div style="padding:8px 14px; border-bottom:2px solid #94a3b8; font-size:0.78rem; font-weight:800; text-transform:uppercase; color:#1e3a8a;">
         Units in this batch · ${inc} of ${n} to approve${inc < n ? ` · <span style="color:#b91c1c;">${n - inc} sent back to Production</span>` : ""}</div>
-      <div style="padding:10px 14px; display:flex; flex-wrap:wrap; gap:8px; align-items:center; border-bottom:1px solid #cbd5e1; background:#f8fafc;">
+      <div style="padding:10px 14px; display:flex; flex-wrap:wrap; gap:8px; align-items:center; border-bottom:2px solid #94a3b8; background:#f8fafc;">
         <span style="font-size:0.8rem; font-weight:700;">Fill serials:</span>
         <input type="text" id="fg-batch-prefix-${fgId}" placeholder="Prefix, e.g. ABPS/CAP/26/" style="width:220px; padding:6px 8px;">
         <input type="number" id="fg-batch-start-${fgId}" placeholder="Start no." min="0" style="width:110px; padding:6px 8px;">
@@ -726,8 +726,8 @@ function renderFGBatchUnits(fgId) {
         <table style="width:100%; border-collapse:collapse; font-size:0.85rem; table-layout:fixed;">
           <colgroup><col style="width:9%"><col style="width:12%"><col style="width:44%"><col style="width:35%"></colgroup>
           <thead><tr style="background:#e0e7ff; color:#1e3a8a;">
-            <th style="padding:7px 8px; text-align:center;">Approve</th><th style="padding:7px 8px; text-align:left;">Set</th>
-            <th style="padding:7px 8px; text-align:left;">Job Card</th><th style="padding:7px 8px; text-align:left;">Serial Number *</th></tr></thead>
+            <th style="padding:7px 8px; text-align:center; border-bottom:2px solid #94a3b8;">Approve</th><th style="padding:7px 8px; text-align:left; border-bottom:2px solid #94a3b8; border-left:2px solid #94a3b8;">Set</th>
+            <th style="padding:7px 8px; text-align:left; border-bottom:2px solid #94a3b8; border-left:2px solid #94a3b8;">Job Card</th><th style="padding:7px 8px; text-align:left; border-bottom:2px solid #94a3b8; border-left:2px solid #94a3b8;">Serial Number *</th></tr></thead>
           <tbody>${rows}</tbody>
         </table>
       </div>
@@ -749,7 +749,7 @@ function fgBatchFillSequence(fgId) {
   const prefix = document.getElementById(`fg-batch-prefix-${fgId}`).value;
   const start = parseInt(document.getElementById(`fg-batch-start-${fgId}`).value, 10);
   const width = Math.max(1, parseInt(document.getElementById(`fg-batch-width-${fgId}`).value, 10) || 1);
-  if (isNaN(start)) return alert("Enter the start number.");
+  if (isNaN(start)) return fgPopup("Fill in order", "Enter the Start no. first (the number for the first ticked unit).");
   let n = start;
   st.batchUnits.forEach(u => { if (u.include) u.serial = prefix + String(n++).padStart(width, "0"); });
   fgBatchRefresh(fgId);
@@ -758,10 +758,37 @@ function fgBatchAllNA(fgId) {
   window._fgApprovalState[fgId].batchUnits.forEach(u => { if (u.include) u.serial = "N/A"; });
   fgBatchRefresh(fgId);
 }
+// On-page popup used instead of the browser's alert() / prompt(). With
+// { input: true } it shows a text box and resolves to its text (null if cancelled).
+function fgPopup(title, message, opts) {
+  const o = opts || {};
+  return new Promise(resolve => {
+    const wrap = document.createElement("div");
+    wrap.style.cssText = "position:fixed; inset:0; background:rgba(15,23,42,0.5); z-index:100000; display:flex; align-items:center; justify-content:center; padding:16px;";
+    const box = document.createElement("div");
+    box.style.cssText = "background:#fff; border-radius:10px; max-width:520px; width:100%; padding:22px 24px; box-shadow:0 12px 36px rgba(0,0,0,0.25); border:2px solid #94a3b8;";
+    box.innerHTML = `<div style="font-size:1.05rem; font-weight:800; color:var(--brand); margin-bottom:10px;">${escapeHtml(title)}</div>
+      <div style="font-size:0.92rem; color:#111827; white-space:pre-line; line-height:1.5; margin-bottom:14px;">${escapeHtml(message)}</div>
+      ${o.input ? '<textarea rows="8" style="width:100%; box-sizing:border-box; padding:8px 10px; border:2px solid #94a3b8; border-radius:6px; font-family:monospace; font-size:0.9rem; margin-bottom:14px;"></textarea>' : ''}
+      <div style="display:flex; justify-content:flex-end; gap:10px;">
+        ${o.input ? '<button type="button" class="nav-btn-styled" data-v="cancel" style="background:#e2e8f0; color:#111827; padding:8px 20px; font-weight:700; width:auto;">Cancel</button>' : ''}
+        <button type="button" class="nav-btn-styled" data-v="ok" style="background:var(--brand); padding:8px 22px; font-weight:700; width:auto;">${escapeHtml(o.okLabel || "OK")}</button>
+      </div>`;
+    const ta = box.querySelector("textarea");
+    const done = (ok) => { document.removeEventListener("keydown", onKey, true); wrap.remove(); resolve(o.input ? (ok ? ta.value : null) : ok); };
+    const onKey = (e) => { if (e.key === "Escape") { e.preventDefault(); done(false); } else if (e.key === "Enter" && !o.input) { e.preventDefault(); done(true); } };
+    box.querySelector('[data-v="ok"]').onclick = () => done(true);
+    const c = box.querySelector('[data-v="cancel"]'); if (c) c.onclick = () => done(false);
+    wrap.addEventListener("click", (e) => { if (e.target === wrap) done(false); });
+    document.addEventListener("keydown", onKey, true);
+    wrap.appendChild(box); document.body.appendChild(wrap);
+    (ta || box.querySelector('[data-v="ok"]')).focus();
+  });
+}
 async function fgBatchPasteList(fgId) {
   const st = window._fgApprovalState[fgId];
   const inc = st.batchUnits.filter(u => u.include);
-  const text = window.prompt(`Paste ${inc.length} serial numbers, one per line (or separated by commas), in Set order:`);
+  const text = await fgPopup("Paste a list", `Paste ${inc.length} serial numbers, one per line (or separated by commas), in Set order.`, { input: true, okLabel: "Fill" });
   if (text == null) return;
   const list = text.split(/[\r\n,;\t]+/).map(x => x.trim()).filter(Boolean);
   if (list.length !== inc.length && !(await abpsConfirm(`You pasted ${list.length} serial numbers for ${inc.length} units. Fill as many as match, in order?`, { okLabel: "Fill" }))) return;
