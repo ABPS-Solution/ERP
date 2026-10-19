@@ -689,6 +689,7 @@ const DESIGN_WORKSPACE_TARGET_IDS = [
 
 function switchActiveDashboardModule(targetSectionId) {
   window.scrollTo(0, 0);
+  document.querySelectorAll(".panel-own-header-item").forEach(el => el.style.display = "none");
   // Production reminder banners (Batch 7, 16 Sep 2026) — Portal calls both
   // from exactly here, on every dashboard navigation, so the banners are
   // already correct by the time a Production screen renders. Both are
@@ -992,6 +993,7 @@ function navigateToStoreWorkspacePanel(targetPanelModuleId) {
 function returnToDashboard() {
   document.querySelectorAll('[id^="canvas-module-"]').forEach(p => p.style.display = "none");
   document.querySelectorAll('[id$="-workspace-enclosure-panel"]').forEach(p => p.style.display = "none");
+  document.querySelectorAll(".panel-own-header-item").forEach(el => el.style.display = "none");
   const mwc = document.getElementById("module-workspace-container");
   if (mwc) mwc.style.display = "none";
   document.getElementById("dashboard-view").style.display = "flex";
