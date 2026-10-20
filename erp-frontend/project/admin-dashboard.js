@@ -113,7 +113,7 @@ function admReadCustomVal() {
 
 function admLoadCustom() {
   const val = admReadCustomVal();
-  if (!val) return alert("Please enter a value for the custom period.");
+  if (!val) return abpsAlert("Please enter a value for the custom period.");
   admCurrentPeriod = admCurrentCustomType;
   admLoadDashboard(val);
 }
@@ -139,10 +139,10 @@ async function admLoadDashboard(customVal) {
       periodValue: customVal || "",
       todayOverride: localStorage.getItem("erpPtlTodayOverride") || "",
     });
-    if (!data.success) { alert("Admin Dashboard load failed: " + data.error); return; }
+    if (!data.success) { abpsAlert("Admin Dashboard load failed: " + data.error); return; }
     admRenderDashboard(data);
   } catch (e) {
-    alert("Admin Dashboard error: " + e.message);
+    abpsAlert("Admin Dashboard error: " + e.message);
   }
 }
 

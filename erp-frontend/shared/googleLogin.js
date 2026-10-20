@@ -58,7 +58,7 @@ function initializeGoogleSignInButton() {
 async function handleGooglePlatformCredentialResponse(response) {
   const selectedEngineer = document.getElementById("app-auth-active-engineer-identity").value;
   if (!selectedEngineer) {
-    alert("Identity Verification Failed: You must select your individual Engineer Name before logging in with your Google Account credentials.");
+    abpsAlert("Identity Verification Failed: You must select your individual Engineer Name before logging in with your Google Account credentials.");
     return;
   }
 
@@ -92,16 +92,16 @@ async function handleGooglePlatformCredentialResponse(response) {
       // from the server's real perm_super_admin flag, so it's trustworthy.
       completeSuccessfulLogin(data, selectedEngineer, isUserAdminGlobal, !!data.isSuperAdmin);
     } else if (data.code === "LOCATION_BLOCKED") {
-      alert(data.error);
+      abpsAlert(data.error);
       if (googleBtnMount) googleBtnMount.style.display = "flex";
       if (processingLoader) processingLoader.style.display = "none";
     } else {
-      alert("Authentication Error: " + data.error);
+      abpsAlert("Authentication Error: " + data.error);
       if (googleBtnMount) googleBtnMount.style.display = "flex";
       if (processingLoader) processingLoader.style.display = "none";
     }
   } catch (e) {
-    alert("Connection verification failure: " + e.message);
+    abpsAlert("Connection verification failure: " + e.message);
     if (googleBtnMount) googleBtnMount.style.display = "flex";
     if (processingLoader) processingLoader.style.display = "none";
   }

@@ -444,11 +444,11 @@ async function pplanSetPurchasedOutside(boqId, on) {
   if (!(await abpsConfirm(msg, { okLabel: on ? "Purchasing from Outside" : "Remove", title: "Purchasing from Outside" }))) return;
   try {
     const data = await apFetch({ action: "setProductPurchasedOutside", boqId, on });
-    if (!data.success) { alert(data.error || "Could not change this product."); return; }
+    if (!data.success) { abpsAlert(data.error || "Could not change this product."); return; }
     pplanClearInitDraft(boqId);
     await loadProductionPlanForProject();
     loadProductionPlanningQueue();
-  } catch (e) { alert("Network error: " + e.message); }
+  } catch (e) { abpsAlert("Network error: " + e.message); }
 }
 
 // Table form — Process Name / Initial Planning Date (frozen) / Current
@@ -572,7 +572,7 @@ async function pplanSubmitInitialPlan(boqId) {
   for (const s of lane.steps) {
     const el = document.getElementById(`pplan-plan-${boqId}-${s.id}`);
     const val = el ? el.value : "";
-    if (!val) { alert(`Enter a completion date for "${s.label}".`); return; }
+    if (!val) { abpsAlert(`Enter a completion date for "${s.label}".`); return; }
     // Starting Date is optional (informational only, never gates submission).
     const startEl = document.getElementById(`pplan-start-${boqId}-${s.id}`);
     const startVal = startEl ? startEl.value : "";
@@ -580,22 +580,22 @@ async function pplanSubmitInitialPlan(boqId) {
   }
   try {
     const data = await apFetch({ action: "submitInitialProductPlan", operatorName: appActiveOperatorIdentityString, boqId, steps });
-    if (!data.success) { alert(data.error || "Could not submit the plan."); return; }
+    if (!data.success) { abpsAlert(data.error || "Could not submit the plan."); return; }
     pplanClearInitDraft(boqId);
     await loadProductionPlanForProject(); // reload real server state rather than guess it locally
     loadProductionPlanningQueue();
-  } catch (e) { alert("Network error: " + e.message); }
+  } catch (e) { abpsAlert("Network error: " + e.message); }
 }
 
 async function pplanUpdateTarget(boqId, stepKey, targetDate) {
   if (!targetDate) return;
   try {
     const data = await apFetch({ action: "updateProductPlanStepTarget", boqId, stepKey, targetDate });
-    if (!data.success) { alert(data.error || "Could not update the target date."); pplanRenderLanes(); return; }
+    if (!data.success) { abpsAlert(data.error || "Could not update the target date."); pplanRenderLanes(); return; }
     const lane = pplanData.lanes.find(l => l.boqId === boqId);
     const step = lane && lane.steps.find(s => s.id === stepKey);
     if (step) step.target = data.targetDate;
-  } catch (e) { alert("Network error: " + e.message); }
+  } catch (e) { abpsAlert("Network error: " + e.message); }
 }
 
 // Starting Date (11 Sep 2026) — purely informational, never gates
@@ -604,22 +604,22 @@ async function pplanUpdateTarget(boqId, stepKey, targetDate) {
 async function pplanUpdateStartDate(boqId, stepKey, startDate) {
   try {
     const data = await apFetch({ action: "updateProductPlanStepStartDate", boqId, stepKey, startDate });
-    if (!data.success) { alert(data.error || "Could not update the starting date."); pplanRenderLanes(); return; }
+    if (!data.success) { abpsAlert(data.error || "Could not update the starting date."); pplanRenderLanes(); return; }
     const lane = pplanData.lanes.find(l => l.boqId === boqId);
     const step = lane && lane.steps.find(s => s.id === stepKey);
     if (step) step.startDate = data.startDate;
-  } catch (e) { alert("Network error: " + e.message); }
+  } catch (e) { abpsAlert("Network error: " + e.message); }
 }
 
 // Admin-only testing override for the frozen Initial Planning Date.
 async function pplanAdminOverridePlanned(boqId, stepKey) {
   try {
     const date = pplanReadAsOf(`planned-${boqId}-${stepKey}`);
-    if (!date) { alert('Pick a date.'); return; }
+    if (!date) { abpsAlert('Pick a date.'); return; }
     const data = await apFetch({ action: "adminOverridePlannedDate", operatorName: appActiveOperatorIdentityString, boqId, stepKey, date });
-    if (!data.success) { alert(data.error || "Could not override the Initial Planning Date."); return; }
+    if (!data.success) { abpsAlert(data.error || "Could not override the Initial Planning Date."); return; }
     await loadProductionPlanForProject();
-  } catch (e) { alert("Network error: " + e.message); }
+  } catch (e) { abpsAlert("Network error: " + e.message); }
 }
 
 // Per-Job-Card mark/unmark (11 Sep 2026, migration 192; the only way to
@@ -633,7 +633,7 @@ async function pplanMarkStepJcDone(boqId, stepKey, jobCardNumber) {
   try {
     const asOfDate = pplanReadAsOf(`${boqId}-${stepKey}`);
     const data = await apFetch({ action: "markProductPlanStepJobCardDone", operatorName: appActiveOperatorIdentityString, boqId, stepKey, jobCardNumber, asOfDate });
-    if (!data.success) { alert(data.error || "Could not mark this Job Card done."); return; }
+    if (!data.success) { abpsAlert(data.error || "Could not mark this Job Card done."); return; }
     const lane = pplanData.lanes.find(l => l.boqId === boqId);
     const step = lane && lane.steps.find(s => s.id === stepKey);
     if (step) {
@@ -643,7 +643,7 @@ async function pplanMarkStepJcDone(boqId, stepKey, jobCardNumber) {
       step.doneJobCards = Array.from(set);
     }
     pplanRenderLanes();
-  } catch (e) { alert("Network error: " + e.message); }
+  } catch (e) { abpsAlert("Network error: " + e.message); }
 }
 
 // Super-admin testing override: move an already-completed step's
@@ -654,19 +654,19 @@ async function pplanAdminRedateStep(boqId, stepKey, date) {
   const lane = pplanData.lanes.find(l => l.boqId === boqId);
   const step = lane && lane.steps.find(s => s.id === stepKey);
   const jc = step && (step.doneJobCards || [])[0];
-  if (!jc) { alert("No completed Job Card found on this step."); return; }
+  if (!jc) { abpsAlert("No completed Job Card found on this step."); return; }
   try {
     const data = await apFetch({ action: "markProductPlanStepJobCardDone", operatorName: appActiveOperatorIdentityString, boqId, stepKey, jobCardNumber: jc, asOfDate: date });
-    if (!data.success) { alert(data.error || "Could not change this date."); return; }
+    if (!data.success) { abpsAlert(data.error || "Could not change this date."); return; }
     step.actual = data.actualDate;
     pplanRenderLanes();
-  } catch (e) { alert("Network error: " + e.message); }
+  } catch (e) { abpsAlert("Network error: " + e.message); }
 }
 
 async function pplanUnmarkStepJcDone(boqId, stepKey, jobCardNumber) {
   try {
     const data = await apFetch({ action: "unmarkProductPlanStepJobCardDone", operatorName: appActiveOperatorIdentityString, boqId, stepKey, jobCardNumber });
-    if (!data.success) { alert(data.error || "Could not mark this Job Card undone."); return; }
+    if (!data.success) { abpsAlert(data.error || "Could not mark this Job Card undone."); return; }
     const lane = pplanData.lanes.find(l => l.boqId === boqId);
     const step = lane && lane.steps.find(s => s.id === stepKey);
     if (step) {
@@ -675,23 +675,23 @@ async function pplanUnmarkStepJcDone(boqId, stepKey, jobCardNumber) {
       step.doneJobCards = (step.doneJobCards || []).filter(j => j !== jobCardNumber);
     }
     pplanRenderLanes();
-  } catch (e) { alert("Network error: " + e.message); }
+  } catch (e) { abpsAlert("Network error: " + e.message); }
 }
 
 async function pplanAdminSetPackingFgDate(boqId) {
   const date = pplanReadAsOf(`${boqId}-packing_add_fg`);
-  if (!date) { alert("Pick a date first."); return; }
+  if (!date) { abpsAlert("Pick a date first."); return; }
   try {
     const data = await apFetch({ action: "adminSetPackingFgDate", operatorName: appActiveOperatorIdentityString, boqId, date });
-    if (!data.success) { alert(data.error || "Could not set this date."); return; }
+    if (!data.success) { abpsAlert(data.error || "Could not set this date."); return; }
     await loadProductionPlanForProject();
-  } catch (e) { alert("Network error: " + e.message); }
+  } catch (e) { abpsAlert("Network error: " + e.message); }
 }
 
 async function pplanAdminClearPackingFgDate(boqId) {
   try {
     const data = await apFetch({ action: "adminClearPackingFgDate", operatorName: appActiveOperatorIdentityString, boqId });
-    if (!data.success) { alert(data.error || "Could not clear this override."); return; }
+    if (!data.success) { abpsAlert(data.error || "Could not clear this override."); return; }
     await loadProductionPlanForProject();
-  } catch (e) { alert("Network error: " + e.message); }
+  } catch (e) { abpsAlert("Network error: " + e.message); }
 }

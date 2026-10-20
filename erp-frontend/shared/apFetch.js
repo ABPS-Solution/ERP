@@ -238,7 +238,7 @@ document.addEventListener("click", async (e) => {
     if (w) w.location = href; else window.open(href, '_blank');
   } catch (err) {
     if (w) w.close();
-    alert("Could not open document: " + err.message);
+    abpsAlert("Could not open document: " + err.message);
   }
 }, true);
 
@@ -379,7 +379,13 @@ document.documentElement.scrollTop = 0;
 document.body.scrollTop = 0;
 if ("scrollRestoration" in history) history.scrollRestoration = "manual";
 
-window.onload = async function() {
+// Runs at DOMContentLoaded, not window.onload: onload waits for every image/font/
+// third-party script, so the screen sat on the wrong view for a while on refresh.
+// #auth-container starts hidden in CSS and is shown only once the login path is chosen.
+function abpsBootRun() { abpsBootApp(); }
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", abpsBootRun);
+else setTimeout(abpsBootRun, 0);
+async function abpsBootApp() {
   window.scrollTo(0, 0);
   const token   = localStorage.getItem("erpSessionToken");
   const expires = localStorage.getItem("erpSessionExpiry");
@@ -434,13 +440,23 @@ window.onload = async function() {
     syncPlatformPersonnelDropdownOptionsList();
     initializeLoginScreen();
   }
-};
+}
 
 // ── Unauthenticated department/personnel directory (login screen dropdowns) ──
 async function syncPlatformPersonnelDropdownOptionsList() {
   const deptSelect = document.getElementById("app-auth-active-department-identity");
   const nameSelect = document.getElementById("app-auth-active-engineer-identity");
   if (!deptSelect || !nameSelect) return;
+
+  // Show the remembered Department + Name straight away, before the directory
+  // call returns, so the login card doesn't change after it appears.
+  try {
+    const rd = localStorage.getItem("erpRememberedLoginDept"), rn = localStorage.getItem("erpRememberedLoginName");
+    if (rd && !deptSelect.value) {
+      document.querySelectorAll(".login-dept-btn").forEach(btn => btn.classList.toggle("active", btn.dataset.dept === rd));
+      if (rn) { nameSelect.innerHTML = ""; const o = document.createElement("option"); o.value = rn; o.textContent = rn; nameSelect.appendChild(o); nameSelect.value = rn; }
+    }
+  } catch (_) {}
 
   try {
     const res = await fetch(GAS_URL, {

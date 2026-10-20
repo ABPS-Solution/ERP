@@ -83,7 +83,7 @@ function pjdReadCustomVal() {
 
 function pjdLoadCustom() {
   const val = pjdReadCustomVal();
-  if (!val) return alert("Please enter a value for the custom period.");
+  if (!val) return abpsAlert("Please enter a value for the custom period.");
   pjdCurrentPeriod = pjdCurrentCustomType;
   pjdLoadDashboard(val);
 }
@@ -96,8 +96,8 @@ async function pjdLoadDashboard(customVal) {
       periodValue: customVal || "",
       todayOverride: localStorage.getItem("erpPtlTodayOverride") || ""
     });
-    if (!data.success) { alert("Project Dashboard load failed: " + data.error); return; }
+    if (!data.success) { abpsAlert("Project Dashboard load failed: " + data.error); return; }
   } catch (e) {
-    if (e.message !== "SESSION_EXPIRED") alert("Project Dashboard error: " + e.message);
+    if (e.message !== "SESSION_EXPIRED") abpsAlert("Project Dashboard error: " + e.message);
   }
 }

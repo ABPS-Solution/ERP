@@ -190,9 +190,9 @@ async function commitIsolatedTaskItem(leadRef, scopeNode) {
     shift: form.querySelector(".task-shift-select").value, targetDate: form.querySelector(".task-targetdate-input").value, status: form.querySelector(".task-status-select").value,
     priority: form.querySelector(".task-priority-select").value, completionNotes: form.querySelector(".task-completionnotes-input").value
   };
-  if (!taskData.targetDate) return alert("Target Date required.");
-  if (!desc || desc.trim() === "") return alert("Task Description is a compulsory field.");
-  if (!taskData.engineer || !taskData.engineer.trim()) return alert("Assigned To (Engineer) is a compulsory field.");
+  if (!taskData.targetDate) return abpsAlert("Target Date required.");
+  if (!desc || desc.trim() === "") return abpsAlert("Task Description is a compulsory field.");
+  if (!taskData.engineer || !taskData.engineer.trim()) return abpsAlert("Assigned To (Engineer) is a compulsory field.");
   btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Saving...';
   try {
     const r = await apFetch({ 
@@ -214,9 +214,9 @@ async function commitIsolatedTaskItem(leadRef, scopeNode) {
       // 6 Sep 2026). Follow-up creation just above (commitIsolatedFollowUpItem)
       // and new-lead creation (leads.js) still call it.
     } else {
-      alert(r.error || "Could not save the task.");
+      abpsAlert(r.error || "Could not save the task.");
     }
-  } catch(e) { if (e.message !== "SESSION_EXPIRED") alert(e.message); } finally { btn.disabled = false; btn.innerHTML = "Save Task"; }
+  } catch(e) { if (e.message !== "SESSION_EXPIRED") abpsAlert(e.message); } finally { btn.disabled = false; btn.innerHTML = "Save Task"; }
 }
 
 async function removeIsolatedTaskItem(leadRef, taskId, event) {
@@ -235,7 +235,7 @@ async function removeIsolatedTaskItem(leadRef, taskId, event) {
     
     // FIXED: Catch backend authorization block
     if (!r.success) {
-        alert(r.error || "An unexpected error occurred.");
+        abpsAlert(r.error || "An unexpected error occurred.");
         btn.disabled = false;
         btn.textContent = "Delete";
         return;
@@ -245,7 +245,7 @@ async function removeIsolatedTaskItem(leadRef, taskId, event) {
     await globalExecutionScopeReloader(leadRef, activeScopeNode); 
     
   } catch(e) { 
-    alert("Deletion failed: " + e.message); 
+    abpsAlert("Deletion failed: " + e.message); 
     btn.disabled = false;
     btn.textContent = "Delete";
   }
@@ -289,7 +289,7 @@ async function executeTaskMatrixSearch(opts) {
   const dateFilterLabels = { Overdue: "Overdue", Today: "Today", ThisWeek: "This Week", NextWeek: "Next Week", ThisMonth: "This Month" };
 
   if (checkedEngineers.length === 0 && checkedStatuses.length === 0 && !dateFilter) {
-    alert("Please select at least one Engineer, Task Status, or Target Date filter before searching.");
+    abpsAlert("Please select at least one Engineer, Task Status, or Target Date filter before searching.");
     return;
   }
 
@@ -387,7 +387,7 @@ async function executeTaskMatrixSearch(opts) {
         document.getElementById(`matrix-edit-task-btn-${t.id}`).onclick = function() { injectMatrixInlineTaskForm(t, card); };
       });
     }
-  } catch(e) { if (live) throw e; alert("Task matrix engine fetch error: " + e.message); } 
+  } catch(e) { if (live) throw e; abpsAlert("Task matrix engine fetch error: " + e.message); } 
   finally { btn.classList.remove("loading"); btn.textContent = "Run Tasks Search"; }
 }
 
@@ -445,8 +445,8 @@ async function commitMatrixTaskMutations(formNode, fallbackLeadId, btnNode) {
   const desc = formNode.querySelector(".task-desc-input").value;
   const targetDate = formNode.querySelector(".task-targetdate-input").value;
 
-  if (!targetDate) return alert("Target Date required.");
-  if (!desc || desc.trim() === "") return alert("Task Description is compulsory.");
+  if (!targetDate) return abpsAlert("Target Date required.");
+  if (!desc || desc.trim() === "") return abpsAlert("Task Description is compulsory.");
 
   const taskData = {
     id: editId, isNew: false, leadRef: fallbackLeadId,
@@ -468,15 +468,15 @@ async function commitMatrixTaskMutations(formNode, fallbackLeadId, btnNode) {
       taskData 
     });
     if (r.success) {
-      alert("Task modifications saved successfully.");
+      abpsAlert("Task modifications saved successfully.");
       executeTaskMatrixSearch();
     } else {
-      alert(r.error || "Could not save the task.");
+      abpsAlert(r.error || "Could not save the task.");
       btnNode.disabled = false; btnNode.innerHTML = "Save Task";
     }
   } catch(e) {
     if (e.message === "SESSION_EXPIRED") return;
-    alert("Matrix Update Error: " + e.message);
+    abpsAlert("Matrix Update Error: " + e.message);
     btnNode.disabled = false; btnNode.innerHTML = "Save Task";
   }
 }
@@ -496,7 +496,7 @@ async function removeMatrixTaskFromEngine(taskId, event) {
     });
     if (r.success) { executeTaskMatrixSearch(); }
   } catch(e) { 
-    alert(e.message); 
+    abpsAlert(e.message); 
     btn.classList.remove("loading");
     btn.textContent = "Delete";
   }
@@ -526,7 +526,7 @@ async function archiveEmailLeadFromSystemDatabaseCache(messageId, elementIndex) 
 
     // FIXED: Catch backend authorization block
     if (!r.success) {
-        alert(r.error || "An unexpected error occurred.");
+        abpsAlert(r.error || "An unexpected error occurred.");
         deleteBtn.disabled = false;
         deleteBtn.textContent = "Delete";
         return;
@@ -539,7 +539,7 @@ async function archiveEmailLeadFromSystemDatabaseCache(messageId, elementIndex) 
     else if (cardNode) cardNode.remove();
     
   } catch(e) {
-    alert("Connection Error: Deletion parameter could not be tracked: " + e.message);
+    abpsAlert("Connection Error: Deletion parameter could not be tracked: " + e.message);
     deleteBtn.disabled = false; 
     deleteBtn.textContent = "Delete";
   }
