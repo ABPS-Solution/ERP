@@ -482,6 +482,10 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-purchase-authorize-prn")) document.getElementById("mod-purchase-authorize-prn").style.display = canAuthorizePRN ? "block" : "none";
   if (document.getElementById("mod-revise-prn"))             document.getElementById("mod-revise-prn").style.display             = canRevisePRN ? "block" : "none";
   if (document.getElementById("mod-authorize-prn-revision")) document.getElementById("mod-authorize-prn-revision").style.display = canAuthorizePRNRevision ? "block" : "none";
+  // The 4 PRN sections are hidden since Automatic PRN (20 Oct 2026). Code is kept so they can be revived.
+  ["mod-purchase-request-note", "mod-purchase-authorize-prn", "mod-revise-prn", "mod-authorize-prn-revision"].forEach(id => {
+    const el = document.getElementById(id); if (el) el.style.display = "none";
+  });
   if (document.getElementById("mod-assign-current-stock"))   document.getElementById("mod-assign-current-stock").style.display   = canReserveStoreStock ? "block" : "none";
   if (document.getElementById("mod-store-gate"))             document.getElementById("mod-store-gate").style.display             = canGateEntry ? "block" : "none";
   if (document.getElementById("mod-store-entry"))            document.getElementById("mod-store-entry").style.display            = canStoreEntryAndGrn ? "block" : "none";
