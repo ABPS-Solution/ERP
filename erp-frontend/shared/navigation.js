@@ -267,6 +267,8 @@ async function navigateToModule(key) {
       loadCityStateFilterOptions();
     } else if (key === "emailLeads") {
       executeInboundEmailSyncPipelineFetch();
+    } else if (key === "newsLeads") {
+      if (typeof nlInit === "function") nlInit();
     } else if (key === "morningMeeting") {
       if (typeof mmInit === "function") mmInit();
     } else if (key === "meetingPreparation") {
@@ -321,6 +323,8 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canSearchCityState         = userPermissionsObject.searchCityState === true;
   const canMeetingPreparation      = userPermissionsObject.meetingPreparation === true;
   const canMorningMeeting         = userPermissionsObject.morningMeeting === true;
+  const canNewsLeads              = userPermissionsObject.newsLeads === true;
+  if (document.getElementById("mod-news-leads")) document.getElementById("mod-news-leads").style.display = canNewsLeads ? "block" : "none";
   // ERP's permMap.js key is "marketingDashboard", not Portal's
   // "viewMarketingDashboard" — ERP's own dedicated key, not a rename.
   const canViewMarketingDashboard  = userPermissionsObject.marketingDashboard === true;
@@ -551,7 +555,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const adminBlock = document.getElementById("dashboard-admin-department-header-block");
   if (adminBlock) adminBlock.style.display = (canSecurity || canViewAdminDashboard) ? "block" : "none";
   const marketingBlock = document.getElementById("dashboard-marketing-department-header-block");
-  if (marketingBlock) marketingBlock.style.display = (canEnterCard || canViewEmailLeads || canUploadCommissioning || canUploadPurchaseOrder || canUploadRevisedPo || canSearchCompany || canSearchTasks || canSearchStatus || canSearchQual || canSearchCityState || canMeetingPreparation || canMorningMeeting) ? "block" : "none";
+  if (marketingBlock) marketingBlock.style.display = (canEnterCard || canViewEmailLeads || canUploadCommissioning || canUploadPurchaseOrder || canUploadRevisedPo || canSearchCompany || canSearchTasks || canSearchStatus || canSearchQual || canSearchCityState || canMeetingPreparation || canMorningMeeting || canNewsLeads) ? "block" : "none";
   const projectBlock = document.getElementById("dashboard-project-department-header-block");
   if (projectBlock) projectBlock.style.display = (canManufacturingClearance || canProjectTimeline || canDailyTimeline || canProjectStatus || canOrderPaymentProgress || userPermissionsObject.viewProjectDashboard === true) ? "block" : "none";
   // Batch 6 (16 Sep 2026): Store's own screens landed, so this is no
