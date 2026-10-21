@@ -116,6 +116,7 @@ function renderStoreManagerApprovalsCardsFeed(pendingTicketsList) {
     let cardWrapper = document.createElement("div");
     cardWrapper.className = "contact-summary-card-parent";
     cardWrapper.id = `store-pending-ticket-card-node-${ticket.ticketId}`;
+    cardWrapper.dataset.outwardPurpose = ticket.outwardPurpose || "";
     
     let itemsArray = Array.isArray(ticket.items) ? ticket.items : [];
     
@@ -189,7 +190,7 @@ ${spareCellsHtml}
             <span style="background:#fef3c7; color:#b45309; font-weight:700; margin-left:4px;">${statusBadgeText}</span>
             <span style="margin-left:8px;">Store:</span> <strong style="color:#111827;">${mappedStorageScope}</strong>
             <span style="margin-left:8px;">Department:</span> <strong style="color:#111827;">${escapeHtml(outwardUseLabel(ticket.department) || "General Store")}</strong>
-            ${ticket.outwardPurpose ? `<span style="margin-left:8px;">Purpose:</span> <strong style="color:#111827;">${escapeHtml(ticket.outwardPurpose)}</strong>` : ""}
+            ${ticket.outwardPurpose ? `<span style="margin-left:8px;">Purpose:</span> <strong style="color:#111827;">${escapeHtml(outwardUseLabel(ticket.outwardPurpose))}</strong>` : ""}
             <span style="margin-left:8px;">Ticket Created By:</span> <strong style="color:#111827;">${escapeHtml(ticket.requestedBy)}</strong>
             <span id="ticket-card-caret-${ticket.ticketId}" style="float:right; font-weight:700; color:var(--muted);">▸</span>
           </div>

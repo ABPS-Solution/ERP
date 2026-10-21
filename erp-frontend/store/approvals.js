@@ -295,10 +295,16 @@ async function executeStoreManagerTicketActionDecision(ticketId, decisionString)
       // Persistent banner + explicit "+ Approve Another Ticket" reset button,
       // matching Authorize BOQ's convention — was previously a setTimeout
       // auto-hide with no way to reload the queue on demand.
+      // Service / Processing / Store Related (DC) tickets go out on a Delivery Challan.
+      const dcPurpose = cardNode?.dataset?.outwardPurpose || "";
+      const isDcTicket = ["Service", "Processing", "Sample"].includes(dcPurpose);
+      const successMsg = decisionString === "APPROVE" && isDcTicket
+        ? `${outwardUseLabel(dcPurpose)} DC Ticket ${ticketId} approved. Its material is now waiting in Material Outward on Delivery Challan for the challan to be made.`
+        : `Ticket Reference ${ticketId} successfully ${decisionString.slice(0, 6).toLowerCase()}ed`;
       if (feedbackBanner) {
         showSuccessWithReset(
           "store-approvals-runtime-inline-feedback-banner",
-          `Ticket Reference ${ticketId} successfully ${decisionString.slice(0, 6).toLowerCase()}ed`,
+          successMsg,
           "Approve Another Ticket",
           "initializeStoreManagerApprovalsWorkspace()",
           [{ url: result.pdfUrl ? driveLink(result.pdfUrl) : "", label: "Download Material Issue Ticket PDF" }]
