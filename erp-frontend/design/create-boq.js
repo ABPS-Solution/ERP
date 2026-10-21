@@ -216,6 +216,7 @@ async function importCBOQFromExisting() {
         descriptionOfMaterial: row.descriptionOfMaterial || ""
       };
     });
+    cboqMaterialRows = await boqSortRowsByMaterialType(cboqMaterialRows);
     // A recent RM PO rate (same formula as picking a material) replaces the
     // old BOQ's rate; rows with no PO in the window keep the old rate.
     await boqEnsurePurchaseRates(cboqMaterialRows.filter(r => r.typeOfStore !== "Finished Goods Store" && !boqIsAcRow(r)).map(r => r.itemCode).filter(Boolean));
@@ -1025,6 +1026,7 @@ async function toggleAuthBOQCardExpansion(boqId, mode) {
     const authDraftBase = authBoqBaseSig(data.draft.materialRows, String(data.draft.version ?? "") + "|" + String(data.draft.orderQuantity ?? ""));
     const authDraftSaved = authBoqDraftLoad(authDraftKey, authDraftBase);
     if (authDraftSaved) eboqMaterialRows = authDraftSaved.rows;
+    eboqMaterialRows = await boqSortRowsByMaterialType(eboqMaterialRows);
 
     let summaryHtml = "";
     if (mode === "authorize-update") {
@@ -1067,3 +1069,23 @@ async function toggleAuthBOQCardExpansion(boqId, mode) {
   }
 }
 
+
+// Orders BOQ rows the way the BOQ document groups them (routes/design.js
+// groupBoqRowsForPdf): Finished Goods first, then Fixed Format types of
+// material, then Free Form ones (each by its display order, then name),
+// Additional Costing last. Row order inside a type is kept.
+async function boqSortRowsByMaterialType(rows) {
+  if (!Array.isArray(rows) || rows.length < 2) return rows || [];
+  if (typeof loadItemCodeCatalogIntoCache === "function") { try { await loadItemCodeCatalogIntoCache(); } catch (e) { /* sort with what we have */ } }
+  const byCode = new Map((window.itemCodeCatalogCache || []).map(c => [c.itemCode, c]));
+  const key = (r) => {
+    if (r && r.typeOfStore === "Finished Goods Store") return [0, 0, "Finished Goods"];
+    if (typeof boqIsAcRow === "function" && boqIsAcRow(r)) return [9, 0, "Additional Costing"];
+    const c = byCode.get(r && r.itemCode) || {};
+    const type = c.typeOfMaterial || (r && r.typeOfMaterial) || "Other";
+    return [c.typeEntryMode === "Fixed Format" ? 1 : 2, c.typeDisplayOrder ?? 9999, type];
+  };
+  return rows.map((r, i) => ({ r, i, k: key(r) }))
+    .sort((a, b) => a.k[0] - b.k[0] || a.k[1] - b.k[1] || a.k[2].localeCompare(b.k[2]) || a.i - b.i)
+    .map(x => x.r);
+}

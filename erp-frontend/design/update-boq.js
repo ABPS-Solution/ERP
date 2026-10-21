@@ -45,6 +45,7 @@ async function toggleBOQRevisionExpansion(updateId) {
   const revDraftBase = authBoqBaseSig(reqItem.newMaterialRows, String(reqItem.newOrderQuantity ?? "") + "|" + authBoqBaseSig(reqItem.oldMaterialRows));
   const revDraftSaved = authBoqDraftLoad(revDraftKey, revDraftBase);
   if (revDraftSaved) uboqRevRows = revDraftSaved.rows;
+  uboqRevRows = await boqSortRowsByMaterialType(uboqRevRows);
 
   // Build a plain-text diff summary from old vs new for the reviewer.
   let summaryText = "Generating change summary...";
@@ -450,7 +451,7 @@ async function loadBOQForUpdate(boqId) {
   if (!data.success) return showBOQBanner("update-boq-feedback", data.error, "error");
 
   uboqCurrentDraft = data.draft;
-  uboqMaterialRows = (data.draft.materialRows || []).map(r => ({ ...r }));
+  uboqMaterialRows = await boqSortRowsByMaterialType((data.draft.materialRows || []).map(r => ({ ...r })));
   uboqSpecFiles    = [];
 
   renderUBOQForm();
