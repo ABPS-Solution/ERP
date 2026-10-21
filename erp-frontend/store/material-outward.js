@@ -47,6 +47,7 @@ async function loadMaterialOutwardServiceQueue() {
   try {
     let data;
     try {
+      if (typeof loadItemCodeCatalogIntoCache === "function") await loadItemCodeCatalogIntoCache().catch(() => {});
       data = await apFetch({ action: "fetchServiceTicketsAwaitingChallan" });
       if (!data.success) throw new Error(data.error || "Failed to load.");
       abpsDraftSave(MOW_QUEUE_CACHE_KEY, { tickets: data.tickets, drafts: data.drafts });
@@ -113,6 +114,20 @@ function mowTicketSummaryLine(t) {
     (jc ? `<div style="margin-top:4px; font-size:0.82rem; color:#475569;"><span style="font-weight:700; color:var(--muted); text-transform:uppercase; font-size:0.68rem; letter-spacing:0.04em;">Job Card</span> <span style="font-family:monospace; font-weight:600;">${escapeHtml(jc)}</span></div>` : "");
 }
 
+// Materials on a ticket as "Name - Rating - Make" (from the item code catalog),
+// so the right ticket is easy to pick.
+function mowTicketMaterialsLine(t) {
+  const byCode = new Map((window.itemCodeCatalogCache || []).map(c => [c.itemCode, c]));
+  const names = (t.items || []).map(it => {
+    const c = byCode.get(it.itemCode);
+    const name = (c && c.combinedName) || it.materialName || it.itemCode || "";
+    const qty = it.released ?? it.quantity;
+    return name + (qty != null && qty !== "" ? ` (${fmtQty(qty)} ${it.unitType || ""})`.replace(/ \)$/, ")") : "");
+  }).filter(Boolean);
+  if (!names.length) return "";
+  return `<div style="margin-top:6px; font-size:0.84rem; color:#111827; line-height:1.45;"><span style="font-weight:700; color:var(--muted); text-transform:uppercase; font-size:0.68rem; letter-spacing:0.04em;">Materials</span> ${names.map(escapeHtml).join("; ")}</div>`;
+}
+
 // renderTicketPoolSection — every approved ticket not yet linked to any
 // challan. A checkbox per ticket; the action row above the list starts a
 // new draft (or, when at least one draft is already open, offers to add
@@ -127,6 +142,7 @@ function renderTicketPoolSection() {
         onchange="mowTogglePoolSelection(${jsArg(t.ticket_id)}, this.checked)" style="margin-top:3px; width:18px; height:18px; flex:none; cursor:pointer;" />
       <div style="flex:1; min-width:0;">
         <div style="font-weight:700; font-size:0.92rem;">${mowTicketSummaryLine(t)}</div>
+        ${mowTicketMaterialsLine(t)}
         <div style="color:var(--muted); font-size:0.78rem; margin-top:2px;">Purpose: ${escapeHtml(outwardUseLabel(t.outward_purpose) || '—')} · ${escapeHtml(t.type_of_store || "")} · Requested by ${escapeHtml(t.requested_returned_by || "")}</div>
       </div>
       <button class="nav-btn-styled" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; font-weight:700; padding:4px 10px; font-size:0.8rem; white-space:nowrap; width:auto; flex:none;" onclick="event.preventDefault(); rejectMaterialOutwardRequest(${jsArg(t.ticket_id)})">Reject</button>
