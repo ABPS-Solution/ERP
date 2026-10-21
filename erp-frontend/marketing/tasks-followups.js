@@ -207,12 +207,15 @@ async function commitIsolatedTaskItem(leadRef, scopeNode) {
       const taskLabelDone = scopeNode.querySelector(".task-status-label"); if (taskLabelDone) taskLabelDone.style.display = "none";
       const taskBox = scopeNode.querySelector(".template-task-box");
       if (taskBox) taskBox.innerHTML = '<div style="font-size:0.8rem; color:var(--brand); font-weight:600; padding:8px; display:flex; align-items:center; gap:6px;"><span class="spinner" style="display:inline-block; width:10px; height:10px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite;"></span> Creating new task...</div>';
+      // A task created from an Email Leads card clears that card (21 Oct 2026;
+      // follow-ups are gone, so a task is how an email lead is acted on).
+      // Read the card before the reload below replaces this form.
+      const emailAnchor = scopeNode.closest('[id^="email-nested-inline-database-workspace-anchor-"]');
       await globalExecutionScopeReloader(leadRef, scopeNode);
-      // Deliberately does NOT call markEmailLeadActionedIfInEmailContext —
-      // an Email Leads card should only disappear on Delete, a genuine new
-      // lead, or a logged follow-up, not merely a task (explicit request,
-      // 6 Sep 2026). Follow-up creation just above (commitIsolatedFollowUpItem)
-      // and new-lead creation (leads.js) still call it.
+      if (emailAnchor) {
+        const emailIdx = parseInt(emailAnchor.id.replace("email-nested-inline-database-workspace-anchor-", ""), 10);
+        if (!isNaN(emailIdx) && typeof markEmailLeadActionedAndRemoveCard === "function") markEmailLeadActionedAndRemoveCard(emailIdx);
+      }
     } else {
       abpsAlert(r.error || "Could not save the task.");
     }
