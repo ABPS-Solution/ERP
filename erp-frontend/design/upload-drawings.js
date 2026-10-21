@@ -9,7 +9,7 @@ async function initializeUploadDrawingsPanel() {
   document.getElementById("upload-drawings-upload-zone").style.display = "none";
   document.getElementById("upload-drawings-feedback").style.display = "none";
   uploadDrawingsSelectedType = null;
-  // Start fresh on every entry â€” the previously typed project used to stay.
+  // Start fresh on every entry — the previously typed project used to stay.
   if (projDrop) projDrop.value = "";
   const projDropList = document.getElementById("upload-drawings-project-ta-dropdown");
   if (projDropList) projDropList.style.display = "none";
@@ -59,7 +59,7 @@ function handleUploadDrawingsProjectChange(projectId) {
   }
 
   typeZone.style.display = "block";
-  // Default to Customer Approved every time a (new) project is picked â€”
+  // Default to Customer Approved every time a (new) project is picked —
   // never carry the previous project's selected type forward silently.
   selectUploadDrawingsType('Customer Approved');
 }
@@ -75,7 +75,7 @@ function selectUploadDrawingsType(drawingType) {
   approvedBtn.style.cssText = drawingType === 'Customer Approved' ? activeStyle : inactiveStyle;
   workingBtn.style.cssText  = drawingType === 'Working Drawing'   ? activeStyle : inactiveStyle;
 
-  document.getElementById("upload-drawings-list-heading").textContent = `Already Uploaded â€” ${drawingType}`;
+  document.getElementById("upload-drawings-list-heading").textContent = `Already Uploaded — ${drawingType}`;
 
   const uploadZone = document.getElementById("upload-drawings-upload-zone");
   uploadZone.style.display = "block";
@@ -223,7 +223,7 @@ async function submitUploadDrawing() {
     uploadDrawingsSelectedFile = null;
     document.getElementById("upload-drawings-input").value = "";
     const box = document.getElementById("upload-drawings-dropzone");
-    box.textContent = "ðŸ“‹ Select Drawing Documents *";
+    box.textContent = "📋 Select Drawing Documents *";
     box.title = "";
     box.classList.remove("done");
     await refreshUploadDrawingsList(projectId, uploadDrawingsSelectedType);
