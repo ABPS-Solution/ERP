@@ -631,7 +631,7 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
               <option value="Material">Material</option><option value="Transport">Transport</option>
             </select>`}
         <span id="cpo-po-type-note" style="font-size:0.78rem; color:var(--muted);"></span>
-        ${isExisting ? "" : `<span style="margin-left:auto; font-size:0.85rem; color:var(--muted);">PO Number: <b id="cpo-next-po-no" style="color:var(--brand); font-family:monospace;">…</b></span>`}
+        ${isExisting ? "" : `<span style="margin-left:auto; font-size:0.85rem; color:var(--muted);">PO Number: <b id="cpo-next-po-no" style="color:var(--brand); font-family:monospace;">…</b><span id="cpo-next-po-no-note" style="font-size:0.75rem;"></span></span>`}
       </div>
       <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:14px;">
         <div>
@@ -662,7 +662,7 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
           <label class="field-label" style="margin-top:0;">Manual PO Number (optional)</label>
           <div style="display:flex; align-items:stretch; border:1.5px solid var(--border); border-radius:var(--radius); overflow:hidden; background:#fff;">
             <span style="padding:9px 4px 9px 10px; background:#f1f5f9; font-family:monospace; font-weight:700; color:#475569; white-space:nowrap;">${cpoCurrentPOPrefix()}</span>
-            <input type="text" inputmode="numeric" id="cpo-po-number-override" placeholder="Leave blank to auto-generate, or enter the PO number, e.g. 1 or 10 (saved as ${cpoCurrentPOPrefix()}00001)" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,5); persistCPODraft(); cpoShowNextPoNumber()" style="padding:9px; border:none; width:100%; min-width:0;">
+            <input type="text" inputmode="numeric" id="cpo-po-number-override" placeholder="Leave blank to auto-generate, or enter the PO number, e.g. 1 or 10 (saved as ${cpoCurrentPOPrefix()}00001)" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,5); persistCPODraft(); cpoRenderNextPoNumber()" style="padding:9px; border:none; width:100%; min-width:0;">
           </div>
         </div>
       </div>` : ""}
@@ -826,7 +826,7 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
     if (draft.freightTerms) document.getElementById("cpo-freight-terms").value = draft.freightTerms;
     if (draft.notes) document.getElementById("cpo-notes").value = draft.notes;
     if (draft.poNumberOverride && document.getElementById("cpo-po-number-override")) {
-      document.getElementById("cpo-po-number-override").value = draft.poNumberOverride; cpoShowNextPoNumber();
+      document.getElementById("cpo-po-number-override").value = draft.poNumberOverride; cpoRenderNextPoNumber();
     }
   }
   cpoApplyPoTypeLabels();
@@ -1050,6 +1050,7 @@ function persistCPODraft() {
       poType: window.cpoPoType || "Material",
     };
     abpsDraftSave("createPO", draft);
+    cpoMaybeReservePoNumber();
   } catch (e) { /* storage unavailable/full — resume just won't work, not fatal */ }
 }
 
@@ -1071,6 +1072,8 @@ function clearCPODraftStorage() {
 async function clearCPOForm() {
   if (!await abpsConfirm("Clear the entire Purchase Order form: Header, Material Rows, and Allocations?")) return;
   clearCPODraftStorage();
+  if (cpoPoNoReserved) { try { await apFetch({ action: "releasePONumberReservation" }); } catch (e) { /* freed after 15 days anyway */ } }
+  cpoPoNoReserved = false; cpoNextPoNoCache = null;
   initializeCreatePOPanel();
 }
 
@@ -1736,6 +1739,7 @@ async function submitCreatePO() {
     hideBlockingOverlay();
     if (data.success) {
       clearCPODraftStorage();
+      cpoPoNoReserved = false; cpoNextPoNoCache = null;
       document.getElementById("create-po-body").innerHTML = "";
       banner.style.cssText = "display:block; padding:16px; margin-bottom:12px; border-left:4px solid #15803d; background:#dcfce7; color:#15803d; border-radius:var(--radius);";
       let msg = `<strong>PO Draft Created: ${data.poNo}</strong><br/>It has been sent for Authorization.`;
@@ -2499,19 +2503,45 @@ document.addEventListener("click", function(e) {
 
 
 // Shows the number this new PO will get: the typed override if any, else the
-// next number in sequence (a preview; the real one is taken when it is created).
+// number reserved for this person's draft, else the next free one (preview).
+// The number is reserved once the draft has a fully filled row.
 let cpoNextPoNoCache = null;
-async function cpoShowNextPoNumber() {
+let cpoPoNoReserved = false;
+let cpoReserveInFlight = false;
+function cpoRenderNextPoNumber() {
   const el = document.getElementById("cpo-next-po-no");
   if (!el) return;
   const typed = (document.getElementById("cpo-po-number-override")?.value || "").trim();
-  if (typed) { el.textContent = cpoCurrentPOPrefix() + typed.padStart(5, "0"); return; }
-  if (cpoNextPoNoCache) el.textContent = cpoNextPoNoCache;
+  const note = document.getElementById("cpo-next-po-no-note");
+  if (typed) { el.textContent = cpoCurrentPOPrefix() + typed.padStart(5, "0"); if (note) note.textContent = ""; return; }
+  el.textContent = cpoNextPoNoCache || "—";
+  if (note) note.textContent = cpoPoNoReserved ? " (reserved for you)" : " (reserved once a row is complete)";
+}
+async function cpoShowNextPoNumber() {
+  cpoRenderNextPoNumber();
   try {
     const data = await apFetch({ action: "fetchNextPONumberPreview" });
-    if (data.success) cpoNextPoNoCache = data.poNo;
+    if (data.success) { cpoNextPoNoCache = data.poNo; cpoPoNoReserved = !!data.reserved; }
   } catch (e) { /* keep last value */ }
-  const el2 = document.getElementById("cpo-next-po-no");
-  const typed2 = (document.getElementById("cpo-po-number-override")?.value || "").trim();
-  if (el2 && !typed2) el2.textContent = cpoNextPoNoCache || "—";
+  cpoRenderNextPoNumber();
+  cpoMaybeReservePoNumber();
+}
+function cpoHasReadyRow() {
+  const rows = window.cpoMaterialRows || [];
+  if (cpoIsTransport()) return rows.some(r => cpoTransportRowsError([r]) === "");
+  return rows.some(r => r.itemCode && parseFloat(r.quantity) > 0 && parseFloat(r.rate) > 0 && (r.additionalDescription || "").trim());
+}
+async function cpoMaybeReservePoNumber() {
+  if (cpoPoNoReserved || cpoReserveInFlight) return;
+  if (window.cpoMode === 'authorize' || window.cpoMode === 'edit') return;
+  if (!document.getElementById("cpo-next-po-no")) return;
+  if ((document.getElementById("cpo-po-number-override")?.value || "").trim()) return;
+  if (!cpoHasReadyRow()) return;
+  cpoReserveInFlight = true;
+  try {
+    const data = await apFetch({ action: "reservePONumber" });
+    if (data.success) { cpoNextPoNoCache = data.poNo; cpoPoNoReserved = true; }
+  } catch (e) { /* tried again on the next edit */ }
+  cpoReserveInFlight = false;
+  cpoRenderNextPoNumber();
 }
