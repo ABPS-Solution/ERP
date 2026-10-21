@@ -341,7 +341,7 @@ async function refreshLiveStockForSelectedMaterial(opts) {
     && document.getElementById("ticket-item-selection-dropdown")?.value === pickedAtStart;
   const activeStoreScope   = document.getElementById("ticket-selected-store-scope-toggle")?.value || "Raw Materials Store";
   const selectedMaterial   = document.getElementById("ticket-item-selection-dropdown")?.value;
-  const projectId          = document.getElementById("ticket-project-id-dropdown-ta-input")?.value;
+  const projectId          = document.getElementById("ticket-department-outgoing-dropdown")?.value === "Sample" ? "SAMPLE" : document.getElementById("ticket-project-id-dropdown-ta-input")?.value;
   if (!selectedMaterial) { stopLiveStockPolling(); return; }
 
   // Strip any appended stock count suffix e.g. " (0 NOS available)" from Spare Store dropdown labels

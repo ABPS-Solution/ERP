@@ -17,7 +17,8 @@
 // ═══════════════════════════════════════════════════════════════════════
 async function updateSelectedLiveStockPillCounter(liveStockOverride) {
   const selectedMaterial = document.getElementById("ticket-item-selection-dropdown").value;
-  const projectId = document.getElementById("ticket-project-id-dropdown-ta-input").value;
+  // Store Related (DC) has no project: same key the item list uses ("SAMPLE").
+  const projectId = document.getElementById("ticket-department-outgoing-dropdown")?.value === "Sample" ? "SAMPLE" : document.getElementById("ticket-project-id-dropdown-ta-input").value;
   const counterZone = document.getElementById("ticket-live-counter-pill-zone");
   
   if (!selectedMaterial || !projectId) {

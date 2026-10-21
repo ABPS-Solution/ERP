@@ -483,5 +483,5 @@ function materialSearch(list, query, limit, getFields) {
   return scored.slice(0, limit || scored.length).map(x => x.item);
 }
 
-// "Sample" is stored internally; it is shown as "Store Related" (21 Oct 2026).
-function outwardUseLabel(v) { return v === "Sample" ? "Store Related" : (v || ""); }
+// "Sample" is stored internally; it is shown as "Store Related (DC)" (21 Oct 2026).
+function outwardUseLabel(v) { return v === "Sample" ? "Store Related (DC)" : (v || ""); }
