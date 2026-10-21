@@ -265,7 +265,9 @@ async function erpFetchWithRetry(url, init) {
 // ~25s on the server). Returns a Response so apFetch's checks apply as usual.
 async function erpRunAsJob(payload, timeoutMs) {
   const post = (body) => erpFetchWithRetry(GAS_URL, { method: "POST", body: JSON.stringify(body), signal: AbortSignal.timeout(40000) });
-  const startRes = await post({ ...payload, action: "startAsyncJob", jobAction: payload.action });
+  // One id per click: a retried start reuses the same server job, never runs it twice.
+  const clientJobId = (crypto.randomUUID ? crypto.randomUUID() : null);
+  const startRes = await post({ ...payload, action: "startAsyncJob", jobAction: payload.action, clientJobId });
   if (!startRes.ok) return startRes;
   const started = await startRes.json();
   const asResponse = (body, status) => new Response(JSON.stringify(body), { status: status || 200, headers: { "Content-Type": "application/json" } });

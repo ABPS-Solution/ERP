@@ -232,7 +232,12 @@ async function authorizeBOQRevision(updateId) {
     } else {
       if (authBtn) { authBtn.disabled = false; authBtn.textContent = "Authorize BOQ Revision"; }
       if (rejBtn) rejBtn.disabled = false;
-      showBOQBanner("auth-boq-upd-feedback", data.error || "Authorization failed.", "error");
+      if (/already actioned/i.test(data.error || "")) {
+        await initializeAuthorizeBOQRevisionPanel();
+        showBOQBanner("auth-boq-upd-feedback", "This revision was already authorized (or rejected). The list has been refreshed.", "success");
+      } else {
+        showBOQBanner("auth-boq-upd-feedback", data.error || "Authorization failed.", "error");
+      }
     }
   } catch (e) {
     hideBlockingOverlay();
