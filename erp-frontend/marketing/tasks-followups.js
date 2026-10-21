@@ -364,7 +364,7 @@ async function executeTaskMatrixSearch(opts) {
               <span style="font-size:0.82rem; font-weight:700; padding:3px 10px; border-radius:10px; white-space:nowrap; ${dateChipStyle}">Target Date: ${formatOrdinalDate(t.targetDate)} · ${escapeHtml(t.shift)}</span>
             </div>
             <div style="display:flex; gap:6px; flex-shrink:0;">
-              <button class="nav-btn-styled" id="view-company-btn-${t.id}" onclick="toggleTaskCompanyExpand('${t.id}', '${encodeURIComponent(t.companyName)}', '${encodeURIComponent(t.personName)}')" style="font-size:0.85rem; font-weight:700; padding:5px 12px; background:#fff; color:var(--brand); border:1px solid var(--brand); border-radius:4px; white-space:nowrap;">View Company</button>
+              <button class="nav-btn-styled" id="view-company-btn-${t.id}" onclick="toggleTaskCompanyExpand(${jsArg(t.id)}, ${jsArg(encodeURIComponent(t.companyName))}, ${jsArg(encodeURIComponent(t.personName))})" style="font-size:0.85rem; font-weight:700; padding:5px 12px; background:#fff; color:var(--brand); border:1px solid var(--brand); border-radius:4px; white-space:nowrap;">View Company</button>
               <button class="nav-btn-styled" id="matrix-edit-task-btn-${t.id}" style="font-size:0.85rem; font-weight:700; padding:5px 12px; background:#fff; color:var(--accent); border:1px solid var(--accent); border-radius:4px; white-space:nowrap;">Edit</button>
               ${deleteActionHtml}
             </div>

@@ -615,7 +615,7 @@ async function initializeAuthorizePRNPanel() {
       const card = document.createElement("div");
       card.className = "contact-summary-card-parent";
       card.innerHTML = `
-        <div class="contact-summary-header-row" onclick="toggleAPRNExpansion('${p.prnId}')" style="cursor:pointer; width:100%; padding-bottom:8px;">
+        <div class="contact-summary-header-row" onclick="toggleAPRNExpansion(${jsArg(p.prnId)})" style="cursor:pointer; width:100%; padding-bottom:8px;">
           <div class="contact-summary-title-info" style="width:100%;">
             <div class="meta-row-line-block" style="margin-bottom:6px;">
               <span style="background:#edf2f7;">Customer:</span><strong style="margin-right:15px;">${escapeHtml(p.customerName || "")}</strong>
@@ -664,8 +664,8 @@ function toggleAPRNExpansion(prnId) {
     <div style="font-size:0.82rem; font-weight:700; color:var(--brand); margin-bottom:12px;">PRN: <span style="font-family:monospace;">${prnId}</span></div>
     <div id="aprn-rows-mount-${prnId}"></div>
     <div style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--border); padding-top:14px; margin-top:14px;">
-      <button class="nav-btn-styled" id="aprn-reject-btn-${prnId}" onclick="rejectPRN('${prnId}')" style="background:#dc2626; padding:8px 20px; font-weight:700;">Reject PRN${isRevision ? " Revision" : ""}</button>
-      <button class="nav-btn-styled" id="aprn-auth-btn-${prnId}" onclick="authorizePRN('${prnId}')" style="background:var(--accent); padding:8px 24px; font-weight:700;">Authorize PRN${isRevision ? " Revision" : ""}</button>
+      <button class="nav-btn-styled" id="aprn-reject-btn-${prnId}" onclick="rejectPRN(${jsArg(prnId)})" style="background:#dc2626; padding:8px 20px; font-weight:700;">Reject PRN${isRevision ? " Revision" : ""}</button>
+      <button class="nav-btn-styled" id="aprn-auth-btn-${prnId}" onclick="authorizePRN(${jsArg(prnId)})" style="background:var(--accent); padding:8px 24px; font-weight:700;">Authorize PRN${isRevision ? " Revision" : ""}</button>
     </div>`;
   renderAPRNRows(prnId);
 }
@@ -755,7 +755,7 @@ function renderAPRNRows(prnId) {
           <td style="padding:8px; text-align:center;">
             <input type="number" min="${minStore}" max="${storeCap}" value="${Number(r.newStoreTotal) || 0}"
               class="aprn-storeqty" data-idx="${idx}" data-decrease-row="${isDecreaseOrRemoved ? '1' : '0'}" data-total-covered="${totalCovered}" data-deferred="${r.deferred ? '1' : '0'}"
-              oninput="updateAPRNRow(${idx}, this.value, '${prnId}')"
+              oninput="updateAPRNRow(${idx}, this.value, ${jsArg(prnId)})"
               style="width:90px; text-align:center; font-weight:700; padding:5px; border:1.5px solid var(--brand); border-radius:3px; font-size:0.88rem;" />
           </td>
           <td id="aprn-purchaseqty-${idx}" style="padding:8px; text-align:center; font-weight:800; font-size:0.9rem; color:#1a2332;">${trimNum(Math.max(0, buffered - (Number(r.newStoreTotal) || 0)))}${deferredNote}</td>
@@ -811,7 +811,7 @@ function renderAPRNRows(prnId) {
                <div style="font-size:0.6rem; color:#94a3b8; font-weight:700;">AUTO</div>`
             : `<input type="number" min="0" max="${buffered}" value="${Number(r.storeDelta) || 0}"
                  class="aprn-storeqty" data-idx="${idx}"
-                 oninput="updateAPRNRow(${idx}, this.value, '${prnId}')"
+                 oninput="updateAPRNRow(${idx}, this.value, ${jsArg(prnId)})"
                  style="width:90px; text-align:center; font-weight:700; padding:5px; border:1.5px solid var(--brand); border-radius:3px; font-size:0.88rem;" />`}
         </td>
         <td id="aprn-purchaseqty-${idx}" style="padding:8px; text-align:center; font-weight:800; font-size:0.9rem; color:#1a2332;">${trimNum(r.editable !== false ? Number(r.purchaseDelta || 0) : Number(r.newPurchaseTotal || 0))}</td>
@@ -1289,7 +1289,7 @@ function renderAllPRNCards(prns, boqId) {
 
     const card = document.createElement("div");
     card.innerHTML = `
-      <div id="${cardId}" onclick="togglePRNCardExpanded('${expandId}','${toggleId}')" style="cursor:pointer; background:${isPending ? "#fffbeb" : "var(--highlight-bg)"}; border:1.5px solid ${isPending ? "#f59e0b" : "var(--brand)"}; border-radius:var(--radius); padding:12px;">
+      <div id="${cardId}" onclick="togglePRNCardExpanded(${jsArg(expandId)},${jsArg(toggleId)})" style="cursor:pointer; background:${isPending ? "#fffbeb" : "var(--highlight-bg)"}; border:1.5px solid ${isPending ? "#f59e0b" : "var(--brand)"}; border-radius:var(--radius); padding:12px;">
         ${isPending ? `<div style="font-size:0.72rem; font-weight:800; color:#b45309; margin-bottom:8px;">⏳ This PRN is waiting for authorization.</div>` : ""}
         <div style="display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start; margin-bottom:4px;">
           <div><div style="font-size:0.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Customer Name</div>

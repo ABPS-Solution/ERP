@@ -72,7 +72,7 @@ async function loadMaterialOutwardServiceQueue() {
     const tab = window._mowTab || "new";
     const editing = mowDraftsCache.filter(d => Number(d.checking_draft_count) > 0);
     const fresh = mowDraftsCache.filter(d => !(Number(d.checking_draft_count) > 0));
-    const tabBtn = (key, label) => `<button class="nav-btn-styled" onclick="mowSwitchTab('${key}')" style="width:auto; background:${tab === key ? "var(--brand)" : "#e2e8f0"}; color:${tab === key ? "#fff" : "#334155"};">${label}</button>`;
+    const tabBtn = (key, label) => `<button class="nav-btn-styled" onclick="mowSwitchTab(${jsArg(key)})" style="width:auto; background:${tab === key ? "var(--brand)" : "#e2e8f0"}; color:${tab === key ? "#fff" : "#334155"};">${label}</button>`;
     const tabsHtml = `<div style="display:flex; gap:8px;">${tabBtn("new", "New Challan")}${tabBtn("editing", `Pending Challans (Editing) (${editing.length})`)}</div>`;
     feed.innerHTML = tabsHtml + (tab === "editing"
       ? (editing.length ? editing.map(d => renderDraftChallanCard(d, true)).join("") : `<div style="padding:16px; text-align:center; color:var(--muted); border:1px dashed var(--border); border-radius:var(--radius);">No challans are waiting for edits.</div>`)
@@ -124,12 +124,12 @@ function renderTicketPoolSection() {
   const rowsHtml = mowServiceTicketsCache.map(t => `
     <label style="display:flex; align-items:flex-start; gap:10px; padding:10px 12px; border:1px solid var(--border); border-radius:var(--radius); margin-bottom:8px; cursor:pointer; background:${window._mowSelectedPoolTickets.has(t.ticket_id) ? '#eff6ff' : '#fff'};">
       <input type="checkbox" class="mow-pool-checkbox" data-ticket-id="${escapeHtml(t.ticket_id)}" ${window._mowSelectedPoolTickets.has(t.ticket_id) ? 'checked' : ''}
-        onchange="mowTogglePoolSelection('${t.ticket_id}', this.checked)" style="margin-top:3px; width:18px; height:18px; flex:none; cursor:pointer;" />
+        onchange="mowTogglePoolSelection(${jsArg(t.ticket_id)}, this.checked)" style="margin-top:3px; width:18px; height:18px; flex:none; cursor:pointer;" />
       <div style="flex:1; min-width:0;">
         <div style="font-weight:700; font-size:0.92rem;">${mowTicketSummaryLine(t)}</div>
-        <div style="color:var(--muted); font-size:0.78rem; margin-top:2px;">Purpose: ${escapeHtml(t.outward_purpose || '—')} · ${escapeHtml(t.type_of_store || "")} · Requested by ${escapeHtml(t.requested_returned_by || "")}</div>
+        <div style="color:var(--muted); font-size:0.78rem; margin-top:2px;">Purpose: ${escapeHtml(outwardUseLabel(t.outward_purpose) || '—')} · ${escapeHtml(t.type_of_store || "")} · Requested by ${escapeHtml(t.requested_returned_by || "")}</div>
       </div>
-      <button class="nav-btn-styled" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; font-weight:700; padding:4px 10px; font-size:0.8rem; white-space:nowrap; width:auto; flex:none;" onclick="event.preventDefault(); rejectMaterialOutwardRequest('${t.ticket_id}')">Reject</button>
+      <button class="nav-btn-styled" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; font-weight:700; padding:4px 10px; font-size:0.8rem; white-space:nowrap; width:auto; flex:none;" onclick="event.preventDefault(); rejectMaterialOutwardRequest(${jsArg(t.ticket_id)})">Reject</button>
     </label>`).join("");
 
   const addToDraftButtons = mowDraftsCache.map(d =>
@@ -237,7 +237,7 @@ function renderDraftChallanCard(draft, collapsible) {
   const linkedTicketsHtml = linkedTickets.map(t => `
     <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 12px; border:2px solid #94a3b8; border-left:5px solid var(--brand); border-radius:var(--radius); margin-bottom:8px; background:#fff;">
       <span style="font-size:0.88rem; line-height:1.45;">${mowTicketSummaryLine(t)}</span>
-      <button class="nav-btn-styled" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; font-weight:700; padding:2px 8px; font-size:0.75rem;" onclick="mowRemoveTicketFromDraft(${challanId}, '${t.ticketId}')">Remove</button>
+      <button class="nav-btn-styled" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; font-weight:700; padding:2px 8px; font-size:0.75rem;" onclick="mowRemoveTicketFromDraft(${challanId}, ${jsArg(t.ticketId)})">Remove</button>
     </div>`).join("");
 
   const materialRowsHtml = items.map((it, i) => `
@@ -265,7 +265,7 @@ function renderDraftChallanCard(draft, collapsible) {
 
       <div style="margin-top:14px; border-top:1px solid var(--border); padding-top:12px;">
         <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:12px; margin-bottom:12px;">
-          <div style="border:2px solid #94a3b8; border-radius:var(--radius); padding:10px 14px; background:#fff;"><div style="font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; color:var(--muted);">Purpose</div><div style="margin-top:6px; font-size:1.1rem; font-weight:800; color:var(--text);">${escapeHtml(draft.outward_type || '—')}</div></div>
+          <div style="border:2px solid #94a3b8; border-radius:var(--radius); padding:10px 14px; background:#fff;"><div style="font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; color:var(--muted);">Purpose</div><div style="margin-top:6px; font-size:1.1rem; font-weight:800; color:var(--text);">${escapeHtml(outwardUseLabel(draft.outward_type) || '—')}</div></div>
           <div style="border:2px solid #94a3b8; border-radius:var(--radius); padding:10px 14px; background:#fff;"><div style="font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; color:var(--muted);">Status *</div><select id="mow-status-${challanId}" oninput="mowValidateDraftCard(${challanId})" onchange="mowValidateDraftCard(${challanId})" style="width:100%; margin-top:4px; padding:7px; border:2px solid #94a3b8; background:#fff; border-radius:var(--radius); font-weight:700;">${returnableOptions}</select></div>
           <div style="border:2px solid #94a3b8; border-radius:var(--radius); padding:10px 14px; background:#fff;"><div style="font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; color:var(--muted);">Challan No</div><div style="margin-top:6px; font-size:1.1rem; font-weight:800; font-family:monospace; color:var(--brand);">${escapeHtml(draft.challan_number || '—')}</div></div>
           <div style="border:2px solid #94a3b8; border-radius:var(--radius); padding:10px 14px; background:#fff;"><div style="font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; color:var(--muted);">Challan Date</div><div style="margin-top:6px; font-size:1.1rem; font-weight:800; color:var(--text);">${escapeHtml(todayStr)}</div></div>
@@ -332,7 +332,7 @@ function mowDraftCollapsedHeader(draft, expanded) {
   const cell = (label, value, mono) => `<div style="min-width:0;"><div style="font-size:0.68rem; font-weight:800; text-transform:uppercase; color:var(--muted); letter-spacing:0.3px;">${label}</div><div style="font-weight:700; font-size:0.86rem; word-break:break-word;${mono ? ' font-family:monospace;' : ''}">${value}</div></div>`;
   return `<div onclick="mowToggleDraftCard(${id})" style="display:flex; align-items:center; gap:14px; cursor:pointer; user-select:none;">
       <div style="flex:1; display:grid; grid-template-columns:0.8fr 1.1fr 0.9fr 0.8fr 1.4fr 1.6fr; gap:10px 14px; align-items:start;">
-        ${cell('Purpose', escapeHtml(draft.outward_type || '—'))}
+        ${cell('Purpose', escapeHtml(outwardUseLabel(draft.outward_type) || '—'))}
         ${cell('Challan No', escapeHtml(draft.challan_number || '—'), true)}
         ${cell('Challan Date', escapeHtml(today))}
         ${cell('Draft', 'Draft #' + escapeHtml(String(draft.checking_draft_count || 0)))}
@@ -360,7 +360,7 @@ function mowEditAddTicketsSection(draft) {
   const id = draft.challan_id;
   const pool = mowServiceTicketsCache.filter(t => !draft.outward_type || t.outward_purpose === draft.outward_type);
   if (!pool.length) {
-    return `<div style="margin-top:6px; font-size:0.8rem; color:var(--muted);">No other approved ${escapeHtml(draft.outward_type || '')} tickets are waiting to be added.</div>`;
+    return `<div style="margin-top:6px; font-size:0.8rem; color:var(--muted);">No other approved ${escapeHtml(outwardUseLabel(draft.outward_type))} tickets are waiting to be added.</div>`;
   }
   const rows = pool.map(t => `
     <label style="display:flex; align-items:flex-start; gap:10px; padding:8px 10px; border:1px solid var(--border); border-radius:var(--radius); margin-bottom:6px; cursor:pointer; background:#fff;">

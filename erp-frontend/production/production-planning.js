@@ -358,7 +358,7 @@ function pplanRenderLane(lane) {
   const title = [lane.productName, lane.productRating, lane.descriptionOfMaterial].filter(Boolean).join(" - ");
   return `
     <div id="pplan-lane-${lane.boqId}" style="border:1px solid var(--border); border-radius:var(--radius); margin-bottom:14px; overflow:hidden;">
-      <div onclick="pplanToggleLane('${lane.boqId}')" style="padding:10px 14px; background:${c}14; border-left:4px solid ${c}; display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:nowrap; gap:16px; cursor:pointer;">
+      <div onclick="pplanToggleLane(${jsArg(lane.boqId)})" style="padding:10px 14px; background:${c}14; border-left:4px solid ${c}; display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:nowrap; gap:16px; cursor:pointer;">
         <div style="flex:1; min-width:0;">
           <span style="display:inline-block; width:0; height:0; border-top:5px solid transparent; border-bottom:5px solid transparent; border-left:6px solid ${c}; margin-right:8px; transform:rotate(${expanded ? 90 : 0}deg); transition:transform .15s;"></span>
           <span style="font-weight:800; color:${c};">${escapeHtml(lane.name)}</span>
@@ -409,7 +409,7 @@ function pplanRenderLaneInitialPlanForm(lane) {
       </table>
     </div>
     <div style="margin-top:12px;">
-      <button class="nav-btn-styled" ${dis} style="${!canWrite ? 'opacity:0.5; cursor:not-allowed;' : ''}" onclick="pplanSubmitInitialPlan('${lane.boqId}')">Submit Initial Plan</button>
+      <button class="nav-btn-styled" ${dis} style="${!canWrite ? 'opacity:0.5; cursor:not-allowed;' : ''}" onclick="pplanSubmitInitialPlan(${jsArg(lane.boqId)})">Submit Initial Plan</button>
     </div>`;
 }
 
@@ -482,7 +482,7 @@ function pplanRenderLaneSteps(lane, c, canWrite) {
       // testing-only override so a realistic multi-week test pass
       // doesn't need real Job Card/FG Store activity to exist.
       const chip = `<span style="font-size:0.72rem; font-family:monospace; font-weight:700; color:${c}; background:${c}22; padding:2px 8px; border-radius:10px;">${escapeHtml(s.chip || '')}</span>`;
-      const adminCtl = pplanIsAdmin() ? `<span style="display:inline-flex; align-items:center; gap:6px;">${pplanAsOfInputHtml(`${lane.boqId}-${s.id}`, s.actual)}<button class="nav-btn-styled" style="padding:4px 10px; font-size:0.72rem;" onclick="pplanAdminSetPackingFgDate('${lane.boqId}')">${s.actual ? 'Update (admin)' : 'Set date (admin)'}</button>${s.actual ? `<button class="nav-btn-styled" style="padding:4px 10px; font-size:0.72rem; background:#fff; color:var(--muted); border:1px solid var(--border);" onclick="pplanAdminClearPackingFgDate('${lane.boqId}')">Clear</button>` : ''}</span>` : '';
+      const adminCtl = pplanIsAdmin() ? `<span style="display:inline-flex; align-items:center; gap:6px;">${pplanAsOfInputHtml(`${lane.boqId}-${s.id}`, s.actual)}<button class="nav-btn-styled" style="padding:4px 10px; font-size:0.72rem;" onclick="pplanAdminSetPackingFgDate(${jsArg(lane.boqId)})">${s.actual ? 'Update (admin)' : 'Set date (admin)'}</button>${s.actual ? `<button class="nav-btn-styled" style="padding:4px 10px; font-size:0.72rem; background:#fff; color:var(--muted); border:1px solid var(--border);" onclick="pplanAdminClearPackingFgDate(${jsArg(lane.boqId)})">Clear</button>` : ''}</span>` : '';
       actionCell = `${chip}${adminCtl}`;
     } else if (!s.planned) {
       actionCell = `<span style="font-size:0.78rem; color:var(--muted);">-</span>`;
@@ -496,8 +496,8 @@ function pplanRenderLaneSteps(lane, c, canWrite) {
             const jcIsDone = (s.doneJobCards || []).includes(jc);
             const shortJc = escapeHtml(pplanShortJobCard(jc));
             const onclick = !canWrite ? '' : jcIsDone
-              ? `onclick="pplanUnmarkStepJcDone('${lane.boqId}','${s.id}','${jc.replace(/'/g, "\\'")}')"`
-              : `onclick="pplanMarkStepJcDone('${lane.boqId}','${s.id}','${jc.replace(/'/g, "\\'")}')"`;
+              ? `onclick="pplanUnmarkStepJcDone(${jsArg(lane.boqId)},${jsArg(s.id)},'${jc.replace(/'/g, "\\'")}')"`
+              : `onclick="pplanMarkStepJcDone(${jsArg(lane.boqId)},${jsArg(s.id)},'${jc.replace(/'/g, "\\'")}')"`;
             return `<span ${onclick} title="${escapeHtml(jc)}" style="font-size:0.68rem; font-weight:700; font-family:monospace; padding:3px 8px; border-radius:12px; ${canWrite ? 'cursor:pointer;' : ''} background:${jcIsDone ? c : '#fff'}; color:${jcIsDone ? '#fff' : c}; border:1.5px solid ${c};">${jcIsDone ? '✓ ' : ''}${shortJc}</span>`;
           }).join('')}</div>`
         : `<span style="font-size:0.78rem; color:var(--muted);">-</span>`;
@@ -513,7 +513,7 @@ function pplanRenderLaneSteps(lane, c, canWrite) {
     // reusing the same window so the two stay visually consistent.
     // pplanUpdateStartDate never rejects on step status server-side.
     const startCell = canWrite && (s.terminal || !done)
-      ? `<div style="max-width:150px; margin:0 auto;"><input type="date" value="${s.startDate || ''}" onchange="pplanUpdateStartDate('${lane.boqId}','${s.id}', this.value)"
+      ? `<div style="max-width:150px; margin:0 auto;"><input type="date" value="${s.startDate || ''}" onchange="pplanUpdateStartDate(${jsArg(lane.boqId)},${jsArg(s.id)}, this.value)"
               style="padding:5px; border:1.5px solid var(--border); border-radius:4px; font-size:0.92rem; font-weight:700; width:100%; box-sizing:border-box; text-align:center;" /></div>`
       : `<span style="color:var(--text); font-size:0.95rem; font-weight:700;">${s.startDate ? pplanFmt(s.startDate) : '-'}</span>`;
 
@@ -522,7 +522,7 @@ function pplanRenderLaneSteps(lane, c, canWrite) {
     // Date" display plus a separate blank "New Target Date" input;
     // merged 11 Sep 2026 into a single in-place-editable field).
     const targetCell = canWrite && (s.terminal || !done)
-      ? `<div style="max-width:150px; margin:0 auto;"><input type="date" value="${s.target || ''}" onchange="pplanUpdateTarget('${lane.boqId}','${s.id}', this.value)"
+      ? `<div style="max-width:150px; margin:0 auto;"><input type="date" value="${s.target || ''}" onchange="pplanUpdateTarget(${jsArg(lane.boqId)},${jsArg(s.id)}, this.value)"
               style="padding:5px; border:1.5px solid var(--border); border-radius:4px; font-size:0.92rem; font-weight:700; width:100%; box-sizing:border-box; text-align:center;" /></div>`
       : `<span style="color:var(--text); font-size:0.95rem; font-weight:700;">${pplanFmt(currentTarget)}</span>`;
 
@@ -535,7 +535,7 @@ function pplanRenderLaneSteps(lane, c, canWrite) {
         </td>
         <td style="width:14%; padding:5px 8px; font-size:1rem; font-weight:800; color:#15803d; font-family:monospace; text-align:center; ${colBorder}">
           ${pplanFmt(s.planned)}
-          ${pplanIsAdmin() && s.planned ? `<div style="margin-top:4px; display:flex; flex-direction:column; align-items:center; gap:3px;">${pplanAsOfInputHtml(`planned-${lane.boqId}-${s.id}`, s.planned)}<button class="nav-btn-styled" style="padding:2px 8px; font-size:0.65rem;" onclick="pplanAdminOverridePlanned('${lane.boqId}','${s.id}')">Update (admin)</button></div>` : ''}
+          ${pplanIsAdmin() && s.planned ? `<div style="margin-top:4px; display:flex; flex-direction:column; align-items:center; gap:3px;">${pplanAsOfInputHtml(`planned-${lane.boqId}-${s.id}`, s.planned)}<button class="nav-btn-styled" style="padding:2px 8px; font-size:0.65rem;" onclick="pplanAdminOverridePlanned(${jsArg(lane.boqId)},${jsArg(s.id)})">Update (admin)</button></div>` : ''}
         </td>
         <td style="width:14%; padding:5px 8px; text-align:center; ${colBorder}">${startCell}</td>
         <td style="width:20%; padding:5px 8px; text-align:center; ${colBorder}">${targetCell}</td>

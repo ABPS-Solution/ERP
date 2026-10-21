@@ -45,7 +45,7 @@ async function initializeStoreEntryWorkspaceQueue() {
           const pills = lineMatches.map((m) => {
             const c = confColors[m.confidence] || confColors.low;
             return `<div 
-              onclick="selectStoreEntryItemCodeMatch('${item.gateNumber}', ${idx}, '${m.itemCode}', ${jsArg(m.productName)}, ${jsArg(m.typeOfMaterial)}, this)"
+              onclick="selectStoreEntryItemCodeMatch(${jsArg(item.gateNumber)}, ${idx}, ${jsArg(m.itemCode)}, ${jsArg(m.productName)}, ${jsArg(m.typeOfMaterial)}, this)"
               style="display:flex; justify-content:space-between; align-items:center; padding:5px 8px; border:1.5px solid ${c.border}; border-radius:4px; background:${c.bg}; cursor:pointer; margin-bottom:3px; transition:all 0.15s ease;"
               onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
               <div style="flex:1; min-width:0;">
@@ -96,7 +96,7 @@ async function initializeStoreEntryWorkspaceQueue() {
           </td>
           <td style="padding:6px; width:280px; text-align:center; vertical-align:middle; border-left:1px solid var(--border);">
             <div class="se-mat-name-display-${item.gateNumber}" data-idx="${idx}"
-              onclick="reopenSEMaterialSearch('${item.gateNumber}', ${idx})"
+              onclick="reopenSEMaterialSearch(${jsArg(item.gateNumber)}, ${idx})"
               title="Click to change"
               style="${isPreFilled ? 'display:flex; justify-content:space-between; align-items:center; gap:6px; cursor:pointer;' : 'display:none; cursor:pointer;'} font-size:0.85rem; font-weight:700; color:var(--brand); padding:5px 6px; min-height:30px; border:1.5px solid var(--accent); border-radius:3px; background:#f0fdf4; line-height:1.4;">
               <span>${escapeHtml(preFilledName)}</span>
@@ -107,7 +107,7 @@ async function initializeStoreEntryWorkspaceQueue() {
             <div style="position:relative; margin-top:${isPreFilled ? '4px' : '0'};">
               <input type="text" id="${searchId}"
                 placeholder="${isPreFilled ? 'Search to change...' : 'Type to search material name...'}"
-                oninput="handleSENameSearch(this, '${item.gateNumber}', ${idx})"
+                oninput="handleSENameSearch(this, ${jsArg(item.gateNumber)}, ${idx})"
                 autocomplete="off"
                 style="font-size:0.78rem; padding:4px 6px; border:1px solid var(--border); width:100%; border-radius:3px; text-align:center; ${isPreFilled ? 'display:none;' : ''}" />
               <div id="${dropId}" style="display:none; position:fixed; background:#fff; border:1px solid var(--border); border-radius:4px; z-index:9999; max-height:180px; overflow-y:auto; box-shadow:0 4px 16px rgba(0,0,0,0.15); min-width:240px;"></div>
@@ -171,7 +171,7 @@ async function initializeStoreEntryWorkspaceQueue() {
             <label class="field-label">PO Number</label>
             <input type="text" id="se-po-number-${item.gateNumber}" value="${item.defaultPoNo || ''}" placeholder="e.g. PO_26-27_00002"
               style="width:100%; padding:6px; background:#f1f5f9; border:1.5px solid var(--border); border-radius:3px;"
-              onblur="checkStoreEntryPONumber('${item.gateNumber}');">
+              onblur="checkStoreEntryPONumber(${jsArg(item.gateNumber)});">
             <div id="se-po-check-msg-${item.gateNumber}" style="font-size:0.68rem; font-weight:700; margin-top:3px;"></div>
           </div>
           <div style="max-width:620px; margin:-6px 0 14px;">
@@ -179,7 +179,7 @@ async function initializeStoreEntryWorkspaceQueue() {
             <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
               <input type="text" id="se-processing-dc-${item.gateNumber}" list="se-processing-dc-list-${item.gateNumber}" autocomplete="off"
                 placeholder="Type the ABPS Delivery Challan No..."
-                onfocus="grnLoadProcessingChallans('${item.gateNumber}')" oninput="grnProcessingChallanChanged('${item.gateNumber}')"
+                onfocus="grnLoadProcessingChallans(${jsArg(item.gateNumber)})" oninput="grnProcessingChallanChanged(${jsArg(item.gateNumber)})"
                 style="flex:1; min-width:260px; max-width:360px; padding:6px; border:1.5px solid var(--border); border-radius:3px;">
               <datalist id="se-processing-dc-list-${item.gateNumber}"></datalist>
               <span style="font-size:0.75rem; font-weight:700; color:#b45309;">Only for Processing or Service return material.</span>
@@ -212,7 +212,7 @@ async function initializeStoreEntryWorkspaceQueue() {
           </div>
           <div style="display:flex; justify-content:flex-end; margin-top:10px;">
             <button class="nav-btn-styled" style="background:var(--accent);" 
-              onclick="commitStoreEntryVerificationToBackend('${item.gateNumber}', \`${encodeURIComponent(JSON.stringify(item))}\`)">
+              onclick="commitStoreEntryVerificationToBackend(${jsArg(item.gateNumber)}, \`${encodeURIComponent(JSON.stringify(item))}\`)">
               Submit Store Entry and GRN
             </button>
           </div>

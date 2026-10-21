@@ -125,7 +125,7 @@ function epmrRender() {
       : "—";
     return `<div style="border:1px solid ${open ? "var(--brand)" : "var(--border)"}; border-left:4px solid #15803d; border-radius:var(--radius); background:#fff;">
       <div onclick="epmrToggle(${jsArg(key)})" style="cursor:pointer; padding:12px 14px; background:#eaf1fb; border-radius:${open ? "var(--radius) var(--radius) 0 0" : "var(--radius)"}; display:grid; grid-template-columns:1.5fr 1.1fr 1.4fr 1.3fr 1fr 1fr 1fr 24px; gap:10px 14px; align-items:center;">
-        ${cell(isSample ? "Purpose" : "Project", isSample ? "Sample" : escapeHtml(uniqJoin(tickets.map(t => t.projectId || t.companyName)) || "—"))}
+        ${cell(isSample ? "Purpose" : "Project", isSample ? "Store Related" : escapeHtml(uniqJoin(tickets.map(t => t.projectId || t.companyName)) || "—"))}
         ${cell("Ticket ID", `<span style="font-family:monospace;">${escapeHtml(tickets_.join(", "))}</span>`)}
         ${cell(isSample ? "Sent To" : "Vendor Name", escapeHtml((isSample ? (r.consigneeName || r.vendorName) : r.vendorName) || "—"))}
         ${cell("Delivery Challan", challan)}
@@ -135,8 +135,8 @@ function epmrRender() {
         <div style="font-size:1rem; color:var(--muted); text-align:right;">${open ? "▲" : "▼"}</div>
       </div>
       ${open ? `<div class="epmr-tables" style="display:grid; grid-template-columns:1fr 1fr; gap:16px; padding:0 14px 14px; border-top:1px solid var(--border); padding-top:12px;">
-        ${table(isSample ? "Materials Sent as Sample" : "Materials Sent for Processing", rowsOf(sent, i => i.qty, i => i.unit))}
-        ${table(isSample ? "Expected Sample Return (received / expected, left)" : "Expected Processing Material Return (received / expected, left)", rowsOf(expected, i => { const rc = receivedByCode[i.itemCode] || 0; const left = Math.max(0, i.qty - rc); return `${fmtQty(rc)} / ${fmtQty(i.qty)}${left > 1e-9 ? ` · ${fmtQty(left)} left` : " · done"}`; }, i => i.unit))}
+        ${table(isSample ? "Materials Sent (Store Related)" : "Materials Sent for Processing", rowsOf(sent, i => i.qty, i => i.unit))}
+        ${table(isSample ? "Expected Return, Store Related (received / expected, left)" : "Expected Processing Material Return (received / expected, left)", rowsOf(expected, i => { const rc = receivedByCode[i.itemCode] || 0; const left = Math.max(0, i.qty - rc); return `${fmtQty(rc)} / ${fmtQty(i.qty)}${left > 1e-9 ? ` · ${fmtQty(left)} left` : " · done"}`; }, i => i.unit))}
       </div>
       ${isSample && anyLeft ? `<div style="display:flex; justify-content:flex-end; padding:0 14px 14px;">
         <button class="nav-btn-styled" style="width:auto; background:#b45309; padding:7px 14px; font-size:0.8rem;" onclick="epmrCloseSample(${jsArg(tickets_.join(","))})">Rest is not coming back</button></div>` : ""}` : ""}

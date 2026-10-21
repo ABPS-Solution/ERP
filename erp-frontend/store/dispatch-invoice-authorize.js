@@ -56,7 +56,7 @@ async function toggleApdiCard(invoiceId) {
         poDate: data.poDate ? formatOrdinalDate(data.poDate) : '', documents: data.documents || [],
       })}
       <div style="margin-top:16px; padding-top:14px; border-top:2px solid #94a3b8; display:flex; justify-content:flex-start; flex-direction:row-reverse; gap:8px;">
-      <button class="nav-btn-styled" style="background:var(--brand); padding:10px 24px; font-weight:700; width:auto;" onclick="openApdiAuthorizeConfirm(${invoiceId}, '${data.projectId}')">Authorize</button>
+      <button class="nav-btn-styled" style="background:var(--brand); padding:10px 24px; font-weight:700; width:auto;" onclick="openApdiAuthorizeConfirm(${invoiceId}, ${jsArg(data.projectId)})">Authorize</button>
       <button class="nav-btn-styled" style="background:#dc2626; padding:10px 24px; font-weight:700; width:auto;" onclick="adminDeleteApdiDraft(${invoiceId})">Reject</button>
       </div>
       <div id="apdi-card-feedback-${invoiceId}" style="margin-top:10px;"></div>`;

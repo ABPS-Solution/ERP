@@ -631,7 +631,7 @@ function ttkHandleFilterEmployeeSearch(query, ns) {
   const matches = ttkFilterCachedEmployees.filter(e => e.employeeName.toLowerCase().includes(q)).slice(0, 15);
   if (matches.length === 0) { dd.style.display = "none"; return; }
   dd.innerHTML = matches.map(e => `
-    <div onmousedown="event.preventDefault(); ttkSelectFilterEmployee(${e.employeeId}, '${ns}')"
+    <div onmousedown="event.preventDefault(); ttkSelectFilterEmployee(${e.employeeId}, ${jsArg(ns)})"
       style="padding:8px 10px; cursor:pointer; font-size:0.85rem; border-bottom:1px solid #f1f5f9;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
       ${escapeHtml(e.employeeName)} <span style="color:var(--muted); font-size:0.75rem;">${e.empCode ? '· ' + escapeHtml(e.empCode) : ''}</span>

@@ -182,13 +182,13 @@ ${spareCellsHtml}
     const mappedStorageScope = ticket.storeTargetScope || "Raw Materials Store";
 
     cardWrapper.innerHTML = `
-      <div class="contact-summary-header-row" onclick="toggleTicketCardBody('${ticket.ticketId}')" style="margin-bottom:0; padding-bottom:6px; cursor:pointer;">
+      <div class="contact-summary-header-row" onclick="toggleTicketCardBody(${jsArg(ticket.ticketId)})" style="margin-bottom:0; padding-bottom:6px; cursor:pointer;">
         <div class="contact-summary-title-info" style="width:100%;">
           <div class="meta-row-line-block">
             <span style="font-family:monospace; font-weight:800; background:var(--brand); color:#fff; font-size:0.75rem; padding:3px 6px;">${ticket.ticketId}</span>
             <span style="background:#fef3c7; color:#b45309; font-weight:700; margin-left:4px;">${statusBadgeText}</span>
             <span style="margin-left:8px;">Store:</span> <strong style="color:#111827;">${mappedStorageScope}</strong>
-            <span style="margin-left:8px;">Department:</span> <strong style="color:#111827;">${escapeHtml(ticket.department || "General Store")}</strong>
+            <span style="margin-left:8px;">Department:</span> <strong style="color:#111827;">${escapeHtml(outwardUseLabel(ticket.department) || "General Store")}</strong>
             ${ticket.outwardPurpose ? `<span style="margin-left:8px;">Purpose:</span> <strong style="color:#111827;">${escapeHtml(ticket.outwardPurpose)}</strong>` : ""}
             <span style="margin-left:8px;">Ticket Created By:</span> <strong style="color:#111827;">${escapeHtml(ticket.requestedBy)}</strong>
             <span id="ticket-card-caret-${ticket.ticketId}" style="float:right; font-weight:700; color:var(--muted);">▸</span>
@@ -230,8 +230,8 @@ ${spareCellsHtml}
           </table>
         </div>
         <div style="display:flex; justify-content:flex-end; gap:8px;">
-          <button class="nav-btn-styled" id="btn-reject-${ticket.ticketId}" style="background:#e53e3e; padding:6px 12px; font-size:0.75rem;" onclick="executeStoreManagerTicketActionDecision('${ticket.ticketId}', 'REJECT')">Reject</button>
-            <button class="nav-btn-styled" id="btn-approve-${ticket.ticketId}" style="background:var(--accent); padding:6px 14px; font-size:0.78rem; font-weight:700;" onclick="checkCoverageAndApprove('${ticket.ticketId}', '${ticket.projectId}', this)">
+          <button class="nav-btn-styled" id="btn-reject-${ticket.ticketId}" style="background:#e53e3e; padding:6px 12px; font-size:0.75rem;" onclick="executeStoreManagerTicketActionDecision(${jsArg(ticket.ticketId)}, 'REJECT')">Reject</button>
+            <button class="nav-btn-styled" id="btn-approve-${ticket.ticketId}" style="background:var(--accent); padding:6px 14px; font-size:0.78rem; font-weight:700;" onclick="checkCoverageAndApprove(${jsArg(ticket.ticketId)}, ${jsArg(ticket.projectId)}, this)">
             ${isBoqInc ? 'Approve Allocation Overwrite' : 'Approve'}
           </button>
         </div>
@@ -323,13 +323,13 @@ function executeClientSideStoreTicketFilterSearch() {
     let cleanActionedDate = ticket.dateActioned ? formatOrdinalDateTime(ticket.dateActioned) : "Not Actioned Yet";
 
     card.innerHTML = `
-      <div class="contact-summary-header-row" onclick="toggleMatrixCardBody('${ticket.ticketId}')" style="margin-bottom:0; padding-bottom:6px; cursor:pointer;">
+      <div class="contact-summary-header-row" onclick="toggleMatrixCardBody(${jsArg(ticket.ticketId)})" style="margin-bottom:0; padding-bottom:6px; cursor:pointer;">
         <div class="contact-summary-title-info" style="width:100%;">
           <div class="meta-row-line-block" style="display:flex; align-items:center; justify-content:space-between;">
             <div>
               <span style="font-family:monospace; font-weight:800; background:var(--highlight-bg); color:var(--brand); padding:2px 6px; border-radius:4px; font-size:0.8rem;">${ticket.ticketId}</span>
               <span style="margin-left:8px;">Store:</span> <strong style="color:#111827;">${mappedStorageScope}</strong>
-              <span style="margin-left:8px;">Department:</span> <strong style="color:#111827;">${escapeHtml(ticket.department || "General Store")}</strong>
+              <span style="margin-left:8px;">Department:</span> <strong style="color:#111827;">${escapeHtml(outwardUseLabel(ticket.department) || "General Store")}</strong>
               
             </div>
             <div>
@@ -2045,7 +2045,7 @@ function renderExpectedInboundsPOCard(po, scheme, cardId, defaultExpanded) {
 
   return `
     <div style="background:#fff; border:1px solid ${scheme.sectionBorder}; border-radius:var(--radius); overflow:hidden;">
-      <div onclick="toggleEICard('${cardId}')" style="padding:10px 14px; background:${scheme.sectionBg}; border-bottom:1px solid ${scheme.sectionBorder}; cursor:pointer;">
+      <div onclick="toggleEICard(${jsArg(cardId)})" style="padding:10px 14px; background:${scheme.sectionBg}; border-bottom:1px solid ${scheme.sectionBorder}; cursor:pointer;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:8px; margin-bottom:6px;">
           <div style="display:flex; align-items:baseline; gap:8px;">
             <span id="${cardId}-chevron" style="font-size:0.75rem; color:var(--muted); flex:none;">${defaultExpanded ? "▾" : "▸"}</span>

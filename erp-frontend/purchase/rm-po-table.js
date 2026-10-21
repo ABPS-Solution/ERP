@@ -67,7 +67,7 @@ function rptBuild() {
     </style>
     <div id="rpt-feedback" style="display:none;"></div>
     <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">${RPT_PERIODS.map(([k, label]) =>
-      `<button type="button" class="nav-btn-styled rpt-period" data-k="${k}" onclick="rptSetPeriod('${k}')" style="width:auto; padding:7px 16px; font-size:0.85rem; font-weight:700; border-radius:999px;">${label}</button>`).join("")}</div>
+      `<button type="button" class="nav-btn-styled rpt-period" data-k="${k}" onclick="rptSetPeriod(${jsArg(k)})" style="width:auto; padding:7px 16px; font-size:0.85rem; font-weight:700; border-radius:999px;">${label}</button>`).join("")}</div>
     <div style="display:flex; gap:12px; flex-wrap:wrap; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-bottom:12px; align-items:flex-end;">
       ${box("PO Number", 150, inp("rpt-po", "e.g. PO_26-27_00001"))}
       ${box("Vendor Name", 220, inp("rpt-vendor", "Start typing vendor name...", "rptVendorInput(this.value)"))}
@@ -268,7 +268,7 @@ function rptRender() {
       <table id="rpt-table">
         <colgroup><col style="width:5%;">${RPT_COLS.map(c => `<col style="width:${c[4]}%;">`).join("")}</colgroup>
         <thead><tr><th style="text-align:center; cursor:default;">Sr No</th>${RPT_COLS.map(([h, k, , al]) =>
-          `<th onclick="rptSortBy('${k}')" style="text-align:${k === "progressPct" ? "center" : al};">${h}${arrow(k)}</th>`).join("")}</tr></thead>
+          `<th onclick="rptSortBy(${jsArg(k)})" style="text-align:${k === "progressPct" ? "center" : al};">${h}${arrow(k)}</th>`).join("")}</tr></thead>
         <tbody>${visible.map((r, i) => { const id = rptRowId(r.poNo); const open = rptOpenRows.has(r.poNo); return `
           <tr class="rpt-row${open ? " rpt-open" : ""}" id="${id}-row">
             <td style="text-align:center;"><button type="button" class="rpt-exp" title="Open / close PO details" onclick="rptToggleRow(${jsArg(r.poNo)})">${i + 1} ${open ? "▴" : "▾"}</button></td>

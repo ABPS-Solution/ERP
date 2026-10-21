@@ -60,7 +60,7 @@ async function initializeAuthorizeBOQPanel(mode) {
       card.className = "contact-summary-card-parent";
       card.id = `auth-boq-card-${mode}-${draft.boqId.replace(/[^a-zA-Z0-9]/g, '_')}`;
       card.innerHTML = `
-        <div class="contact-summary-header-row" onclick="toggleAuthBOQCardExpansion('${draft.boqId}', '${mode}')" style="cursor:pointer; width:100%; padding-bottom:8px;">
+        <div class="contact-summary-header-row" onclick="toggleAuthBOQCardExpansion(${jsArg(draft.boqId)}, ${jsArg(mode)})" style="cursor:pointer; width:100%; padding-bottom:8px;">
           <div class="contact-summary-title-info" style="width:100%;">
             <div class="meta-row-line-block" style="margin-bottom:6px;">
               <span style="background:#edf2f7;">Customer:</span><strong style="margin-right:15px;">${escapeHtml(draft.customerName)}</strong>
@@ -431,7 +431,7 @@ function renderEBOQForm(containerId) {
 
     <div style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--border); padding-top:14px;">
       ${eboqMode === "authorize" ? `
-      <button class="nav-btn-styled" onclick="rejectBOQDraft('${draft.boqId}')" style="background:#dc2626; padding:8px 24px; font-weight:700;" id="eboq-reject-btn">
+      <button class="nav-btn-styled" onclick="rejectBOQDraft(${jsArg(draft.boqId)})" style="background:#dc2626; padding:8px 24px; font-weight:700;" id="eboq-reject-btn">
         Reject BOQ
       </button>
       ` : ``}

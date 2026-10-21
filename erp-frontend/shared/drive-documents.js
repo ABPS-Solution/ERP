@@ -280,7 +280,7 @@ function ddocRenderDocument(d, showGroup, expandVersions) {
       </div>`;
   void expandVersions;
   const id = "ddoc-v-" + Math.random().toString(36).slice(2, 9);
-  const toggle = hasVersions ? `<button class="ddoc-btn ddoc-btn-ghost ddoc-older-btn" onclick="ddocToggleVersions('${id}', this)">See Older Versions (${older.length}) ▾</button>` : "";
+  const toggle = hasVersions ? `<button class="ddoc-btn ddoc-btn-ghost ddoc-older-btn" onclick="ddocToggleVersions(${jsArg(id)}, this)">See Older Versions (${older.length}) ▾</button>` : "";
   return `
     <div class="ddoc-doc${hasVersions ? " ddoc-has-versions" : ""}">
       ${row(latest, true, toggle)}

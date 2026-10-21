@@ -86,7 +86,7 @@ function qaitRenderFilterBar() {
   const chips = [{ key: "all", label: "All" }, ...QAIT_BUCKETS];
   bar.innerHTML = chips.map(c => {
     const active = qaitActiveBucketFilter === c.key;
-    return `<button class="dd-period-btn${active ? ' active' : ''}" onclick="qaitSetBucketFilter('${c.key}')" style="font-size:0.78rem; padding:6px 14px;">${escapeHtml(c.label)} (${counts[c.key] || 0})</button>`;
+    return `<button class="dd-period-btn${active ? ' active' : ''}" onclick="qaitSetBucketFilter(${jsArg(c.key)})" style="font-size:0.78rem; padding:6px 14px;">${escapeHtml(c.label)} (${counts[c.key] || 0})</button>`;
   }).join("");
 }
 
@@ -146,7 +146,7 @@ function qaitRenderRow(r) {
   const colBorder = "border-left:2px solid var(--border);";
   const centered = "text-align:center;";
   const rowMain = `
-    <tr id="qait-row-${r.projectId}" onclick="qaitToggleRow('${r.projectId}')" style="cursor:pointer; border-bottom:2px solid var(--border);">
+    <tr id="qait-row-${r.projectId}" onclick="qaitToggleRow(${jsArg(r.projectId)})" style="cursor:pointer; border-bottom:2px solid var(--border);">
       <td style="padding:8px 6px; ${centered} font-weight:700; color:var(--brand);">${expanded ? '▾' : '▸'}</td>
       <td style="padding:8px 6px; font-weight:700; overflow-wrap:anywhere; ${colBorder}">${escapeHtml(r.projectId)}${r.hasLdExposure ? ' <span title="LD applicable on this project" style="color:#b91c1c;">⚠</span>' : ''}</td>
       <td style="padding:8px 6px; ${colBorder}">${escapeHtml(r.companyName || '')}</td>
@@ -260,16 +260,16 @@ function qaitRenderDetail(projectId, d) {
     <div class="qait-section"><div class="qait-section-title">Documents</div><div class="qait-section-body">
       ${(d.documents || []).map(doc => `<div style="font-size:0.84rem; padding:6px 10px; margin-bottom:6px; border:2px solid #94a3b8; border-radius:var(--radius); background:#f8fafc; display:flex; align-items:center; gap:6px;">
         <span style="flex:1; min-width:0;">
-        <a href="#" onclick="event.preventDefault(); driveLink('${doc.fileUrl}');" style="color:var(--brand); font-weight:600;">${escapeHtml(doc.documentType)}</a>
+        <a href="#" onclick="event.preventDefault(); driveLink(${jsArg(doc.fileUrl)});" style="color:var(--brand); font-weight:600;">${escapeHtml(doc.documentType)}</a>
         <span style="color:var(--muted);"> · ${escapeHtml(doc.fileName)} (${qaitFmt(doc.uploadedAt)})</span></span>
-        <button type="button" title="Remove this document" onclick="qaitDeleteDocument('${projectId}', ${Number(doc.documentId)})" style="flex:none; width:26px; height:26px; background:#fef2f2; border:1px solid #fecaca; color:#dc2626; border-radius:4px; cursor:pointer; font-size:0.85rem;">✕</button>
+        <button type="button" title="Remove this document" onclick="qaitDeleteDocument(${jsArg(projectId)}, ${Number(doc.documentId)})" style="flex:none; width:26px; height:26px; background:#fef2f2; border:1px solid #fecaca; color:#dc2626; border-radius:4px; cursor:pointer; font-size:0.85rem;">✕</button>
       </div>`).join("") || `<div style="color:var(--muted); font-size:0.78rem; margin-bottom:6px;">No documents uploaded yet.</div>`}
       <div style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
         <select id="qait-doc-type-${projectId}" style="padding:6px 8px; border:2px solid #94a3b8; border-radius:4px; font-size:0.78rem; flex:1 1 240px; min-width:200px;">
           ${QAIT_DOC_TYPES.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join("")}
         </select>
         <input type="file" id="qait-doc-file-${projectId}" style="font-size:0.72rem; flex:2 1 320px; min-width:260px;" />
-        <button class="nav-btn-styled" style="padding:6px 16px; font-size:0.78rem; flex:none; white-space:nowrap;" onclick="qaitUploadDocument('${projectId}')">Upload</button>
+        <button class="nav-btn-styled" style="padding:6px 16px; font-size:0.78rem; flex:none; white-space:nowrap;" onclick="qaitUploadDocument(${jsArg(projectId)})">Upload</button>
       </div>
     </div></div>`;
 
@@ -294,7 +294,7 @@ function qaitCallFormHtml(projectId, existing) {
     ${qaitDateInput(`qait-call-date-${projectId}`, existing ? existing.callPlacedOn : '')}
     <input type="text" id="qait-call-contact-${projectId}" placeholder="Customer contact (optional)" value="${existing ? escapeHtml(existing.customerContact || '') : ''}" style="padding:6px; border:2px solid #94a3b8; border-radius:4px; font-size:0.82rem; flex:1; min-width:220px;" />
     <input type="text" id="qait-call-notes-${projectId}" placeholder="Notes (optional)" value="${existing ? escapeHtml(existing.notes || '') : ''}" style="padding:6px; border:2px solid #94a3b8; border-radius:4px; font-size:0.82rem; flex:1; min-width:220px;" />
-    <button class="nav-btn-styled" style="padding:5px 12px; font-size:0.78rem; flex:none; white-space:nowrap;" onclick="qaitRecordCall('${projectId}')">${existing ? 'Update' : 'Record Call'}</button>
+    <button class="nav-btn-styled" style="padding:5px 12px; font-size:0.78rem; flex:none; white-space:nowrap;" onclick="qaitRecordCall(${jsArg(projectId)})">${existing ? 'Update' : 'Record Call'}</button>
   </div>`;
 }
 

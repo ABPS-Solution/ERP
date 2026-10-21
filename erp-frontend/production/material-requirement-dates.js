@@ -309,7 +309,7 @@ function mrdRenderLinesTable(ns, prnId, lines, readOnly, submitFnName) {
 
   const submitBtn = readOnly ? "" : `
     <div style="display:flex; justify-content:flex-end; margin-top:12px;">
-      <button class="nav-btn-styled" id="${ns}-submit-btn" onclick="${submitFnName}('${ns}', '${prnId.replace(/'/g,"\\'")}', this)" style="background:var(--accent); padding:8px 20px; font-weight:700;">${ns === 'mrd' ? 'Submit Requirement Dates' : 'Save Revised Dates'}</button>
+      <button class="nav-btn-styled" id="${ns}-submit-btn" onclick="${submitFnName}(${jsArg(ns)}, '${prnId.replace(/'/g,"\\'")}', this)" style="background:var(--accent); padding:8px 20px; font-weight:700;">${ns === 'mrd' ? 'Submit Requirement Dates' : 'Save Revised Dates'}</button>
     </div>`;
 
   const readOnlyNote = readOnly ? `<div style="padding:10px 14px; margin-bottom:12px; background:#f1f5f9; border-radius:var(--radius); color:#475569; font-size:0.82rem; font-weight:600;">These requirement dates are already submitted — view only. Use Revise Material Requirement Date to change them.</div>` : "";
@@ -354,11 +354,11 @@ function mrdRenderScheduleEditor(ns, key) {
   const rowsHtml = list.map((t, i) => `
     <div style="display:flex; align-items:center; gap:8px; margin-bottom:5px;">
       <input type="number" min="0" step="any" value="${t.requiredQty}" placeholder="Qty"
-        oninput="mrdClampTranche('${ns}','${key}', ${i}, this)"
+        oninput="mrdClampTranche(${jsArg(ns)},${jsArg(key)}, ${i}, this)"
         style="width:90px; padding:6px; border:1.5px solid var(--border); border-radius:4px; font-size:0.82rem;">
-      <input type="date" value="${t.requiredDate || ''}" onchange="mrdUpdateTranche('${ns}','${key}', ${i}, 'requiredDate', this.value)"
+      <input type="date" value="${t.requiredDate || ''}" onchange="mrdUpdateTranche(${jsArg(ns)},${jsArg(key)}, ${i}, 'requiredDate', this.value)"
         style="padding:6px; border:1.5px solid var(--border); border-radius:4px; font-size:0.82rem;">
-      <button type="button" onclick="mrdRemoveTranche('${ns}','${key}', ${i})" style="background:#fef2f2; border:1px solid #fecaca; color:#dc2626; cursor:pointer; width:26px; height:26px; border-radius:4px; font-size:0.85rem;">✕</button>
+      <button type="button" onclick="mrdRemoveTranche(${jsArg(ns)},${jsArg(key)}, ${i})" style="background:#fef2f2; border:1px solid #fecaca; color:#dc2626; cursor:pointer; width:26px; height:26px; border-radius:4px; font-size:0.85rem;">✕</button>
     </div>`).join("");
 
   const exact = Math.abs(total - purchaseQty) < 1e-9;
@@ -367,7 +367,7 @@ function mrdRenderScheduleEditor(ns, key) {
 
   const addLabel = remaining > 0 ? `+ Add Delivery (${fmt(remaining)} left)` : "+ Add Delivery";
   return `${sumLine}${rowsHtml}
-    <button type="button" id="mrdaddbtn-${ns}-${key}" onclick="mrdAddTranche('${ns}','${key}')" style="margin-top:4px; padding:5px 12px; font-size:0.76rem; font-weight:700; border:1.5px dashed var(--border); border-radius:4px; background:#fff; color:var(--brand); cursor:pointer;">${addLabel}</button>`;
+    <button type="button" id="mrdaddbtn-${ns}-${key}" onclick="mrdAddTranche(${jsArg(ns)},${jsArg(key)})" style="margin-top:4px; padding:5px 12px; font-size:0.76rem; font-weight:700; border:1.5px dashed var(--border); border-radius:4px; background:#fff; color:var(--brand); cursor:pointer;">${addLabel}</button>`;
 }
 
 // mrdClampTranche deliberately doesn't call mrdRerenderSchedule on every

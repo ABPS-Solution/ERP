@@ -86,7 +86,7 @@ function renderEmailLeadsDatePills() {
   wrap.innerHTML = EMAIL_LEADS_DATE_FILTER_OPTIONS.map(([value, label]) => {
     const active = activeEmailLeadsDateFilter === value;
     return `
-      <div onclick="selectEmailLeadsDateFilter('${value}')"
+      <div onclick="selectEmailLeadsDateFilter(${jsArg(value)})"
         style="cursor:pointer; user-select:none; border:1.5px solid ${active ? "var(--brand)" : "var(--border)"};
                background:${active ? "var(--highlight-bg)" : "#fff"}; color:${active ? "var(--brand)" : "var(--text)"};
                border-radius:6px; padding:6px 12px; font-size:0.78rem; font-weight:700;">${label}</div>`;
@@ -110,7 +110,7 @@ function renderEmailLeadsEngineerPills() {
     // pinned top-left the way a two-line email+subtitle pill needs to be.
     const centerStyle = subtitle ? "" : "align-items:center; justify-content:center; text-align:center;";
     return `
-      <div onclick="selectEmailLeadsEngineerFilter('${encodeURIComponent(value)}')"
+      <div onclick="selectEmailLeadsEngineerFilter(${jsArg(encodeURIComponent(value))})"
         style="cursor:pointer; user-select:none; border:1.5px solid ${border}; background:${bg}; border-radius:6px;
                padding:6px 10px; min-width:0; display:flex; flex-direction:column; gap:1px; line-height:1.25; ${centerStyle}">
         <span style="font-size:0.78rem; font-weight:700; color:${titleColor};">${escapeHtml(title)}</span>

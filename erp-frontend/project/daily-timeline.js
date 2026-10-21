@@ -175,7 +175,7 @@ function dtlDeptChipsHtml() {
   return DTL_DEPT_ORDER.map(dept => {
     const active = dtlActiveDeptFilters.has(dept);
     const hue = PTL_COLORS[dept] || 'var(--brand)';
-    return `<button type="button" onclick="dtlToggleDeptFilter('${dept}')"
+    return `<button type="button" onclick="dtlToggleDeptFilter(${jsArg(dept)})"
       style="padding:5px 12px; font-size:0.74rem; font-weight:700; border-radius:14px; cursor:pointer; border:1.5px solid ${hue}; background:${active ? hue : '#fff'}; color:${active ? '#fff' : hue};">
       ${escapeHtml(PTL_DEPT_NAME[dept] || dept)}</button>`;
   }).join('');
@@ -289,7 +289,7 @@ function dtlRenderProductionSubgroups(items) {
     const collapsed = dtlCollapsedDepts.has(subKey);
     const lateCount = bucket.filter(it => it.late).length;
     return `<div style="margin-left:14px; border-left:2px solid var(--border); margin-bottom:2px;">
-      <div style="display:flex; align-items:center; gap:8px; padding:6px 10px; cursor:pointer; font-weight:700; font-size:0.78rem; color:var(--muted);" onclick="dtlToggleDeptCollapse('${subKey}')">
+      <div style="display:flex; align-items:center; gap:8px; padding:6px 10px; cursor:pointer; font-weight:700; font-size:0.78rem; color:var(--muted);" onclick="dtlToggleDeptCollapse(${jsArg(subKey)})">
         <span>${collapsed ? '&#9656;' : '&#9662;'}</span>
         <span>${escapeHtml(key)} &middot; ${bucket.length}</span>
         ${lateCount ? `<span style="margin-left:auto; font-size:0.72rem; font-weight:700; color:#e84545;">${lateCount} late</span>` : ''}
@@ -394,7 +394,7 @@ function dtlRenderSteps() {
     const collapsed = dtlCollapsedDepts.has(dept);
     const hue = PTL_COLORS[dept] || 'var(--brand)';
     html += `<div style="margin-bottom:14px;">
-      <div style="display:flex; align-items:center; gap:8px; padding:9px 12px; background:${allDone ? '#f0fdf4' : '#f7fafd'}; border-left:4px solid ${allDone ? '#15803d' : hue}; border-radius:var(--radius); font-weight:800; color:${allDone ? '#15803d' : 'var(--text)'}; cursor:pointer;" onclick="dtlToggleDeptCollapse('${dept}')">
+      <div style="display:flex; align-items:center; gap:8px; padding:9px 12px; background:${allDone ? '#f0fdf4' : '#f7fafd'}; border-left:4px solid ${allDone ? '#15803d' : hue}; border-radius:var(--radius); font-weight:800; color:${allDone ? '#15803d' : 'var(--text)'}; cursor:pointer;" onclick="dtlToggleDeptCollapse(${jsArg(dept)})">
         <span>${collapsed ? '&#9656;' : '&#9662;'}</span>
         <span>${escapeHtml(PTL_DEPT_NAME[dept] || dept)} &middot; ${items.length}</span>
         ${allDone ? '<span style="margin-left:auto; font-size:0.74rem; font-weight:700; color:#15803d;">All done</span>'

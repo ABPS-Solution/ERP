@@ -482,7 +482,7 @@ function handleIcfTypeTypeaheadInput(query, inputId, dropdownId) {
     .filter(t => t.typeOfMaterial.toLowerCase().includes(q)).slice(0, 15);
   if (matches.length === 0) { dd.style.display = "none"; return; }
   dd.innerHTML = matches.map(t => `
-    <div onmousedown="event.preventDefault();" onclick="selectIcfTypeTypeahead(${jsArg(t.typeOfMaterial)}, '${inputId}', '${dropdownId}')"
+    <div onmousedown="event.preventDefault();" onclick="selectIcfTypeTypeahead(${jsArg(t.typeOfMaterial)}, ${jsArg(inputId)}, ${jsArg(dropdownId)})"
       style="padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
       <span style="font-weight:700;">${escapeHtml(t.typeOfMaterial)}</span>
@@ -868,7 +868,7 @@ function handleSENameSearch(inputEl, gateNum, idx) {
     dropdown.style.display = "block"; return;
   }
   dropdown.innerHTML = matches.map(c => `
-    <div onclick="selectSENameMatch('${gateNum}', ${idx}, '${c.itemCode}', ${jsArg(c.combinedName || c.productName)}, ${jsArg(c.typeOfMaterial || "")}, ${jsArg(c.unit || "")})"
+    <div onclick="selectSENameMatch(${jsArg(gateNum)}, ${idx}, ${jsArg(c.itemCode)}, ${jsArg(c.combinedName || c.productName)}, ${jsArg(c.typeOfMaterial || "")}, ${jsArg(c.unit || "")})"
       style="padding:7px 10px; cursor:pointer; font-size:0.78rem; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center;"
       onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#fff'">
       <span style="font-weight:600;">${escapeHtml(c.combinedName || c.productName)}</span>

@@ -63,7 +63,7 @@ function renderBOQIncreaseTicketCard(ticket) {
   }).join("");
 
   card.innerHTML = `
-    <div class="contact-summary-header-row" onclick="toggleBOQIncreaseCardBody('${ticket.ticketId}')" style="margin-bottom:0; padding-bottom:8px; cursor:pointer;">
+    <div class="contact-summary-header-row" onclick="toggleBOQIncreaseCardBody(${jsArg(ticket.ticketId)})" style="margin-bottom:0; padding-bottom:8px; cursor:pointer;">
       <div class="contact-summary-title-info" style="width:100%;">
         <div class="meta-row-line-block">
           <span style="font-family:monospace; font-weight:800; background:#fef3c7; color:#b45309; padding:3px 8px; font-size:0.85rem; border-radius:3px;">${ticket.ticketId}</span>
@@ -75,7 +75,7 @@ function renderBOQIncreaseTicketCard(ticket) {
           <span style="margin-left:8px;">By:</span> <strong style="color:#111827;">${escapeHtml(ticket.requestedBy)}</strong>
           <span style="margin-left:8px;">|</span>
           <strong style="color:#111827; margin-left:8px;">${formatOrdinalDateTime(ticket.dateCreated)}</strong>
-          <span style="margin-left:12px;">Dept:</span> <strong style="color:#111827;">${escapeHtml(ticket.department || "—")}</strong>
+          <span style="margin-left:12px;">Dept:</span> <strong style="color:#111827;">${escapeHtml(outwardUseLabel(ticket.department) || "—")}</strong>
           <span style="margin-left:8px;">|</span>
           <span style="margin-left:8px;">Store:</span> <strong style="color:#111827;">${ticket.storeType || "—"}</strong>
         </div>
@@ -104,7 +104,7 @@ function renderBOQIncreaseTicketCard(ticket) {
         </table>
       </div>
       <div style="display:flex; justify-content:flex-end; gap:10px;">
-        <button class="nav-btn-styled" onclick="submitBOQIncreaseDecision('${ticket.ticketId}')"
+        <button class="nav-btn-styled" onclick="submitBOQIncreaseDecision(${jsArg(ticket.ticketId)})"
           style="background:var(--accent); padding:8px 20px; font-weight:700;">
           Submit Decision for This Ticket
         </button>

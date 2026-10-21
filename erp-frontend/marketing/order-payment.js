@@ -157,7 +157,7 @@ function oppRenderCard(p) {
 
   return `
     <div style="border:2px solid #94a3b8; border-radius:var(--radius); margin-bottom:16px; background:#fff; overflow:hidden; box-shadow:0 1px 3px rgba(15,23,42,0.08);">
-      <div style="padding:12px 14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; cursor:pointer;" onclick="oppToggleProject('${p.projectId}')">
+      <div style="padding:12px 14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; cursor:pointer;" onclick="oppToggleProject(${jsArg(p.projectId)})">
         <div style="flex:1; min-width:220px;">
           <div style="font-weight:800; font-size:0.95rem;">${escapeHtml(p.companyName || '-')}</div>
           <div style="font-size:0.78rem; color:var(--muted); margin-top:2px;">
@@ -179,7 +179,7 @@ function oppRenderCard(p) {
           </div>
         </div>
         <button id="opp-lead-btn-${p.projectId}" class="nav-btn-styled" style="font-size:0.78rem; padding:5px 12px; background:#fff; color:var(--brand); border:1px solid var(--brand); white-space:nowrap;"
-          onclick="event.stopPropagation(); oppToggleLeadExpand('${p.projectId}', '${encodeURIComponent(p.companyName || '')}')">${isLeadExpanded ? 'Hide Lead' : 'View Lead'}</button>
+          onclick="event.stopPropagation(); oppToggleLeadExpand(${jsArg(p.projectId)}, '${encodeURIComponent(p.companyName || '')}')">${isLeadExpanded ? 'Hide Lead' : 'View Lead'}</button>
       </div>
       <div id="opp-lead-expand-${p.projectId}" style="display:${isLeadExpanded ? 'block' : 'none'};">${isLeadExpanded ? oppLeadExpandPlaceholderOrCached(p.projectId) : ''}</div>
       <div id="opp-editor-expand-${p.projectId}" style="display:${isExpanded ? 'block' : 'none'};">${isExpanded ? oppRenderEditorContent(p.projectId) : ''}</div>
@@ -268,7 +268,7 @@ function oppRenderEditorContent(projectId) {
       <div id="opp-tranches-wrap-${projectId}" style="margin-top:12px;"></div>
       <div style="display:flex; align-items:center; gap:14px; margin-top:14px; padding-top:12px; border-top:2px solid #94a3b8; flex-wrap:wrap;">
         <div id="opp-balance-line-${projectId}" style="font-size:0.88rem; font-weight:700;"></div>
-        <button class="nav-btn-styled" style="background:var(--brand); padding:10px 26px; font-weight:700; width:auto; margin-left:auto;" onclick="oppSaveSchedule('${projectId}')">Save</button>
+        <button class="nav-btn-styled" style="background:var(--brand); padding:10px 26px; font-weight:700; width:auto; margin-left:auto;" onclick="oppSaveSchedule(${jsArg(projectId)})">Save</button>
       </div>
       <div id="opp-editor-feedback-${projectId}" style="margin-top:10px;"></div>
     </div>`;
@@ -310,39 +310,39 @@ function oppRenderTranches(projectId) {
           <div style="flex:1; min-width:110px;">
             <label class="field-label" style="margin-top:0; font-size:0.68rem;">Expected Amount ₹</label>
             <input type="text" inputmode="decimal" placeholder="0" value="${t.expectedAmount ? formatIndianCurrencyInput(t.expectedAmount) : ''}"
-              oninput="oppUpdateTrancheField('${projectId}', ${i}, 'expectedAmount', sanitizeAmountInput(this))"
+              oninput="oppUpdateTrancheField(${jsArg(projectId)}, ${i}, 'expectedAmount', sanitizeAmountInput(this))"
               onblur="this.value = window.oppActiveTranchesByProject['${projectId}'][${i}].expectedAmount ? formatIndianCurrencyInput(window.oppActiveTranchesByProject['${projectId}'][${i}].expectedAmount) : '';"
               style="width:100%; padding:6px 8px; border:1px solid var(--border); border-radius:4px;" />
           </div>
           <div style="flex:1; min-width:130px;">
             <label class="field-label" style="margin-top:0; font-size:0.68rem;">Expected Date</label>
             <input type="date" value="${t.expectedDate || ''}"
-              onchange="oppUpdateDateField('${projectId}', ${i}, 'expectedDate', this.value)"
+              onchange="oppUpdateDateField(${jsArg(projectId)}, ${i}, 'expectedDate', this.value)"
               style="width:100%; padding:6px 8px; border:1px solid var(--border); border-radius:4px;" />
           </div>
           <div style="flex:1; min-width:110px;">
             <label class="field-label" style="margin-top:0; font-size:0.68rem;">Received Amount ₹</label>
             <input type="text" inputmode="decimal" placeholder="0" value="${t.receivedAmount ? formatIndianCurrencyInput(t.receivedAmount) : ''}"
-              oninput="oppUpdateTrancheField('${projectId}', ${i}, 'receivedAmount', sanitizeAmountInput(this))"
+              oninput="oppUpdateTrancheField(${jsArg(projectId)}, ${i}, 'receivedAmount', sanitizeAmountInput(this))"
               onblur="this.value = window.oppActiveTranchesByProject['${projectId}'][${i}].receivedAmount ? formatIndianCurrencyInput(window.oppActiveTranchesByProject['${projectId}'][${i}].receivedAmount) : '';"
               style="width:100%; padding:6px 8px; border:1px solid var(--border); border-radius:4px;" />
           </div>
           <div style="flex:1; min-width:130px;">
             <label class="field-label" style="margin-top:0; font-size:0.68rem;">Received Date</label>
             <input type="date" value="${t.receivedDate || ''}"
-              onchange="oppUpdateDateField('${projectId}', ${i}, 'receivedDate', this.value)"
+              onchange="oppUpdateDateField(${jsArg(projectId)}, ${i}, 'receivedDate', this.value)"
               style="width:100%; padding:6px 8px; border:1px solid var(--border); border-radius:4px;" />
           </div>
           <div style="flex:1.4; min-width:140px;">
             <label class="field-label" style="margin-top:0; font-size:0.68rem;">Reference (optional)</label>
             <input type="text" value="${escapeHtml(t.paymentReference || '')}" placeholder="UTR / Cheque No."
-              oninput="oppUpdateTrancheField('${projectId}', ${i}, 'paymentReference', this.value)"
+              oninput="oppUpdateTrancheField(${jsArg(projectId)}, ${i}, 'paymentReference', this.value)"
               style="width:100%; padding:6px 8px; border:1px solid var(--border); border-radius:4px;" />
           </div>
           <div style="flex-shrink:0; align-self:flex-end;">
             <span id="opp-status-badge-${projectId}-${i}" style="display:inline-block; padding:5px 10px; border-radius:10px; font-size:0.7rem; font-weight:700; background:${isReceived ? '#dcfce7' : (t.status === 'Partially Received' ? '#fef3c7' : '#f1f5f9')}; color:${isReceived ? '#15803d' : (t.status === 'Partially Received' ? '#b45309' : '#475569')};">${t.status}</span>
           </div>
-          <button type="button" onclick="oppRemoveTranche('${projectId}', ${i})" title="Remove this payment" style="flex-shrink:0; align-self:flex-end; background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; border-radius:4px; font-size:0.75rem; font-weight:700; padding:6px 9px; cursor:pointer;">✕</button>
+          <button type="button" onclick="oppRemoveTranche(${jsArg(projectId)}, ${i})" title="Remove this payment" style="flex-shrink:0; align-self:flex-end; background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; border-radius:4px; font-size:0.75rem; font-weight:700; padding:6px 9px; cursor:pointer;">✕</button>
         </div>
         ${note}
       </div>`;
@@ -350,7 +350,7 @@ function oppRenderTranches(projectId) {
   const empty = list.length === 0
     ? `<div style="font-size:0.75rem; color:var(--muted); font-style:italic; margin-bottom:6px;">No payments added yet.</div>` : "";
   wrap.innerHTML = `${empty}${rows}
-    <button type="button" onclick="oppAddTranche('${projectId}')" style="display:block; width:100%; background:none; border:1.5px dashed var(--brand); color:var(--brand); border-radius:5px; font-size:0.78rem; font-weight:700; padding:8px; cursor:pointer;">+ Add Payment</button>`;
+    <button type="button" onclick="oppAddTranche(${jsArg(projectId)})" style="display:block; width:100%; background:none; border:1.5px dashed var(--brand); color:var(--brand); border-radius:5px; font-size:0.78rem; font-weight:700; padding:8px; cursor:pointer;">+ Add Payment</button>`;
   oppRenderBalanceLine(projectId);
 }
 
@@ -535,7 +535,7 @@ async function oppToggleLeadExpand(projectId, encodedCompany) {
       const tRef = lead["Lead ID"];
       return `
         <div class="contact-summary-card-parent" id="opp-lead-card-${tRef}">
-          <div class="contact-summary-header-row lead-wrapper-header" style="cursor:pointer;" onclick="toggleContactExpansionView('${tRef}', \`${encodeURIComponent(JSON.stringify(lead))}\`)">
+          <div class="contact-summary-header-row lead-wrapper-header" style="cursor:pointer;" onclick="toggleContactExpansionView(${jsArg(tRef)}, \`${encodeURIComponent(JSON.stringify(lead))}\`)">
             <div class="contact-summary-title-info">
               <div class="meta-row-line-block" style="margin-bottom:6px;">
                 <span style="background:#e2e8f0;">Company:</span><strong style="margin-right:20px;">${escapeHtml(lead["Company Name"] || companyName)}</strong>

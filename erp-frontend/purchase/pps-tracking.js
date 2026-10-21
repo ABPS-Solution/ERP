@@ -425,7 +425,7 @@ async function loadPPSForPRN() {
         ${data.ppsDocUrl ? `<a href="${driveLink(data.ppsDocUrl)}" target="_blank" style="background:#fff; color:var(--brand); border:1.5px solid var(--brand); padding:6px 16px; border-radius:var(--radius); font-weight:700; font-size:0.82rem; text-decoration:none;">View PPS Document</a>` : `<span style="color:#92400e; font-size:0.82rem;">PPS document could not be created now; it will be retried within the hour.</span>`}
       </div>` : `
       <div style="display:flex; justify-content:flex-end; margin-top:12px;">
-        <button class="nav-btn-styled" id="pps-save-schedule-btn" onclick="savePPSDeliverySchedule('${prnId}', this)" style="background:var(--accent); padding:8px 20px; font-weight:700;">Save Delivery Schedule</button>
+        <button class="nav-btn-styled" id="pps-save-schedule-btn" onclick="savePPSDeliverySchedule(${jsArg(prnId)}, this)" style="background:var(--accent); padding:8px 20px; font-weight:700;">Save Delivery Schedule</button>
       </div>`}`;
   } catch (e) {
     body.innerHTML = `<p style="color:var(--warn);">Network error: ${e.message}</p>`;
@@ -487,12 +487,12 @@ function ppsRenderScheduleEditor(key) {
       <div style="background:#f8fafc; border:1px solid var(--border); border-radius:5px; padding:5px 6px; margin-bottom:5px;">
         <div style="display:flex; align-items:center; gap:5px;">
           <input type="number" min="0" step="any" max="${orderedQty}" value="${t.plannedQty ?? ''}" ${isReceived ? "disabled" : ""}
-            oninput="ppsClampDeliveryQty('${key}', ${i}, this)"
+            oninput="ppsClampDeliveryQty(${jsArg(key)}, ${i}, this)"
             style="width:64px; padding:4px 5px; font-size:0.95rem; font-weight:700; border:1px solid var(--border); border-radius:3px; text-align:center; background:#fff; box-sizing:border-box;" placeholder="Qty" />
           <input type="date" value="${t.plannedDate || ''}" ${isReceived ? "disabled" : ""}
-            onchange="ppsUpdateDeliveryField('${key}', ${i}, 'plannedDate', this.value)"
+            onchange="ppsUpdateDeliveryField(${jsArg(key)}, ${i}, 'plannedDate', this.value)"
             style="flex:1; min-width:0; padding:4px 5px; font-size:0.7rem; border:1px solid var(--border); border-radius:3px; background:#fff; box-sizing:border-box;" />
-          ${!isReceived ? `<button type="button" onclick="ppsRemoveDelivery('${key}', ${i})" title="Remove this delivery" style="flex-shrink:0; background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; border-radius:3px; font-size:0.7rem; font-weight:700; padding:3px 7px; cursor:pointer; line-height:1;">✕</button>` : ""}
+          ${!isReceived ? `<button type="button" onclick="ppsRemoveDelivery(${jsArg(key)}, ${i})" title="Remove this delivery" style="flex-shrink:0; background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; border-radius:3px; font-size:0.7rem; font-weight:700; padding:3px 7px; cursor:pointer; line-height:1;">✕</button>` : ""}
         </div>
         ${note}
       </div>`;
@@ -508,7 +508,7 @@ function ppsRenderScheduleEditor(key) {
   // exactly as they render above (already read-only once their own
   // status is 'Received').
   const fullyReceived = !!window.ppsScheduleFullyReceived[key];
-  const addBtn = fullyReceived ? "" : `<button type="button" onclick="ppsAddDelivery('${key}')" style="display:block; width:100%; background:none; border:1.5px dashed var(--brand); color:var(--brand); border-radius:4px; font-size:0.68rem; font-weight:700; padding:5px 6px; cursor:pointer; box-sizing:border-box;">${addLabel}</button>`;
+  const addBtn = fullyReceived ? "" : `<button type="button" onclick="ppsAddDelivery(${jsArg(key)})" style="display:block; width:100%; background:none; border:1.5px dashed var(--brand); color:var(--brand); border-radius:4px; font-size:0.68rem; font-weight:700; padding:5px 6px; cursor:pointer; box-sizing:border-box;">${addLabel}</button>`;
   return `<div style="min-width:200px;">${empty}${rows}${addBtn}</div>`;
 }
 

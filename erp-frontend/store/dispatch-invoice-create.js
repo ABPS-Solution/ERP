@@ -56,7 +56,7 @@ function cpdiRenderFileList(type) {
   list.innerHTML = files.map((f, i) => `
     <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; font-size:0.82rem; padding:4px 8px; background:#f8fafc; border:1px solid var(--border); border-radius:4px; margin-top:4px;">
       <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(f.name)}</span>
-      <span onclick="cpdiRemoveFile('${type}', ${i})" style="cursor:pointer; color:#b91c1c; font-weight:700; flex-shrink:0;" title="Remove">✕</span>
+      <span onclick="cpdiRemoveFile(${jsArg(type)}, ${i})" style="cursor:pointer; color:#b91c1c; font-weight:700; flex-shrink:0;" title="Remove">✕</span>
     </div>`).join("");
 }
 

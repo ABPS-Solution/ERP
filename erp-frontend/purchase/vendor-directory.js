@@ -42,7 +42,7 @@ function vdRenderList() {
     Incomplete: vdVendors.filter(v => v.incomplete && v.status === "Active").length,
     All: vdVendors.length,
   };
-  const pill = (k) => `<button type="button" class="nav-btn-styled vd-pill" onclick="vdSetFilter('${k}')"
+  const pill = (k) => `<button type="button" class="nav-btn-styled vd-pill" onclick="vdSetFilter(${jsArg(k)})"
       style="width:auto; padding:7px 16px; font-size:0.85rem; font-weight:700; border-radius:999px; background:${vdFilter === k ? "var(--brand)" : "#e2e8f0"}; color:${vdFilter === k ? "#fff" : "#334155"};">${k === "Incomplete" ? "Details Incomplete" : k} <span style="opacity:0.8;">(${counts[k]})</span></button>`;
   root.innerHTML = `
     <style>

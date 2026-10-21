@@ -138,7 +138,7 @@ function renderPdiLineItemsTable(wrapId, items, idPrefix, onItemChange, onDelete
                   style="width:100%; min-width:80px; box-sizing:border-box; padding:7px 9px; font-size:0.87rem; border:1px solid var(--border); border-radius:4px; background:#f1f5f9; color:var(--muted); cursor:not-allowed; text-align:center;" /></td>`;
               }
               if (type === 'text') {
-                return `<td><textarea rows="1" oninput="${onItemChange}(${idx}, '${key}', this.value); pdiAutoGrowField(this);" onfocus="pdiAutoGrowField(this);" style="${key === 'description' ? '' : 'text-align:center; '}width:100%; min-width:80px; box-sizing:border-box; padding:7px 9px; font-size:0.87rem; border:1px solid var(--border); border-radius:4px; resize:none; overflow:hidden; font-family:inherit;">${escapeHtml(it[key] ?? '')}</textarea></td>`;
+                return `<td><textarea rows="1" oninput="${onItemChange}(${idx}, ${jsArg(key)}, this.value); pdiAutoGrowField(this);" onfocus="pdiAutoGrowField(this);" style="${key === 'description' ? '' : 'text-align:center; '}width:100%; min-width:80px; box-sizing:border-box; padding:7px 9px; font-size:0.87rem; border:1px solid var(--border); border-radius:4px; resize:none; overflow:hidden; font-family:inherit;">${escapeHtml(it[key] ?? '')}</textarea></td>`;
               }
               if (key === 'quantity' && (idPrefix === 'cpdi' || String(idPrefix).startsWith('rpdi'))) {
                 return `<td><input type="number" value="${(parseFloat(it[key]) || 0) || ''}" placeholder="0" readonly title="${idPrefix === 'cpdi' ? 'Set by Qty to Bill Now above' : 'The billed quantity cannot be revised'}"
@@ -147,7 +147,7 @@ function renderPdiLineItemsTable(wrapId, items, idPrefix, onItemChange, onDelete
               const rawVal = key === 'quantity' && (parseFloat(it[key]) || 0) === 0
                 ? `value="" placeholder="0"`
                 : `value="${(it[key] ?? '').toString().replace(/"/g, '&quot;')}"`;
-              return `<td><input type="${type}" ${rawVal} oninput="${onItemChange}(${idx}, '${key}', this.value)" style="text-align:center; width:100%; min-width:80px; box-sizing:border-box; padding:7px 9px; font-size:0.87rem; border:1px solid var(--border); border-radius:4px;" /></td>`;
+              return `<td><input type="${type}" ${rawVal} oninput="${onItemChange}(${idx}, ${jsArg(key)}, this.value)" style="text-align:center; width:100%; min-width:80px; box-sizing:border-box; padding:7px 9px; font-size:0.87rem; border:1px solid var(--border); border-radius:4px;" /></td>`;
             }).join('')}
             ${showDelete ? `<td style="text-align:center;"><button type="button" onclick="${onDeleteItem}(${idx})" title="Remove this line from the invoice"
               style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; border-radius:3px; font-size:0.76rem; font-weight:700; padding:3px 7px; cursor:pointer;">✕</button></td>` : ''}

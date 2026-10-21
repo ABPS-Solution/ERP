@@ -727,7 +727,7 @@ function handleCompanySearchTypeaheadInput(query, inputId = "lookup-module-compa
     .slice(0, 10);
   if (matches.length === 0) { dd.style.display = "none"; return; }
   dd.innerHTML = matches.map(item => `
-    <div onmousedown="event.preventDefault(); selectCompanySearchTypeahead(${jsArg(item.companyValue)}, '${inputId}', '${ddId}')"
+    <div onmousedown="event.preventDefault(); selectCompanySearchTypeahead(${jsArg(item.companyValue)}, ${jsArg(inputId)}, ${jsArg(ddId)})"
       style="padding:9px 12px; cursor:pointer; font-size:0.88rem; border-bottom:1px solid var(--border);"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background=''">${escapeHtml(item.displayLabel)}</div>
   `).join("");

@@ -29,12 +29,12 @@ async function initializeAuthorizePOPanel() {
     const isSuperAdminUser = localStorage.getItem("erpIsUserSuperAdminGlobal") === "true";
     body.innerHTML = data.pos.map(po => `
       <div class="contact-summary-card-parent" style="margin-bottom:12px;">
-        <div class="contact-summary-header-row" onclick="toggleAuthorizePOCard('${po.poNumber}')" style="cursor:pointer; width:100%; display:flex; justify-content:space-between; align-items:center;">
+        <div class="contact-summary-header-row" onclick="toggleAuthorizePOCard(${jsArg(po.poNumber)})" style="cursor:pointer; width:100%; display:flex; justify-content:space-between; align-items:center;">
           <div>
             <span style="background:var(--accent); color:#fff; font-weight:700; padding:3px 10px; font-family:monospace;">${po.poNumber}</span>
             <span style="margin-left:8px; font-weight:700;">${escapeHtml(po.vendorName)}</span>
             ${po.checkingDraftCount > 0 ? `<a href="${driveLink(po.checkingDocUrl)}" target="_blank" onclick="event.stopPropagation();" style="margin-left:10px; font-size:0.72rem; color:#0ea5e9; font-weight:700; text-decoration:none;" title="Not authorized yet. Sign this printout, then authorize.">Draft #${po.checkingDraftCount}</a>` : ""}
-            ${isSuperAdminUser ? `<button onclick="event.stopPropagation(); promptRenameRMPONumber('${po.poNumber}')" style="margin-left:10px; font-size:0.68rem; padding:2px 8px; border:1px solid var(--border); border-radius:4px; background:#fff; color:var(--muted); cursor:pointer;" title="Correct a typo'd PO number (super admin only)">Fix PO Number</button>` : ""}
+            ${isSuperAdminUser ? `<button onclick="event.stopPropagation(); promptRenameRMPONumber(${jsArg(po.poNumber)})" style="margin-left:10px; font-size:0.68rem; padding:2px 8px; border:1px solid var(--border); border-radius:4px; background:#fff; color:var(--muted); cursor:pointer;" title="Correct a typo'd PO number (super admin only)">Fix PO Number</button>` : ""}
           </div>
           <div style="font-size:1rem; color:#334155; font-weight:600;">${formatOrdinalDate(po.orderDate)} &nbsp;|&nbsp; Grand Total: <strong style="color:var(--brand);">${fmt(po.grandTotal)}</strong> &nbsp;|&nbsp; Prepared by ${escapeHtml(po.preparedBy)}</div>
         </div>
@@ -176,7 +176,7 @@ function handleSrchPOMaterialInput(query) {
   const matches = materialSearch(catalog, q, 10);
   if (matches.length === 0) { dd.style.display = "none"; return; }
   dd.innerHTML = matches.map(it => `
-    <div onclick="selectSrchPOMaterial('${it.itemCode}', ${jsArg(it.productName||'')}, ${jsArg(it.rating||'')})"
+    <div onclick="selectSrchPOMaterial(${jsArg(it.itemCode)}, ${jsArg(it.productName||'')}, ${jsArg(it.rating||'')})"
       style="padding:7px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.8rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
       <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:6px;">${it.itemCode}</span>${escapeHtml(it.productName)}${it.rating ? ` - <span style="color:var(--brand); font-weight:700;">${escapeHtml(it.rating)}</span>` : ''}
@@ -360,7 +360,7 @@ function renderSrchPOResultsAsPOCards(list) {
   const fmt = (n) => (parseFloat(n)||0).toLocaleString("en-IN",{minimumFractionDigits:0,maximumFractionDigits:2});
   results.innerHTML = list.map(po => `
     <div class="contact-summary-card-parent" style="margin-bottom:0;">
-      <div class="contact-summary-header-row" onclick="toggleSrchPOCard('${po.poNo}')" style="cursor:pointer; width:100%; display:flex; justify-content:space-between; align-items:center;">
+      <div class="contact-summary-header-row" onclick="toggleSrchPOCard(${jsArg(po.poNo)})" style="cursor:pointer; width:100%; display:flex; justify-content:space-between; align-items:center;">
         <div>
           <span style="background:var(--accent); color:#fff; font-weight:700; padding:3px 10px; font-family:monospace;">${po.poNo}</span>
           <span style="margin-left:8px; font-weight:700;">${escapeHtml(po.vendorName)}</span>
@@ -460,7 +460,7 @@ function renderRMPOViewOnlyDetail(po, lineItems) {
           <span style="font-size:0.74rem; font-weight:800; padding:4px 12px; border-radius:999px; background:${po.status === "Authorized" ? "#dcfce7" : "#fef3c7"}; color:${po.status === "Authorized" ? "#15803d" : "#92400e"};">${escapeHtml(po.status || "")}</span>
           ${isTransportPO ? (po.completedAt
             ? `<span style="font-size:0.74rem; font-weight:800; padding:4px 12px; border-radius:999px; background:#dcfce7; color:#15803d;" title="By ${escapeHtml(po.completedBy || "")}">Completed ${escapeHtml(formatOrdinalDate(po.completedAt))}</span>`
-            : `<button class="nav-btn-styled" onclick="event.stopPropagation(); markTransportPOCompleted('${po.poNo}', this)" style="background:#15803d; color:#fff; font-weight:700; padding:5px 14px; font-size:0.78rem;">Mark Completed</button>`) : ""}
+            : `<button class="nav-btn-styled" onclick="event.stopPropagation(); markTransportPOCompleted(${jsArg(po.poNo)}, this)" style="background:#15803d; color:#fff; font-weight:700; padding:5px 14px; font-size:0.78rem;">Mark Completed</button>`) : ""}
         </div>
       </div>
       <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:10px; padding:14px 16px;">
@@ -1379,7 +1379,7 @@ function handleCPODescSearch(rowId, query) {
   const matches = materialSearch(catalog, q, 10);
   if (matches.length === 0) { dd.style.display = "none"; return; }
   dd.innerHTML = matches.map(it => `
-    <div onclick="selectCPOMaterial(${rowId}, '${it.itemCode}', ${jsArg(it.combinedName || it.productName || '')}, ${jsArg(it.unit||'Nos')})"
+    <div onclick="selectCPOMaterial(${rowId}, ${jsArg(it.itemCode)}, ${jsArg(it.combinedName || it.productName || '')}, ${jsArg(it.unit||'Nos')})"
       style="padding:7px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.8rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
       <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:6px;">${it.itemCode}</span>${escapeHtml(it.combinedName || it.productName)}
@@ -2098,7 +2098,7 @@ async function initializeEditPOPanel() {
     const fmt = (n) => (parseFloat(n)||0).toLocaleString("en-IN",{maximumFractionDigits:2});
     body.innerHTML = data.pos.map(po => `
       <div class="contact-summary-card-parent" style="margin-bottom:12px;">
-        <div class="contact-summary-header-row" onclick="toggleEditPOCard('${po.poNumber}')" style="cursor:pointer; width:100%; display:flex; justify-content:space-between; align-items:center;">
+        <div class="contact-summary-header-row" onclick="toggleEditPOCard(${jsArg(po.poNumber)})" style="cursor:pointer; width:100%; display:flex; justify-content:space-between; align-items:center;">
           <div>
             <span style="background:var(--accent); color:#fff; font-weight:700; padding:3px 10px; font-family:monospace;">${po.poNumber}</span>
             <span style="margin-left:8px; font-weight:700;">${escapeHtml(po.vendorName)}</span>
@@ -2444,7 +2444,7 @@ function handleRMPONameSearch(inputEl, idx) {
     return;
   }
   dropdown.innerHTML = matches.map(c => `
-    <div onclick="selectRMPONameMatch(${idx}, '${c.itemCode}', ${jsArg(c.combinedName || c.productName || '')}, ${jsArg(c.unit || '')})"
+    <div onclick="selectRMPONameMatch(${idx}, ${jsArg(c.itemCode)}, ${jsArg(c.combinedName || c.productName || '')}, ${jsArg(c.unit || '')})"
       style="padding:8px 10px; cursor:pointer; font-size:0.8rem; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center;"
       onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#fff'">
       <span style="font-weight:600;">${escapeHtml(c.combinedName || c.productName)}</span>

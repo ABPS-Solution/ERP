@@ -151,7 +151,7 @@ async function loadRpdiDocuments(invoiceId) {
     if (!data.success) { zone.innerHTML = `<span style="color:#b91c1c;">${escapeHtml(data.error || "Failed to load documents.")}</span>`; return; }
     const docs = data.documents || [];
     const actions = (d) => `
-      <label class="pdi-act-btn" style="color:#0369a1; border-color:#7dd3fc;">Replace<input type="file" hidden onchange="rpdiReplaceDocument(${invoiceId}, ${d.documentId}, '${d.docType}', this)"></label>
+      <label class="pdi-act-btn" style="color:#0369a1; border-color:#7dd3fc;">Replace<input type="file" hidden onchange="rpdiReplaceDocument(${invoiceId}, ${d.documentId}, ${jsArg(d.docType)}, this)"></label>
       <span class="pdi-act-btn" style="color:#b91c1c; border-color:#fca5a5;" onclick="rpdiRemoveDocument(${invoiceId}, ${d.documentId})">Remove</span>`;
     zone.innerHTML = `
       <div style="font-size:0.8rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:8px;">Invoice Documents</div>

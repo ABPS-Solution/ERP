@@ -593,7 +593,7 @@ function ptlRenderLane(lane) {
   const title = [lane.productName, lane.productRating, lane.descriptionOfMaterial].filter(Boolean).join(" - ");
   return `
     <div id="ptl-lane-${lane.boqId}" style="border:1px solid var(--border); border-radius:var(--radius); margin-bottom:14px; overflow:hidden;">
-      <div onclick="ptlToggleLane('${lane.boqId}')" style="padding:10px 14px; background:${c}14; border-left:4px solid ${c}; display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:nowrap; gap:16px; cursor:pointer;">
+      <div onclick="ptlToggleLane(${jsArg(lane.boqId)})" style="padding:10px 14px; background:${c}14; border-left:4px solid ${c}; display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:nowrap; gap:16px; cursor:pointer;">
         <div style="flex:1; min-width:0;">
           <span style="display:inline-block; width:0; height:0; border-top:5px solid transparent; border-bottom:5px solid transparent; border-left:6px solid ${c}; margin-right:8px; transform:rotate(${expanded ? 90 : 0}deg); transition:transform .15s;"></span>
           <span style="font-weight:800; color:${c};">${escapeHtml(lane.name)}</span>
@@ -817,7 +817,7 @@ function ptlRenderStageRows(nodes, today, prodPlanDone) {
     const systemDateCanEdit = PTL_ADMIN_SYSTEM_DATE_IDS.has(n.id) && !n.notApplicable && ptlIsAdmin();
     const milestoneOverrideCanEdit = !!PTL_ADMIN_MILESTONE_OVERRIDE_KEY[n.id] && ptlIsAdmin();
     return `
-      <div id="ptl-row-${n.id}" ${hasDetail ? `onclick="ptlToggleNodeDetail('${n.id}')"` : ''} style="display:flex; align-items:flex-start; gap:12px; padding:10px 4px; border-bottom:1px solid var(--border); border-radius:4px;${hasDetail ? ' cursor:pointer;' : ''}${n.id === 'delivery' ? ' background:rgba(245,158,11,0.12); border:2px solid #d97706; padding:10px 8px; margin:4px 0;' : ''}">
+      <div id="ptl-row-${n.id}" ${hasDetail ? `onclick="ptlToggleNodeDetail(${jsArg(n.id)})"` : ''} style="display:flex; align-items:flex-start; gap:12px; padding:10px 4px; border-bottom:1px solid var(--border); border-radius:4px;${hasDetail ? ' cursor:pointer;' : ''}${n.id === 'delivery' ? ' background:rgba(245,158,11,0.12); border:2px solid #d97706; padding:10px 8px; margin:4px 0;' : ''}">
         <div style="flex:none; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center;
           background:${done ? dotColor : '#fff'}; border:2.5px solid ${dotColor}; margin-top:2px;">
           ${done ? '<span style="color:#fff; font-weight:900; font-size:0.85rem;">✓</span>' : ''}
@@ -836,18 +836,18 @@ function ptlRenderStageRows(nodes, today, prodPlanDone) {
           ${isEmptyDetailArray ? (n.blocked
             ? `<div style="font-size:0.76rem; color:var(--muted); font-style:italic; margin-top:5px;">${escapeHtml(n.blocked)}</div>`
             : `<div style="font-size:0.72rem; color:var(--accent); margin-top:5px; font-weight:600;">✓ Completed</div>`) : ''}
-          ${manualCanEdit ? `<div onclick="event.stopPropagation()" style="margin-top:7px; display:flex; align-items:center; gap:8px;">${ptlAsOfInputHtml(n.id, n.actual)}<button class="nav-btn-styled" style="padding:5px 12px; font-size:0.78rem;" onclick="ptlMarkMilestoneDone('${n.id}')">${n.actual ? 'Update (admin)' : 'Mark Done'}</button></div>` : ''}
+          ${manualCanEdit ? `<div onclick="event.stopPropagation()" style="margin-top:7px; display:flex; align-items:center; gap:8px;">${ptlAsOfInputHtml(n.id, n.actual)}<button class="nav-btn-styled" style="padding:5px 12px; font-size:0.78rem;" onclick="ptlMarkMilestoneDone(${jsArg(n.id)})">${n.actual ? 'Update (admin)' : 'Mark Done'}</button></div>` : ''}
           ${qaUnsetPointer ? `<div style="margin-top:7px; font-size:0.76rem; color:var(--muted); font-style:italic;">Set in Quality Assurance → QA Inspection Timeline.</div>` : ''}
           ${systemDateCanEdit ? `
             <div onclick="event.stopPropagation()" style="margin-top:7px; display:flex; align-items:center; gap:8px;">
               <input type="date" id="ptl-sysdate-${n.id}" value="${n.actual || ''}" title="Admin only - set/backdate this for testing" style="padding:5px; border:1.5px dashed #f59e0b; border-radius:4px; font-size:0.78rem;" />
-              <button class="nav-btn-styled" style="padding:5px 12px; font-size:0.78rem;" onclick="ptlSetSystemDate('${n.id}')">${n.actual ? 'Update (admin)' : 'Set (admin)'}</button>
+              <button class="nav-btn-styled" style="padding:5px 12px; font-size:0.78rem;" onclick="ptlSetSystemDate(${jsArg(n.id)})">${n.actual ? 'Update (admin)' : 'Set (admin)'}</button>
             </div>` : ''}
           ${milestoneOverrideCanEdit ? `
             <div onclick="event.stopPropagation()" style="margin-top:7px; display:flex; align-items:center; gap:8px;">
               <input type="date" id="ptl-msoverride-${n.id}" value="${n.actual || ''}" title="Admin only - override this milestone's date for testing (normally computed live)" style="padding:5px; border:1.5px dashed #f59e0b; border-radius:4px; font-size:0.78rem;" />
-              <button class="nav-btn-styled" style="padding:5px 12px; font-size:0.78rem;" onclick="ptlSetMilestoneOverride('${n.id}')">${n.actual ? 'Update (admin)' : 'Set (admin)'}</button>
-              ${n.actual ? `<button class="nav-btn-styled" style="padding:5px 12px; font-size:0.78rem; background:#fff; color:var(--muted); border:1px solid var(--border);" onclick="ptlClearMilestoneOverride('${n.id}')">Clear override</button>` : ''}
+              <button class="nav-btn-styled" style="padding:5px 12px; font-size:0.78rem;" onclick="ptlSetMilestoneOverride(${jsArg(n.id)})">${n.actual ? 'Update (admin)' : 'Set (admin)'}</button>
+              ${n.actual ? `<button class="nav-btn-styled" style="padding:5px 12px; font-size:0.78rem; background:#fff; color:var(--muted); border:1px solid var(--border);" onclick="ptlClearMilestoneOverride(${jsArg(n.id)})">Clear override</button>` : ''}
             </div>` : ''}
         </div>
       </div>
@@ -2003,7 +2003,7 @@ function ptlRenderFsRailBody(flags) {
     if (!items.length) return;
     html += `<div style="font-size:0.68rem; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; margin:15px 0 7px; color:${SEV_COLOR[sev]};">${escapeHtml(GRP[sev])} · ${items.length}</div>`;
     items.forEach(f => {
-      html += `<button type="button" onclick="ptlGotoFlag('${f.nodeId}','${f.boqId || ''}')"
+      html += `<button type="button" onclick="ptlGotoFlag(${jsArg(f.nodeId)},'${f.boqId || ''}')"
         style="display:block; width:100%; text-align:left; font:inherit; color:inherit; background:#f7fafd; border:1px solid var(--border); border-left:3px solid ${SEV_COLOR[sev]}; border-radius:var(--radius); padding:9px 11px; margin-bottom:7px; cursor:pointer;">
         <b style="display:block; font-size:0.8rem; font-weight:700; margin-bottom:3px; line-height:1.35;">${escapeHtml(f.title)}</b>
         <span style="display:block; font-size:0.74rem; color:var(--muted); line-height:1.45;">${escapeHtml(f.msg)}</span>
@@ -2066,7 +2066,7 @@ function ptlRenderFullscreen() {
         <div style="flex:1 1 auto;"></div>
         ${ptlStageProgressHtml()}
         <div style="display:inline-flex; border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; flex:none;">
-          ${Object.keys(PTL_MODES).map(m => `<button type="button" onclick="ptlSetMode('${m}')" style="padding:7px 14px; font-size:0.82rem; font-weight:600; border:0; border-right:1px solid var(--border); cursor:pointer; background:${m === ptlMode ? 'var(--brand)' : '#fff'}; color:${m === ptlMode ? '#fff' : 'var(--muted)'};">${m === 'week' ? 'This Week' : m === 'days15' ? '15 Days' : 'This Month'}</button>`).join("")}
+          ${Object.keys(PTL_MODES).map(m => `<button type="button" onclick="ptlSetMode(${jsArg(m)})" style="padding:7px 14px; font-size:0.82rem; font-weight:600; border:0; border-right:1px solid var(--border); cursor:pointer; background:${m === ptlMode ? 'var(--brand)' : '#fff'}; color:${m === ptlMode ? '#fff' : 'var(--muted)'};">${m === 'week' ? 'This Week' : m === 'days15' ? '15 Days' : 'This Month'}</button>`).join("")}
         </div>
         <button type="button" onclick="ptlJumpToday()" style="flex:none; padding:7px 14px; font-size:0.82rem; font-weight:700; border:0; border-radius:var(--radius); cursor:pointer; background:var(--brand); color:#fff;">Today</button>
         <button type="button" id="ptl-fs-flags-toggle" onclick="ptlToggleFsRail()" style="flex:none; padding:7px 14px; font-size:0.82rem; font-weight:700; border:0; border-radius:var(--radius); cursor:pointer; color:#fff;"></button>
@@ -2492,7 +2492,7 @@ function ptlRenderLdPanel() {
     } else if (bc) {
       const opt = (source, amount, label) => amount == null ? "" : `<label style="display:flex; align-items:center; gap:8px; font-size:0.82rem; margin-bottom:6px; cursor:pointer;">
         <input type="radio" name="ptl-ld-basis" style="width:auto; flex:none;" ${dis} ${f.basisAmountSource === source ? "checked" : ""}
-          onchange="ptlLdFormSet('basisAmountSource','${source}'); ptlLdFormSet('basisAmountInr', ${amount}); ptlRenderLdPanel();" />
+          onchange="ptlLdFormSet('basisAmountSource',${jsArg(source)}); ptlLdFormSet('basisAmountInr', ${amount}); ptlRenderLdPanel();" />
         <span>${label}: <strong>${ptlFmtINR(amount)}</strong></span>
       </label>`;
       if (f.basisKind === "delayed_goods_basic") {

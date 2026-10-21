@@ -119,9 +119,9 @@ async function loadManufacturingClearanceList() {
         <td style="padding:8px; font-size:0.95rem; font-weight:600;">${formatOrdinalDate(p.deliveryDate) || "—"}</td>
         <td style="padding:8px;">
           ${mcCurrentStatus === "Inactive"
-            ? `<button class="nav-btn-styled" style="background:#2f9e58; padding:5px 12px; font-size:0.78rem;" onclick="mcActivateProject('${p.projectId}')">Activate</button>`
+            ? `<button class="nav-btn-styled" style="background:#2f9e58; padding:5px 12px; font-size:0.78rem;" onclick="mcActivateProject(${jsArg(p.projectId)})">Activate</button>`
             : mcCurrentStatus === "Completed"
-            ? `<button class="nav-btn-styled" style="background:var(--brand); padding:5px 12px; font-size:0.78rem;" onclick="mcReactivateProject('${p.projectId}')">Reactivate</button>`
+            ? `<button class="nav-btn-styled" style="background:var(--brand); padding:5px 12px; font-size:0.78rem;" onclick="mcReactivateProject(${jsArg(p.projectId)})">Reactivate</button>`
             : `<span style="color:var(--muted); font-size:0.78rem;">—</span>`}
         </td>
       </tr>`).join("");
@@ -156,7 +156,7 @@ function renderMcProjectCard(project) {
   const deliveryValue = project.mfcInt ? project.actualDeliveryDate : project.deliveryDate;
 
   card.innerHTML = `
-    <div class="contact-summary-header-row" onclick="toggleMcCardBody('${project.projectId}')" style="margin-bottom:0; padding-bottom:0; border-bottom:none; cursor:pointer;">
+    <div class="contact-summary-header-row" onclick="toggleMcCardBody(${jsArg(project.projectId)})" style="margin-bottom:0; padding-bottom:0; border-bottom:none; cursor:pointer;">
       <div style="width:100%; display:flex; align-items:center; gap:14px; border-left:4px solid ${status.color}; padding-left:12px;">
         <div style="flex:1; min-width:0;">
           <div style="font-size:1rem; font-weight:800; color:#111827; margin-bottom:4px;">${escapeHtml(project.companyName)}</div>
@@ -302,12 +302,12 @@ function renderMcLineItemsTable(projectId, lineItems) {
         <td style="padding:8px; position:relative; vertical-align:middle;">
           <textarea rows="1" id="mc-std-search-${safeId}-${li.lineId}" ${productSearchDisabledAttr}
             placeholder="Search Item Code..." autocomplete="off"
-            oninput="handleMcProductSearch(this.value, '${projectId}', ${li.lineId}); mcAutoGrowField(this);"
+            oninput="handleMcProductSearch(this.value, ${jsArg(projectId)}, ${li.lineId}); mcAutoGrowField(this);"
             onfocus="mcAutoGrowField(this);"
             onkeydown="if(event.key==='Enter') event.preventDefault();"
             style="width:100%; min-width:0; box-sizing:border-box; padding:6px 8px; font-size:0.8rem; border:1.5px solid var(--border); border-radius:4px; resize:none; overflow:hidden; font-family:inherit; min-height:32px; color:#111827;${productSearchStyleExtra}">${searchVal.replace(/</g,'&lt;')}</textarea>
           <div id="mc-std-dropdown-${safeId}-${li.lineId}" style="display:none; position:fixed; z-index:9999; background:#fff; border:1.5px solid var(--brand); border-radius:6px; box-shadow:0 8px 24px rgba(0,0,0,0.18); overflow-y:auto; min-width:280px;"></div>
-          ${hasBoq && isAdmin ? `<button class="nav-btn-styled" onclick="openProductRenameModal('${projectId}', ${li.lineId})" style="margin-top:4px; background:#7c3aed; padding:3px 8px; font-size:0.68rem;">Change Product</button>` : ''}
+          ${hasBoq && isAdmin ? `<button class="nav-btn-styled" onclick="openProductRenameModal(${jsArg(projectId)}, ${li.lineId})" style="margin-top:4px; background:#7c3aed; padding:3px 8px; font-size:0.68rem;">Change Product</button>` : ''}
         </td>
         <td style="padding:8px; vertical-align:middle;">
           <textarea rows="1" id="mc-std-rating-${safeId}-${li.lineId}" readonly
@@ -335,8 +335,8 @@ function renderMcLineItemsTable(projectId, lineItems) {
         </td>
         <td style="padding:8px; text-align:center; vertical-align:middle;">
           ${isAdmin ? (isHeld
-            ? `<button class="nav-btn-styled" data-mc-hold-btn onclick="unholdMcProduct('${projectId}', ${li.lineId})" style="background:#15803d; padding:5px 10px; font-size:0.72rem;">Un-hold</button>`
-            : `<button class="nav-btn-styled" data-mc-hold-btn onclick="holdMcProduct('${projectId}', ${li.lineId})" style="background:#b91c1c; padding:5px 10px; font-size:0.72rem;">Hold</button>`)
+            ? `<button class="nav-btn-styled" data-mc-hold-btn onclick="unholdMcProduct(${jsArg(projectId)}, ${li.lineId})" style="background:#15803d; padding:5px 10px; font-size:0.72rem;">Un-hold</button>`
+            : `<button class="nav-btn-styled" data-mc-hold-btn onclick="holdMcProduct(${jsArg(projectId)}, ${li.lineId})" style="background:#b91c1c; padding:5px 10px; font-size:0.72rem;">Hold</button>`)
             : '<span style="color:var(--muted); font-size:0.72rem;">—</span>'}
         </td>
       </tr>`;
@@ -372,7 +372,7 @@ function renderMcLineItemsTable(projectId, lineItems) {
         </table>
       </div>
       <div style="display:flex; justify-content:flex-end;">
-        <button class="nav-btn-styled" onclick="submitMcClearance('${projectId}')" style="background:var(--accent); padding:8px 20px; font-weight:700;" ${disabledAttr}>
+        <button class="nav-btn-styled" onclick="submitMcClearance(${jsArg(projectId)})" style="background:var(--accent); padding:8px 20px; font-weight:700;" ${disabledAttr}>
           Submit Manufacturing Clearance
         </button>
       </div>
@@ -434,7 +434,7 @@ function buildMcGatingPanelHtml(projectId, gating) {
       <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; color:#111827;">
         <div>
           <label style="display:block; font-size:0.78rem; font-weight:600; color:var(--muted); margin-bottom:4px;">Drawing Sent for Approval</label>
-          <select onchange="saveMcGatingField('${projectId}', 'drawingSentForApproval', this.value)"
+          <select onchange="saveMcGatingField(${jsArg(projectId)}, 'drawingSentForApproval', this.value)"
             style="width:100%; padding:7px 8px; font-size:0.82rem; border:1.5px solid var(--border); border-radius:4px;">
             ${sentOpt("No")}${sentOpt("Yes")}${sentOpt("Not Eligible")}
           </select>
@@ -442,7 +442,7 @@ function buildMcGatingPanelHtml(projectId, gating) {
         ${notEligible ? "" : `<div>
           <label style="display:block; font-size:0.78rem; font-weight:600; color:var(--muted); margin-bottom:4px;">Drawing Sent Date</label>
           <input type="date" value="${gating.drawingSentDate ? gating.drawingSentDate.slice(0,10) : ""}"
-            onchange="saveMcGatingField('${projectId}', 'drawingSentDate', this.value)"
+            onchange="saveMcGatingField(${jsArg(projectId)}, 'drawingSentDate', this.value)"
             style="width:100%; padding:6px 8px; font-size:1rem; border:1.5px solid var(--border); border-radius:4px;" />
         </div>
         <div>
@@ -455,13 +455,13 @@ function buildMcGatingPanelHtml(projectId, gating) {
         <div>
           <label style="display:block; font-size:0.78rem; font-weight:600; color:var(--muted); margin-bottom:4px;">Date of MFC Received from Customer</label>
           <input type="date" value="${gating.dateOfMfcReceivedFromCustomer ? gating.dateOfMfcReceivedFromCustomer.slice(0,10) : ""}"
-            onchange="saveMcGatingField('${projectId}', 'dateOfMfcReceivedFromCustomer', this.value)"
+            onchange="saveMcGatingField(${jsArg(projectId)}, 'dateOfMfcReceivedFromCustomer', this.value)"
             style="width:100%; padding:6px 8px; font-size:1rem; border:1.5px solid var(--border); border-radius:4px;" />
         </div>
         <div>
           <label style="display:block; font-size:0.78rem; font-weight:600; color:var(--muted); margin-bottom:4px;">Final Delivery Date from MFC</label>
           <input type="date" value="${gating.actualDeliveryDate ? gating.actualDeliveryDate.slice(0,10) : ""}"
-            onchange="saveMcGatingField('${projectId}', 'actualDeliveryDate', this.value)"
+            onchange="saveMcGatingField(${jsArg(projectId)}, 'actualDeliveryDate', this.value)"
             style="width:100%; padding:6px 8px; font-size:1rem; border:1.5px solid var(--border); border-radius:4px;" />
         </div>
       </div>
@@ -573,7 +573,7 @@ function handleMcProductSearch(query, projectId, lineId) {
   }
 
   dropdown.innerHTML = matches.map(item => `
-    <div onclick="selectMcProduct('${projectId}', ${lineId}, '${item.itemCode}', ${jsArg(item.productName)}, ${jsArg(item.rating||'')}, ${jsArg(item.make||'')}, ${jsArg(item.unit||'')})"
+    <div onclick="selectMcProduct(${jsArg(projectId)}, ${lineId}, ${jsArg(item.itemCode)}, ${jsArg(item.productName)}, ${jsArg(item.rating||'')}, ${jsArg(item.make||'')}, ${jsArg(item.unit||'')})"
       style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
       ${escapeHtml(item.productName)}${item.rating ? ` - <span style="color:var(--brand); font-weight:700;">${escapeHtml(item.rating)}</span>` : ""}
@@ -626,7 +626,7 @@ function mcMfcQtyCellsHtml(projectId, safeId, lineId, state, orderQty, currentMf
         <td id="mc-new-${id}" style="padding:8px; text-align:center; vertical-align:middle;">
           <input type="number" id="mc-new-mfc-${id}" value="${trimNum(state.newMfcQuantity)}" ${enabled ? "" : "disabled"}
             min="0" max="${orderQty}" step="any"
-            oninput="clampMcNewMfcQty(this, '${projectId}', ${lineId})"
+            oninput="clampMcNewMfcQty(this, ${jsArg(projectId)}, ${lineId})"
             style="width:100px; padding:5px 6px; text-align:center; font-family:monospace; font-size:1rem; font-weight:700; color:#111827; border:1.5px solid var(--border); border-radius:4px;${enabled ? "" : " background:#f1f5f9; cursor:not-allowed;"}" />
         </td>`;
 }
@@ -858,7 +858,7 @@ function handleProductRenameSearch(query) {
   const catalog = window.itemCodeCatalogCache || [];
   const matches = materialSearch(catalog, q, 10);
   results.innerHTML = matches.map(item => `
-    <div onclick="selectProductRenameCandidate('${item.itemCode}')"
+    <div onclick="selectProductRenameCandidate(${jsArg(item.itemCode)})"
       style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
       ${escapeHtml(item.productName)}${item.rating ? ` - <span style="color:var(--brand); font-weight:700;">${escapeHtml(item.rating)}</span>` : ""}
@@ -985,7 +985,7 @@ function renderMcSubmitSuccess(projectId, summaryRows) {
         Manufacturing Clearance submitted for <span style="font-family:monospace;">${projectId}</span>
       </div>
       <ul style="margin:8px 0 14px 18px; padding:0; font-size:0.85rem; color:#111827;">${bulletsHtml}</ul>
-      <button class="nav-btn-styled" onclick="mcAnotherClearance('${projectId}')" style="background:var(--brand); padding:8px 20px; font-weight:700;">
+      <button class="nav-btn-styled" onclick="mcAnotherClearance(${jsArg(projectId)})" style="background:var(--brand); padding:8px 20px; font-weight:700;">
         + Another Manufacturing Clearance
       </button>
     </div>

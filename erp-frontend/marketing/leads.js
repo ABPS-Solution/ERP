@@ -659,14 +659,14 @@ function buildMultiContactDirectoryInterface(leadsList, targetSearchName, contai
 
     const isAdminUser = localStorage.getItem("erpIsUserSuperAdminGlobal") === "true";
     const mergeButtonHtml = localStorage.getItem("erpIsUserAdminGlobal") === "true"
-      ? `<button class="nav-btn-styled" style="font-size:1rem; padding:9px 18px;" onclick="openMergeLeadPicker('${tRef}', '${encodeURIComponent(companyLabelName)}')">Merge</button>`
+      ? `<button class="nav-btn-styled" style="font-size:1rem; padding:9px 18px;" onclick="openMergeLeadPicker(${jsArg(tRef)}, ${jsArg(encodeURIComponent(companyLabelName))})">Merge</button>`
       : "";
     const deleteButtonHtml = isAdminUser
-      ? `<button class="nav-btn-styled" style="font-size:1rem; padding:9px 18px; background:var(--warn);" onclick="removeLeadRowEntirely('${tRef}', '${encodeURIComponent(companyLabelName)}', '${encodeURIComponent(cardDisplayName)}')">Delete Record</button>`
+      ? `<button class="nav-btn-styled" style="font-size:1rem; padding:9px 18px; background:var(--warn);" onclick="removeLeadRowEntirely(${jsArg(tRef)}, ${jsArg(encodeURIComponent(companyLabelName))}, ${jsArg(encodeURIComponent(cardDisplayName))})">Delete Record</button>`
       : ""; // Non-admins get absolutely nothing rendered
 
     wrapperCard.innerHTML = `
-      <div class="contact-summary-header-row lead-wrapper-header" style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px; cursor:pointer;" onclick="toggleContactExpansionView('${tRef}', \`${encodeURIComponent(JSON.stringify(lead))}\`)">
+      <div class="contact-summary-header-row lead-wrapper-header" style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px; cursor:pointer;" onclick="toggleContactExpansionView(${jsArg(tRef)}, \`${encodeURIComponent(JSON.stringify(lead))}\`)">
         <div class="contact-summary-title-info" style="flex:1; display:grid; grid-template-columns: minmax(220px, 1fr) minmax(200px, 1fr); gap:10px 24px;">
           <div class="meta-pair" style="display:flex; align-items:baseline; gap:8px; min-width:0;">
             <span style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--muted); flex-shrink:0;">Lead</span>
@@ -2669,16 +2669,16 @@ function renderPoReviewLineItemsTable() {
                     style="width:100%; min-width:0; box-sizing:border-box; padding:5px; font-size:0.85rem; ${alignStyle} background:#eef1f5; color:var(--text); border:1px solid var(--border);" /></td>`;
                 }
                 return `<td style="vertical-align:middle;"><input id="po-li-${key}-${idx}" type="text" inputmode="decimal" value="${formattedAttr}"
-                  oninput="updatePoReviewLineItem(${idx}, '${key}', sanitizeAmountInput(this))"
+                  oninput="updatePoReviewLineItem(${idx}, ${jsArg(key)}, sanitizeAmountInput(this))"
                   onfocus="this.value = (poReviewState.lineItems[${idx}]['${key}'] ?? '').toString();"
                   onblur="this.value = formatIndianCurrencyInput(poReviewState.lineItems[${idx}]['${key}']);"
                   style="width:100%; min-width:0; box-sizing:border-box; padding:5px; font-size:0.85rem; ${alignStyle}" /></td>`;
               }
               if (isWrap) {
-                return `<td style="vertical-align:middle;"><textarea rows="1" oninput="updatePoReviewLineItem(${idx}, '${key}', this.value); autoGrowPoField(this);" onfocus="autoGrowPoField(this);"
+                return `<td style="vertical-align:middle;"><textarea rows="1" oninput="updatePoReviewLineItem(${idx}, ${jsArg(key)}, this.value); autoGrowPoField(this);" onfocus="autoGrowPoField(this);"
                   style="width:100%; min-width:0; box-sizing:border-box; padding:5px; font-size:0.85rem; ${alignStyle} resize:none; overflow:hidden; font-family:inherit; min-height:28px;">${val.replace(/</g, '&lt;')}</textarea></td>`;
               }
-              return `<td style="vertical-align:middle;"><input type="${type}" value="${valAttr}" oninput="updatePoReviewLineItem(${idx}, '${key}', this.value)"
+              return `<td style="vertical-align:middle;"><input type="${type}" value="${valAttr}" oninput="updatePoReviewLineItem(${idx}, ${jsArg(key)}, this.value)"
                 style="width:100%; min-width:0; box-sizing:border-box; padding:5px; font-size:0.85rem; ${alignStyle}" /></td>`;
             }).join('')}
             <td style="vertical-align:middle; text-align:center;"><button class="po-li-del-btn" onclick="removePoReviewLineItem(${idx})" title="Remove row">✕</button></td>
@@ -2721,7 +2721,7 @@ function renderPurchaseOrderReview() {
         <div class="grid-cell-item" style="${spanStyle || ''}">
           <label style="font-size:0.72rem;">${labelText}</label>
           <input type="text" inputmode="decimal" value="${formatIndianCurrencyInput(val).replace(/"/g, '&quot;')}"
-            oninput="updatePoReviewField('${key}', sanitizeAmountInput(this))"
+            oninput="updatePoReviewField(${jsArg(key)}, sanitizeAmountInput(this))"
             onfocus="this.value = (poReviewState['${key}'] ?? '').toString();"
             onblur="this.value = formatIndianCurrencyInput(poReviewState['${key}']);"
             style="font-size:0.95rem; padding:7px 8px;" />
@@ -2731,13 +2731,13 @@ function renderPurchaseOrderReview() {
       return `
         <div class="grid-cell-item" style="${spanStyle || ''}">
           <label style="font-size:0.72rem;">${labelText}</label>
-          <input type="date" value="${val.replace(/"/g, '&quot;')}" oninput="updatePoReviewField('${key}', this.value)" style="font-size:0.95rem; padding:7px 8px;" />
+          <input type="date" value="${val.replace(/"/g, '&quot;')}" oninput="updatePoReviewField(${jsArg(key)}, this.value)" style="font-size:0.95rem; padding:7px 8px;" />
         </div>`;
     }
     return `
       <div class="grid-cell-item" style="${spanStyle || ''}">
         <label style="font-size:0.72rem;">${labelText}</label>
-        <textarea rows="1" oninput="updatePoReviewField('${key}', this.value); autoGrowPoField(this);" onfocus="autoGrowPoField(this);"
+        <textarea rows="1" oninput="updatePoReviewField(${jsArg(key)}, this.value); autoGrowPoField(this);" onfocus="autoGrowPoField(this);"
           style="font-size:0.95rem; padding:7px 8px; resize:none; overflow:hidden; font-family:inherit; min-height:32px;">${val.replace(/</g, '&lt;')}</textarea>
       </div>`;
   };
@@ -3043,7 +3043,7 @@ function renderGateFileList(boxId) {
   list.innerHTML = files.map((f, i) => `
     <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; font-size:0.76rem; padding:4px 8px; background:#f8fafc; border:1px solid var(--border); border-radius:4px; margin-top:4px;">
       <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Page ${i + 1}: ${escapeHtml(f.name)}</span>
-      <span onclick="removeGateFile('${docType}', ${i})" style="cursor:pointer; color:#b91c1c; font-weight:700; flex-shrink:0;" title="Remove">✕</span>
+      <span onclick="removeGateFile(${jsArg(docType)}, ${i})" style="cursor:pointer; color:#b91c1c; font-weight:700; flex-shrink:0;" title="Remove">✕</span>
     </div>`).join("");
 }
 
@@ -3231,7 +3231,7 @@ async function renderIsolatedDocumentInfoSection(leadRef, leadId, scopeNode) {
         const bodyId = `pinv-doc-card-body-${leadRef}-${inv.invoiceId}`;
         return `
           <div style="margin-bottom:8px; border:1px solid #d1fae5; border-radius:4px; overflow:hidden;">
-            <div onclick="togglePinvDocCard('${bodyId}')" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center; background:#ecfdf5; padding:6px 10px;">
+            <div onclick="togglePinvDocCard(${jsArg(bodyId)})" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center; background:#ecfdf5; padding:6px 10px;">
               <strong style="font-size:0.8rem; color:#047857;">${escapeHtml(inv.invoiceType)} Invoice — ${escapeHtml(inv.invoiceNo)}${inv.revision > 1 ? ` (Rev ${inv.revision})` : ""}</strong>
               <span id="${bodyId}-caret" style="font-size:0.7rem; color:#047857;">▸</span>
             </div>
@@ -3312,7 +3312,7 @@ function handlePoLeadTypeaheadInput(query) {
   const matches = [...sel.options].filter(o => o.value && o.text.toLowerCase().includes(q)).slice(0, 15);
   if (!matches.length) { dd.style.display = "none"; return; }
   dd.innerHTML = matches.map(o => `
-    <div onmousedown="event.preventDefault(); selectPoLeadTypeahead('${encodeURIComponent(o.value)}')"
+    <div onmousedown="event.preventDefault(); selectPoLeadTypeahead(${jsArg(encodeURIComponent(o.value))})"
       style="padding:9px 12px; cursor:pointer; font-size:0.88rem; border-bottom:1px solid var(--border);"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background=''">${escapeHtml(o.text)}</div>`).join("");
   const rect = input.getBoundingClientRect();

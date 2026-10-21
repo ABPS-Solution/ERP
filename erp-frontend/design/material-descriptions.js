@@ -59,7 +59,7 @@ function handleMaterialDescriptionTypeaheadInput(query, inputId, dropdownId, hid
   const exact = catalog.find(d => (d.descriptionText || "").trim().toLowerCase() === q);
 
   let html = matches.map(d => `
-    <div onmousedown="event.preventDefault();" onclick="selectMaterialDescriptionOption(${d.descriptionId}, ${jsArg(d.descriptionText)}, '${inputId}', '${dropdownId}', '${hiddenIdFieldId || ""}', ${onSelectFn ? `'${onSelectFn}'` : 'null'}, ${extraArg !== undefined ? `'${extraArg}'` : 'null'})"
+    <div onmousedown="event.preventDefault();" onclick="selectMaterialDescriptionOption(${d.descriptionId}, ${jsArg(d.descriptionText)}, ${jsArg(inputId)}, ${jsArg(dropdownId)}, '${hiddenIdFieldId || ""}', ${onSelectFn ? `'${onSelectFn}'` : 'null'}, ${extraArg !== undefined ? `'${extraArg}'` : 'null'})"
       style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
       ${escapeHtml(d.descriptionText)}
@@ -67,7 +67,7 @@ function handleMaterialDescriptionTypeaheadInput(query, inputId, dropdownId, hid
 
   if (!exact && query.trim()) {
     html += `
-      <div onmousedown="event.preventDefault();" onclick="createMaterialDescriptionInline('${query.trim().replace(/'/g, "\\'")}', '${inputId}', '${dropdownId}', '${hiddenIdFieldId || ""}', ${onSelectFn ? `'${onSelectFn}'` : 'null'}, ${extraArg !== undefined ? `'${extraArg}'` : 'null'})"
+      <div onmousedown="event.preventDefault();" onclick="createMaterialDescriptionInline(${jsArg(query.trim())},${jsArg(inputId)}, ${jsArg(dropdownId)}, '${hiddenIdFieldId || ""}', ${onSelectFn ? `'${onSelectFn}'` : 'null'}, ${extraArg !== undefined ? `'${extraArg}'` : 'null'})"
         style="padding:8px 12px; cursor:pointer; font-size:0.82rem; font-weight:700; color:var(--accent); border-top:1px solid var(--border);"
         onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
         + Create new: "${query.trim()}"

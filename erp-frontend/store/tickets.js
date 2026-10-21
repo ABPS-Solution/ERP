@@ -1312,7 +1312,7 @@ async function openFGReleaseSelectionModal(ticketId) {
         ${it.swapCandidates.map(c => `
           <label style="display:flex; align-items:center; gap:8px; padding:4px 0; font-size:0.85rem; cursor:pointer;">
             <input type="checkbox" ${it.reserved.some(r => r.fgId === c.fgId) ? 'checked' : ''}
-              onchange="toggleFGReleaseSelection('${it.itemCode}', ${c.fgId}, this.checked, ${it.quantity})">
+              onchange="toggleFGReleaseSelection(${jsArg(it.itemCode)}, ${c.fgId}, this.checked, ${it.quantity})">
             <span style="font-family:monospace;">${c.serial || '(no serial)'}</span>
             <span style="color:var(--muted); font-size:0.75rem;">${formatOrdinalDate(c.fgDate)}</span>
           </label>`).join("")}
@@ -1325,7 +1325,7 @@ async function openFGReleaseSelectionModal(ticketId) {
       <div id="fg-release-modal-error" style="color:var(--warn); font-size:0.85rem; margin-bottom:10px; display:none;"></div>
       <div style="display:flex; justify-content:flex-end; gap:8px;">
         <button class="nav-btn-styled" style="background:#718096;" onclick="document.getElementById('fg-release-modal-overlay').style.display='none';">Cancel</button>
-        <button class="nav-btn-styled" style="background:var(--accent);" onclick="confirmFGReleaseSelection('${ticketId}')">Confirm & Release</button>
+        <button class="nav-btn-styled" style="background:var(--accent);" onclick="confirmFGReleaseSelection(${jsArg(ticketId)})">Confirm & Release</button>
       </div>
     </div>`;
   } catch(e) {
@@ -1407,8 +1407,8 @@ function showShortfallResolutionModal(ticketId, projectId, coverageReport) {
       ${itemsHtml}
       <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;border-top:1px solid var(--border);padding-top:14px;flex-wrap:wrap;">
         <button class="nav-btn-styled" style="background:#718096;" onclick="document.getElementById('shortfall-modal-overlay').remove()">Cancel</button>
-        <button class="nav-btn-styled" style="background:#b45309;" onclick="executeShortfallResolution('${ticketId}', '${projectId}', 'partial')">⚡ Option A — Partial Release</button>
-        <button class="nav-btn-styled" style="background:var(--brand);" onclick="executeShortfallResolution('${ticketId}', '${projectId}', 'reallocate')">🔄 Option B — Reallocate & Release</button>
+        <button class="nav-btn-styled" style="background:#b45309;" onclick="executeShortfallResolution(${jsArg(ticketId)}, ${jsArg(projectId)}, 'partial')">⚡ Option A — Partial Release</button>
+        <button class="nav-btn-styled" style="background:var(--brand);" onclick="executeShortfallResolution(${jsArg(ticketId)}, ${jsArg(projectId)}, 'reallocate')">🔄 Option B — Reallocate & Release</button>
       </div>
     </div>`;
   document.body.appendChild(modal);
@@ -1588,7 +1588,7 @@ function applyCmitDepartmentLock(lock) {
 
   if (lock && lock.locked && lock.value) {
     if (fieldWrapper) fieldWrapper.style.display = "none";
-    if (badge) { badge.style.display = "inline-block"; badge.textContent = lock.value; }
+    if (badge) { badge.style.display = "inline-block"; badge.textContent = outwardUseLabel(lock.value); }
     if (dropdown) {
       dropdown.value = lock.value;
       handleCreateTicketDepartmentChange(lock.value);

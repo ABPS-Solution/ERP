@@ -131,7 +131,7 @@ async function renderServiceConsumableRequestsToOrder(mountId) {
           <td style="padding:6px;">${escapeHtml(formatOrdinalDate(r.actionedAt))}</td>
           <td style="padding:6px;"><div style="display:flex; gap:6px;">
             <input type="text" id="cpr-po-${r.requestId}" placeholder="PO_26-27_00001" style="width:150px; padding:5px;">
-            <button class="nav-btn-styled" style="width:auto; padding:5px 10px; font-size:0.8rem;" onclick="cprMarkOrdered(${r.requestId}, '${mountId}')">Mark Ordered</button>
+            <button class="nav-btn-styled" style="width:auto; padding:5px 10px; font-size:0.8rem;" onclick="cprMarkOrdered(${r.requestId}, ${jsArg(mountId)})">Mark Ordered</button>
           </div></td>
         </tr>`).join('')}</tbody></table></div>`;
   } catch (e) { mount.innerHTML = ''; }

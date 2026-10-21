@@ -48,7 +48,7 @@ function handleSVCIMaterialInput(query) {
   const matches = materialSearch(catalog, q, 10);
   if (matches.length === 0) { dd.style.display = "none"; return; }
   dd.innerHTML = matches.map(it => `
-    <div onclick="selectSVCIMaterial('${it.itemCode}', ${jsArg(it.productName||'')}, ${jsArg(it.rating||'')})"
+    <div onclick="selectSVCIMaterial(${jsArg(it.itemCode)}, ${jsArg(it.productName||'')}, ${jsArg(it.rating||'')})"
       style="padding:7px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.8rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
       <span style="font-family:monospace; color:var(--brand); font-weight:700; margin-right:6px;">${it.itemCode}</span>${escapeHtml(it.productName)}${it.rating ? ` - <span style="color:var(--brand); font-weight:700;">${escapeHtml(it.rating)}</span>` : ''}
@@ -183,7 +183,7 @@ function svciSortableHeader(col, label) {
   const st = window.svciSortState;
   const active = st.col === col;
   const arrow = active ? (st.dir === 'asc' ? ' ▲' : ' ▼') : "";
-  return `<th onclick="sortSVCITable('${col}')" style="padding:8px; font-size:0.7rem; text-align:center; text-transform:uppercase; color:${active ? 'var(--brand)' : 'var(--muted)'}; cursor:pointer; user-select:none; white-space:nowrap;">${label}${arrow}</th>`;
+  return `<th onclick="sortSVCITable(${jsArg(col)})" style="padding:8px; font-size:0.7rem; text-align:center; text-transform:uppercase; color:${active ? 'var(--brand)' : 'var(--muted)'}; cursor:pointer; user-select:none; white-space:nowrap;">${label}${arrow}</th>`;
 }
 
 function renderSVCIResultsTable() {

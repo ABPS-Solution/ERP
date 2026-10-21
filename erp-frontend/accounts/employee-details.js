@@ -67,7 +67,7 @@ async function edInitEmployeeSection(ns) {
   const addFormBlock = cfg.editable ? `
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
       <div style="font-size:0.8rem; color:var(--muted);">One shared employee list across Tour Expense, Daily Cash/UPI/Online Expenses and Travel Ticket / Hotel Booking — Tour Balance and Daily Balance are tracked separately, and always start at 0.</div>
-      <button class="nav-btn-styled" onclick="edToggleAddForm('${ns}')">+ Add Employee</button>
+      <button class="nav-btn-styled" onclick="edToggleAddForm(${jsArg(ns)})">+ Add Employee</button>
     </div>
     <div id="${ns}-add-form" style="display:none; background:var(--highlight-bg); padding:16px; border-radius:var(--radius); margin-bottom:16px;">
       <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
@@ -80,7 +80,7 @@ async function edInitEmployeeSection(ns) {
           <option value="Executive">Executive</option><option value="Manager">Manager</option>
         </select>
       </div>
-      <button class="nav-btn-styled" onclick="edSubmitAddEmployee('${ns}')">Submit</button>
+      <button class="nav-btn-styled" onclick="edSubmitAddEmployee(${jsArg(ns)})">Submit</button>
       <button class="nav-btn-styled" onclick="document.getElementById('${ns}-add-form').style.display='none';">Cancel</button>
     </div>` : `
     <div style="font-size:0.8rem; color:var(--muted); margin-bottom:14px;">View only — one shared employee list across Tour Expense, Daily Cash/UPI/Online Expenses and Travel Ticket / Hotel Booking. Add or edit an employee from Travel Ticket / Hotel Booking's own Employee Details toggle.</div>`;
@@ -90,7 +90,7 @@ async function edInitEmployeeSection(ns) {
     ${addFormBlock}
     <div style="margin-bottom:12px; max-width:320px;">
       <input type="text" id="${ns}-search-input" placeholder="Search employee by name..." autocomplete="off"
-        oninput="edFilterEmployees('${ns}')"
+        oninput="edFilterEmployees(${jsArg(ns)})"
         style="width:100%; padding:9px 12px; border:1.5px solid var(--border); border-radius:var(--radius); font-size:0.85rem; box-sizing:border-box;">
     </div>
     <div id="${ns}-table-wrap" style="overflow-x:auto;"></div>`;
@@ -212,8 +212,8 @@ function edRenderEmployeeTable(ns, employees) {
         : escapeHtml(e.positionType || '—');
       const actionsCell = cfg.editable ? `
         <td style="${cell} ${cb}; white-space:nowrap;">
-          <button class="nav-btn-styled" style="padding:5px 10px; font-size:0.76rem;" onclick="edSubmitUpdateEmployee(${e.employeeId}, '${ns}')">Save</button>
-          <button class="nav-btn-styled" style="padding:5px 10px; font-size:0.76rem; background:#b91c1c; color:#fff;" onclick="edSubmitDeleteEmployee(${e.employeeId}, ${jsArg(e.employeeName)}, '${ns}')">Delete</button>
+          <button class="nav-btn-styled" style="padding:5px 10px; font-size:0.76rem;" onclick="edSubmitUpdateEmployee(${e.employeeId}, ${jsArg(ns)})">Save</button>
+          <button class="nav-btn-styled" style="padding:5px 10px; font-size:0.76rem; background:#b91c1c; color:#fff;" onclick="edSubmitDeleteEmployee(${e.employeeId}, ${jsArg(e.employeeName)}, ${jsArg(ns)})">Delete</button>
         </td>` : '';
       return `
       <tr style="border-bottom:2px solid var(--border); opacity:${bothInactive ? '0.55' : '1'};" data-employee-id="${e.employeeId}">

@@ -169,7 +169,7 @@ function laSubDeptPillsHtml(u) {
     <div style="display:flex; gap:4px; margin-top:6px; justify-content:center;">
       ${PROD_SUB_DEPTS.map(sd => {
         const active = activeList.includes(sd);
-        return `<button onclick="event.stopPropagation(); handleProductionSubDeptClick('${u.personKey}', '${sd}')"
+        return `<button onclick="event.stopPropagation(); handleProductionSubDeptClick(${jsArg(u.personKey)}, ${jsArg(sd)})"
           title="${active ? `Click to remove ${sd}` : `Add ${sd} to this person's Stage 4 role(s)`}"
           style="border:${active ? '2px solid #b45309' : '1px solid #dde3ea'}; background:${active ? '#b4530918' : '#fff'};
                  color:${active ? '#b45309' : '#64748b'}; border-radius:8px; padding:3px 8px; cursor:pointer;
@@ -201,7 +201,7 @@ function laPersonButtonHtml(u, color) {
     <div style="display:flex; flex-direction:column; align-items:center;">
       <div style="width:2px; height:20px; background:${color};"></div>
       <div style="width:7px; height:7px; border-radius:50%; background:${color}; margin-bottom:-1px;"></div>
-      <button onclick="handleLoginAnywhereButtonClick('${u.personKey}')"
+      <button onclick="handleLoginAnywhereButtonClick(${jsArg(u.personKey)})"
         title="${granted ? 'Click to revoke' : 'Click to grant'} Login Anywhere access"
         style="border:${border}; background:#fff; border-radius:12px; padding:13px 22px; cursor:pointer;
                font-weight:${granted ? 800 : 650}; font-size:0.92rem; color:#1e293b; white-space:nowrap;
@@ -331,7 +331,7 @@ async function loadHolidays() {
         <td style="padding:8px;">${formatDMYFromISO ? formatDMYFromISO(h.date) : h.date}</td>
         <td style="padding:8px;">${h.label}</td>
         <td style="padding:8px; font-size:0.78rem; color:var(--muted);">${escapeHtml(h.createdBy || '—')}</td>
-        <td style="padding:8px;"><button class="nav-btn-styled" style="padding:4px 10px; font-size:0.78rem;" onclick="submitDeleteHoliday('${h.date}')">Delete</button></td>
+        <td style="padding:8px;"><button class="nav-btn-styled" style="padding:4px 10px; font-size:0.78rem;" onclick="submitDeleteHoliday(${jsArg(h.date)})">Delete</button></td>
       </tr>`).join('') || `<tr><td colspan="4" style="padding:14px; text-align:center; color:var(--muted);">No holidays configured.</td></tr>`;
   } catch (e) { console.error("loadHolidays failed:", e); }
 }
@@ -528,11 +528,11 @@ function selectPinTreeMode(mode) {
 
 function pinLockBadgeHtml(u) {
   if (u.pin_disabled) {
-    return `<div style="font-size:0.68rem; color:#dc2626; font-weight:700; margin-top:4px;">Disabled (too many fails) — <a href="#" onclick="submitClearUserPinLockout('${u.personKey}'); return false;" style="color:#dc2626;">Unlock</a></div>`;
+    return `<div style="font-size:0.68rem; color:#dc2626; font-weight:700; margin-top:4px;">Disabled (too many fails) — <a href="#" onclick="submitClearUserPinLockout(${jsArg(u.personKey)}); return false;" style="color:#dc2626;">Unlock</a></div>`;
   }
   if (u.pin_locked_until && new Date(u.pin_locked_until) > new Date()) {
     const until = new Date(u.pin_locked_until).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-    return `<div style="font-size:0.68rem; color:#d97706; font-weight:700; margin-top:4px;">Locked until ${until} — <a href="#" onclick="submitClearUserPinLockout('${u.personKey}'); return false;" style="color:#d97706;">Unlock</a></div>`;
+    return `<div style="font-size:0.68rem; color:#d97706; font-weight:700; margin-top:4px;">Locked until ${until} — <a href="#" onclick="submitClearUserPinLockout(${jsArg(u.personKey)}); return false;" style="color:#d97706;">Unlock</a></div>`;
   }
   return '';
 }
@@ -548,9 +548,9 @@ function pinFlipCardHtml(u, color) {
     : (u.pin_value || 'None');
   const backIsCode = pinTreeMode === 'enroll';
   const outerHandlers = isChangeMode
-    ? `onmouseenter="handleChangePinHover('${u.personKey}', true)" onmouseleave="handleChangePinHover('${u.personKey}', false)"`
-    : `onclick="handlePinFlipClick('${u.personKey}')"`;
-  const backOnClick = isChangeMode ? ` onclick="handleChangePinBackClick('${u.personKey}'); event.stopPropagation();"` : '';
+    ? `onmouseenter="handleChangePinHover(${jsArg(u.personKey)}, true)" onmouseleave="handleChangePinHover(${jsArg(u.personKey)}, false)"`
+    : `onclick="handlePinFlipClick(${jsArg(u.personKey)})"`;
+  const backOnClick = isChangeMode ? ` onclick="handleChangePinBackClick(${jsArg(u.personKey)}); event.stopPropagation();"` : '';
   return `
     <div style="display:flex; flex-direction:column; align-items:center;">
       <div style="width:2px; height:20px; background:${color};"></div>
@@ -570,7 +570,7 @@ function pinFlipCardHtml(u, color) {
       </div>
       ${pinLockBadgeHtml(u)}
       ${u.department === 'Production' ? laSubDeptPillsHtml(u) : ''}
-      ${saViewerIsSuperAdmin() && !u.isSuperAdmin ? `<a href="#" onclick="submitRemoveUserFromSystem('${u.personKey}'); return false;" style="font-size:0.68rem; color:#b91c1c; font-weight:700; margin-top:4px; text-decoration:none;">Remove from system</a>` : ''}
+      ${saViewerIsSuperAdmin() && !u.isSuperAdmin ? `<a href="#" onclick="submitRemoveUserFromSystem(${jsArg(u.personKey)}); return false;" style="font-size:0.68rem; color:#b91c1c; font-weight:700; margin-top:4px; text-decoration:none;">Remove from system</a>` : ''}
     </div>`;
 }
 
@@ -617,7 +617,7 @@ function handleChangePinBackClick(personKey) {
   const pinLen = (saAllPinUsers.find(x => x.personKey === personKey) || {}).isSuperAdmin ? 6 : 4;
   backEl.innerHTML = `<input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="${pinLen}"
     id="pinchange-input-${safeId}" style="width:80px; text-align:center; font-weight:800; font-size:1.05rem; letter-spacing:4px; font-family:monospace; border:1.5px solid #cbd5e1; border-radius:6px; padding:4px;"
-    oninput="handleChangePinInputTyping('${personKey}', this)" onclick="event.stopPropagation();">`;
+    oninput="handleChangePinInputTyping(${jsArg(personKey)}, this)" onclick="event.stopPropagation();">`;
   const input = document.getElementById(`pinchange-input-${safeId}`);
   if (input) input.focus();
 }
@@ -675,11 +675,11 @@ function renderSecurityAdminPinUsers() {
         <div style="height:3px; width:100%; border-radius:2px; background:${dept.color};"></div>
         ${saViewerIsSuperAdmin() ? (() => { const ds = dept.name.replace(/[^a-zA-Z0-9]/g, '_'); return `
           <div style="text-align:center; margin-top:8px;">
-            <a href="#" onclick="toggleSaAddPersonForm('${ds}'); return false;" style="font-size:0.78rem; font-weight:700; color:${dept.color}; text-decoration:none;">+ Add person to ${escapeHtml(dept.name)}</a>
+            <a href="#" onclick="toggleSaAddPersonForm(${jsArg(ds)}); return false;" style="font-size:0.78rem; font-weight:700; color:${dept.color}; text-decoration:none;">+ Add person to ${escapeHtml(dept.name)}</a>
             <div id="sa-add-form-${ds}" style="display:none; justify-content:center; gap:8px; flex-wrap:wrap; margin-top:8px;">
               <input id="sa-add-first-${ds}" placeholder="First name" style="width:170px; padding:6px 8px; border:1.5px solid #8492a6; border-radius:4px;">
               <input id="sa-add-last-${ds}" placeholder="Last name" style="width:170px; padding:6px 8px; border:1.5px solid #8492a6; border-radius:4px;">
-              <button class="nav-btn-styled" style="width:auto; background:${dept.color}; padding:6px 14px;" onclick="submitAddUserToSystem('${ds}', ${jsArg(dept.name)})">Add</button>
+              <button class="nav-btn-styled" style="width:auto; background:${dept.color}; padding:6px 14px;" onclick="submitAddUserToSystem(${jsArg(ds)}, ${jsArg(dept.name)})">Add</button>
             </div>
           </div>`; })() : ''}
         ${people.length === 0
@@ -873,7 +873,7 @@ function saRenderDeviceAddPersonChips(modal) {
   mount.innerHTML = modal._allowedKeys.map((k, i) => `
     <span style="display:inline-flex; align-items:center; gap:5px; background:var(--highlight-bg); color:var(--brand); font-weight:600; font-size:0.8rem; padding:5px 9px; border-radius:14px; border:1px solid var(--border);">
       ${escapeHtml(modal._allowedNames[i] || k)}
-      <span onclick="saDeviceAddPersonRemove('${k}')" style="cursor:pointer; font-weight:800; color:#b91c1c;" title="Remove">✕</span>
+      <span onclick="saDeviceAddPersonRemove(${jsArg(k)})" style="cursor:pointer; font-weight:800; color:#b91c1c;" title="Remove">✕</span>
     </span>`).join('') || `<span style="color:var(--muted); font-size:0.82rem;">No one allowed on this device yet.</span>`;
 }
 
@@ -914,7 +914,7 @@ function handleAddDevicePersonSearch(rawQuery) {
   }
   box.style.display = "block";
   box.innerHTML = matches.map(u => `
-    <div onmousedown="event.preventDefault();" onclick="saDeviceAddPersonAdd('${u.personKey}', \`${(`${u.first_name || ''} ${u.last_name || ''}`).replace(/`/g, "'")}\`)"
+    <div onmousedown="event.preventDefault();" onclick="saDeviceAddPersonAdd(${jsArg(u.personKey)}, \`${(`${u.first_name || ''} ${u.last_name || ''}`).replace(/`/g, "'")}\`)"
       style="padding:9px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.85rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
       <strong>${escapeHtml(u.first_name || '')} ${escapeHtml(u.last_name || '')}</strong>
@@ -1024,7 +1024,7 @@ function handlePermissionMatrixSearchInput(rawQuery) {
   }
   box.style.display = "block";
   box.innerHTML = matches.map(u => `
-    <div onclick="selectPermissionMatrixUser('${u.personKey}')" style="padding:9px 12px; cursor:pointer; border-top:1px solid var(--border); font-size:0.85rem;"
+    <div onclick="selectPermissionMatrixUser(${jsArg(u.personKey)})" style="padding:9px 12px; cursor:pointer; border-top:1px solid var(--border); font-size:0.85rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background=''">
       <strong>${escapeHtml(u.first_name || '')} ${escapeHtml(u.last_name || '')}</strong>
       <span style="color:var(--muted); font-size:0.78rem;"> — ${escapeHtml(u.department || 'No department')}</span>
@@ -1060,7 +1060,7 @@ function pmPillHtml(perm, color) {
   const style = enabled
     ? `background:${color}26; border:1.5px solid ${color}; color:#0f172a; font-weight:700;`
     : `background:#f1f5f9; border:1.5px solid #cbd5e1; color:#0f172a; font-weight:600;`;
-  return `<button onclick="togglePermissionMatrixPill('${perm.dbColumn}')"
+  return `<button onclick="togglePermissionMatrixPill(${jsArg(perm.dbColumn)})"
       style="${style} padding:8px 16px; border-radius:999px; font-size:0.92rem; cursor:pointer; transition:all 0.12s;">${label}</button>`;
 }
 

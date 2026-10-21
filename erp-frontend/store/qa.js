@@ -34,13 +34,13 @@ async function renderStoreEntryRejectionBanner(cardEl, gateNum, vendorName, line
 
     const rows = data.openRejections.map((r, idx) => `
       <div style="display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid #fde68a;">
-        <input type="checkbox" id="se-rej-check-${gateNum}-${idx}" onchange="toggleGateRejectionLink('${r.rejectionId}', this.checked, '${r.itemCode}', ${jsArg(r.materialName||'')},  ${jsArg(r.unitType)}, ${r.outstandingQuantity}, '${gateNum}', ${idx})" />
+        <input type="checkbox" id="se-rej-check-${gateNum}-${idx}" onchange="toggleGateRejectionLink(${jsArg(r.rejectionId)}, this.checked, ${jsArg(r.itemCode)}, ${jsArg(r.materialName||'')},  ${jsArg(r.unitType)}, ${r.outstandingQuantity}, ${jsArg(gateNum)}, ${idx})" />
         <label for="se-rej-check-${gateNum}-${idx}" style="flex:1; font-size:0.85rem;">
           <strong>${escapeHtml(r.materialName)}</strong> (${r.itemCode}) — ${escapeHtml(r.action || "Pending action")} — Pending Qty: ${r.outstandingQuantity} ${r.unitType}
           ${lineItems.some(li => (li.itemCode||'').toUpperCase() === r.itemCode.toUpperCase()) ? '' : '<span style="color:#b91c1c; font-weight:700;"> (no matching item code on this delivery)</span>'}
         </label>
         <input type="number" min="0" max="${r.outstandingQuantity}" placeholder="Qty" style="width:80px;" disabled
-               id="se-rej-qty-${gateNum}-${idx}" onchange="updateGateRejectionLinkQty('${r.rejectionId}', this.value)" />
+               id="se-rej-qty-${gateNum}-${idx}" onchange="updateGateRejectionLinkQty(${jsArg(r.rejectionId)}, this.value)" />
       </div>`).join("");
 
     bannerEl.style.cssText = "display:block; margin:10px 0; background:#fffbeb; border-left:4px solid #d97706; padding:14px; border-radius:var(--radius);";
@@ -214,7 +214,7 @@ async function runQARevisionSearch() {
     if (!data.results.length) { zone.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted); background:#fff; border:1px solid var(--border); border-radius:6px;">No Q/A-completed GRNs match this search.</div>`; return; }
     zone.innerHTML = data.results.map(r => `
       <div class="contact-summary-card-parent" style="margin-bottom:10px;">
-        <div onclick="openQARevisionDetail('${r.grnNumber}')" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; padding:4px;">
+        <div onclick="openQARevisionDetail(${jsArg(r.grnNumber)})" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; padding:4px;">
           <div>
             <span style="background:#dcfce7; color:#15803d; font-weight:700; padding:3px 8px;">${r.grnNumber}</span>
             <span style="background:#edf2f7; color:var(--text); margin-left:4px; font-weight:700; padding:3px 8px;">Vendor: ${escapeHtml(r.vendorName)}</span>
@@ -246,17 +246,17 @@ async function openQARevisionDetail(grnNumber) {
         <td style="width:110px; padding:6px;"><input type="text" class="qarev-item-code-${grnNumber}" data-idx="${idx}" value="${line.itemCode}" readonly style="font-size:0.78rem; padding:5px 4px; font-weight:800; border:1.5px solid #86efac; text-align:center; width:100%; background:#f0fdf4; color:var(--brand); border-radius:3px;"></td>
         <td style="padding:8px; font-size:0.78rem; color:#64748b; min-width:180px; max-width:220px; line-height:1.4; word-break:break-word;">${escapeHtml(line.invoiceDescription || '') || "—"}</td>
         <td style="padding:6px; min-width:220px;">
-          <div class="qarev-name-display-${grnNumber}" data-idx="${idx}" ${blocked?'':`onclick="reopenQARevMaterialSearch('${grnNumber}', ${idx})"`} style="cursor:${blocked?'default':'pointer'}; font-size:0.85rem; font-weight:700; color:var(--brand); padding:5px 6px; border:1.5px solid var(--accent); border-radius:3px; background:#f0fdf4;"><span>${escapeHtml(line.materialName||'')}</span>${blocked?'':' <span style="font-size:0.65rem; color:var(--muted);">✎ change</span>'}</div>
+          <div class="qarev-name-display-${grnNumber}" data-idx="${idx}" ${blocked?'':`onclick="reopenQARevMaterialSearch(${jsArg(grnNumber)}, ${idx})"`} style="cursor:${blocked?'default':'pointer'}; font-size:0.85rem; font-weight:700; color:var(--brand); padding:5px 6px; border:1.5px solid var(--accent); border-radius:3px; background:#f0fdf4;"><span>${escapeHtml(line.materialName||'')}</span>${blocked?'':' <span style="font-size:0.65rem; color:var(--muted);">✎ change</span>'}</div>
           <input type="hidden" class="qarev-mat-name-${grnNumber}" data-idx="${idx}" value="${escapeHtml(line.materialName||'')}" />
           <input type="hidden" class="qarev-unit-${grnNumber}" data-idx="${idx}" value="${line.unitType||'NOS'}" />
           <div style="position:relative; margin-top:4px;">
-            <input type="text" id="qarev-search-${grnNumber}-${idx}" placeholder="Search to change..." oninput="handleQARevNameSearch(this, '${grnNumber}', ${idx})" autocomplete="off" style="font-size:0.78rem; padding:4px 6px; border:1px solid var(--border); width:100%; border-radius:3px; display:none;" />
+            <input type="text" id="qarev-search-${grnNumber}-${idx}" placeholder="Search to change..." oninput="handleQARevNameSearch(this, ${jsArg(grnNumber)}, ${idx})" autocomplete="off" style="font-size:0.78rem; padding:4px 6px; border:1px solid var(--border); width:100%; border-radius:3px; display:none;" />
             <div id="qarev-drop-${grnNumber}-${idx}" style="display:none; position:fixed; background:#fff; border:1px solid var(--border); border-radius:4px; z-index:9999; max-height:180px; overflow-y:auto; box-shadow:0 4px 16px rgba(0,0,0,0.15); min-width:240px;"></div>
           </div>
         </td>
         <td style="width:55px; padding:6px; text-align:center; font-family:monospace; font-weight:700;">${line.unitType}</td>
         <td style="width:70px; padding:6px; text-align:center; font-weight:700;">${recvd}</td>
-        <td style="width:70px; padding:6px;"><input type="number" min="0" class="qarev-ok-${grnNumber}" data-idx="${idx}" data-max="${recvd}" value="${parseFloat(line.okQuantity)||0}" ${blocked?'disabled':''} oninput="autoBalanceQARevQuantities(this, '${grnNumber}', ${idx})" style="width:100%; border:1.5px solid var(--brand); font-weight:700; text-align:center; padding:5px 2px; border-radius:3px;"></td>
+        <td style="width:70px; padding:6px;"><input type="number" min="0" class="qarev-ok-${grnNumber}" data-idx="${idx}" data-max="${recvd}" value="${parseFloat(line.okQuantity)||0}" ${blocked?'disabled':''} oninput="autoBalanceQARevQuantities(this, ${jsArg(grnNumber)}, ${idx})" style="width:100%; border:1.5px solid var(--brand); font-weight:700; text-align:center; padding:5px 2px; border-radius:3px;"></td>
         <td style="width:70px; padding:6px;"><input type="number" min="0" class="qarev-notok-${grnNumber}" data-idx="${idx}" value="${parseFloat(line.notOkQuantity)||0}" readonly style="width:100%; border:1.5px solid #f59e0b; font-weight:700; text-align:center; padding:5px 2px; border-radius:3px; background:#fffbeb;"></td>
         <td style="min-width:140px; padding:6px;"><input type="text" class="qarev-reason-${grnNumber}" data-idx="${idx}" value="${escapeHtml(line.reasonForNotOk||'')}" ${blocked?'disabled':''} placeholder="Reason..." style="width:100%; font-size:0.78rem; padding:5px 6px; border:1px solid var(--border); border-radius:3px;"></td>
         <td style="min-width:170px; padding:6px;">
@@ -296,7 +296,7 @@ async function openQARevisionDetail(grnNumber) {
         </table>
       </div>
       ${blocked ? '' : `<div style="display:flex; justify-content:flex-end; margin-top:12px;">
-        <button class="nav-btn-styled" style="background:var(--brand);" onclick="commitQARevisionToBackend('${grnNumber}', this)">Submit Q/A Revision</button>
+        <button class="nav-btn-styled" style="background:var(--brand);" onclick="commitQARevisionToBackend(${jsArg(grnNumber)}, this)">Submit Q/A Revision</button>
       </div>`}`;
   } catch(e) { zone.innerHTML = `<p style="color:var(--warn);">${e.message}</p>`; }
 }
@@ -330,7 +330,7 @@ function handleQARevNameSearch(inputEl, grnNum, idx) {
   const matches = materialSearch(catalog, query, 10);
   if (!matches.length) { dropdown.innerHTML = `<div style="padding:8px 10px; font-size:0.78rem; color:var(--muted);">No match found</div>`; dropdown.style.display = "block"; return; }
   dropdown.innerHTML = matches.map(c => `
-    <div onclick="selectQARevNameMatch('${grnNum}', ${idx}, '${c.itemCode}', ${jsArg(c.combinedName || c.productName)}, ${jsArg(c.unit || 'NOS')})"
+    <div onclick="selectQARevNameMatch(${jsArg(grnNum)}, ${idx}, ${jsArg(c.itemCode)}, ${jsArg(c.combinedName || c.productName)}, ${jsArg(c.unit || 'NOS')})"
       style="padding:7px 10px; cursor:pointer; font-size:0.78rem; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; gap:8px;"
       onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#fff'">
       <span style="font-weight:600;">${escapeHtml(c.combinedName || c.productName)}</span>
@@ -487,7 +487,7 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
               </table>
             </div>
             <div style="display:flex; justify-content:flex-end;">
-              <button class="nav-btn-styled" style="background:var(--brand);" onclick="commitRepairQAToBackend('${item.grnNumber}', this)">Confirm Repair Q/A & Add to Stock</button>
+              <button class="nav-btn-styled" style="background:var(--brand);" onclick="commitRepairQAToBackend(${jsArg(item.grnNumber)}, this)">Confirm Repair Q/A & Add to Stock</button>
             </div>
           </div>`;
         feed.appendChild(card);
@@ -508,7 +508,7 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
             </td>
             <td style="padding:6px; min-width:220px; vertical-align:middle;">
               <div class="qa-mat-name-display-${item.grnNumber}" data-idx="${idx}"
-                onclick="reopenQAMaterialSearch('${item.grnNumber}', ${idx})"
+                onclick="reopenQAMaterialSearch(${jsArg(item.grnNumber)}, ${idx})"
                 title="Click to correct the material match"
                 style="display:flex; justify-content:space-between; align-items:center; gap:6px; cursor:pointer; font-size:0.85rem; font-weight:700; color:var(--brand); padding:5px 6px; min-height:30px; border:1.5px solid var(--accent); border-radius:3px; background:#f0fdf4; line-height:1.4;">
                 <span>${matName.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span>
@@ -518,7 +518,7 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
               <div style="position:relative; margin-top:4px;">
                 <input type="text" id="${searchId}"
                   placeholder="Search to change..."
-                  oninput="handleQANameSearch(this, '${item.grnNumber}', ${idx})"
+                  oninput="handleQANameSearch(this, ${jsArg(item.grnNumber)}, ${idx})"
                   autocomplete="off"
                   style="font-size:0.78rem; padding:4px 6px; border:1px solid var(--border); width:100%; border-radius:3px; display:none;" />
                 <div id="${dropId}" style="display:none; position:fixed; background:#fff; border:1px solid var(--border); border-radius:4px; z-index:9999; max-height:180px; overflow-y:auto; box-shadow:0 4px 16px rgba(0,0,0,0.15); min-width:240px;"></div>
@@ -530,7 +530,7 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
             </td>
             <td style="width:70px; padding:6px; text-align:center; font-weight:700; font-size:1.1rem; vertical-align:middle;">${recvd}</td>
             <td style="width:70px; padding:6px; vertical-align:middle;">
-              <input type="number" min="0" step="any" class="qa-ok-${item.grnNumber}" data-idx="${idx}" data-max="${recvd}" value="${recvd}" style="width:100%; border:1.5px solid var(--brand); font-weight:700; font-size:1.1rem; text-align:center; padding:5px 2px; border-radius:3px;" onchange="autoBalanceQaQuantities(this, '${item.grnNumber}', ${idx})">
+              <input type="number" min="0" step="any" class="qa-ok-${item.grnNumber}" data-idx="${idx}" data-max="${recvd}" value="${recvd}" style="width:100%; border:1.5px solid var(--brand); font-weight:700; font-size:1.1rem; text-align:center; padding:5px 2px; border-radius:3px;" onchange="autoBalanceQaQuantities(this, ${jsArg(item.grnNumber)}, ${idx})">
             </td>
             <td style="width:55px; padding:6px; vertical-align:middle;">
               <input type="number" min="0" step="any" class="qa-notok-${item.grnNumber}" data-idx="${idx}" value="0" style="width:100%; background:#f1f5f9; text-align:center; font-weight:700; font-size:1.1rem; padding:5px 2px; border:1px solid var(--border); border-radius:3px;" readonly>
@@ -590,7 +590,7 @@ async function initializeStoreGrnWorkspaceQueue(toggle) {
               </table>
             </div>
             <div style="display:flex; justify-content:flex-end;">
-              <button class="nav-btn-styled" style="background:var(--brand);" onclick="commitStoreQAToBackend('${item.grnNumber}', \`${encodeURIComponent(JSON.stringify(item))}\`, this)">Submit Q/A & Add Stock</button>
+              <button class="nav-btn-styled" style="background:var(--brand);" onclick="commitStoreQAToBackend(${jsArg(item.grnNumber)}, \`${encodeURIComponent(JSON.stringify(item))}\`, this)">Submit Q/A & Add Stock</button>
             </div>
           </div>`;
         feed.appendChild(card);
@@ -636,7 +636,7 @@ function handleQANameSearch(inputEl, grnNum, idx) {
     dropdown.style.display = "block"; return;
   }
   dropdown.innerHTML = matches.map(c => `
-    <div onclick="selectQANameMatch('${grnNum}', ${idx}, '${c.itemCode}', ${jsArg(c.combinedName || c.productName)}, ${jsArg(c.unit || 'NOS')})"
+    <div onclick="selectQANameMatch(${jsArg(grnNum)}, ${idx}, ${jsArg(c.itemCode)}, ${jsArg(c.combinedName || c.productName)}, ${jsArg(c.unit || 'NOS')})"
       style="padding:7px 10px; cursor:pointer; font-size:0.78rem; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center;"
       onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#fff'">
       <span style="font-weight:600;">${escapeHtml(c.combinedName || c.productName)}</span>
@@ -882,10 +882,10 @@ async function initializeRejectedMaterialPanel(toggle) {
           <td style="width:170px; padding:8px 6px;">
             ${isMissingOnly ? `<span style="font-size:0.8rem; font-weight:600; color:#64748b;">Awaiting vendor replacement</span> <span style="font-size:0.72rem; color:var(--muted);">(${line.status})</span>` :
               isEditable ? `
-              <select class="rej-action-${item.grnNumber}" data-idx="${idx}" data-rejid="${line.rejectionId}" data-pending="${Number(line.notOkPendingQuantity ?? line.notOkQuantity) || 0}" onchange="rejUpdateSplitRest('${line.rejectionId}')" style="width:100%; font-size:0.76rem; padding:3px 2px;">${rejActionOptionsHtml(line.actionForRejectedMaterial)}</select>
+              <select class="rej-action-${item.grnNumber}" data-idx="${idx}" data-rejid="${line.rejectionId}" data-pending="${Number(line.notOkPendingQuantity ?? line.notOkQuantity) || 0}" onchange="rejUpdateSplitRest(${jsArg(line.rejectionId)})" style="width:100%; font-size:0.76rem; padding:3px 2px;">${rejActionOptionsHtml(line.actionForRejectedMaterial)}</select>
               <div id="rej-split-rest-${line.rejectionId}" style="display:none; font-size:0.72rem; color:#475569; margin-top:3px;"></div>
               <div id="rej-splits-${line.rejectionId}"></div>
-              ${(Number(line.notOkPendingQuantity ?? line.notOkQuantity) || 0) > 0 ? `<button type="button" class="btn" style="width:auto; margin-top:4px; padding:2px 8px; font-size:0.72rem; background:#eff6ff; color:var(--brand); border:1px solid #bfdbfe;" onclick="rejAddSplit('${line.rejectionId}')">+ Split quantity</button>` : ''}` : `<span style="font-size:0.8rem; font-weight:600;">${escapeHtml(line.actionForRejectedMaterial)}</span> <span style="font-size:0.72rem; color:var(--muted);">(${line.status})</span>`}
+              ${(Number(line.notOkPendingQuantity ?? line.notOkQuantity) || 0) > 0 ? `<button type="button" class="btn" style="width:auto; margin-top:4px; padding:2px 8px; font-size:0.72rem; background:#eff6ff; color:var(--brand); border:1px solid #bfdbfe;" onclick="rejAddSplit(${jsArg(line.rejectionId)})">+ Split quantity</button>` : ''}` : `<span style="font-size:0.8rem; font-weight:600;">${escapeHtml(line.actionForRejectedMaterial)}</span> <span style="font-size:0.72rem; color:var(--muted);">(${line.status})</span>`}
           </td>
         </tr>`;
       });
@@ -924,7 +924,7 @@ async function initializeRejectedMaterialPanel(toggle) {
             </table>
           </div>
           ${cardHasEditableLine ? `<div style="display:flex; justify-content:flex-end;">
-            <button class="nav-btn-styled" style="background:var(--brand);" onclick="commitRejectedMaterialActionToBackend('${item.grnNumber}', this)">${isCompleted ? 'Update Action' : 'Submit Action'}</button>
+            <button class="nav-btn-styled" style="background:var(--brand);" onclick="commitRejectedMaterialActionToBackend(${jsArg(item.grnNumber)}, this)">${isCompleted ? 'Update Action' : 'Submit Action'}</button>
           </div>` : ''}
         </div>`;
       feed.appendChild(card);
@@ -951,9 +951,9 @@ function rejAddSplit(rejId) {
   const row = document.createElement("div");
   row.className = "rej-split-row";
   row.style.cssText = "display:flex; gap:4px; align-items:center; margin-top:4px;";
-  row.innerHTML = `<input type="number" class="rej-split-qty" min="0" step="any" placeholder="Qty" oninput="rejUpdateSplitRest('${rejId}')" style="width:62px; font-size:0.76rem; padding:3px;">
+  row.innerHTML = `<input type="number" class="rej-split-qty" min="0" step="any" placeholder="Qty" oninput="rejUpdateSplitRest(${jsArg(rejId)})" style="width:62px; font-size:0.76rem; padding:3px;">
     <select class="rej-split-action" style="flex:1; min-width:0; font-size:0.76rem; padding:3px 2px;">${rejActionOptionsHtml("Scrap")}</select>
-    <button type="button" title="Remove this split" onclick="this.parentElement.remove(); rejUpdateSplitRest('${rejId}')" style="border:none; background:none; color:#b91c1c; font-weight:700; cursor:pointer;">×</button>`;
+    <button type="button" title="Remove this split" onclick="this.parentElement.remove(); rejUpdateSplitRest(${jsArg(rejId)})" style="border:none; background:none; color:#b91c1c; font-weight:700; cursor:pointer;">×</button>`;
   box.appendChild(row);
   rejUpdateSplitRest(rejId);
 }

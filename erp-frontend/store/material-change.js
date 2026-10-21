@@ -416,7 +416,7 @@ function renderMaterialChangeCard(t) {
           <span style="margin-left:8px;">By:</span> <strong style="color:#111827;">${escapeHtml(t.requestedBy || "")}</strong>
           <span style="margin-left:8px;">|</span>
           <strong style="color:#111827; margin-left:8px;">${formatOrdinalDateTime(t.dateCreated)}</strong>
-          <span style="margin-left:12px;">Dept:</span> <strong style="color:#111827;">${escapeHtml(t.department || "—")}</strong>
+          <span style="margin-left:12px;">Dept:</span> <strong style="color:#111827;">${escapeHtml(outwardUseLabel(t.department) || "—")}</strong>
         </div>
       </div>
     </div>

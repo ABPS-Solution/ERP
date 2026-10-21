@@ -54,7 +54,7 @@ function handleStoreLedgerMaterialSearch(prefix, query) {
     return;
   }
   dropdown.innerHTML = matches.map(m => `
-    <div onclick="selectStoreLedgerMaterial('${prefix}', '${m.itemCode}', ${jsArg(m.combinedName || m.productName)})"
+    <div onclick="selectStoreLedgerMaterial(${jsArg(prefix)}, ${jsArg(m.itemCode)}, ${jsArg(m.combinedName || m.productName)})"
       style="padding:7px 10px; cursor:pointer; font-size:0.8rem; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center;"
       onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#fff'">
       <span style="font-weight:600;">${escapeHtml(m.combinedName || m.productName)}</span>
@@ -87,7 +87,7 @@ function renderStoreLedgerSelectedMaterials(prefix) {
   mount.innerHTML = selected.map(m => `
     <span style="display:inline-flex; align-items:center; gap:5px; background:var(--highlight-bg); color:var(--brand); font-weight:600; font-size:0.78rem; padding:4px 8px; border-radius:14px; border:1px solid var(--border);">
       ${m.label}
-      <span onclick="removeStoreLedgerMaterial('${prefix}', '${m.itemCode}')" style="cursor:pointer; font-weight:800; color:#b91c1c;" title="Remove">✕</span>
+      <span onclick="removeStoreLedgerMaterial(${jsArg(prefix)}, ${jsArg(m.itemCode)})" style="cursor:pointer; font-weight:800; color:#b91c1c;" title="Remove">✕</span>
     </span>`).join('');
 }
 

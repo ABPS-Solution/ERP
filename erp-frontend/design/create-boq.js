@@ -423,7 +423,7 @@ function showCBOQProductDropdown() {
       <span>${opt.displayLabel || opt.productName}</span>
       <span style="background:#fee2e2; color:#b91c1c; font-size:0.65rem; font-weight:800; padding:2px 7px; border-radius:10px; text-transform:uppercase; white-space:nowrap;">⏸ On Hold</span>
     </div>` : `
-    <div onmousedown="event.preventDefault();" onclick="selectCBOQProductOption('${opt.itemCode}', '${(opt.descriptionId || '')}', '${opt.lineId || ''}')"
+    <div onmousedown="event.preventDefault();" onclick="selectCBOQProductOption(${jsArg(opt.itemCode)}, '${(opt.descriptionId || '')}', '${opt.lineId || ''}')"
       style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
       ${opt.displayLabel || opt.productName}
@@ -733,7 +733,7 @@ function boqSetStoreType(row, value) {
 }
 function boqAcMaterialSelectHtml(prefix, idx, row, rerenderJs) {
   const opts = BOQ_AC_OPTIONS.map(o => `<option value="${escapeHtml(o)}" ${row.materialName === o ? "selected" : ""}>${escapeHtml(o)}</option>`).join("");
-  return `<select onchange="boqRowsForPrefix('${prefix}')[${idx}].materialName=this.value; boqRowsForPrefix('${prefix}')[${idx}].costingVerified=false; ${rerenderJs}" style="padding:5px; font-size:0.82rem; width:100%; border:1px solid var(--border); border-radius:3px;">
+  return `<select onchange="boqRowsForPrefix(${jsArg(prefix)})[${idx}].materialName=this.value; boqRowsForPrefix(${jsArg(prefix)})[${idx}].costingVerified=false; ${rerenderJs}" style="padding:5px; font-size:0.82rem; width:100%; border:1px solid var(--border); border-radius:3px;">
     <option value="" ${row.materialName ? "" : "selected"}>Select costing item...</option>${opts}</select>`;
 }
 function boqAcQtyCellHtml() {
@@ -843,7 +843,7 @@ function handleBOQRowMaterialSearch(query, rowIdx, formPrefix) {
     </div>`;
     }
     return `
-    <div onclick="selectBOQRowMaterial(${rowIdx}, ${jsArg(bareNameRating)}, '${item.itemCode}', '${formPrefix}')"
+    <div onclick="selectBOQRowMaterial(${rowIdx}, ${jsArg(bareNameRating)}, ${jsArg(item.itemCode)}, ${jsArg(formPrefix)})"
       style="padding:9px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem; display:flex; align-items:center; gap:10px; background:#fff; transition:background 0.1s;"
       onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#fff'">
       <span style="font-weight:600; color:var(--text); flex:1;">${escapeHtml(item.combinedName || item.productName)}</span>

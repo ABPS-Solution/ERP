@@ -186,7 +186,7 @@ async function initializeRPOEditingTab() {
           <div style="font-size:0.8rem; font-weight:600; margin-top:2px;">${escapeHtml(r.vendorName || "")} &nbsp;·&nbsp; ${r.revisionKind}</div>
           ${r.checkingDraftCount > 0 ? `<div style="font-size:0.72rem; color:#0ea5e9; font-weight:700; margin-top:2px;">Draft #${r.checkingDraftCount}</div>` : ""}
         </div>
-        <button class="nav-btn-styled" onclick="openPORevisionForEdit('${r.requestId}', '${r.poNo}')" style="background:var(--brand); color:#fff; font-weight:700; padding:7px 18px; font-size:0.8rem;">Edit →</button>
+        <button class="nav-btn-styled" onclick="openPORevisionForEdit(${jsArg(r.requestId)}, ${jsArg(r.poNo)})" style="background:var(--brand); color:#fff; font-weight:700; padding:7px 18px; font-size:0.8rem;">Edit →</button>
       </div>`).join("");
   } catch (e) {
     feed.innerHTML = `<p style="color:var(--warn);">Network error: ${e.message}</p>`;
@@ -379,8 +379,8 @@ async function initializeRevisePOPanel() {
     feed.innerHTML = queue.map(po => {
       return `
 ${rpoPoCardHtml(po, `
-              <button onclick="dismissPORevision('${po.poNo}')" style="padding:7px 14px; border:1px solid var(--border); background:#fff; border-radius:6px; cursor:pointer; font-weight:600; font-size:0.8rem;">No Revision Needed</button>
-              <button class="nav-btn-styled" onclick="openPORevision('${po.poNo}', true)" style="width:auto; background:var(--brand); color:#fff; font-weight:700; padding:8px 20px; font-size:0.82rem;">Revise →</button>`, "#f59e0b")}`;
+              <button onclick="dismissPORevision(${jsArg(po.poNo)})" style="padding:7px 14px; border:1px solid var(--border); background:#fff; border-radius:6px; cursor:pointer; font-weight:600; font-size:0.8rem;">No Revision Needed</button>
+              <button class="nav-btn-styled" onclick="openPORevision(${jsArg(po.poNo)}, true)" style="width:auto; background:var(--brand); color:#fff; font-weight:700; padding:8px 20px; font-size:0.82rem;">Revise →</button>`, "#f59e0b")}`;
     }).join("");
   } catch (e) {
     feed.innerHTML = `<p style="color:var(--warn);">Network error: ${e.message}</p>`;
@@ -503,7 +503,7 @@ async function searchPOsForRevisionUI() {
           ? `<span style="font-size:0.74rem; font-weight:700; color:#15803d; background:#dcfce7; padding:5px 12px; border-radius:999px;" title="Raise a new PO for any further requirement">Fully delivered · cannot be revised</span>`
           : po.revisionPending
           ? `<span style="font-size:0.74rem; font-weight:700; color:#b45309; background:#fef3c7; padding:5px 12px; border-radius:999px;">Revision already pending</span>`
-          : `<button class="nav-btn-styled" onclick="openPORevision('${po.poNo}', false)" style="width:auto; background:var(--brand); color:#fff; font-weight:700; padding:8px 20px; font-size:0.82rem;">Revise →</button>`, "var(--brand)")).join("");
+          : `<button class="nav-btn-styled" onclick="openPORevision(${jsArg(po.poNo)}, false)" style="width:auto; background:var(--brand); color:#fff; font-weight:700; padding:8px 20px; font-size:0.82rem;">Revise →</button>`, "var(--brand)")).join("");
   } catch (e) {
     feed.innerHTML = `<p style="color:var(--warn);">Network error: ${e.message}</p>`;
   }
@@ -726,7 +726,7 @@ function renderPORevisionCard() {
       </div>
 
       <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:14px; flex-wrap:wrap;">
-        ${st.editMode ? `<span></span>` : `<button onclick="cancelPOEntirely('${po.poNo}')" class="nav-btn-styled" style="background:#dc2626;">Cancel this PO entirely</button>`}
+        ${st.editMode ? `<span></span>` : `<button onclick="cancelPOEntirely(${jsArg(po.poNo)})" class="nav-btn-styled" style="background:#dc2626;">Cancel this PO entirely</button>`}
         <div style="display:flex; gap:10px;">
           <button onclick="document.getElementById('rpo-detail-zone').innerHTML=''; window.rpoActive=null;" style="padding:8px 16px; border:1px solid var(--border); background:#fff; border-radius:6px; cursor:pointer; font-weight:600; font-size:0.8rem;">Close</button>
           ${st.editMode

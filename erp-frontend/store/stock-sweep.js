@@ -157,8 +157,8 @@ function renderSweepBasket() {
         <td style="padding:8px; border:1.5px solid #64748b;">${escapeHtml(b.materialName)}${b.rating ? ` - <span style="color:var(--brand); font-weight:700;">${escapeHtml(b.rating)}</span>` : ""}</td>
         ${sweepStockCell("rm", b.itemCode)}${sweepStockCell("spare", b.itemCode)}
         <td style="padding:8px; border:1.5px solid #64748b; font-family:monospace; color:#334155; text-align:center; font-size:1rem;">${b.unitType || "NOS"}</td>
-        <td style="padding:8px; border:1.5px solid #64748b; text-align:center;"><input type="number" min="0" step="any" required value="${b.quantity}" oninput="updateSweepBasketField('${b.itemCode}','quantity',this.value)" style="width:90px; padding:5px; border:1px solid var(--border); border-radius:4px; text-align:center; font-size:1rem; font-weight:700;"></td>
-        <td style="padding:8px; border:1.5px solid #64748b;"><button onclick="removeFromSweepBasket('${b.itemCode}')" style="background:none; border:none; color:#c0435a; cursor:pointer; font-size:1rem;">✕</button></td>
+        <td style="padding:8px; border:1.5px solid #64748b; text-align:center;"><input type="number" min="0" step="any" required value="${b.quantity}" oninput="updateSweepBasketField(${jsArg(b.itemCode)},'quantity',this.value)" style="width:90px; padding:5px; border:1px solid var(--border); border-radius:4px; text-align:center; font-size:1rem; font-weight:700;"></td>
+        <td style="padding:8px; border:1.5px solid #64748b;"><button onclick="removeFromSweepBasket(${jsArg(b.itemCode)})" style="background:none; border:none; color:#c0435a; cursor:pointer; font-size:1rem;">✕</button></td>
       </tr>`).join("");
   }
   updateSweepSubmitState();

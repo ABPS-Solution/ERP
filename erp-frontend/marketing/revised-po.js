@@ -326,7 +326,7 @@ function crpoRenderAmounts() {
   if (focused && el.children.length) return; // don't redraw under the cursor
   const box = (label, k) => `<div class="grid-cell-item" style="grid-column: span 4;"><label style="font-size:0.72rem;">${label}</label>
     <input id="crpo-amt-${k}" type="text" inputmode="decimal" value="${escapeHtml(formatIndianCurrencyInput(a[k] ?? ''))}"
-      oninput="crpoAmountTyped('${k}', sanitizeAmountInput(this))"
+      oninput="crpoAmountTyped(${jsArg(k)}, sanitizeAmountInput(this))"
       onfocus="this.value = (crpoReview.amounts['${k}'] ?? '').toString();"
       onblur="this.value = formatIndianCurrencyInput(crpoReview.amounts['${k}']);"
       style="padding:6px 8px; font-weight:600; font-size:0.95rem; border:1.5px solid #8492a6; border-radius:4px; text-align:right; width:100%; box-sizing:border-box;" /></div>`;
@@ -363,10 +363,10 @@ function crpoRenderLines() {
     return `<option value="${l.lineId}" ${String(cur) === String(l.lineId) ? 'selected' : ''} ${taken ? 'disabled' : ''}>${escapeHtml((l.description || l.itemCode || 'Row ' + l.lineId).slice(0, 70))} (qty ${fmtQty(l.quantity)})</option>`;
   }).join('');
   const cell = 'width:100%; min-width:0; box-sizing:border-box; padding:5px; font-size:0.85rem;';
-  const wrapTxt = (i, k, align) => `<textarea rows="1" oninput="crpoUpdateLine(${i}, '${k}', this.value); autoGrowPoField(this);" onfocus="autoGrowPoField(this);"
+  const wrapTxt = (i, k, align) => `<textarea rows="1" oninput="crpoUpdateLine(${i}, ${jsArg(k)}, this.value); autoGrowPoField(this);" onfocus="autoGrowPoField(this);"
     style="${cell} text-align:${align}; resize:none; overflow:hidden; font-family:inherit; min-height:28px;">${escapeHtml(String(crpoReview.lineItems[i][k] ?? ''))}</textarea>`;
   const amt = (i, k) => `<input type="text" inputmode="decimal" value="${escapeHtml(formatIndianCurrencyInput(crpoReview.lineItems[i][k] ?? ''))}"
-    oninput="crpoUpdateLine(${i}, '${k}', sanitizeAmountInput(this))"
+    oninput="crpoUpdateLine(${i}, ${jsArg(k)}, sanitizeAmountInput(this))"
     onfocus="this.value = (crpoReview.lineItems[${i}]['${k}'] ?? '').toString();"
     onblur="this.value = formatIndianCurrencyInput(crpoReview.lineItems[${i}]['${k}']);"
     style="${cell} text-align:right;" />`;

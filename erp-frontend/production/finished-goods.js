@@ -58,7 +58,7 @@ function renderFGFileList(type) {
   list.innerHTML = files.map((f, i) => `
     <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; font-size:0.76rem; padding:4px 8px; background:#f8fafc; border:1px solid var(--border); border-radius:4px; margin-top:4px;">
       <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(f.name)}</span>
-      <span onclick="removeFGFile('${type}', ${i})" style="cursor:pointer; color:#b91c1c; font-weight:700; flex-shrink:0;" title="Remove">✕</span>
+      <span onclick="removeFGFile(${jsArg(type)}, ${i})" style="cursor:pointer; color:#b91c1c; font-weight:700; flex-shrink:0;" title="Remove">✕</span>
     </div>`).join("");
 }
 
@@ -132,7 +132,7 @@ async function submitFinishedGoodsAddEntry(department, canvasId) {
             <span style="font-size:0.88rem; font-weight:600;">Project: <strong>${projectId}</strong> · Customer: ${escapeHtml(customerName)} · Qty: ${totalStock}</span>
           </div>
           <!-- unreachable: initializeFinishedGoodsAddWorkspace is not defined in ERP -->
-          <button class="nav-btn-styled" onclick="initializeFinishedGoodsAddWorkspace('${department}', '${canvasId}')" style="background:#15803d; color:white; padding:10px 18px; font-weight:700;">
+          <button class="nav-btn-styled" onclick="initializeFinishedGoodsAddWorkspace(${jsArg(department)}, ${jsArg(canvasId)})" style="background:#15803d; color:white; padding:10px 18px; font-weight:700;">
             + Add Another Item
           </button>
         </div>`;

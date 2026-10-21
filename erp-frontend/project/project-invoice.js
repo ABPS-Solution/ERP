@@ -64,7 +64,7 @@ function renderPinvFileList(type) {
   list.innerHTML = files.map((f, i) => `
     <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; font-size:0.82rem; padding:4px 8px; background:#f8fafc; border:1px solid var(--border); border-radius:4px; margin-top:4px;">
       <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(f.name)}</span>
-      <span onclick="removePinvFile('${type}', ${i})" style="cursor:pointer; color:#b91c1c; font-weight:700; flex-shrink:0;" title="Remove">✕</span>
+      <span onclick="removePinvFile(${jsArg(type)}, ${i})" style="cursor:pointer; color:#b91c1c; font-weight:700; flex-shrink:0;" title="Remove">✕</span>
     </div>`).join("");
 }
 
@@ -706,7 +706,7 @@ function renderPinvLineItemsTable() {
                   style="width:100%; min-width:80px; box-sizing:border-box; padding:7px 9px; font-size:0.87rem; border:1px solid var(--border); border-radius:4px; background:#f1f5f9; color:var(--muted); cursor:not-allowed;" /></td>`;
               }
               if (type === 'text') {
-                return `<td><textarea rows="1" oninput="updatePinvLineItem(${idx}, '${key}', this.value); pinvAutoGrowField(this);" onfocus="pinvAutoGrowField(this);" style="width:100%; min-width:80px; box-sizing:border-box; padding:7px 9px; font-size:0.87rem; border:1px solid var(--border); border-radius:4px; resize:none; overflow:hidden; font-family:inherit;">${escapeHtml(it[key] ?? '')}</textarea></td>`;
+                return `<td><textarea rows="1" oninput="updatePinvLineItem(${idx}, ${jsArg(key)}, this.value); pinvAutoGrowField(this);" onfocus="pinvAutoGrowField(this);" style="width:100%; min-width:80px; box-sizing:border-box; padding:7px 9px; font-size:0.87rem; border:1px solid var(--border); border-radius:4px; resize:none; overflow:hidden; font-family:inherit;">${escapeHtml(it[key] ?? '')}</textarea></td>`;
               }
               // Qty starts at value="" + placeholder="0" when it's genuinely
               // 0 (e.g. mirrors pinv-jc-body's own Qty to Bill Now input),
@@ -717,7 +717,7 @@ function renderPinvLineItemsTable() {
               const rawVal = key === 'quantity' && (parseFloat(it[key]) || 0) === 0
                 ? `value="" placeholder="0"`
                 : `value="${(it[key] ?? '').toString().replace(/"/g, '&quot;')}"`;
-              return `<td><input type="${type}" ${rawVal} oninput="updatePinvLineItem(${idx}, '${key}', this.value)" style="width:100%; min-width:80px; box-sizing:border-box; padding:7px 9px; font-size:0.87rem; border:1px solid var(--border); border-radius:4px;" /></td>`;
+              return `<td><input type="${type}" ${rawVal} oninput="updatePinvLineItem(${idx}, ${jsArg(key)}, this.value)" style="width:100%; min-width:80px; box-sizing:border-box; padding:7px 9px; font-size:0.87rem; border:1px solid var(--border); border-radius:4px;" /></td>`;
             }).join('')}
             <td style="text-align:center;"><button type="button" onclick="pinvDeleteLineItem(${idx})" title="Remove this line from the invoice"
               style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; border-radius:3px; font-size:0.76rem; font-weight:700; padding:3px 7px; cursor:pointer;">✕</button></td>
@@ -1371,13 +1371,13 @@ function renderPinvReviseLineItemsTable() {
                   style="width:100%; min-width:80px; box-sizing:border-box; padding:7px 9px; font-size:0.87rem; border:1px solid var(--border); border-radius:4px; background:#f1f5f9; color:var(--muted); cursor:not-allowed;" /></td>`;
               }
               if (type === 'text') {
-                return `<td><textarea rows="1" oninput="updatePinvReviseLineItem(${idx}, '${key}', this.value); pinvAutoGrowField(this);" onfocus="pinvAutoGrowField(this);" style="width:100%; min-width:80px; box-sizing:border-box; padding:7px 9px; font-size:0.87rem; border:1px solid var(--border); border-radius:4px; resize:none; overflow:hidden; font-family:inherit;">${escapeHtml(it[key] ?? '')}</textarea></td>`;
+                return `<td><textarea rows="1" oninput="updatePinvReviseLineItem(${idx}, ${jsArg(key)}, this.value); pinvAutoGrowField(this);" onfocus="pinvAutoGrowField(this);" style="width:100%; min-width:80px; box-sizing:border-box; padding:7px 9px; font-size:0.87rem; border:1px solid var(--border); border-radius:4px; resize:none; overflow:hidden; font-family:inherit;">${escapeHtml(it[key] ?? '')}</textarea></td>`;
               }
               // Same value=""+placeholder="0" convention as renderPinvLineItemsTable.
               const rawVal = key === 'quantity' && (parseFloat(it[key]) || 0) === 0
                 ? `value="" placeholder="0"`
                 : `value="${(it[key] ?? '').toString().replace(/"/g, '&quot;')}"`;
-              return `<td><input type="${type}" ${rawVal} oninput="updatePinvReviseLineItem(${idx}, '${key}', this.value)" style="width:100%; min-width:80px; box-sizing:border-box; padding:7px 9px; font-size:0.87rem; border:1px solid var(--border); border-radius:4px;" /></td>`;
+              return `<td><input type="${type}" ${rawVal} oninput="updatePinvReviseLineItem(${idx}, ${jsArg(key)}, this.value)" style="width:100%; min-width:80px; box-sizing:border-box; padding:7px 9px; font-size:0.87rem; border:1px solid var(--border); border-radius:4px;" /></td>`;
             }).join('')}
             <td style="text-align:center;"><button type="button" onclick="pinvReviseDeleteLineItem(${idx})" title="Remove this line from the invoice"
               style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; border-radius:3px; font-size:0.76rem; font-weight:700; padding:3px 7px; cursor:pointer;">✕</button></td>

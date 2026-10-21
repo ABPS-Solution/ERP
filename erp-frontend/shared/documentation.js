@@ -76,7 +76,7 @@ function docRenderNav() {
     const expanded = docExpandedDepts.has(dept.key);
     html += `
       <div style="margin-top:10px;">
-        <div onclick="docToggleDept('${dept.key}')" style="display:flex; align-items:center; gap:6px; padding:7px 10px; border-radius:var(--radius); cursor:pointer; font-weight:700; font-size:0.82rem; color:${dept.color};">
+        <div onclick="docToggleDept(${jsArg(dept.key)})" style="display:flex; align-items:center; gap:6px; padding:7px 10px; border-radius:var(--radius); cursor:pointer; font-weight:700; font-size:0.82rem; color:${dept.color};">
           <span style="font-size:0.7rem;">${expanded ? '▾' : '▸'}</span>
           <span style="width:8px; height:8px; border-radius:50%; background:${dept.color}; flex:none;"></span>
           ${escapeHtml(dept.label)}
@@ -94,7 +94,7 @@ function docRenderNav() {
 
 function docNavLinkHtml(key, label, top) {
   const active = key === docActiveKey;
-  return `<div onclick="docShowArticle('${key}')" id="doc-nav-item-${docSafeId(key)}"
+  return `<div onclick="docShowArticle(${jsArg(key)})" id="doc-nav-item-${docSafeId(key)}"
       style="padding:${top ? '8px 10px' : '6px 10px'}; border-radius:var(--radius); cursor:pointer; font-size:${top ? '0.85rem' : '0.8rem'}; font-weight:${active ? '700' : '500'}; color:${active ? 'var(--brand)' : 'var(--text)'}; background:${active ? 'var(--highlight-bg)' : 'transparent'};"
       onmouseover="if(this.id!=='doc-nav-item-${docSafeId(docActiveKey || '')}') this.style.background='#f8fafc';"
       onmouseout="if(this.id!=='doc-nav-item-${docSafeId(docActiveKey || '')}') this.style.background='transparent';">${escapeHtml(label)}</div>`;

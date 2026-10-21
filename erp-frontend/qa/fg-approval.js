@@ -231,7 +231,7 @@ function renderFGDedicatedDocZone(fgId, docType, required) {
   return `
     <div>
       <label class="field-label" style="margin-top:0;">${label}${required ? ' * <span style="color:#b91c1c;">(required)</span>' : ''}</label>
-      <div class="card-box" id="fg-approval-dz-${fgId}-${docType}" onclick="triggerFGDedicatedUpload(${fgId}, '${docType}')" style="padding:24px; min-height:90px; border:2px dashed var(--brand); background:#eff6ff; color:var(--brand); font-weight:600; font-size:0.9rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+      <div class="card-box" id="fg-approval-dz-${fgId}-${docType}" onclick="triggerFGDedicatedUpload(${fgId}, ${jsArg(docType)})" style="padding:24px; min-height:90px; border:2px dashed var(--brand); background:#eff6ff; color:var(--brand); font-weight:600; font-size:0.9rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">
         📎 Click to attach ${label} (you can select several files)
       </div>
       ${fileListHtml}
@@ -394,7 +394,7 @@ function ensureFGDocTypeDropdownEl() {
     dd.id = "fg-doctype-shared-dd";
     dd.style.cssText = "display:none; position:fixed; background:#fff; border:1.5px solid var(--brand); border-radius:4px; z-index:9999; max-height:220px; overflow-y:auto; box-shadow:0 6px 16px rgba(0,0,0,0.15);";
     dd.innerHTML = Object.entries(FG_DOC_TYPE_LABELS).map(([type, label]) => `
-      <div onclick="selectFGDocType('${type}')" style="padding:7px 10px; cursor:pointer; font-size:0.82rem; border-bottom:1px solid #f1f5f9;" onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${label}</div>
+      <div onclick="selectFGDocType(${jsArg(type)})" style="padding:7px 10px; cursor:pointer; font-size:0.82rem; border-bottom:1px solid #f1f5f9;" onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${label}</div>
     `).join("");
     document.body.appendChild(dd);
   }

@@ -93,7 +93,7 @@ function psnRenderTabBar() {
     const active = psnActiveTab === t.key;
     const bg = active ? 'var(--brand)' : '#e2e8f0';
     const color = active ? '#fff' : '#334155';
-    return `<button class="nav-btn-styled" style="background:${bg}; color:${color}; font-weight:700; padding:11px 20px;" onclick="psnShowTab('${t.key}')">${escapeHtml(t.label)}</button>`;
+    return `<button class="nav-btn-styled" style="background:${bg}; color:${color}; font-weight:700; padding:11px 20px;" onclick="psnShowTab(${jsArg(t.key)})">${escapeHtml(t.label)}</button>`;
   }).join('');
 }
 
