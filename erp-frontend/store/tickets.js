@@ -86,7 +86,8 @@ async function initializeMaterialRequestWorkspace() {
     applyCmitDepartmentLock(null);
   }
 
-  resetMaterialRequestCascadingLockState();
+  // A Sample lock has already set Choose Store; don't wipe it.
+  if (deptDropdown.value !== "Sample") resetMaterialRequestCascadingLockState();
 
   // Defensive re-reset — the scroll-to-top at navigation time can be undone if the page's
   // height changes once the dropdowns above actually populate (e.g. arriving from a long,
