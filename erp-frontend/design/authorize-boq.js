@@ -66,6 +66,7 @@ async function initializeAuthorizeBOQPanel(mode) {
               <span style="background:#edf2f7;">Customer:</span><strong style="margin-right:15px;">${escapeHtml(draft.customerName)}</strong>
               <span style="background:#edf2f7;">Project ID:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:700; color:var(--brand); margin-right:15px;">${draft.projectId}</span>
               <span style="background:#edf2f7;">Prepared By:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:400; color:#111827;">${escapeHtml(draft.preparedBy)}</span>
+              ${boqUnauthLinkHtml(draft.unauthPdfUrl)}
             </div>
             <div class="meta-row-line-block" style="margin-bottom:6px;">
               <span style="background:#e2e8f0;">Product:</span><strong>${escapeHtml(draft.productName)} ${escapeHtml(draft.productRating)}</strong>
@@ -143,6 +144,7 @@ async function initializeAuthorizeBOQRevisionPanel() {
               <span style="background:#edf2f7;">Customer:</span><strong style="margin-right:15px;">${escapeHtml(reqItem.customerName || "")}</strong>
               <span style="background:#edf2f7;">Project ID:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:700; color:var(--brand); margin-right:15px;">${reqItem.projectId || ""}</span>
               <span style="background:#edf2f7;">Requested By:</span><span style="background:none; text-transform:none; padding:0; font-size:0.95rem; font-weight:400; color:#111827;">${escapeHtml(reqItem.requestedBy || "")}</span>
+              ${boqUnauthLinkHtml(reqItem.unauthPdfUrl)}
             </div>
             <div class="meta-row-line-block" style="margin-bottom:6px;">
               <span style="background:#e2e8f0;">Product:</span><strong>${escapeHtml(reqItem.productName || "")} ${escapeHtml(reqItem.productRating || "")}</strong>
@@ -884,4 +886,10 @@ function authBoqDraftNote(containerEl) {
   note.style.cssText = "background:#ecfdf5; border:1px solid #6ee7b7; color:#065f46; padding:8px 12px; border-radius:6px; font-size:0.82rem; font-weight:700; margin-bottom:12px;";
   note.textContent = "Continuing where you left off: your earlier edits and Costing Verified ticks on this BOQ are back.";
   containerEl.prepend(note);
+}
+// Printable unauthorized copy (watermarked, costed) of a BOQ / revision
+// waiting for authorization. Made by the server right after submission.
+function boqUnauthLinkHtml(url) {
+  if (!url) return `<span style="margin-left:15px; font-size:0.8rem; color:var(--muted);">Unauthorized copy is being made...</span>`;
+  return `<a href="${driveLink(url)}" target="_blank" onclick="event.stopPropagation()" style="margin-left:15px; display:inline-block; background:#fff; color:#b91c1c; border:1.5px solid #b91c1c; padding:3px 10px; border-radius:var(--radius); font-weight:700; font-size:0.8rem; text-decoration:none;">Print Unauthorized BOQ</a>`;
 }
