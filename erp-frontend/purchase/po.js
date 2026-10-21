@@ -631,6 +631,7 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
               <option value="Material">Material</option><option value="Transport">Transport</option>
             </select>`}
         <span id="cpo-po-type-note" style="font-size:0.78rem; color:var(--muted);"></span>
+        ${isExisting ? "" : `<span style="margin-left:auto; font-size:0.85rem; color:var(--muted);">PO Number: <b id="cpo-next-po-no" style="color:var(--brand); font-family:monospace;">…</b></span>`}
       </div>
       <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:14px;">
         <div>
@@ -661,7 +662,7 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
           <label class="field-label" style="margin-top:0;">Manual PO Number (optional)</label>
           <div style="display:flex; align-items:stretch; border:1.5px solid var(--border); border-radius:var(--radius); overflow:hidden; background:#fff;">
             <span style="padding:9px 4px 9px 10px; background:#f1f5f9; font-family:monospace; font-weight:700; color:#475569; white-space:nowrap;">${cpoCurrentPOPrefix()}</span>
-            <input type="text" inputmode="numeric" id="cpo-po-number-override" placeholder="Leave blank to auto-generate, or enter the PO number, e.g. 1 or 10 (saved as ${cpoCurrentPOPrefix()}00001)" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,5); persistCPODraft()" style="padding:9px; border:none; width:100%; min-width:0;">
+            <input type="text" inputmode="numeric" id="cpo-po-number-override" placeholder="Leave blank to auto-generate, or enter the PO number, e.g. 1 or 10 (saved as ${cpoCurrentPOPrefix()}00001)" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,5); persistCPODraft(); cpoShowNextPoNumber()" style="padding:9px; border:none; width:100%; min-width:0;">
           </div>
         </div>
       </div>` : ""}
@@ -736,6 +737,7 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
       </div>
     </div>
   `;
+  if (!isExisting) cpoShowNextPoNumber();
 
   if (isExisting) {
     // Load the PO's own saved data — not a local draft. Vendor is
@@ -824,7 +826,7 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
     if (draft.freightTerms) document.getElementById("cpo-freight-terms").value = draft.freightTerms;
     if (draft.notes) document.getElementById("cpo-notes").value = draft.notes;
     if (draft.poNumberOverride && document.getElementById("cpo-po-number-override")) {
-      document.getElementById("cpo-po-number-override").value = draft.poNumberOverride;
+      document.getElementById("cpo-po-number-override").value = draft.poNumberOverride; cpoShowNextPoNumber();
     }
   }
   cpoApplyPoTypeLabels();
@@ -2495,3 +2497,21 @@ document.addEventListener("click", function(e) {
   }
 });
 
+
+// Shows the number this new PO will get: the typed override if any, else the
+// next number in sequence (a preview; the real one is taken when it is created).
+let cpoNextPoNoCache = null;
+async function cpoShowNextPoNumber() {
+  const el = document.getElementById("cpo-next-po-no");
+  if (!el) return;
+  const typed = (document.getElementById("cpo-po-number-override")?.value || "").trim();
+  if (typed) { el.textContent = cpoCurrentPOPrefix() + typed.padStart(5, "0"); return; }
+  if (cpoNextPoNoCache) el.textContent = cpoNextPoNoCache;
+  try {
+    const data = await apFetch({ action: "fetchNextPONumberPreview" });
+    if (data.success) cpoNextPoNoCache = data.poNo;
+  } catch (e) { /* keep last value */ }
+  const el2 = document.getElementById("cpo-next-po-no");
+  const typed2 = (document.getElementById("cpo-po-number-override")?.value || "").trim();
+  if (el2 && !typed2) el2.textContent = cpoNextPoNoCache || "—";
+}
