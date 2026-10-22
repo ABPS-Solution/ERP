@@ -4480,33 +4480,40 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
     </div>
 
     <div id="canvas-module-search-inward" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 class="panel-title">Search Inward Material</h2>
-      <p style="font-size:0.82rem; color:var(--muted); margin:6px 0 14px;">Every material line received at Gate Entry. Filter, then click a line to see its timeline, where the stock went and any Not OK / Missing quantity. View only.</p>
-      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:10px; align-items:end;">
-        <div><label class="field-label" style="margin-top:0;">Gate date from</label><input type="date" id="iws-date-from" style="padding:8px; border:1px solid var(--border); border-radius:var(--radius); width:100%;"></div>
-        <div><label class="field-label" style="margin-top:0;">Gate date to</label><input type="date" id="iws-date-to" style="padding:8px; border:1px solid var(--border); border-radius:var(--radius); width:100%;"></div>
-        <div style="position:relative;"><label class="field-label" style="margin-top:0;">Vendor</label>
-          <input type="text" id="iws-vendor" autocomplete="off" placeholder="Type vendor name..." oninput="iwsVendorSearch(this.value)" onblur="setTimeout(()=>document.getElementById('iws-vendor-dd').style.display='none',150)" style="padding:8px; border:1px solid var(--border); border-radius:var(--radius); width:100%;">
-          <div id="iws-vendor-dd" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:300; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div></div>
-        <div style="position:relative;"><label class="field-label" style="margin-top:0;">Material</label>
-          <input type="text" id="iws-material" autocomplete="off" placeholder="Name, rating, make or item code..." oninput="iwsMaterialSearch(this.value)" onblur="setTimeout(()=>document.getElementById('iws-material-dd').style.display='none',150)" style="padding:8px; border:1px solid var(--border); border-radius:var(--radius); width:100%;">
-          <div id="iws-material-dd" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:300; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div></div>
-        <div style="position:relative;"><label class="field-label" style="margin-top:0;">Project</label>
-          <input type="text" id="iws-project-ta-input" autocomplete="off" placeholder="Project ID or customer..." oninput="handleSharedProjectTypeaheadInput(this.value, 'iws-project-ta-input', 'iws-project-ta-dropdown', true)" style="padding:8px; border:1px solid var(--border); border-radius:var(--radius); width:100%;">
-          <div id="iws-project-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:300; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div></div>
-        <div><label class="field-label" style="margin-top:0;">PO No</label><input type="text" id="iws-po" placeholder="New or old PO number" style="padding:8px; border:1px solid var(--border); border-radius:var(--radius); width:100%;"></div>
-        <div><label class="field-label" style="margin-top:0;">Invoice / Challan No</label><input type="text" id="iws-invoice" style="padding:8px; border:1px solid var(--border); border-radius:var(--radius); width:100%;"></div>
-        <div><label class="field-label" style="margin-top:0;">Gate Entry No</label><input type="text" id="iws-gate" placeholder="e.g. GT_26-27_00109" style="padding:8px; border:1px solid var(--border); border-radius:var(--radius); width:100%;"></div>
-        <div><label class="field-label" style="margin-top:0;">GRN No</label><input type="text" id="iws-grn" placeholder="e.g. GRN_26-27_00099" style="padding:8px; border:1px solid var(--border); border-radius:var(--radius); width:100%;"></div>
-        <div><label class="field-label" style="margin-top:0;">Status</label>
-          <select id="iws-status" style="padding:8px; border:1px solid var(--border); border-radius:var(--radius); width:100%;"><option value="">All</option><option>Gate Entered</option><option>GRN Done</option><option>QA Passed</option><option>Not OK / Missing</option></select></div>
-      </div>
-      <div style="display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 16px;">
-        <button class="nav-btn-styled" style="width:auto; padding:8px 18px;" onclick="runInwardMaterialSearch()">Search</button>
-        <button class="nav-btn-styled" style="width:auto; padding:8px 14px; background:#e2e8f0; color:#334155;" onclick="iwsSetRange('today')">Today</button>
-        <button class="nav-btn-styled" style="width:auto; padding:8px 14px; background:#e2e8f0; color:#334155;" onclick="iwsSetRange('week')">This Week</button>
-        <button class="nav-btn-styled" style="width:auto; padding:8px 14px; background:#e2e8f0; color:#334155;" onclick="iwsSetRange('month')">This Month</button>
-        <button class="nav-btn-styled" style="width:auto; padding:8px 14px; background:#fff; color:#334155; border:1px solid var(--border);" onclick="iwsClearFilters()">Clear filters</button>
+      <h2 class="panel-title" style="margin-bottom:14px;">Search Inward Material</h2>
+      <div style="background:#f8fafc; border:2px solid #94a3b8; border-radius:var(--radius); padding:16px; margin-bottom:16px;">
+        <div style="display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; padding-bottom:14px; border-bottom:1.5px solid #cbd5e1; margin-bottom:14px;">
+          <div style="width:170px;"><label style="display:block; font-size:0.7rem; font-weight:800; text-transform:uppercase; color:#475569; letter-spacing:0.03em; margin:0 0 5px;">Gate date from</label><input type="date" id="iws-date-from" style="width:100%; padding:8px 10px; border:1.5px solid #cbd5e1; border-radius:var(--radius); font-size:0.88rem; background:#fff;"></div>
+          <div style="width:170px;"><label style="display:block; font-size:0.7rem; font-weight:800; text-transform:uppercase; color:#475569; letter-spacing:0.03em; margin:0 0 5px;">Gate date to</label><input type="date" id="iws-date-to" style="width:100%; padding:8px 10px; border:1.5px solid #cbd5e1; border-radius:var(--radius); font-size:0.88rem; background:#fff;"></div>
+          <div style="display:flex; gap:6px; flex-wrap:wrap; padding-bottom:2px;">
+            <button class="nav-btn-styled" style="width:auto; padding:6px 14px; font-size:0.8rem; background:#fff; color:#334155; border:1.5px solid #cbd5e1; border-radius:999px; font-weight:700;" onclick="iwsSetRange('today')">Today</button>
+            <button class="nav-btn-styled" style="width:auto; padding:6px 14px; font-size:0.8rem; background:#fff; color:#334155; border:1.5px solid #cbd5e1; border-radius:999px; font-weight:700;" onclick="iwsSetRange('week')">This Week</button>
+            <button class="nav-btn-styled" style="width:auto; padding:6px 14px; font-size:0.8rem; background:#fff; color:#334155; border:1.5px solid #cbd5e1; border-radius:999px; font-weight:700;" onclick="iwsSetRange('month')">This Month</button>
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:12px; margin-bottom:12px;" class="iws-grid">
+          <div style="position:relative;"><label style="display:block; font-size:0.7rem; font-weight:800; text-transform:uppercase; color:#475569; letter-spacing:0.03em; margin:0 0 5px;">Vendor</label>
+            <input type="text" id="iws-vendor" autocomplete="off" placeholder="Type vendor name..." oninput="iwsVendorSearch(this.value)" onblur="setTimeout(()=>document.getElementById('iws-vendor-dd').style.display='none',150)" style="width:100%; padding:8px 10px; border:1.5px solid #cbd5e1; border-radius:var(--radius); font-size:0.88rem; background:#fff;">
+            <div id="iws-vendor-dd" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:260px; overflow-y:auto; z-index:300; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div></div>
+          <div style="position:relative;"><label style="display:block; font-size:0.7rem; font-weight:800; text-transform:uppercase; color:#475569; letter-spacing:0.03em; margin:0 0 5px;">Material</label>
+            <input type="text" id="iws-material" autocomplete="off" placeholder="Name, rating, make or item code..." oninput="iwsMaterialSearch(this.value)" onblur="setTimeout(()=>document.getElementById('iws-material-dd').style.display='none',150)" style="width:100%; padding:8px 10px; border:1.5px solid #cbd5e1; border-radius:var(--radius); font-size:0.88rem; background:#fff;">
+            <div id="iws-material-dd" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:260px; overflow-y:auto; z-index:300; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div></div>
+          <div style="position:relative;"><label style="display:block; font-size:0.7rem; font-weight:800; text-transform:uppercase; color:#475569; letter-spacing:0.03em; margin:0 0 5px;">Project</label>
+            <input type="text" id="iws-project-ta-input" autocomplete="off" placeholder="Project ID or customer..." oninput="handleSharedProjectTypeaheadInput(this.value, 'iws-project-ta-input', 'iws-project-ta-dropdown', true)" style="width:100%; padding:8px 10px; border:1.5px solid #cbd5e1; border-radius:var(--radius); font-size:0.88rem; background:#fff;">
+            <div id="iws-project-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:260px; overflow-y:auto; z-index:300; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div></div>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(5, minmax(0, 1fr)); gap:12px;" class="iws-grid">
+          <div><label style="display:block; font-size:0.7rem; font-weight:800; text-transform:uppercase; color:#475569; letter-spacing:0.03em; margin:0 0 5px;">PO No</label><input type="text" id="iws-po" placeholder="New or old PO no." style="width:100%; padding:8px 10px; border:1.5px solid #cbd5e1; border-radius:var(--radius); font-size:0.88rem; background:#fff;"></div>
+          <div><label style="display:block; font-size:0.7rem; font-weight:800; text-transform:uppercase; color:#475569; letter-spacing:0.03em; margin:0 0 5px;">Invoice / Challan No</label><input type="text" id="iws-invoice" style="width:100%; padding:8px 10px; border:1.5px solid #cbd5e1; border-radius:var(--radius); font-size:0.88rem; background:#fff;"></div>
+          <div><label style="display:block; font-size:0.7rem; font-weight:800; text-transform:uppercase; color:#475569; letter-spacing:0.03em; margin:0 0 5px;">Gate Entry No</label><input type="text" id="iws-gate" placeholder="GT_26-27_00109" style="width:100%; padding:8px 10px; border:1.5px solid #cbd5e1; border-radius:var(--radius); font-size:0.88rem; background:#fff;"></div>
+          <div><label style="display:block; font-size:0.7rem; font-weight:800; text-transform:uppercase; color:#475569; letter-spacing:0.03em; margin:0 0 5px;">GRN No</label><input type="text" id="iws-grn" placeholder="GRN_26-27_00099" style="width:100%; padding:8px 10px; border:1.5px solid #cbd5e1; border-radius:var(--radius); font-size:0.88rem; background:#fff;"></div>
+          <div><label style="display:block; font-size:0.7rem; font-weight:800; text-transform:uppercase; color:#475569; letter-spacing:0.03em; margin:0 0 5px;">Status</label>
+            <select id="iws-status" style="width:100%; padding:8px 10px; border:1.5px solid #cbd5e1; border-radius:var(--radius); font-size:0.88rem; background:#fff;"><option value="">All</option><option>Gate Entered</option><option>GRN Done</option><option>QA Passed</option><option>Not OK / Missing</option></select></div>
+        </div>
+        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:16px;">
+          <button class="nav-btn-styled" style="width:auto; padding:9px 18px; background:#fff; color:#334155; border:1.5px solid #cbd5e1;" onclick="iwsClearFilters()">Clear filters</button>
+          <button class="nav-btn-styled" style="width:auto; padding:9px 26px;" onclick="runInwardMaterialSearch()">Search</button>
+        </div>
       </div>
       <div id="iws-results"></div>
     </div>

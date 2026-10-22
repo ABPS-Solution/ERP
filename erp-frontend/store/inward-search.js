@@ -96,39 +96,59 @@ function iwsMoney(n) { return "₹" + formatINRComma(n || 0); }
 function iwsStatusBadge(r) {
   const bad = Number(r.notOk) > 0 || Number(r.missing) > 0;
   const color = r.status === "QA Passed" ? (bad ? "#b45309" : "#15803d") : "#1d4ed8";
-  return `<span style="display:inline-block; padding:2px 8px; border-radius:999px; font-size:0.72rem; font-weight:700; color:#fff; background:${color};">${escapeHtml(r.status)}${bad ? " · Not OK / Missing" : ""}</span>`;
+  return `<span style="display:inline-block; padding:3px 10px; border-radius:999px; font-size:0.72rem; white-space:nowrap; font-weight:700; color:#fff; background:${color};">${escapeHtml(r.status)}${bad ? " · Not OK / Missing" : ""}</span>`;
 }
 
 function iwsRender(d) {
   const feed = document.getElementById("iws-results");
-  if (!iwsRows.length) { feed.innerHTML = `<div style="padding:20px; text-align:center; color:var(--muted); border:1px dashed var(--border); border-radius:var(--radius);">No inward material matches these filters.</div>`; return; }
-  const head = `<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
-      <div style="font-size:0.85rem; color:#334155;"><b>${d.capped ? `Showing ${iwsRows.length} of ${d.matchedCount}` : `${d.matchedCount}`}</b> line(s) · Basic ${iwsMoney(d.totals.basicAmount)} · With GST ${iwsMoney(d.totals.totalAmount)}${d.capped ? ` <span style="color:#b45309;">(narrow the filters to see the rest)</span>` : ""}</div>
-      <button class="nav-btn-styled" style="width:auto; padding:7px 14px; background:#15803d;" onclick="iwsDownload()">Download to Excel</button>
-    </div>`;
-  const rows = iwsRows.map((r, i) => `
-    <tr onclick="iwsToggleDetail(${i})" style="cursor:pointer; border-bottom:1px solid #e2e8f0;">
-      <td>${escapeHtml(formatOrdinalDate(r.ts))}</td>
-      <td>${escapeHtml(r.gateNumber || "")}<div style="color:var(--muted);">${escapeHtml(r.grnNumber || "")}</div></td>
-      <td>${escapeHtml(r.vendorName || "")}</td>
-      <td>${escapeHtml(r.invoiceNumber || r.challanNumber || "")}${r.docUrls ? `<div>${gateDocLinksHtml(r.docUrls, r.invoiceNumber, r.challanNumber)}</div>` : ""}</td>
-      <td>${escapeHtml(r.poNo || r.legacyPoNo || (r.processingTicketId ? "Return: " + r.processingTicketId : "-"))}</td>
-      <td><b>${escapeHtml(r.itemCode || "")}</b> ${escapeHtml(r.materialName || "")}</td>
-      <td style="text-align:right;">${fmtQty(r.received)}</td>
-      <td style="text-align:right;">${r.ok == null ? "-" : fmtQty(r.ok)}</td>
-      <td style="text-align:right;">${(Number(r.notOk) || 0) + (Number(r.missing) || 0) ? fmtQty((Number(r.notOk) || 0) + (Number(r.missing) || 0)) : "-"}</td>
-      <td>${escapeHtml(r.unit || "")}</td>
-      <td style="text-align:right;">${iwsMoney(r.rate)}</td>
-      <td style="text-align:right;">${iwsMoney(r.basicAmount)}</td>
-      <td>${iwsStatusBadge(r)}</td>
+  if (!iwsRows.length) { feed.innerHTML = `<div style="padding:24px; text-align:center; color:var(--muted); border:2px dashed #cbd5e1; border-radius:var(--radius);">No inward material matches these filters.</div>`; return; }
+  const chip = (label, value, color) => `<div style="background:#fff; border:1.5px solid #cbd5e1; border-radius:var(--radius); padding:8px 14px; min-width:140px;">
+      <div style="font-size:0.66rem; font-weight:800; text-transform:uppercase; color:#64748b; letter-spacing:0.03em;">${label}</div>
+      <div style="font-size:1.1rem; font-weight:800; color:${color || "#0f172a"}; font-family:monospace;">${value}</div></div>`;
+  const head = `<div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        ${chip("Lines", d.capped ? `${iwsRows.length} of ${d.matchedCount}` : d.matchedCount)}
+        ${chip("Basic amount", iwsMoney(d.totals.basicAmount), "var(--brand)")}
+        ${chip("Amount with GST", iwsMoney(d.totals.totalAmount))}
+      </div>
+      <button class="nav-btn-styled" style="width:auto; padding:8px 16px; background:#15803d;" onclick="iwsDownload()">Download to Excel</button>
+    </div>
+    ${d.capped ? `<div style="background:#fffbeb; border:1px solid #fcd34d; color:#92400e; padding:7px 12px; border-radius:6px; font-size:0.82rem; font-weight:600; margin-bottom:10px;">Showing the newest ${iwsRows.length} lines. Narrow the filters to see the rest.</div>` : ""}`;
+  // Borders on every cell (PPS Tracking style): row lines on a <tr> don't
+  // paint under border-collapse:collapse.
+  const cb = "border-left:1.5px solid var(--border); border-bottom:2px solid #94a3b8;";
+  const fb = "border-bottom:2px solid #94a3b8;";
+  const th = (t, extra) => `<th style="padding:9px 8px; font-size:0.7rem; ${extra || "text-align:center;"}">${t}</th>`;
+  const num = "padding:8px; text-align:center; font-family:monospace; font-size:0.95rem;";
+  const rows = iwsRows.map((r, i) => {
+    const bad = (Number(r.notOk) || 0) + (Number(r.missing) || 0);
+    return `
+    <tr onclick="iwsToggleDetail(${i})" style="cursor:pointer;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
+      <td style="padding:8px; white-space:nowrap; ${fb}">${escapeHtml(formatOrdinalDate(r.ts))}</td>
+      <td style="padding:8px; ${cb}"><div style="font-family:monospace; font-weight:700;">${escapeHtml(r.gateNumber || "")}</div><div style="font-family:monospace; color:#64748b; font-size:0.8rem;">${escapeHtml(r.grnNumber || "Not GRN'd yet")}</div></td>
+      <td style="padding:8px; font-weight:600; ${cb}">${escapeHtml(r.vendorName || "")}</td>
+      <td style="padding:8px; ${cb}">${escapeHtml(r.invoiceNumber || r.challanNumber || "")}${r.docUrls ? `<div style="margin-top:3px;">${gateDocLinksHtml(r.docUrls, r.invoiceNumber, r.challanNumber)}</div>` : ""}</td>
+      <td style="padding:8px; font-family:monospace; font-size:0.82rem; ${cb}">${escapeHtml(r.poNo || (r.legacyPoNo ? r.legacyPoNo + " (old)" : "") || (r.processingTicketId ? "Return: " + r.processingTicketId : "-"))}</td>
+      <td style="padding:8px; ${cb}"><div style="font-weight:600;">${escapeHtml(r.materialName || "")}</div><div style="font-family:monospace; color:#64748b; font-size:0.78rem;">${escapeHtml(r.itemCode || "")}</div></td>
+      <td style="${num} font-weight:700; ${cb}">${fmtQty(r.received)}</td>
+      <td style="${num} color:#15803d; font-weight:700; ${cb}">${r.ok == null ? "-" : fmtQty(r.ok)}</td>
+      <td style="${num} ${bad ? "color:#b91c1c; font-weight:800;" : "color:#94a3b8;"} ${cb}">${bad ? fmtQty(bad) : "-"}</td>
+      <td style="padding:8px; text-align:center; ${cb}">${escapeHtml(r.unit || "")}</td>
+      <td style="${num} ${cb}">${iwsMoney(r.rate)}</td>
+      <td style="${num} font-weight:700; ${cb}">${iwsMoney(r.basicAmount)}</td>
+      <td style="padding:8px; text-align:center; ${cb}">${iwsStatusBadge(r)}</td>
     </tr>
-    <tr id="iws-detail-${i}" style="display:none;"><td colspan="13" style="background:#f8fafc; padding:12px 14px;"></td></tr>`).join("");
-  feed.innerHTML = head + `<div style="overflow-x:auto;"><table class="iws-table" style="width:100%; border-collapse:collapse; font-size:0.82rem;">
-    <thead><tr style="background:#f1f5f9; text-align:left;">
-      <th>Gate date</th><th>Gate / GRN No</th><th>Vendor</th><th>Invoice / Challan</th><th>PO No</th><th>Material</th>
-      <th style="text-align:right;">Received</th><th style="text-align:right;">OK</th><th style="text-align:right;">Not OK / Missing</th>
-      <th>Unit</th><th style="text-align:right;">Rate</th><th style="text-align:right;">Amount</th><th>Status</th>
-    </tr></thead><tbody>${rows}</tbody></table></div>`;
+    <tr id="iws-detail-${i}" style="display:none;"><td colspan="13" style="background:#f1f5f9; padding:14px; border-bottom:2px solid #94a3b8;"></td></tr>`;
+  }).join("");
+  feed.innerHTML = head + `<div style="overflow-x:auto; border:2px solid #94a3b8; border-radius:var(--radius);">
+    <table class="store-basket-data-table" style="width:100%; border-collapse:collapse; min-width:1250px; margin-top:0;">
+    <thead><tr>
+      ${th("Gate Date", "text-align:left;" + fb)}${th("Gate / GRN No", "text-align:left;" + cb)}${th("Vendor", "text-align:left;" + cb)}${th("Invoice / Challan", "text-align:left;" + cb)}
+      ${th("PO No", "text-align:left;" + cb)}${th("Material", "text-align:left; min-width:220px;" + cb)}
+      ${th("Received", "text-align:center;" + cb)}${th("OK", "text-align:center;" + cb)}${th("Not OK / Missing", "text-align:center;" + cb)}
+      ${th("Unit", "text-align:center;" + cb)}${th("Rate", "text-align:center;" + cb)}${th("Amount", "text-align:center;" + cb)}${th("Status", "text-align:center;" + cb)}
+    </tr></thead><tbody>${rows}</tbody></table></div>
+    <div style="font-size:0.78rem; color:var(--muted); margin-top:8px;">Click a line to see its timeline, where the stock went and any Not OK / Missing quantity.</div>`;
 }
 
 async function iwsToggleDetail(i) {
@@ -149,13 +169,13 @@ async function iwsToggleDetail(i) {
     const rej = (d.rejections || []).map(x => `<li>Not OK ${fmtQty(x.notOk)}, Missing ${fmtQty(x.missing)}${x.reason ? " (" + escapeHtml(x.reason) + ")" : ""}: ${escapeHtml(x.action || "no action yet")}, <b>${escapeHtml(x.status || "")}</b>${(Number(x.notOkPending) || 0) + (Number(x.missingPending) || 0) > 0 ? `, ${fmtQty((Number(x.notOkPending) || 0) + (Number(x.missingPending) || 0))} still pending` : ""}</li>`).join("");
     const chg = (d.changes || []).map(c => `<li>${escapeHtml(formatOrdinalDateTime(c.at))}: ${escapeHtml(c.by || "")}, ${escapeHtml(c.summary || c.action || "")}</li>`).join("");
     cell.innerHTML = `
-      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:14px;">
-        <div><div style="font-weight:800; margin-bottom:4px;">Timeline</div><ul style="margin:0; padding-left:18px;">
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:12px;">
+        <div style="background:#fff; border:1.5px solid #cbd5e1; border-radius:var(--radius); padding:10px 12px;"><div style="font-size:0.7rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:6px;">Timeline</div><ul style="margin:0; padding-left:18px;">
           ${step("Gate Entry", l.ts, l.gatePerson)}${step("GRN", l.grnAt, l.grnPerson)}${step("Q/A", l.qaAt, l.qaPerson)}</ul>
           ${r.invoiceDescription ? `<div style="margin-top:6px; color:#475569;">On invoice: ${escapeHtml(r.invoiceDescription)}${r.invoiceUnit && r.invoiceUnit !== r.unit ? " (" + escapeHtml(r.invoiceUnit) + ")" : ""}</div>` : ""}</div>
-        <div><div style="font-weight:800; margin-bottom:4px;">Where the stock went</div><ul style="margin:0; padding-left:18px;">${went}</ul></div>
-        ${rej ? `<div><div style="font-weight:800; margin-bottom:4px;">Not OK / Missing</div><ul style="margin:0; padding-left:18px;">${rej}</ul></div>` : ""}
-        ${chg ? `<div><div style="font-weight:800; margin-bottom:4px;">Gate / GRN history</div><ul style="margin:0; padding-left:18px;">${chg}</ul></div>` : ""}
+        <div style="background:#fff; border:1.5px solid #cbd5e1; border-radius:var(--radius); padding:10px 12px;"><div style="font-size:0.7rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:6px;">Where the stock went</div><ul style="margin:0; padding-left:18px;">${went}</ul></div>
+        ${rej ? `<div style="background:#fff; border:1.5px solid #cbd5e1; border-radius:var(--radius); padding:10px 12px;"><div style="font-size:0.7rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:6px;">Not OK / Missing</div><ul style="margin:0; padding-left:18px;">${rej}</ul></div>` : ""}
+        ${chg ? `<div style="background:#fff; border:1.5px solid #cbd5e1; border-radius:var(--radius); padding:10px 12px;"><div style="font-size:0.7rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:6px;">Gate / GRN history</div><ul style="margin:0; padding-left:18px;">${chg}</ul></div>` : ""}
       </div>`;
   } catch (e) { cell.textContent = e.message; }
 }
