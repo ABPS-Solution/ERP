@@ -122,7 +122,8 @@ async function toggleBOQRevisionExpansion(updateId) {
 
   if (revDraftSaved && revDraftSaved.fields) abpsRestoreFields(bodyEl.id, revDraftSaved.fields);
   renderBOQRevisionRows(updateId);
-  if (revDraftSaved) authBoqDraftNote(bodyEl);
+  if (revDraftSaved) authBoqDraftNote(bodyEl, `authBoqDiscard(${jsArg(revDraftKey)}, 'rev', ${Number(updateId)})`);
+  else authBoqDroppedNote(bodyEl, revDraftKey);
   authBoqDraftWatch(bodyEl, revDraftKey, revDraftBase, () => uboqRevRows);
 
   try {
@@ -346,6 +347,7 @@ function recomputeBOQRevisionSummary(updateId) {
 }
 
 async function initializeUpdateBOQPanel() {
+  if (typeof uboqProgRenderList === "function") uboqProgRenderList();
   eboqMode = "";
   uboqCurrentDraft = null;
   uboqMaterialRows = [];
@@ -453,9 +455,15 @@ async function loadBOQForUpdate(boqId) {
   uboqCurrentDraft = data.draft;
   uboqMaterialRows = await boqSortRowsByMaterialType((data.draft.materialRows || []).map(r => ({ ...r })));
   uboqSpecFiles    = [];
+  // Unsaved changes to this BOQ from earlier come back (design/boq-progress.js).
+  const uboqRestored = (!window._uboqProgSkipRestore && typeof uboqProgRestoreFor === "function") ? uboqProgRestoreFor(data.draft) : null;
+  if (uboqRestored && !uboqRestored.dropped) uboqMaterialRows = uboqRestored.rows;
 
+  window._uboqProgRestoring = true;
   renderUBOQForm();
+  window._uboqProgRestoring = false;
   document.getElementById("update-boq-form").style.display = "block";
+  if (typeof uboqProgAttach === "function") { uboqProgAttach(); uboqProgShowNote(uboqRestored); }
 }
 
 function renderUBOQForm() {
@@ -797,6 +805,7 @@ async function submitUpdateBOQ() {
     hideBlockingOverlay();
 
     if (data.success) {
+      if (typeof abpsDraftClear === "function" && uboqCurrentDraft) abpsDraftClear("reviseBOQ:" + uboqCurrentDraft.boqId);
       const _lastDraft = uboqCurrentDraft;
       uboqCurrentDraft = null;
       uboqMaterialRows = [];

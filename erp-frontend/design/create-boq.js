@@ -436,6 +436,7 @@ function selectCBOQProductOption(itemCode, descriptionId, lineId) {
   const opts = window.cboqAllowedOptionsByValue || {};
   const opt = opts[itemCode + '|' + (descriptionId || '') + '|' + (lineId || '')]
     || Object.values(opts).find(o => o.itemCode === itemCode && String(o.descriptionId || '') === String(descriptionId || ''));
+  if (opt && !opt.onHold) setTimeout(() => { if (typeof cboqProgRestoreForCurrent === "function") cboqProgRestoreForCurrent(); }, 0);
   if (opt && opt.onHold) { abpsAlert(`This product is On Hold — ${opt.holdReason || 'no reason given'}. An admin must remove the Hold before a BOQ can be created for it.`); return; }
   const searchEl = document.getElementById("cboq-product-search");
   const ratingEl = document.getElementById("cboq-product-rating");
@@ -866,6 +867,7 @@ function resetCreateBOQForm() {
   // A submitted or explicitly-reset BOQ is finished work — drop its
   // autosaved draft so it can't be offered back later.
   if (typeof abpsDraftClear === 'function') abpsDraftClear('createBOQ');
+  if (typeof cboqProgKey === 'function') { const k = cboqProgKey(); if (k) abpsDraftClear(k); }
   cboqMaterialRows = [];
   renderCBOQMaterialRows();
   ["cboq-project-id-ta-input","cboq-department"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
@@ -1044,7 +1046,10 @@ async function toggleAuthBOQCardExpansion(boqId, mode) {
       if (authDraftSaved.fields) abpsRestoreFields(`eboq-form-mount-${safeBoqId}`, authDraftSaved.fields);
       renderEBOQMaterialRows();
       if (typeof updateEBOQTotals === "function") updateEBOQTotals();
-      authBoqDraftNote(document.getElementById(`eboq-form-mount-${safeBoqId}`));
+      authBoqDraftNote(document.getElementById(`eboq-form-mount-${safeBoqId}`),
+        `authBoqDiscard(${jsArg(authDraftKey)}, 'auth', ${jsArg(boqId)}, ${jsArg(mode)})`);
+    } else {
+      authBoqDroppedNote(document.getElementById(`eboq-form-mount-${safeBoqId}`), authDraftKey);
     }
     authBoqDraftWatch(document.getElementById(`eboq-form-mount-${safeBoqId}`), authDraftKey, authDraftBase, () => eboqMaterialRows);
 

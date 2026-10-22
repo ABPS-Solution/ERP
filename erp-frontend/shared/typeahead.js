@@ -122,8 +122,10 @@ async function initializeCreateBOQPanel() {
   // on a return visit the in-memory form is still populated (the
   // isFirstVisit gate above), so a restore prompt would be noise.
   if (typeof abpsDraftAttach === "function") {
-    abpsDraftAttach("createBOQ", "cboq-form-body", cboqDraftState);
-    if (isFirstVisit) {
+    // Per-product saving (design/boq-progress.js) replaced the single
+    // "createBOQ" slot; an old single draft is still offered once below.
+    if (typeof cboqProgAttach === "function") { cboqProgAttach(); cboqProgRenderList(); }
+    if (isFirstVisit && abpsDraftRead("createBOQ")) {
       abpsDraftOfferRestore("createBOQ", "cboq-form-body", cboqApplyDraftState, { hasFileUploads: true });
     }
   }

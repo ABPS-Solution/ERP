@@ -876,16 +876,28 @@ function authBoqDraftLoad(key, base) {
   const d = abpsDraftRead(key);
   const st = d && d.payload && d.payload.state;
   if (!st || !Array.isArray(st.rows)) return null;
-  if (st.base !== base) { abpsDraftClear(key); return null; }
+  if (st.base !== base) { abpsDraftClear(key); window._authBoqDroppedKey = key; return null; }
   return { rows: st.rows, fields: d.payload.fields || null };
 }
-function authBoqDraftNote(containerEl) {
-  return; // note removed (15 Oct 2026)
+// 22 Oct 2026: restored work shows a note with Discard; work dropped because
+// the BOQ changed meanwhile shows a warning (design/boq-progress.js helpers).
+function authBoqDraftNote(containerEl, discardJs) {
   if (!containerEl) return;
-  const note = document.createElement("div");
-  note.style.cssText = "background:#ecfdf5; border:1px solid #6ee7b7; color:#065f46; padding:8px 12px; border-radius:6px; font-size:0.82rem; font-weight:700; margin-bottom:12px;";
-  note.textContent = "Continuing where you left off: your earlier edits and Costing Verified ticks on this BOQ are back.";
-  containerEl.prepend(note);
+  boqProgNote(containerEl, "Your earlier edits and Costing Verified ticks on this BOQ are back.", discardJs || "");
+}
+function authBoqDroppedNote(containerEl, key) {
+  if (window._authBoqDroppedKey !== key) return;
+  window._authBoqDroppedKey = null;
+  boqProgWarn(containerEl, "Your earlier unsaved edits on this BOQ were dropped because the BOQ was changed since.");
+}
+// kind 'auth': a, b = boqId, mode (Authorize BOQ card); kind 'rev': a = updateId.
+async function authBoqDiscard(key, kind, a, b) {
+  if (!await abpsConfirm("Discard your unsaved edits and ticks on this BOQ?")) return;
+  abpsDraftClear(key);
+  try {
+    if (kind === "auth") { await toggleAuthBOQCardExpansion(a, b); await toggleAuthBOQCardExpansion(a, b); }
+    else { await toggleBOQRevisionExpansion(a); await toggleBOQRevisionExpansion(a); }
+  } catch (_) {}
 }
 // Printable unauthorized copy (watermarked, costed) of a BOQ / revision
 // waiting for authorization. Made by the server right after submission.
