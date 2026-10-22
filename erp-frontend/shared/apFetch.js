@@ -884,8 +884,16 @@ async function sysStartSystem() {
   if (!code) { if (err) err.textContent = "Enter the start code."; return; }
   if (btn) { btn.disabled = true; btn.textContent = "Starting..."; }
   try {
-    const r = await sysPublicPost({ action: "startSystem", code }, 30000);
-    if (!r.success) { if (err) err.textContent = r.error || "Could not start."; if (btn) { btn.disabled = false; btn.textContent = "Start ERP"; } return; }
+    // The server may still be finishing the nightly stop or backup: retry
+    // every 15 seconds for up to 4 minutes.
+    let r = null;
+    for (let tries = 0; tries < 16; tries++) {
+      r = await sysPublicPost({ action: "startSystem", code }, 50000);
+      if (r.success || !r.busy) break;
+      if (err) { err.style.color = "#475569"; err.textContent = "The server is finishing another task. Trying again, please wait..."; }
+      await new Promise(res => setTimeout(res, 15000));
+    }
+    if (!r || !r.success) { if (err) { err.style.color = "#b91c1c"; err.textContent = (r && r.error) || "Could not start."; } if (btn) { btn.disabled = false; btn.textContent = "Start ERP"; } return; }
     sysShowOffHoursScreen({ status: "starting" });
   } catch (e) {
     if (err) err.textContent = "Could not reach the server. Try again.";

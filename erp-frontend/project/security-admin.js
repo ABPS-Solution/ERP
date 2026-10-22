@@ -1353,6 +1353,11 @@ async function saveOfficeHoursKeepOn(clear) {
   try {
     const d = await apFetch({ action: "setDbKeepOnUntil", until: clear ? null : new Date(v).toISOString() });
     if (!d.success) { if (msg) { msg.style.color = "#b91c1c"; msg.textContent = d.error || "Could not save."; } return; }
+    if (d.stopping) {
+      const body = document.getElementById("sa-officehours-body");
+      if (body) body.innerHTML = `<div style="background:#fffbeb; border:1px solid #fcd34d; color:#92400e; padding:10px 14px; border-radius:6px; font-weight:700;">ERP is switching off now. It will be unavailable in a minute or two, and back at 7:55 am (or with the start code).</div>`;
+      return;
+    }
     loadOfficeHours();
   } catch (e) { if (msg) msg.textContent = e.message; }
 }
