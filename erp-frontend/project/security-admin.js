@@ -55,18 +55,29 @@ function saViewerIsSuperAdmin() {
   return localStorage.getItem("erpIsUserSuperAdminGlobal") === "true";
 }
 
-async function initializeSecurityAdminPanel() {
-  const loginAnywhereTabBtn = document.getElementById("sa-tab-users");
-  if (loginAnywhereTabBtn) loginAnywhereTabBtn.style.display = saViewerIsSuperAdmin() ? "" : "none";
-  const emailInboxesTabBtn = document.getElementById("sa-tab-emailinboxes");
-  if (emailInboxesTabBtn) emailInboxesTabBtn.style.display = saViewerIsSuperAdmin() ? "" : "none";
-  const signatureTabBtn = document.getElementById("sa-tab-signature");
-  if (signatureTabBtn) signatureTabBtn.style.display = saViewerIsSuperAdmin() ? "" : "none";
-  const autoPrnTabBtn = document.getElementById("sa-tab-autoprn");
-  if (autoPrnTabBtn) autoPrnTabBtn.style.display = saViewerIsSuperAdmin() ? "" : "none";
+// One screen, two sections (22 Oct 2026): "Security & Login Access" (who can
+// do what and log in where) and "System Settings" (everything else). The
+// card opened decides which tabs show.
+const SA_TAB_GROUPS = {
+  access: ['permissions', 'docaccess', 'users', 'pins', 'registeredpcs', 'log'],
+  system: ['networks', 'holidays', 'emailinboxes', 'pdfkeys', 'signature', 'autoprn'],
+};
+const SA_SUPER_ONLY_TABS = ['users', 'emailinboxes', 'signature', 'autoprn'];
+let saActiveSection = 'access';
+
+async function initializeSecurityAdminPanel(section) {
+  saActiveSection = section === 'system' ? 'system' : 'access';
+  const heading = document.getElementById("sa-panel-heading");
+  if (heading) heading.textContent = saActiveSection === 'system' ? 'System Settings' : 'Security & Login Access';
+  Object.values(SA_TAB_GROUPS).flat().forEach(t => {
+    const b = document.getElementById(`sa-tab-${t}`);
+    if (!b) return;
+    const inSection = SA_TAB_GROUPS[saActiveSection].includes(t);
+    b.style.display = inSection && (!SA_SUPER_ONLY_TABS.includes(t) || saViewerIsSuperAdmin()) ? "" : "none";
+  });
   const pinsModeBtn = document.getElementById("pinmode-btn-changepin");
   if (pinsModeBtn) pinsModeBtn.style.display = saViewerIsSuperAdmin() ? "" : "none";
-  switchSecurityAdminTab('permissions');
+  switchSecurityAdminTab(SA_TAB_GROUPS[saActiveSection][0]);
   await Promise.all([
     loadSecurityAdminUsers(),
     loadAllowedNetworks(),
@@ -94,7 +105,8 @@ function switchSecurityAdminTab(tab) {
   // — its tab button is already hidden for anyone else, but this refuses
   // a direct call too (e.g. a stale bookmarked handler), same
   // defense-in-depth spirit as the server-side gate on its own routes.
-  if ((tab === 'users' || tab === 'emailinboxes' || tab === 'signature' || tab === 'autoprn') && !saViewerIsSuperAdmin()) tab = 'permissions';
+  const sectionTabs = SA_TAB_GROUPS[saActiveSection];
+  if (!sectionTabs.includes(tab) || (SA_SUPER_ONLY_TABS.includes(tab) && !saViewerIsSuperAdmin())) tab = sectionTabs[0];
   // 'devices' (Trusted Devices) retired 17 Sep 2026 — the mechanism it
   // shows (admin_db.trusted_devices) is only ever populated by Google
   // Sign-In from an office IP, and Google Sign-In has been hidden from

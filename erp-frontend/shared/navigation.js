@@ -524,6 +524,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-accounts-dashboard-wrapper")) document.getElementById("mod-accounts-dashboard-wrapper").style.display = canViewAccountsDashboard ? "block" : "none";
   if (document.getElementById("mod-itemcode"))     document.getElementById("mod-itemcode").style.display     = canItemCode     ? "block" : "none";
   if (document.getElementById("mod-security"))     document.getElementById("mod-security").style.display     = canSecurity     ? "block" : "none";
+  if (document.getElementById("mod-system-settings")) document.getElementById("mod-system-settings").style.display = canSecurity ? "block" : "none";
 
   // Dashboard-wrapper pills (show entire pill wrapper, not just a plain card)
   // — same shape as Portal's own dashMap loop.

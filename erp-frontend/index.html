@@ -1563,7 +1563,8 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         </div>
       </div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
-        <div class="menu-card" id="mod-security" onclick="switchActiveDashboardModule('security'); initializeSecurityAdminPanel();"><span class="mc-label">Security &amp; Login Access</span></div>
+        <div class="menu-card" id="mod-security" onclick="switchActiveDashboardModule('security'); initializeSecurityAdminPanel('access');"><span class="mc-label">Security &amp; Login Access</span></div>
+        <div class="menu-card" id="mod-system-settings" onclick="switchActiveDashboardModule('security'); initializeSecurityAdminPanel('system');"><span class="mc-label">System Settings</span></div>
       </div>
     </div>
 
@@ -6274,7 +6275,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <button class="nav-btn-styled" onclick="exitSecurityAdminBackToMenu()">Return to Main Dashboard</button>
     </div>
     <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-    <h2 class="panel-title">Security &amp; Login Access</h2>
+    <h2 class="panel-title" id="sa-panel-heading">Security &amp; Login Access</h2>
     <div id="sa-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
     <div style="display:flex; gap:10px; margin-bottom:22px; align-items:center; flex-wrap:wrap;">
