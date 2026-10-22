@@ -494,6 +494,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-store-gate"))             document.getElementById("mod-store-gate").style.display             = canGateEntry ? "block" : "none";
   if (document.getElementById("mod-store-entry"))            document.getElementById("mod-store-entry").style.display            = canStoreEntryAndGrn ? "block" : "none";
   if (document.getElementById("mod-expected-inbounds"))      document.getElementById("mod-expected-inbounds").style.display      = canExpectedInbounds ? "block" : "none";
+  if (document.getElementById("mod-search-inward"))          document.getElementById("mod-search-inward").style.display          = userPermissionsObject.searchInwardMaterial === true ? "block" : "none";
   if (document.getElementById("mod-stock-sweep"))            document.getElementById("mod-stock-sweep").style.display            = canReserveStoreStock ? "block" : "none";
   if (document.getElementById("mod-boq-increase-approvals")) document.getElementById("mod-boq-increase-approvals").style.display = canApproveBOQIncrease ? "block" : "none";
   if (document.getElementById("mod-material-change-approvals")) document.getElementById("mod-material-change-approvals").style.display = userPermissionsObject.approveMaterialChange === true ? "block" : "none";
@@ -562,7 +563,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   // Batch 6 (16 Sep 2026): Store's own screens landed, so this is no
   // longer keyed on Project Invoice Generation alone.
   const storeBlock = document.getElementById("dashboard-store-department-header-block");
-  if (storeBlock) storeBlock.style.display = (canCreateProjectDispatchInvoice || canAuthorizeProjectDispatchInvoice || canReviseProjectDispatchInvoice || canAuthorizeProjectDispatchInvoiceRevision || canPurchaseRequestNote || canAuthorizePRN
+  if (storeBlock) storeBlock.style.display = (userPermissionsObject.searchInwardMaterial === true || canCreateProjectDispatchInvoice || canAuthorizeProjectDispatchInvoice || canReviseProjectDispatchInvoice || canAuthorizeProjectDispatchInvoiceRevision || canPurchaseRequestNote || canAuthorizePRN
     || canRevisePRN || canAuthorizePRNRevision || canReserveStoreStock || canGateEntry || canStoreEntryAndGrn
     || canExpectedInbounds || canApproveBOQIncrease || canReleaseTicket || canSearchStoreMat || canViewLiveStock
     || canViewLiveFinishedStock || canLiveSpareStoreStock || canMaterialOutward || canAuthorizeMaterialOutward || canViewStoreDashboard)
@@ -795,6 +796,17 @@ function switchActiveDashboardModule(targetSectionId) {
     if (centerTitleEPMR)  centerTitleEPMR.style.visibility  = "hidden";
     document.getElementById("canvas-module-expected-processing-returns").style.display = "block";
     initializeExpectedProcessingReturnsWorkspace();
+    return;
+  }
+  if (targetSectionId === "search-inward") {
+    document.getElementById("module-store-workspace-enclosure-panel").style.display = "block";
+    document.querySelectorAll("#module-store-workspace-enclosure-panel .workspace-panel").forEach(p => p.style.display = "none");
+    const leftControlsSIW = document.getElementById("store-panel-left-controls");
+    const centerTitleSIW  = document.getElementById("store-panel-center-title");
+    if (leftControlsSIW) leftControlsSIW.style.visibility = "hidden";
+    if (centerTitleSIW)  centerTitleSIW.style.visibility  = "hidden";
+    document.getElementById("canvas-module-search-inward").style.display = "block";
+    initializeSearchInwardMaterialWorkspace();
     return;
   }
   if (targetSectionId === "search-material-outward") {
