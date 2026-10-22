@@ -135,7 +135,7 @@ function iwsMoney(n) { return "₹" + formatINRComma(n || 0); }
 function iwsStatusBadge(r) {
   const bad = Number(r.notOk) > 0 || Number(r.missing) > 0;
   const color = r.status === "QA Passed" ? (bad ? "#b45309" : "#15803d") : "#1d4ed8";
-  return `<span style="display:inline-block; padding:3px 10px; border-radius:999px; font-size:0.72rem; white-space:nowrap; font-weight:700; color:#fff; background:${color};">${escapeHtml(r.status)}${bad ? " · Not OK / Missing" : ""}</span>`;
+  return `<span style="display:inline-block; padding:3px 10px; border-radius:999px; font-size:0.72rem; white-space:normal; line-height:1.3; font-weight:700; color:#fff; background:${color};">${escapeHtml(r.status)}${bad ? " · Not OK / Missing" : ""}</span>`;
 }
 
 function iwsRender(d) {
@@ -184,10 +184,10 @@ function iwsRender(d) {
     const statusRow = g.lines.map(l => l.r).sort((a, b) => stageOrder.indexOf(a.status) - stageOrder.indexOf(b.status))[0];
     const anyBad = g.lines.some(({ r }) => (Number(r.notOk) || 0) + (Number(r.missing) || 0) > 0);
     return `
-    <tr onclick="iwsToggleDetail(${gi})" style="cursor:pointer;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
+    <tr>
       <td style="padding:8px; white-space:nowrap; vertical-align:middle; ${fb}">${escapeHtml(formatOrdinalDate(f.ts))}</td>
-      <td style="padding:8px; text-align:center; vertical-align:middle; ${cb}">${iwsStatusBadge({ ...statusRow, notOk: anyBad ? 1 : 0, missing: 0 })}</td>
-      <td style="padding:0; vertical-align:middle; ${cb}">
+      <td style="padding:6px 4px; text-align:center; vertical-align:middle; width:110px; ${cb}">${iwsStatusBadge({ ...statusRow, notOk: anyBad ? 1 : 0, missing: 0 })}</td>
+      <td style="padding:0; vertical-align:middle; min-width:170px; ${cb}">
         <div style="padding:8px; font-family:monospace; font-weight:700;">${escapeHtml(f.gateNumber || "")}</div>
         <div style="padding:8px; font-family:monospace; color:#64748b; font-size:0.82rem; ${sub}">${escapeHtml(f.grnNumber || "No GRN yet")}</div></td>
       <td style="padding:8px; font-weight:600; vertical-align:middle; ${cb}">${escapeHtml(f.vendorName || "")}</td>
@@ -198,19 +198,18 @@ function iwsRender(d) {
       <td style="padding:0; font-family:monospace; font-weight:700; ${cb}">${subCells(g.lines, r => fmtQty(r.received))}</td>
       <td style="padding:0; font-family:monospace; ${cb}">${subCells(g.lines, r => { const b = (Number(r.notOk) || 0) + (Number(r.missing) || 0); return b ? `<span style="color:#b91c1c; font-weight:800;">${fmtQty(b)}</span>` : `<span style="color:#94a3b8;">-</span>`; })}</td>
       <td style="padding:0; font-family:monospace; color:#15803d; font-weight:700; ${cb}">${subCells(g.lines, r => r.ok == null ? "-" : fmtQty(r.ok))}</td>
-    </tr>
-    <tr id="iws-detail-${gi}" style="display:none;"><td colspan="11" style="background:#f1f5f9; padding:14px; border-bottom:2px solid #94a3b8;"></td></tr>`;
+    </tr>`;
   }).join("");
   feed.innerHTML = head + `<div style="overflow-x:auto; border:2px solid #94a3b8; border-radius:var(--radius);">
     <table class="store-basket-data-table prn-view-table" style="width:100%; border-collapse:collapse; min-width:1150px; margin-top:0;">
     <thead><tr style="background:#f8fafc;">
-      ${th("Gate Entry Date", "text-align:left;" + fb)}${th("Status", "text-align:center;" + cb)}${th("Gate / GRN No", "text-align:left;" + cb)}${th("Vendor Name", "text-align:left;" + cb)}${th("Invoice / Challan", "text-align:left;" + cb)}
+      ${th("Gate Entry Date", "text-align:left;" + fb)}${th("Status", "text-align:center; width:110px;" + cb)}${th("Gate / GRN No", "text-align:left; min-width:170px;" + cb)}${th("Vendor Name", "text-align:left;" + cb)}${th("Invoice / Challan", "text-align:left;" + cb)}
       ${th("PO No", "text-align:left;" + cb)}${th("Material Name", "text-align:left; min-width:240px;" + cb)}
       ${th("Unit", "text-align:center;" + cb)}${th("Received Qty", "text-align:center;" + cb)}${th("Not OK / Missing", "text-align:center;" + cb)}${th("OK Qty", "text-align:center;" + cb)}
-    </tr></thead><tbody>${rows}</tbody></table></div>
-    <div style="font-size:0.78rem; color:var(--muted); margin-top:8px;">Click a Gate Entry to see each material's timeline, where the stock went and any Not OK / Missing quantity.</div>`;
+    </tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
+// Unused since 23 Oct 2026 (rows no longer expand); kept, flagged.
 async function iwsToggleDetail(gi) {
   const tr = document.getElementById(`iws-detail-${gi}`);
   if (!tr) return;
