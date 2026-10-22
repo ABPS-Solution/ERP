@@ -204,7 +204,7 @@ async function submitMaterialRequestTicketToBackend() {
   if (basketExcessItems(chosenStoreTargetScopeStr).length && !(document.getElementById("boq-increase-justification-notes-input")?.value || "").trim()) {
     if (feedbackBanner) {
       feedbackBanner.style.cssText = "display: block; background: #fff3c7; border-color: #b45309; color: #b45309; padding: 10px; margin-bottom: 12px; border-left: 4px solid #b45309; text-align: left;";
-      feedbackBanner.innerHTML = `<strong>Compulsory Input Missing:</strong> Explain why the extra material is needed (rows over the Job Card limit).`;
+      feedbackBanner.innerHTML = `<strong>Compulsory Input Missing:</strong> Explain why the extra material is needed (rows over the BOQ limit).`;
       feedbackBanner.scrollIntoView({ behavior: "smooth", block: "center" });
     }
     return;
@@ -231,6 +231,7 @@ async function submitMaterialRequestTicketToBackend() {
       requestedBy: operatorSignatureName,
       projectId: projectId,
       jobCardNumber: jobCardNumberVal,
+      jobCardNumbers: jobCardNumberVal ? ticketSelectedJobCardsList() : [],
       boqId: (isServiceSubmit && !isLegacySubmit) ? boqIdVal : "",
       legacyCompanyName: legacyCompanyNameVal,
       outwardPurpose: outwardPurposeVal,
@@ -620,7 +621,7 @@ async function addItemToShoppingBasketRow() {
       restoreAddBtn();
       abpsAlert(ticketIsServiceItemMode_()
         ? `Only ${fmtQty(jcmMatchFGAdd.remainingQty)} ${jcmMatchFGAdd.unitType || 'units'} of ${materialName} are currently in stock. Reduce the quantity.`
-        : `Finished Goods Store Lockout: Only ${fmtQty(jcmMatchFGAdd.remainingQty)} ${jcmMatchFGAdd.unitType || 'units'} of ${materialName} remain allotted to this Job Card. Reduce the quantity — Finished Goods Store requests cannot exceed the Job Card allotment.`);
+        : `Finished Goods Store Lockout: Only ${fmtQty(jcmMatchFGAdd.remainingQty)} ${jcmMatchFGAdd.unitType || 'units'} of ${materialName} remain allotted to this BOQ. Reduce the quantity — Finished Goods Store requests cannot exceed the Job Card allotment.`);
       return;
     }
 
@@ -665,7 +666,7 @@ async function addItemToShoppingBasketRow() {
       const memoComing = Math.max(0, Number(consMatch.memoComing) || 0);
       const memoQty = Math.max(0, Math.round((shortQty - memoComing) * 1000) / 1000);
       if (shortQty > 0 && memoComing > 0) {
-        abpsAlert(`${fmtQty(memoComing)} ${consMatch.unitType || 'units'} of ${materialName} is already requested / on order through Production Memo for this Job Card.`
+        abpsAlert(`${fmtQty(memoComing)} ${consMatch.unitType || 'units'} of ${materialName} is already requested / on order through Production Memo for this BOQ.`
           + (memoQty > 0 ? ` Only ${fmtQty(memoQty)} more will be asked.` : ` Nothing more will be asked; issue the rest when it arrives.`));
       }
       const deptForMemo = document.getElementById("ticket-department-outgoing-dropdown")?.value || "";
@@ -945,6 +946,7 @@ async function executeBOQLimitIncreaseRequestTransmissionPipeline() {
       operatorName: operatorName,
       projectId: projectId,
       jobCardNumber: document.getElementById("ticket-job-card-dropdown")?.value || "",
+      jobCardNumbers: ticketSelectedJobCardsList(),
       departmentOutgoing: departmentVal,
       expectedReturnItems: departmentVal === "Processing"
         ? (window.ticketExpectedReturnRows || []).map(r => ({ itemCode: r.itemCode, quantity: Number(r.quantity) }))
@@ -1074,7 +1076,18 @@ function selectTicketBOQ(boqId, label) {
   handleCreateTicketBOQChange(boqId);
 }
 
+// BOQ-level tickets (Oct 2026): one or more Job Cards are ticked, only to be
+// recorded. The hidden #ticket-job-card-dropdown keeps the first one, so the
+// material list / stock pill (which read the BOQ's figures) work unchanged.
+window.ticketSelectedJobCards = [];
+function ticketShortJcLabel(jc) { return (String(jc).match(/^JC_Set-\d+/) || [jc])[0]; }
+function ticketSelectedJobCardsList() {
+  const first = document.getElementById("ticket-job-card-dropdown")?.value || "";
+  const list = (window.ticketSelectedJobCards || []).filter(Boolean);
+  return list.length ? list : (first ? [first] : []);
+}
 function ticketJobCardDisplayReset(text) {
+  window.ticketSelectedJobCards = [];
   const disp = document.getElementById("ticket-job-card-display");
   const textEl = document.getElementById("ticket-job-card-display-text");
   const hidden = document.getElementById("ticket-job-card-dropdown");
@@ -1091,10 +1104,34 @@ function ticketJobCardDisplayEnable() {
 function ticketJobCardPopulate(options) {
   const list = document.getElementById("ticket-job-card-dropdown-list");
   if (!list) return;
-  list.innerHTML = options.map(o => `
-    <div onclick="event.stopPropagation(); selectTicketJobCard('${o.value.replace(/'/g,"\\'")}', \`${o.label.replace(/\`/g,"'")}\`)"
-      style="padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem; line-height:1.35;"
-      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${o.label}</div>`).join("");
+  const picked = new Set(window.ticketSelectedJobCards || []);
+  list.innerHTML = `<div style="padding:6px 10px; font-size:0.74rem; color:var(--muted); border-bottom:1px solid #e2e8f0;">Tick the Job Card(s) this material is for. The BOQ limit applies; the issued quantity is shared equally across them.</div>`
+    + options.map(o => `
+    <label onclick="event.stopPropagation();" style="display:flex; gap:8px; align-items:center; padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem; line-height:1.35;"
+      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
+      <input type="checkbox" data-jc="${escapeHtml(o.value)}" style="width:auto; margin:0;" ${picked.has(o.value) ? "checked" : ""} onchange="toggleTicketJobCard(${jsArg(o.value)}, this.checked)" />
+      <span>${escapeHtml(o.label)}</span></label>`).join("");
+}
+// Re-tick the boxes after a restore (the list was built before).
+function ticketJobCardPopulateRefresh() {
+  const picked = new Set(window.ticketSelectedJobCards || []);
+  document.querySelectorAll('#ticket-job-card-dropdown-list input[type=checkbox]').forEach(cb => {
+    cb.checked = picked.has(cb.dataset.jc);
+  });
+}
+function toggleTicketJobCard(jobCardNumber, on) {
+  const hidden = document.getElementById("ticket-job-card-dropdown");
+  const before = hidden.value;
+  const set = (window.ticketSelectedJobCards || []).filter(j => j !== jobCardNumber);
+  if (on) set.push(jobCardNumber);
+  set.sort((a, b) => (parseInt((a.match(/Set-(\d+)/) || [])[1], 10) || 0) - (parseInt((b.match(/Set-(\d+)/) || [])[1], 10) || 0));
+  window.ticketSelectedJobCards = set;
+  hidden.value = set[0] || "";
+  document.getElementById("ticket-job-card-display-text").textContent = set.length
+    ? set.map(ticketShortJcLabel).join(", ") + (set.length > 1 ? ` (${set.length} Job Cards)` : "")
+    : "— Tick Job Card(s) —";
+  // Same BOQ, same figures: only reload when going from none to some, or back.
+  if (!before !== !hidden.value) handleTicketJobCardChange(hidden.value);
 }
 function toggleTicketJobCardDropdown() {
   const disp = document.getElementById("ticket-job-card-display");
@@ -1830,12 +1867,10 @@ function handleCreateTicketBOQChange(chosenBoqId) {
     if (jobCardLabel) jobCardLabel.style.color = "var(--warn)";
     return;
   }
-  ticketJobCardDisplayReset("— Select Job Card Number —");
-  // Several Job Cards of this BOQ in one bulk ticket (17 Oct 2026); not for
-  // Processing, whose expected returns belong to one Job Card.
-  const bulkOption = filtered.length >= 2 && document.getElementById("ticket-department-outgoing-dropdown")?.value !== "Processing"
-    ? [{ value: "__BULK__", label: "Several Job Cards (bulk ticket)" }] : [];
-  ticketJobCardPopulate(bulkOption.concat(filtered.map(jc => ({ value: jc.jobCardNumber, label: `${jc.jobCardNumber} (Set ${jc.setNumber})` }))));
+  ticketJobCardDisplayReset("— Tick Job Card(s) —");
+  // The bulk ticket option (17 Oct 2026) is hidden: one ticket can now be for
+  // several Job Cards (BOQ-level limits). ticketBulkOpen / submitBulkMaterialTicket kept, unused.
+  ticketJobCardPopulate(filtered.map(jc => ({ value: jc.jobCardNumber, label: `Set ${jc.setNumber}: ${jc.jobCardNumber}` })));
   ticketJobCardDisplayEnable();
   if (jobCardLabel) jobCardLabel.style.color = "var(--brand)";
 }
@@ -2016,7 +2051,7 @@ async function loadItemCatalogForSelectedProjectAndStore() {
         itemDrop.disabled = false; qtyInp.disabled = false; addBtn.disabled = false;
         addBtn.style.cursor = "pointer";
       } else {
-        itemDrop.innerHTML = '<option value="">⚠️ No materials allotted to this Job Card</option>';
+        itemDrop.innerHTML = '<option value="">⚠️ No materials allotted to this BOQ</option>';
         addZone.style.opacity = "0.5";
       }
       return;
@@ -2117,7 +2152,7 @@ async function loadItemCatalogForSelectedProjectAndStore() {
         itemDrop.disabled = false; qtyInp.disabled = false; addBtn.disabled = false;
         addBtn.style.cursor = "pointer";
       } else {
-        itemDrop.innerHTML = '<option value="">⚠️ No materials allotted to this Job Card</option>';
+        itemDrop.innerHTML = '<option value="">⚠️ No materials allotted to this BOQ</option>';
         addZone.style.opacity = "0.5";
       }
     }
@@ -2440,6 +2475,7 @@ function cmitDraftSnapshot() {
     store: val("ticket-selected-store-scope-toggle"),
     basket: dynamicTicketShoppingBasketArray || [],
     expectedReturns: window.ticketExpectedReturnRows || [],
+    jobCards: ticketSelectedJobCardsList(),
   };
 }
 function cmitDraftSaveSoon() {
@@ -2486,7 +2522,9 @@ async function cmitDraftRestore(d) {
       }
       if (d.jobCard) {
         await cmitWaitFor(() => (document.getElementById("ticket-job-card-display") || {}).dataset?.disabled === "0");
-        selectTicketJobCard(d.jobCard, d.jobCardLabel || d.jobCard);
+        const jcs = Array.isArray(d.jobCards) && d.jobCards.length ? d.jobCards : [d.jobCard];
+        jcs.forEach(j => toggleTicketJobCard(j, true));
+        ticketJobCardPopulateRefresh();
       }
     }
     if (d.store) {

@@ -53,9 +53,9 @@ function renderBOQIncreaseTicketCard(ticket) {
         <td style="border:1px solid var(--border); padding:8px; text-align:center; font-weight:600;">${fmtQty(reqQty)}</td>
         <td style="border:1px solid var(--border); padding:8px; text-align:center; font-weight:700; color:#b45309;">${fmtQty(item.boqExceedAmount)}</td>
         <td style="border:1px solid var(--border); padding:8px; text-align:center;">
-          <input type="number" data-itemcode="${item.itemCode}" data-min="${remQty}" data-max="${reqQty}"
+          <input type="number" data-itemcode="${item.itemCode}" data-min="0" data-max="${reqQty}"
             id="boq-final-qty-${ticket.ticketId}-${safeCode}"
-            value="${reqQty}" min="${remQty}" max="${reqQty}" step="any"
+            value="${reqQty}" min="0" max="${reqQty}" step="any"
             onblur="clampBOQFinalTicketQty(this)"
             style="width:100px; padding:5px 6px; text-align:center; font-family:monospace; font-weight:700; border:2px solid #64748b; border-radius:4px;" />
         </td>
@@ -67,7 +67,8 @@ function renderBOQIncreaseTicketCard(ticket) {
       <div class="contact-summary-title-info" style="width:100%;">
         <div class="meta-row-line-block">
           <span style="font-family:monospace; font-weight:800; background:#fef3c7; color:#b45309; padding:3px 8px; font-size:0.85rem; border-radius:3px;">${ticket.ticketId}</span>
-          <strong style="margin-left:10px; color:var(--brand); font-size:0.9rem;">${ticket.jobCardNumber || "—"}</strong>
+          <strong style="margin-left:10px; color:var(--brand); font-size:0.9rem;">${escapeHtml(ticket.boqId || ticket.jobCardNumber || "—")}</strong>
+          ${(ticket.jobCardNumbers || []).length ? `<span style="margin-left:8px; font-size:0.8rem; color:var(--muted);">Job Card(s): ${escapeHtml(ticket.jobCardNumbers.map(j => (String(j).match(/^JC_Set-d+/) || [j])[0]).join(", "))}</span>` : ""}
         </div>
         <div class="meta-row-line-block" style="margin-top:8px; font-size:0.85rem;">
           <span>Project ID:</span> <strong style="color:#111827; font-family:monospace;">${escapeHtml(ticket.projectId || "—")}</strong>
@@ -92,9 +93,9 @@ function renderBOQIncreaseTicketCard(ticket) {
             <tr style="background:var(--highlight-bg); text-align:left;">
               <th style="border:1px solid var(--border); padding:8px;">Material Name</th>
               <th style="border:1px solid var(--border); padding:8px; text-align:center;">Unit</th>
-              <th style="border:1px solid var(--border); padding:8px; text-align:center;">JC Allotted Qty</th>
-              <th style="border:1px solid var(--border); padding:8px; text-align:center;">JC Used Qty</th>
-              <th style="border:1px solid var(--border); padding:8px; text-align:center;">JC Remaining Qty</th>
+              <th style="border:1px solid var(--border); padding:8px; text-align:center;">BOQ Allotted Qty</th>
+              <th style="border:1px solid var(--border); padding:8px; text-align:center;">BOQ Used Qty</th>
+              <th style="border:1px solid var(--border); padding:8px; text-align:center;">BOQ Remaining Qty</th>
               <th style="border:1px solid var(--border); padding:8px; text-align:center;">Requested Qty</th>
               <th style="border:1px solid var(--border); padding:8px; text-align:center;">Extra Qty</th>
               <th style="border:1px solid var(--border); padding:8px; text-align:center;">Final Ticket Qty</th>
@@ -147,7 +148,7 @@ async function submitBOQIncreaseDecision(ticketId) {
   });
   if (hasInvalid || itemDecisions.length === 0) {
     feedback.style.cssText = "display:block; background:#fff3c7; border-left:4px solid #b45309; color:#b45309; padding:12px; margin-bottom:12px;";
-    feedback.textContent   = "Final Ticket Qty must be set, and can never be less than JC Remaining Qty, for every item.";
+    feedback.textContent   = "Final Ticket Qty must be set for every item (0 up to the quantity asked).";
     return;
   }
   const adminAction = "accept";
@@ -213,7 +214,7 @@ async function checkCoverageAndApprove(ticketId, projectId, btn, storeType) {
   }
   const overrunItem = findActualQtyOverJcRemaining(ticketId);
   if (overrunItem) {
-    abpsAlert(`The Actual Quantity for ${overrunItem.materialName} is more than the JC Remaining Qty. Either reduce the Actual Quantity to match the JC Remaining Qty, or reject the entire ticket and have them create a new ticket with an Excess Material Request.`);
+    abpsAlert(`The Actual Quantity for ${overrunItem.materialName} is more than the BOQ Remaining Qty. Either reduce the Actual Quantity to match the BOQ Remaining Qty, or reject the entire ticket and have them create a new ticket with an Excess Material Request.`);
     return;
   }
   const invalidSpare = findInvalidSpareAllocation(ticketId);

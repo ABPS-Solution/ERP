@@ -23,14 +23,14 @@ function renderBOQLimitExceededApprovalRequestWorkspaceBlock(materialsList) {
 
   if (inlineFeedbackBanner) {
     inlineFeedbackBanner.style.cssText = "display: block; background: #fffaf0; border-left: 4px solid #dd6b20; color: #c05621; padding: 12px; font-size: 0.82rem; font-weight: 700; text-align: left; margin-bottom: 12px;";
-    inlineFeedbackBanner.innerHTML = `Requested Materials <strong>{ ${materialsList.join(", ")} }</strong> are over the Job Card limit. They will go to Approve Excess Material Request when you generate the ticket; explain why below, or reduce the quantity.`;
+    inlineFeedbackBanner.innerHTML = `Requested Materials <strong>{ ${materialsList.join(", ")} }</strong> are over the BOQ limit. They will go to Approve Excess Material Request when you generate the ticket; explain why below, or reduce the quantity.`;
   }
 
   // Overwrite submission controls row layout area to mount the justification text box window natively
   bottomActionControlsRow.innerHTML = `
     <div style="width: 100%; text-align: left; background: #f8fafc; border: 1px solid var(--border); padding: 12px; border-radius: var(--radius); display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px;">
       <label class="field-label" style="margin: 0; color: var(--brand); font-weight: bold;">Explain Request / Justification *</label>
-      <textarea id="boq-increase-justification-notes-input" placeholder="Specify why additional material is required for this Job Card..." style="min-height: 55px; padding: 8px; font-family: inherit; font-size: 0.85rem; border-color: var(--brand);"></textarea>
+      <textarea id="boq-increase-justification-notes-input" placeholder="Specify why additional material is required for this BOQ..." style="min-height: 55px; padding: 8px; font-family: inherit; font-size: 0.85rem; border-color: var(--brand);"></textarea>
       <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px;">
         <button class="nav-btn-styled" onclick="clearFullBasketDraftState()" style="background: #718096; padding: 9px 20px; font-weight: 700;">Clear Basket</button>
         <button class="nav-btn-styled" id="submit-ticket-final-btn" onclick="submitMaterialRequestTicketToBackend()" style="background: var(--accent); padding: 9px 20px; font-weight: 700;">Generate Material Ticket</button>
@@ -198,7 +198,9 @@ ${spareCellsHtml}
             ${ticket.legacyCompanyName
               ? `<span style="background:#fef3c7; color:#92400e; font-weight:700; padding:2px 6px; border-radius:4px; margin-right:8px;">LEGACY</span><span>Company:</span><strong style="margin-right:15px; color:var(--brand);">${escapeHtml(ticket.legacyCompanyName)}</strong>`
               : `<span>Project ID:</span><strong style="margin-right:15px; color:var(--brand);">${ticket.projectId || "None"}</strong>`}
-            <span>Job Card Number:</span><strong style="color:var(--brand);">${ticket.jobCardNumber || "—"}</strong>
+            ${(ticket.jobCardNumbers || []).length > 1
+              ? `<span>BOQ:</span><strong style="margin-right:15px; color:var(--brand);">${escapeHtml(ticket.boqId || "—")}</strong><span>Job Cards:</span><strong style="color:var(--brand);">${escapeHtml(ticket.jobCardNumbers.map(j => (String(j).match(/^JC_Set-d+/) || [j])[0]).join(", "))}</strong>`
+              : `<span>Job Card Number:</span><strong style="color:var(--brand);">${ticket.jobCardNumber || "—"}</strong>`}
           </div>
         </div>
       </div>
@@ -218,8 +220,8 @@ ${spareCellsHtml}
             <thead>
               <tr style="border-bottom:1px solid #e2e8f0;">
                 <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted);">Material Name</th>
-                <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:center;">JC Allotted Qty</th>
-                <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:center;">JC Remaining Qty</th>
+                <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:center;">BOQ Allotted Qty</th>
+                <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:center;">BOQ Remaining Qty</th>
                 <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:center;">Unit</th>
                 <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:center;">Requested Quantity</th>
                 <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:center;">Actual Quantity *</th>

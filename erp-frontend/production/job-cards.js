@@ -94,7 +94,7 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
       if (!jcmMatchFG) {
         counterZone.innerHTML = `
           <div style="margin:8px 0 4px; font-size:0.88rem; font-weight:700; color:var(--text);">
-            <span style="font-size:0.75rem; color:var(--warn);">⚠️ No allotment for this Job Card</span>
+            <span style="font-size:0.75rem; color:var(--warn);">⚠️ No allotment for this BOQ</span>
           </div>`;
         return;
       }
@@ -131,9 +131,9 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
             ${countDisplay}
           </div>
           <div style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap;">
-            <span style="font-size:0.86rem; font-weight:700; background:#e0f2fe; color:#0369a1; padding:3px 8px; border-radius:4px;">ALLOTTED (THIS JOB CARD): ${fmtQty(jcmMatchFG.allottedQty)} ${escapeHtml(unitTokenFG)}</span>
+            <span style="font-size:0.86rem; font-weight:700; background:#e0f2fe; color:#0369a1; padding:3px 8px; border-radius:4px;">ALLOTTED (BOQ): ${fmtQty(jcmMatchFG.allottedQty)} ${escapeHtml(unitTokenFG)}</span>
             <span style="font-size:0.86rem; font-weight:700; background:#fee2e2; color:#991b1b; padding:3px 8px; border-radius:4px;">USED: ${fmtQty(jcmMatchFG.usedQty)} ${escapeHtml(unitTokenFG)}</span>
-            <span style="font-size:0.86rem; font-weight:700; background:#dcfce7; color:#166534; padding:3px 8px; border-radius:4px;">REMAINING: ${fmtQty(jcmMatchFG.remainingQty)} ${escapeHtml(unitTokenFG)}</span>
+            <span style="font-size:0.86rem; font-weight:700; background:#dcfce7; color:#166534; padding:3px 8px; border-radius:4px;">BOQ REMAINING: ${fmtQty(jcmMatchFG.remainingQty)} ${escapeHtml(unitTokenFG)}</span>
           </div>
         </div>
       `;
@@ -220,9 +220,9 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
               </span>
             </div>
             <div style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap;">
-              <span style="font-size:0.86rem; font-weight:700; background:#e0f2fe; color:#0369a1; padding:3px 8px; border-radius:4px;">ALLOTTED (THIS JOB CARD): ${fmtQty(jcmMatchSpare.allottedQty)} ${escapeHtml(unitTokenSpare)}</span>
+              <span style="font-size:0.86rem; font-weight:700; background:#e0f2fe; color:#0369a1; padding:3px 8px; border-radius:4px;">ALLOTTED (BOQ): ${fmtQty(jcmMatchSpare.allottedQty)} ${escapeHtml(unitTokenSpare)}</span>
               <span style="font-size:0.86rem; font-weight:700; background:#fee2e2; color:#991b1b; padding:3px 8px; border-radius:4px;">USED: ${fmtQty(jcmMatchSpare.usedQty)} ${escapeHtml(unitTokenSpare)}</span>
-              <span style="font-size:0.86rem; font-weight:700; background:#dcfce7; color:#166534; padding:3px 8px; border-radius:4px;">REMAINING: ${fmtQty(jcmMatchSpare.remainingQty)} ${escapeHtml(unitTokenSpare)}</span>
+              <span style="font-size:0.86rem; font-weight:700; background:#dcfce7; color:#166534; padding:3px 8px; border-radius:4px;">BOQ REMAINING: ${fmtQty(jcmMatchSpare.remainingQty)} ${escapeHtml(unitTokenSpare)}</span>
             </div>
           </div>
         `;
@@ -233,7 +233,7 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
         counterZone.innerHTML = `
           <div style="margin:8px 0 4px; font-size:0.88rem; font-weight:700; color:var(--text);">
             Spare Store: <span class="live-counter-pill ${styleClassSpare}" style="font-size:1rem; padding:3px 8px; margin-left:4px;">${availableCountSpare} ${escapeHtml(unitTokenSpare)}</span>
-            <span style="font-size:0.75rem; color:var(--warn); margin-left:8px;">⚠️ No allotment for this Job Card</span>
+            <span style="font-size:0.75rem; color:var(--warn); margin-left:8px;">⚠️ No allotment for this BOQ</span>
           </div>`;
       } else {
         counterZone.innerHTML = `<span style="color:var(--warn); font-size:0.8rem;">⚠️ Selected item missing configuration parameters.</span>`;
@@ -380,9 +380,9 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
             </span>
           </div>
           <div style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap;">
-            <span style="font-size:0.86rem; font-weight:700; background:#e0f2fe; color:#0369a1; padding:3px 8px; border-radius:4px;">ALLOTTED (THIS JOB CARD): ${fmtQty(jcmMatch.allottedQty)} ${escapeHtml(unitToken)}</span>
+            <span style="font-size:0.86rem; font-weight:700; background:#e0f2fe; color:#0369a1; padding:3px 8px; border-radius:4px;">ALLOTTED (BOQ): ${fmtQty(jcmMatch.allottedQty)} ${escapeHtml(unitToken)}</span>
             <span style="font-size:0.86rem; font-weight:700; background:#fee2e2; color:#991b1b; padding:3px 8px; border-radius:4px;">USED: ${fmtQty(jcmMatch.usedQty)} ${escapeHtml(unitToken)}</span>
-            <span style="font-size:0.86rem; font-weight:700; background:#dcfce7; color:#166534; padding:3px 8px; border-radius:4px;">REMAINING: ${fmtQty(jcmMatch.remainingQty)} ${escapeHtml(unitToken)}</span>
+            <span style="font-size:0.86rem; font-weight:700; background:#dcfce7; color:#166534; padding:3px 8px; border-radius:4px;">BOQ REMAINING: ${fmtQty(jcmMatch.remainingQty)} ${escapeHtml(unitToken)}</span>
           </div>
         </div>
       `;
@@ -393,7 +393,7 @@ async function updateSelectedLiveStockPillCounter(liveStockOverride) {
       counterZone.innerHTML = `
         <div style="margin:8px 0 4px; font-size:0.88rem; font-weight:700; color:var(--text);">
           Raw Material Store: <span class="live-counter-pill ${styleClass}" style="font-size:1rem; padding:3px 8px; margin-left:4px;">${availableCount} ${escapeHtml(unitToken)}</span>
-          <span style="font-size:0.75rem; color:var(--warn); margin-left:8px;">⚠️ No allotment for this Job Card</span>
+          <span style="font-size:0.75rem; color:var(--warn); margin-left:8px;">⚠️ No allotment for this BOQ</span>
         </div>`;
     } else {
       counterZone.innerHTML = `<span style="color:var(--warn); font-size:0.8rem;">⚠️ Selected item missing configuration parameters.</span>`;

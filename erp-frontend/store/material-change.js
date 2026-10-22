@@ -334,7 +334,7 @@ function materialChangeBasketRowsHtml(rowItem, arrayIdx) {
 }
 
 // Adding the original material as a normal row while a change for it is in
-// the basket: issued + replaced must still fit the Job Card's remaining qty.
+// the basket: issued + replaced must still fit the BOQ's remaining qty.
 function materialChangeConflictMessage(itemCode, newNormalTotal, jcRemaining) {
   const ch = (dynamicTicketShoppingBasketArray || []).find(r => r.isMaterialChange && r.changeFromItemCode === itemCode);
   if (!ch) return "";
@@ -394,7 +394,7 @@ function renderMaterialChangeCard(t) {
   const th = (txt, al) => `<th style="border:1px solid var(--border); padding:8px; text-align:${al || "center"}; vertical-align:middle;">${txt}</th>`;
   const td = (html, al, rowspan) => `<td ${rowspan > 1 ? `rowspan="${rowspan}"` : ""} style="border:1px solid var(--border); padding:8px; text-align:${al || "center"}; vertical-align:middle;">${html}</td>`;
   const groupsHtml = (t.groups || []).map(g => g.alternates.map((a, ai) => `<tr>
-      ${ai === 0 ? td(`<div style="font-weight:700;">${escapeHtml(g.fromMaterialName)}</div><div style="font-size:0.78rem; color:#64748b; margin-top:2px;">JC Allotted ${fmtQty(g.jcAllotted)} · Used ${fmtQty(g.jcUsed)} · Remaining ${fmtQty(g.jcRemaining)}</div>`, "left", g.alternates.length) : ""}
+      ${ai === 0 ? td(`<div style="font-weight:700;">${escapeHtml(g.fromMaterialName)}</div><div style="font-size:0.78rem; color:#64748b; margin-top:2px;">BOQ Allotted ${fmtQty(g.jcAllotted)} · Used ${fmtQty(g.jcUsed)} · Remaining ${fmtQty(g.jcRemaining)}</div>`, "left", g.alternates.length) : ""}
       ${ai === 0 ? td(`<strong style="font-size:1.15rem;">${fmtQty(g.fromQty)}</strong> ${escapeHtml(g.fromUnit || "")}`, "center", g.alternates.length) : ""}
       ${td(`<div style="font-weight:700;">${escapeHtml(a.materialName)}</div>`, "left")}
       ${td(`<strong style="font-size:1.15rem;">${fmtQty(a.quantity)}</strong> ${escapeHtml(a.unitType || "")}`)}
