@@ -12,17 +12,17 @@ function handleCBOQImportProductSearch(query) {
   resetCBOQImportResolution();
 
   if (!query || query.trim().length < 1) { dropdown.style.display = "none"; return; }
-  const q = query.toLowerCase();
+  // Forgiving search (typos, partial words, any order): shared materialSearch.
   const seen = new Set();
-  const matches = [];
+  const products = [];
   for (const b of list) {
     const combined = `${b.productName || ""} ${b.productRating || ""}`.trim();
     const key = combined.toLowerCase();
-    if (!key.includes(q) || seen.has(key)) continue;
+    if (seen.has(key)) continue;
     seen.add(key);
-    matches.push({ productName: b.productName, productRating: b.productRating, combined });
-    if (matches.length >= 10) break;
+    products.push({ productName: b.productName, productRating: b.productRating, combined });
   }
+  const matches = materialSearch(products, query, 10, p => [p.productName || "", p.productRating || ""]);
 
   if (matches.length === 0) { dropdown.innerHTML = `<div style="padding:10px 12px; font-size:0.8rem; color:#b91c1c; font-weight:600;">No matching BOQ found.</div>`; dropdown.style.display = "block"; return; }
 
