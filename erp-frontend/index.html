@@ -4486,9 +4486,9 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
           <div style="width:170px;"><label style="display:block; font-size:0.7rem; font-weight:800; text-transform:uppercase; color:#475569; letter-spacing:0.03em; margin:0 0 5px;">Gate date from</label><input type="date" id="iws-date-from" style="width:100%; padding:8px 10px; border:1.5px solid #cbd5e1; border-radius:var(--radius); font-size:0.88rem; background:#fff;"></div>
           <div style="width:170px;"><label style="display:block; font-size:0.7rem; font-weight:800; text-transform:uppercase; color:#475569; letter-spacing:0.03em; margin:0 0 5px;">Gate date to</label><input type="date" id="iws-date-to" style="width:100%; padding:8px 10px; border:1.5px solid #cbd5e1; border-radius:var(--radius); font-size:0.88rem; background:#fff;"></div>
           <div style="display:flex; gap:6px; flex-wrap:wrap; padding-bottom:2px;">
-            <button class="nav-btn-styled" style="width:auto; padding:6px 14px; font-size:0.8rem; background:#fff; color:#334155; border:1.5px solid #cbd5e1; border-radius:999px; font-weight:700;" onclick="iwsSetRange('today')">Today</button>
-            <button class="nav-btn-styled" style="width:auto; padding:6px 14px; font-size:0.8rem; background:#fff; color:#334155; border:1.5px solid #cbd5e1; border-radius:999px; font-weight:700;" onclick="iwsSetRange('week')">This Week</button>
-            <button class="nav-btn-styled" style="width:auto; padding:6px 14px; font-size:0.8rem; background:#fff; color:#334155; border:1.5px solid #cbd5e1; border-radius:999px; font-weight:700;" onclick="iwsSetRange('month')">This Month</button>
+            <button class="nav-btn-styled" style="width:auto; padding:6px 14px; font-size:0.8rem; background:#fff; color:#334155; border:1.5px solid #cbd5e1; border-radius:999px; font-weight:700;" id="iws-range-today" onclick="iwsSetRange('today')">Today</button>
+            <button class="nav-btn-styled" style="width:auto; padding:6px 14px; font-size:0.8rem; background:#fff; color:#334155; border:1.5px solid #cbd5e1; border-radius:999px; font-weight:700;" id="iws-range-week" onclick="iwsSetRange('week')">This Week</button>
+            <button class="nav-btn-styled" style="width:auto; padding:6px 14px; font-size:0.8rem; background:#fff; color:#334155; border:1.5px solid #cbd5e1; border-radius:999px; font-weight:700;" id="iws-range-month" onclick="iwsSetRange('month')">This Month</button>
           </div>
         </div>
         <div style="display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:12px; margin-bottom:12px;" class="iws-grid">
@@ -4515,6 +4515,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
           <button class="nav-btn-styled" style="width:auto; padding:9px 26px;" onclick="runInwardMaterialSearch()">Search</button>
         </div>
       </div>
+      <div id="iws-active-filters" style="display:none; font-size:1rem; font-weight:700; color:var(--brand); background:var(--highlight-bg); border:1px solid var(--border); border-radius:4px; padding:6px 10px; margin:0 0 12px;"></div>
       <div id="iws-results"></div>
     </div>
 
