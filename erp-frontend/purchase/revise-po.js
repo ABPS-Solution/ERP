@@ -978,7 +978,8 @@ function collectRPOLines() {
     // Shaped so the shared material checks in submit / update pass through;
     // rpoTransportError does the real checks for these rows.
     return st.lineItems.filter(l => !l._removed).map(l => ({
-      lineKey: l.lineKey || "", projectIds: Array.isArray(l.projectIds) ? l.projectIds : (l.projectId ? [l.projectId] : []),
+      lineKey: l.lineKey || "", projectIds: l.legacyProject ? [] : (Array.isArray(l.projectIds) ? l.projectIds : (l.projectId ? [l.projectId] : [])),
+      legacyProject: l.legacyProject ? String(l.legacyProject).trim() : "",
       description: (l.description || "").trim(),
       additionalDescription: (l.description || "").trim(), unit: "Lump Sum",
       quantity: 1, vendorDiscussedQty: 1,
@@ -1139,6 +1140,12 @@ function rpoTransportRowsHtml(lineItems) {
         <button onclick="rpoRemoveTransportRow(${idx})" title="Remove row" style="background:#fef2f2; border:1px solid #fecaca; color:#dc2626; cursor:pointer; width:28px; height:28px; border-radius:4px;">✕</button>
       </div>
       <div style="padding:10px 12px; display:flex; flex-direction:column; gap:10px;">
+        <label style="display:inline-flex; align-items:center; gap:6px; font-size:0.8rem; font-weight:700; color:#475569; cursor:pointer; width:fit-content;">
+          <input type="checkbox" ${(li._legacyOn || li.legacyProject) ? "checked" : ""} onchange="rpoToggleTransportLegacy(${idx}, this.checked)" style="width:16px; height:16px;">
+          Old project (not in ERP)</label>
+        ${(li._legacyOn || li.legacyProject) ? `<div><div style="${lbl}">Old project / company name *</div>
+          <input type="text" value="${esc(li.legacyProject || "")}" autocomplete="off" oninput="updateRPORowField(${idx},'legacyProject',this.value)"
+            style="width:100%; max-width:520px; padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);" /></div>` : `
         <div><div style="${lbl}">Project ID(s) *</div><div>${chips}</div>
           <div style="position:relative; max-width:520px;">
             <input type="text" id="${taId}-ta-input" placeholder="Type Project ID or Customer Name..." autocomplete="off"
@@ -1146,7 +1153,7 @@ function rpoTransportRowsHtml(lineItems) {
               onchange="if (this.value.trim()) rpoAddTransportProject(${idx}, this.value)"
               style="width:100%; padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);" />
             <div id="${taId}-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
-          </div></div>
+          </div></div>`}
         <div><div style="${lbl}">Description *</div>
           <textarea rows="1" oninput="updateRPORowField(${idx},'description',this.value); this.style.height='auto'; this.style.height=this.scrollHeight+'px';"
             style="width:100%; box-sizing:border-box; padding:7px 9px; border:1.5px solid #cbd5e1; border-radius:4px; font-family:inherit; resize:none; overflow:hidden;">${esc(li.description)}</textarea></div>
@@ -1186,6 +1193,15 @@ function rpoTransportRowsHtml(lineItems) {
   return `<datalist id="rpo-proj-list">${projOpts}</datalist>` + (rows || `<div style="padding:14px; text-align:center; color:var(--muted);">No rows. Click "+ Add Row".</div>`);
 }
 
+// Old project not in ERP (22 Oct 2026): a typed name instead of Project IDs.
+function rpoToggleTransportLegacy(idx, on) {
+  const li = window.rpoActive && window.rpoActive.lineItems[idx];
+  if (!li) return;
+  li._legacyOn = !!on;
+  if (on) { li.projectIds = []; li.legacyProject = li.legacyProject || ""; } else { li.legacyProject = ""; }
+  renderPORevisionCard();
+}
+
 function rpoAddTransportRow() {
   const st = window.rpoActive;
   if (!st) return;
@@ -1220,7 +1236,8 @@ function rpoTransportError(lines) {
   if (!lines.length) return "Keep at least one row. To cancel the whole PO, use Cancel this PO entirely.";
   for (let i = 0; i < lines.length; i++) {
     const l = lines[i];
-    if (!(l.projectIds || []).length) return `Row ${i + 1}: add at least one Project ID.`;
+    if (!l.legacyProject && !(l.projectIds || []).length)
+      return `Row ${i + 1}: add at least one Project ID, or tick Old project and type its name.`;
     if (!(l.description || "").trim()) return `Row ${i + 1}: Description is required.`;
     if (!(Number(l.rate) > 0)) return `Row ${i + 1}: Amount must be greater than 0.`;
   }

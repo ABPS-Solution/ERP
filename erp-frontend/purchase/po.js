@@ -788,6 +788,7 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
             quantity: li.quantity, unit: li.unit || "", rate: li.rate, discountPercent: li.discountPercent || 0,
             projectIds: [], allocations: li.allocations || [], memoAllocations: li.memoAllocations || [], boqAllocations: li.boqAllocations || [],
             projectIds: Array.isArray(li.projectIds) ? li.projectIds : (li.projectId ? [li.projectId] : []), lineKey: li.lineKey || "",
+            legacyProject: li.legacyProject || "", isLegacy: !!li.legacyProject,
             _allocationTouched: true, _allocatedForQty: qty,
             designRatePerQuantity: li.designRatePerQuantity != null ? Number(li.designRatePerQuantity) : null,
           };
@@ -893,6 +894,17 @@ function cpoRemoveTransportProject(rowId, projectId) {
   renderCPOMaterialRows(); recalcCPOTotals(); persistCPODraft();
 }
 
+// Old project not in ERP (22 Oct 2026): like Create Material Issue Ticket's
+// "Project not in system", the row takes a typed name instead of Project IDs.
+// Its cost is not counted in any project's costing.
+function cpoToggleTransportLegacy(rowId, on) {
+  const row = window.cpoMaterialRows.find(r => r.id === rowId);
+  if (!row) return;
+  row.isLegacy = !!on;
+  if (on) row.projectIds = []; else row.legacyProject = "";
+  renderCPOMaterialRows(); recalcCPOTotals(); persistCPODraft();
+}
+
 function cpoTransportRowHtml(row, idx) {
   return cpoTransportRowHtmlV2(row, idx);
 }
@@ -918,7 +930,15 @@ function cpoTransportRowHtmlV2(row, idx) {
         <button onclick="removeCPOMaterialRow(${row.id})" title="Remove row" style="background:#fef2f2; border:1px solid #fecaca; color:#dc2626; cursor:pointer; font-size:0.85rem; width:28px; height:28px; border-radius:4px;">✕</button>
       </div>
       <div style="padding:10px 12px; display:flex; flex-direction:column; gap:10px;">
-        <div>
+        <label style="display:inline-flex; align-items:center; gap:6px; font-size:0.8rem; font-weight:700; color:#475569; cursor:pointer; width:fit-content;">
+          <input type="checkbox" ${row.isLegacy ? "checked" : ""} onchange="cpoToggleTransportLegacy(${row.id}, this.checked)" style="width:16px; height:16px;">
+          Old project (not in ERP)</label>
+        ${row.isLegacy ? `<div>
+          <div style="${lbl}">Old project / company name *</div>
+          <input type="text" value="${esc(row.legacyProject)}" placeholder="e.g. company name and old order" autocomplete="off"
+            oninput="updateCPORowField(${row.id},'legacyProject',this.value); cpoRefreshRowStatus(${row.id});"
+            style="width:100%; max-width:520px; padding:9px; font-weight:600; border:1.5px solid ${(row.legacyProject || "").trim() ? "var(--border)" : "#f59e0b"}; border-radius:var(--radius);" />
+        </div>` : `<div>
           <div style="${lbl}">Project ID(s) *  <span style="text-transform:none; font-weight:500;">— add every project this transport is for; the cost is split equally</span></div>
           <div>${chips}</div>
           <div style="position:relative; max-width:520px;">
@@ -928,7 +948,7 @@ function cpoTransportRowHtmlV2(row, idx) {
               style="width:100%; padding:9px; font-weight:600; border:1.5px solid ${pids.length ? "var(--border)" : "#f59e0b"}; border-radius:var(--radius);" />
             <div id="${taId}-ta-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
           </div>
-        </div>
+        </div>`}
         <div>
           <div style="${lbl}">Description *</div>
           <textarea rows="1" placeholder="e.g. Truck 32 ft, ABPS works to Raipur site"
@@ -998,7 +1018,8 @@ function cpoTransportRowHtmlOld(row, idx) {
 function cpoTransportRowsError(rows) {
   for (let i = 0; i < rows.length; i++) {
     const r = rows[i], n = i + 1;
-    if (!cpoTransportProjects(r).length) return `Row ${n}: add at least one Project ID.`;
+    if (r.isLegacy ? !(r.legacyProject || "").trim() : !cpoTransportProjects(r).length)
+      return r.isLegacy ? `Row ${n}: type the old project / company name.` : `Row ${n}: add at least one Project ID.`;
     if (!(r.additionalDescription || "").trim()) return `Row ${n}: Description is required.`;
     if (!(parseFloat(r.rate) > 0)) return `Row ${n}: Amount must be greater than 0.`;
   }
@@ -1008,7 +1029,7 @@ function cpoTransportRowsError(rows) {
 function cpoTransportPayloadRows() {
   return window.cpoMaterialRows.map(r => ({
     description: (r.additionalDescription || "").trim(), additionalDescription: (r.additionalDescription || "").trim(),
-    projectIds: cpoTransportProjects(r), lineKey: r.lineKey || "",
+    projectIds: r.isLegacy ? [] : cpoTransportProjects(r), legacyProject: r.isLegacy ? (r.legacyProject || "").trim() : "", lineKey: r.lineKey || "",
     quantity: 1, unit: "Lump Sum", rate: parseFloat(r.rate) || 0,
     discountPercent: parseFloat(r.discountPercent) || 0, amount: Number(r.amount) || 0,
   }));
@@ -1310,7 +1331,7 @@ function cpoGrowNameBox(el) {
 function cpoRowMissing(row) {
   const missing = [];
   if (cpoIsTransport()) {
-    if (!cpoTransportProjects(row).length) missing.push("Project ID");
+    if (row.isLegacy ? !(row.legacyProject || "").trim() : !cpoTransportProjects(row).length) missing.push(row.isLegacy ? "old project name" : "Project ID");
     if (!(row.additionalDescription || "").trim()) missing.push("description");
     if (!(parseFloat(row.rate) > 0)) missing.push("Amount");
     return missing;
