@@ -6291,6 +6291,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <button id="sa-tab-pdfkeys" class="nav-btn-styled" onclick="switchSecurityAdminTab('pdfkeys')" style="flex:1; padding:11px 16px;">PDF Keys</button>
       <button id="sa-tab-signature" class="nav-btn-styled" onclick="switchSecurityAdminTab('signature')" style="flex:1; padding:11px 16px; display:none;">Authorized Signature</button>
       <button id="sa-tab-autoprn" class="nav-btn-styled" onclick="switchSecurityAdminTab('autoprn')" style="flex:1; padding:11px 16px; display:none;">Automatic PRN</button>
+      <button id="sa-tab-officehours" class="nav-btn-styled" onclick="switchSecurityAdminTab('officehours')" style="flex:1; padding:11px 16px;">Office Hours</button>
     </div>
 
     <!-- PERMISSIONS MATRIX — renders whatever lib/permissionCatalog.js on
@@ -6373,6 +6374,11 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
     <div id="sa-panel-signature" style="display:none;">
       <p style="font-size:0.85rem; color:var(--muted); margin:0 0 12px;">This signature (Alok Kumar, authorized signatory) is printed on the final authorized copy of outgoing documents: RM Purchase Orders and their revisions, Project Dispatch Invoices and their revisions, and Delivery Challans. Draft copies never carry it. Use a clear scan of the signature on a white or transparent background, cropped close.</p>
       <div id="sa-signature-body"></div>
+    </div>
+
+    <div id="sa-panel-officehours" style="display:none;">
+      <p style="font-size:0.85rem; color:var(--muted); margin:0 0 12px;">ERP (and its database) runs <b>7:55 am – 9:55 pm</b> every day, and switches off at night to save cost. A backup is taken at 9:45 pm before it switches off. Admins can keep it on later for a night. When it is off, the login screen offers a Start ERP button with the start code (stays on for 2 hours).</p>
+      <div id="sa-officehours-body" style="font-size:0.9rem;">Loading...</div>
     </div>
 
     <div id="sa-panel-autoprn" style="display:none;">

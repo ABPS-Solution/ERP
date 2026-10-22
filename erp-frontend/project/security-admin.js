@@ -60,7 +60,7 @@ function saViewerIsSuperAdmin() {
 // card opened decides which tabs show.
 const SA_TAB_GROUPS = {
   access: ['permissions', 'docaccess', 'users', 'pins', 'registeredpcs', 'log'],
-  system: ['networks', 'holidays', 'emailinboxes', 'pdfkeys', 'signature', 'autoprn'],
+  system: ['networks', 'holidays', 'emailinboxes', 'pdfkeys', 'signature', 'autoprn', 'officehours'],
 };
 const SA_SUPER_ONLY_TABS = ['users', 'emailinboxes', 'signature', 'autoprn'];
 let saActiveSection = 'access';
@@ -122,7 +122,8 @@ function switchSecurityAdminTab(tab) {
   if (tab === 'signature') loadSignatorySignature();
   if (tab === 'autoprn' && typeof renderAutoPrnBar === 'function') renderAutoPrnBar('sa-autoprn-bar');
   if (tab === 'docaccess') loadDocumentAccessMatrix();
-  ['permissions', 'docaccess', 'users', 'networks', 'holidays', 'log', 'pins', 'registeredpcs', 'emailinboxes', 'pdfkeys', 'signature', 'autoprn'].forEach(t => {
+  if (tab === 'officehours') loadOfficeHours();
+  ['permissions', 'docaccess', 'users', 'networks', 'holidays', 'log', 'pins', 'registeredpcs', 'emailinboxes', 'pdfkeys', 'signature', 'autoprn', 'officehours'].forEach(t => {
     document.getElementById(`sa-panel-${t}`).style.display = (t === tab) ? 'block' : 'none';
     document.getElementById(`sa-tab-${t}`).style.background = (t === tab) ? 'var(--brand)' : '#e2e8f0';
     document.getElementById(`sa-tab-${t}`).style.color = (t === tab) ? '#fff' : '#334155';
@@ -1319,4 +1320,39 @@ async function loadPdfShiftCredits() {
   } catch (e) {
     if (e.message !== 'SESSION_EXPIRED') body.innerHTML = `<div style="color:#b91c1c; padding:12px;">Network error: ${escapeHtml(e.message)}</div>`;
   }
+}
+
+
+// ── Office Hours (22 Oct 2026): keep ERP on later tonight ───────────────
+function ohFmt(iso) { return iso ? (typeof formatOrdinalDateTime === "function" ? formatOrdinalDateTime(iso) : new Date(iso).toLocaleString()) : ""; }
+async function loadOfficeHours() {
+  const body = document.getElementById("sa-officehours-body");
+  if (!body) return;
+  body.textContent = "Loading...";
+  try {
+    const d = await apFetch({ action: "fetchDbSchedule" });
+    if (!d.success) { body.textContent = d.error || "Could not load."; return; }
+    const keep = d.keepOnUntil && new Date(d.keepOnUntil) > new Date();
+    body.innerHTML = `
+      <div style="margin-bottom:12px;">Status now: <b>${d.status === "on" ? "On" : d.status === "starting" ? "Starting" : "Off"}</b></div>
+      <div style="margin-bottom:14px;">${keep ? `Kept on until <b>${escapeHtml(ohFmt(d.keepOnUntil))}</b>.` : "No keep-on set. It switches off at 9:55 pm."}</div>
+      ${d.canOverride ? `
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;">
+          <div><label class="field-label" style="margin-top:0;">Keep ERP on until</label>
+            <input type="datetime-local" id="oh-keep-until" style="width:auto; padding:8px;"></div>
+          <button class="nav-btn-styled" style="width:auto; padding:9px 18px;" onclick="saveOfficeHoursKeepOn()">Keep On</button>
+          ${keep ? `<button class="nav-btn-styled" style="width:auto; padding:9px 18px; background:#e2e8f0; color:#334155;" onclick="saveOfficeHoursKeepOn(true)">Clear</button>` : ""}
+        </div>
+        <div id="oh-msg" style="margin-top:10px; font-size:0.85rem;"></div>` : `<div style="color:var(--muted);">Only admins can keep ERP on later.</div>`}`;
+  } catch (e) { body.textContent = "Could not load: " + e.message; }
+}
+async function saveOfficeHoursKeepOn(clear) {
+  const msg = document.getElementById("oh-msg");
+  const v = document.getElementById("oh-keep-until")?.value || "";
+  if (!clear && !v) { if (msg) msg.textContent = "Pick a date and time."; return; }
+  try {
+    const d = await apFetch({ action: "setDbKeepOnUntil", until: clear ? null : new Date(v).toISOString() });
+    if (!d.success) { if (msg) { msg.style.color = "#b91c1c"; msg.textContent = d.error || "Could not save."; } return; }
+    loadOfficeHours();
+  } catch (e) { if (msg) msg.textContent = e.message; }
 }

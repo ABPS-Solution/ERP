@@ -389,6 +389,10 @@ if (document.readyState === "loading") document.addEventListener("DOMContentLoad
 else setTimeout(abpsBootRun, 0);
 async function abpsBootApp() {
   window.scrollTo(0, 0);
+  // Office hours (22 Oct 2026): at night the database is off, so show the
+  // off-hours screen (with the emergency start code) instead of the login.
+  if (await sysCheckOffHours()) return;
+  sysScheduleClosingWarning();
   const token   = localStorage.getItem("erpSessionToken");
   const expires = localStorage.getItem("erpSessionExpiry");
   const cachedOperator = localStorage.getItem("erpActiveOperatorSignature");
@@ -824,4 +828,96 @@ async function loadQualFilter() {
       }
     }
   } catch(e) { console.error("Custom Types of Customer load failed:", e.message); }
+}
+
+
+// ── Office hours: off-hours screen + closing warning (22 Oct 2026) ─────────
+// The database runs 7:55 am – 9:55 pm (lib/dbSchedule.js on the server).
+// systemStatus / startSystem work without the database.
+async function sysPublicPost(body, timeoutMs) {
+  const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify(body), signal: AbortSignal.timeout(timeoutMs || 8000) });
+  return res.json();
+}
+
+async function sysCheckOffHours() {
+  let st;
+  try { st = await sysPublicPost({ action: "systemStatus" }, 6000); } catch (e) { return false; }
+  if (!st || !st.success || st.status === "on") return false;
+  sysShowOffHoursScreen(st);
+  return true;
+}
+
+function sysShowOffHoursScreen(st) {
+  const auth = document.getElementById("auth-container");
+  if (auth) auth.style.display = "none";
+  const app = document.getElementById("app-container");
+  if (app) app.style.display = "none";
+  let box = document.getElementById("sys-offhours");
+  if (!box) {
+    box = document.createElement("div");
+    box.id = "sys-offhours";
+    box.style.cssText = "position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:var(--bg, #f1f5f9); z-index:9000; padding:16px;";
+    document.body.appendChild(box);
+  }
+  const starting = st.status === "starting";
+  box.innerHTML = `
+    <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:28px; max-width:420px; width:100%; box-shadow:0 8px 24px rgba(0,0,0,0.08); text-align:center;">
+      <div style="font-size:1.4rem; font-weight:800; color:#1e3a8a; margin-bottom:6px;">ABPS ERP</div>
+      <div id="sys-offhours-msg" style="font-size:0.95rem; color:#334155; margin-bottom:18px; line-height:1.5;">
+        ${starting ? "ERP is starting. This takes about 3 minutes. The page will open by itself." : `ERP is off outside office hours (${escapeHtml(st.hours || "7:55 am – 9:55 pm")}).`}
+      </div>
+      <div id="sys-offhours-start" style="${starting ? "display:none;" : ""}">
+        <div style="font-size:0.8rem; color:#64748b; margin-bottom:8px;">Need it now? Enter the start code.</div>
+        <input id="sys-start-code" type="password" inputmode="numeric" maxlength="8" autocomplete="off"
+          style="width:160px; text-align:center; font-size:1.2rem; letter-spacing:6px; padding:8px; border:1.5px solid #cbd5e1; border-radius:8px;">
+        <div style="margin-top:12px;"><button id="sys-start-btn" class="nav-btn-styled" style="width:auto; padding:9px 22px;" onclick="sysStartSystem()">Start ERP</button></div>
+        <div id="sys-start-err" style="color:#b91c1c; font-size:0.82rem; margin-top:10px; min-height:1em;"></div>
+      </div>
+    </div>`;
+  if (starting) sysWaitUntilOn();
+}
+
+async function sysStartSystem() {
+  const code = (document.getElementById("sys-start-code")?.value || "").trim();
+  const err = document.getElementById("sys-start-err");
+  const btn = document.getElementById("sys-start-btn");
+  if (!code) { if (err) err.textContent = "Enter the start code."; return; }
+  if (btn) { btn.disabled = true; btn.textContent = "Starting..."; }
+  try {
+    const r = await sysPublicPost({ action: "startSystem", code }, 30000);
+    if (!r.success) { if (err) err.textContent = r.error || "Could not start."; if (btn) { btn.disabled = false; btn.textContent = "Start ERP"; } return; }
+    sysShowOffHoursScreen({ status: "starting" });
+  } catch (e) {
+    if (err) err.textContent = "Could not reach the server. Try again.";
+    if (btn) { btn.disabled = false; btn.textContent = "Start ERP"; }
+  }
+}
+
+async function sysWaitUntilOn() {
+  for (let i = 0; i < 60; i++) {
+    await new Promise(r => setTimeout(r, 10000));
+    try {
+      const st = await sysPublicPost({ action: "systemStatus" }, 6000);
+      if (st && st.success && st.status === "on") { window.location.reload(); return; }
+    } catch (e) { /* keep waiting */ }
+  }
+  const msg = document.getElementById("sys-offhours-msg");
+  if (msg) msg.textContent = "ERP is taking longer than usual to start. Refresh the page in a minute.";
+}
+
+// From 9:40 pm a logged-in user is told the system goes off at 9:55 pm
+// (unless an admin has kept it on).
+function sysScheduleClosingWarning() {
+  setInterval(() => {
+    const ist = new Date(Date.now() + 5.5 * 3600 * 1000);
+    const m = ist.getUTCHours() * 60 + ist.getUTCMinutes();
+    const app = document.getElementById("app-container");
+    if (m < 21 * 60 + 40 || m >= 21 * 60 + 55 || !app || app.style.display === "none") return;
+    if (document.getElementById("sys-closing-note")) return;
+    const n = document.createElement("div");
+    n.id = "sys-closing-note";
+    n.style.cssText = "position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:9999; background:#fef3c7; color:#92400e; border:1px solid #fcd34d; padding:9px 16px; border-radius:8px; font-size:0.85rem; font-weight:700; box-shadow:0 4px 12px rgba(0,0,0,0.12);";
+    n.innerHTML = 'ERP switches off at 9:55 pm. Save your work. <span style="cursor:pointer; margin-left:10px;" onclick="this.parentElement.remove()">✕</span>';
+    document.body.appendChild(n);
+  }, 60000);
 }
