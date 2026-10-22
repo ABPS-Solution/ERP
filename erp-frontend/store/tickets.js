@@ -1088,6 +1088,9 @@ function ticketSelectedJobCardsList() {
 }
 function ticketJobCardDisplayReset(text) {
   window.ticketSelectedJobCards = [];
+  window.ticketJobCardOptions = [];
+  const dispBox = document.getElementById("ticket-job-card-display");
+  if (dispBox) dispBox.style.display = "flex";
   const disp = document.getElementById("ticket-job-card-display");
   const textEl = document.getElementById("ticket-job-card-display-text");
   const hidden = document.getElementById("ticket-job-card-dropdown");
@@ -1101,25 +1104,38 @@ function ticketJobCardDisplayEnable() {
   const disp = document.getElementById("ticket-job-card-display");
   if (disp) { disp.dataset.disabled = "0"; disp.style.opacity = "1"; disp.style.cursor = "pointer"; disp.style.color = "var(--text)"; disp.style.background = "#fff"; }
 }
+// Job Cards show as buttons (JC_Set-1, JC_Set-2 ...): click to pick or unpick, or Select All.
 function ticketJobCardPopulate(options) {
   const list = document.getElementById("ticket-job-card-dropdown-list");
+  const disp = document.getElementById("ticket-job-card-display");
   if (!list) return;
-  const picked = new Set(window.ticketSelectedJobCards || []);
-  list.innerHTML = `<div style="padding:6px 10px; font-size:0.74rem; color:var(--muted); border-bottom:1px solid #e2e8f0;">Tick the Job Card(s) this material is for. The BOQ limit applies; the issued quantity is shared equally across them.</div>`
-    + options.map(o => `
-    <label onclick="event.stopPropagation();" style="display:flex; gap:8px; align-items:center; padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem; line-height:1.35;"
-      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
-      <input type="checkbox" data-jc="${escapeHtml(o.value)}" style="width:auto; margin:0;" ${picked.has(o.value) ? "checked" : ""} onchange="toggleTicketJobCard(${jsArg(o.value)}, this.checked)" />
-      <span>${escapeHtml(o.label)}</span></label>`).join("");
+  window.ticketJobCardOptions = options;
+  if (disp) disp.style.display = "none";
+  list.style.cssText = "display:flex; flex-wrap:wrap; gap:6px; padding:2px 0;";
+  ticketJobCardPopulateRefresh();
 }
-// Re-tick the boxes after a restore (the list was built before).
 function ticketJobCardPopulateRefresh() {
+  const list = document.getElementById("ticket-job-card-dropdown-list");
+  const opts = window.ticketJobCardOptions || [];
+  if (!list || !opts.length) return;
   const picked = new Set(window.ticketSelectedJobCards || []);
-  document.querySelectorAll('#ticket-job-card-dropdown-list input[type=checkbox]').forEach(cb => {
-    cb.checked = picked.has(cb.dataset.jc);
-  });
+  const allOn = opts.every(o => picked.has(o.value));
+  const btn = (on, label, click, title) => `<div onclick="event.stopPropagation(); ${click}" title="${escapeHtml(title || label)}"
+    style="cursor:pointer; user-select:none; padding:6px 12px; border-radius:999px; font-size:0.8rem; font-weight:700; font-family:monospace;
+      border:1.5px solid ${on ? "var(--brand)" : "#cbd5e1"}; background:${on ? "var(--brand)" : "#fff"}; color:${on ? "#fff" : "#334155"};">${escapeHtml(label)}</div>`;
+  list.innerHTML = btn(allOn, allOn ? "Unselect All" : "Select All", `ticketJobCardSelectAll(${allOn ? "false" : "true"})`)
+    + opts.map(o => btn(picked.has(o.value), ticketShortJcLabel(o.value), `toggleTicketJobCard(${jsArg(o.value)}, ${picked.has(o.value) ? "false" : "true"})`, o.value)).join("");
 }
-function toggleTicketJobCard(jobCardNumber, on) {
+function ticketJobCardSelectAll(on) {
+  const opts = window.ticketJobCardOptions || [];
+  const hidden = document.getElementById("ticket-job-card-dropdown");
+  const before = hidden.value;
+  window.ticketSelectedJobCards = [];
+  if (on) opts.forEach(o => toggleTicketJobCard(o.value, true, true));
+  else { hidden.value = ""; if (before) handleTicketJobCardChange(""); }
+  ticketJobCardPopulateRefresh();
+}
+function toggleTicketJobCard(jobCardNumber, on, skipRefresh) {
   const hidden = document.getElementById("ticket-job-card-dropdown");
   const before = hidden.value;
   const set = (window.ticketSelectedJobCards || []).filter(j => j !== jobCardNumber);
@@ -1132,6 +1148,7 @@ function toggleTicketJobCard(jobCardNumber, on) {
     : "— Tick Job Card(s) —";
   // Same BOQ, same figures: only reload when going from none to some, or back.
   if (!before !== !hidden.value) handleTicketJobCardChange(hidden.value);
+  if (!skipRefresh) ticketJobCardPopulateRefresh();
 }
 function toggleTicketJobCardDropdown() {
   const disp = document.getElementById("ticket-job-card-display");
