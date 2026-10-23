@@ -1717,6 +1717,31 @@ async function submitCreatePO() {
     }
   }
 
+  // A saved (unfinished) PO can carry an allocation made before the PRN
+  // changed. Re-check every PRN allocation against what it needs today.
+  if (!cpoIsTransport()) {
+    const needByCode = {};
+    for (let i = 0; i < window.cpoMaterialRows.length; i++) {
+      const row = window.cpoMaterialRows[i];
+      if (!(row.allocations || []).length) continue;
+      if (!needByCode[row.itemCode]) {
+        try {
+          const res = await apFetch({ action: "fetchOpenPRNsForItemCode", itemCode: row.itemCode });
+          needByCode[row.itemCode] = Object.fromEntries(((res && res.prns) || []).map(p => [p.prnId, Number(p.stillToOrder) || 0]));
+        } catch (e) { needByCode[row.itemCode] = null; }
+      }
+      const need = needByCode[row.itemCode];
+      if (!need) continue;
+      const stale = row.allocations.find(a => (Number(a.quantity) || 0) > (need[a.prnId] || 0) + 1e-9);
+      if (stale) {
+        row.allocations = []; row.memoAllocations = []; row.boqAllocations = [];
+        row._allocationTouched = false; row.designRatePerQuantity = null;
+        renderCPOMaterialRows(); persistCPODraft();
+        return showErr(`Row ${i + 1} (${row.itemCode}): this allocation was saved earlier and the PRN has changed since (${stale.prnId ? "it now needs " + fmtQty(need[stale.prnId] || 0) + ", not " + fmtQty(stale.quantity) : "it no longer needs it"}). The allocation was cleared: click "Allocate to PRNs" again, then Submit.`);
+      }
+    }
+  }
+
   const payload = {
     vendorName,
     poType: window.cpoPoType || "Material",
