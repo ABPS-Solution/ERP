@@ -826,11 +826,7 @@ function openProductRenameModal(projectId, lineId) {
   body.innerHTML = `
     <h3 style="margin-top:0;">Change Standard Product</h3>
     <p style="color:var(--muted); font-size:0.85rem;">Current: <strong>${escapeHtml(state.standardProductName || '')}${state.standardProductRating ? ' - ' + escapeHtml(state.standardProductRating) : ''}</strong></p>
-    <p style="color:#b45309; font-size:0.8rem; background:#fffbeb; padding:8px 10px; border-radius:4px;">
-      This BOQ already has downstream work. Renaming rewrites its BOQ ID, PRN ID, and every Job Card number,
-      and everywhere they're stored — only allowed until Production Planning is released for it.
-    </p>
-    <input type="text" id="mc-rename-search-input" placeholder="Search new Item Code / Product Name..." autocomplete="off"
+    <input type="text" id="mc-rename-search-input" placeholder="Type the new product (name, rating or item code)..." autocomplete="off"
       oninput="handleProductRenameSearch(this.value)"
       style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius); margin-bottom:8px;" />
     <div id="mc-rename-search-results" style="max-height:220px; overflow-y:auto; border:1px solid var(--border); border-radius:4px;"></div>
@@ -874,22 +870,23 @@ async function selectProductRenameCandidate(newItemCode) {
     const data = await apFetch({ action: "previewStandardProductRename", projectId: target.projectId, lineId: target.lineId, newItemCode });
     if (!data.success) { previewZone.innerHTML = `<div style="color:#b91c1c; font-size:0.85rem;">${escapeHtml(data.error)}</div>`; return; }
     window._mcRenamePreview = { ...data, newItemCode };
-    const boqRows = (data.boqs || []).map(b => `
-      <div style="padding:8px; border:1px solid var(--border); border-radius:4px; margin-top:6px; font-size:0.78rem;">
-        <div><strong>BOQ:</strong> ${escapeHtml(b.oldBoqId)} → ${escapeHtml(b.newBoqId)}</div>
-        ${b.newPrnId ? `<div><strong>PRN:</strong> ${escapeHtml(b.newPrnId)}</div>` : ''}
-        ${b.jobCards.length ? `<div><strong>Job Cards:</strong> ${b.jobCards.map(jc => `${escapeHtml(jc.old)} → ${escapeHtml(jc.new)}`).join(', ')}</div>` : ''}
-        ${b.fgConsumerBoqIds.length ? `<div style="color:#b45309;"><strong>Also re-points:</strong> ${b.fgConsumerBoqIds.map(escapeHtml).join(', ')} (consumes this as a Finished Good material)</div>` : ''}
-      </div>`).join("") || `<div style="color:var(--muted); font-size:0.8rem; margin-top:6px;">No BOQ exists yet for this line — this will just update the product mapping.</div>`;
-
+    // Kept simple (23 Oct 2026): just old -> new and one click. The server
+    // still renames the BOQ / PRN / Job Card IDs everywhere behind the scenes.
+    const boqs = data.boqs || [];
+    const jcCount = boqs.reduce((n, b) => n + (b.jobCards || []).length, 0);
+    const alsoNote = boqs.length
+      ? `Its BOQ${boqs.some(b => b.newPrnId) ? ", PRN" : ""}${jcCount ? ` and ${jcCount} Job Card${jcCount === 1 ? "" : "s"}` : ""} are updated too.`
+      : "No BOQ yet, only the product is changed.";
     previewZone.innerHTML = `
-      <div style="font-weight:700; font-size:0.9rem; margin-bottom:4px;">${escapeHtml(data.oldProductName)} → ${escapeHtml(data.newProductName)}${data.newRating ? ' - ' + escapeHtml(data.newRating) : ''}</div>
-      ${boqRows}
-      <label class="field-label" style="margin-top:12px;">Type the Project ID (<strong>${escapeHtml(target.projectId)}</strong>) to confirm *</label>
-      <input type="text" id="mc-rename-confirm-input" oninput="document.getElementById('mc-rename-confirm-btn').disabled = (this.value.trim() !== '${target.projectId.replace(/'/g,"\\'")}');"
-        style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius); margin-top:6px;" />
+      <div style="border:1.5px solid var(--border); border-radius:var(--radius); padding:12px 14px; background:#f8fafc;">
+        <div style="font-size:0.78rem; color:var(--muted); font-weight:700; text-transform:uppercase;">From</div>
+        <div style="font-size:0.9rem; margin-bottom:8px;">${escapeHtml(data.oldProductName)}</div>
+        <div style="font-size:0.78rem; color:var(--muted); font-weight:700; text-transform:uppercase;">To</div>
+        <div style="font-size:0.95rem; font-weight:700; color:var(--brand);">${escapeHtml(data.newProductName)}${data.newRating ? ' - ' + escapeHtml(data.newRating) : ''}</div>
+        <div style="font-size:0.8rem; color:#475569; margin-top:8px;">${alsoNote}</div>
+      </div>
       <div style="display:flex; justify-content:flex-end; margin-top:12px;">
-        <button class="nav-btn-styled" id="mc-rename-confirm-btn" disabled style="background:var(--danger); opacity:0.5; cursor:not-allowed;" onclick="commitProductRename()">Confirm Rename</button>
+        <button class="nav-btn-styled" id="mc-rename-confirm-btn" style="width:auto; background:var(--brand); padding:8px 20px;" onclick="commitProductRename()">Change Product</button>
       </div>`;
   } catch (e) {
     previewZone.innerHTML = `<div style="color:#b91c1c; font-size:0.85rem;">Network error: ${escapeHtml(e.message)}</div>`;
@@ -901,7 +898,7 @@ async function commitProductRename() {
   const preview = window._mcRenamePreview;
   if (!target || !preview) return;
   const btn = document.getElementById("mc-rename-confirm-btn");
-  if (btn) { btn.disabled = true; btn.textContent = "Renaming..."; }
+  if (btn) { btn.disabled = true; btn.textContent = "Changing..."; }
   try {
     const data = await apFetch({
       action: "renameStandardProduct", projectId: target.projectId, lineId: target.lineId,
@@ -909,14 +906,14 @@ async function commitProductRename() {
     });
     if (!data.success) {
       abpsAlert(data.error || "Rename failed.");
-      if (btn) { btn.disabled = false; btn.textContent = "Confirm Rename"; }
+      if (btn) { btn.disabled = false; btn.textContent = "Change Product"; }
       return;
     }
     closeProductRenameModal();
     await loadMcLineItems(target.projectId);
   } catch (e) {
     abpsAlert("Network error: " + e.message);
-    if (btn) { btn.disabled = false; btn.textContent = "Confirm Rename"; }
+    if (btn) { btn.disabled = false; btn.textContent = "Change Product"; }
   }
 }
 
