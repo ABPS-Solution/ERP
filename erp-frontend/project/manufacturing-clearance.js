@@ -824,18 +824,26 @@ function openProductRenameModal(projectId, lineId) {
   const body = document.getElementById("mc-product-rename-modal-body");
   const state = mcLineItemState[projectId][lineId];
   body.innerHTML = `
-    <h3 style="margin-top:0;">Change Standard Product</h3>
-    <p style="color:var(--muted); font-size:0.85rem;">Current: <strong>${escapeHtml(state.standardProductName || '')}${state.standardProductRating ? ' - ' + escapeHtml(state.standardProductRating) : ''}</strong></p>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+      <h3 style="margin:0; font-size:1.15rem; color:var(--brand);">Change Standard Product</h3>
+      <span onclick="closeProductRenameModal()" title="Close" style="cursor:pointer; font-size:1.4rem; line-height:1; color:var(--muted); padding:0 4px;">×</span>
+    </div>
+    <div style="border:1.5px solid var(--border); border-radius:var(--radius); background:#f8fafc; padding:10px 12px; margin-bottom:14px;">
+      <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--muted); letter-spacing:0.03em;">Current product</div>
+      <div style="font-size:0.9rem; font-weight:700; color:#111827; margin-top:2px;">${escapeHtml(state.standardProductName || '')}${state.standardProductRating ? ' - ' + escapeHtml(state.standardProductRating) : ''}</div>
+    </div>
+    <label style="display:block; font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--muted); letter-spacing:0.03em; margin-bottom:5px;">New product</label>
     <input type="text" id="mc-rename-search-input" placeholder="Type the new product (name, rating or item code)..." autocomplete="off"
       oninput="handleProductRenameSearch(this.value)"
-      style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius); margin-bottom:8px;" />
-    <div id="mc-rename-search-results" style="max-height:220px; overflow-y:auto; border:1px solid var(--border); border-radius:4px;"></div>
+      style="width:100%; padding:9px 12px; border:1.5px solid var(--brand); border-radius:var(--radius); font-size:0.9rem; box-sizing:border-box;" />
+    <div id="mc-rename-search-results" style="display:none; max-height:240px; overflow-y:auto; border:1.5px solid var(--border); border-top:none; border-radius:0 0 var(--radius) var(--radius);"></div>
     <div id="mc-rename-preview-zone" style="margin-top:14px;"></div>
-    <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:14px;">
-      <button class="nav-btn-styled" style="background:#718096;" onclick="closeProductRenameModal()">Cancel</button>
+    <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:6px;">
+      <button class="nav-btn-styled" style="width:auto; background:#fff; color:#334155; border:1.5px solid #cbd5e1; padding:8px 18px;" onclick="closeProductRenameModal()">Cancel</button>
     </div>
   `;
   el.style.display = "flex";
+  setTimeout(() => { const i = document.getElementById("mc-rename-search-input"); if (i) i.focus(); }, 50);
 }
 
 function closeProductRenameModal() {
@@ -849,12 +857,13 @@ function handleProductRenameSearch(query) {
   const results = document.getElementById("mc-rename-search-results");
   if (!results) return;
   document.getElementById("mc-rename-preview-zone").innerHTML = "";
-  if (!query || query.trim().length < 1) { results.innerHTML = ""; return; }
+  if (!query || query.trim().length < 1) { results.innerHTML = ""; results.style.display = "none"; return; }
+  results.style.display = "block";
   const q = query.toLowerCase();
   const catalog = window.itemCodeCatalogCache || [];
   const matches = materialSearch(catalog, q, 10);
   results.innerHTML = matches.map(item => `
-    <div onclick="selectProductRenameCandidate(${jsArg(item.itemCode)})"
+    <div onclick="document.getElementById('mc-rename-search-results').style.display='none'; selectProductRenameCandidate(${jsArg(item.itemCode)})"
       style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
       ${escapeHtml(item.productName)}${item.rating ? ` - <span style="color:var(--brand); font-weight:700;">${escapeHtml(item.rating)}</span>` : ""}
