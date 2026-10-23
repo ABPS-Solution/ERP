@@ -744,7 +744,11 @@ async function submitMcClearance(projectId) {
       const meta = mcLineItemMeta[projectId] || {};
       const summaryRows = rows.map(r => {
         const before = meta[r.lineId] ? meta[r.lineId].currentMfcQuantity : 0;
-        const label = r.standardProductName || (meta[r.lineId] && meta[r.lineId].description) || `Line ${r.lineId}`;
+        const st = (mcLineItemState[projectId] || {})[r.lineId] || {};
+        const fullName = (r.standardItemCode || st.standardItemCode)
+          ? mcRenameFullName(r.standardItemCode || st.standardItemCode, r.standardProductName || st.standardProductName, r.standardProductRating || st.standardProductRating, r.make || st.make)
+          : r.standardProductName;
+        const label = escapeHtml(fullName || (meta[r.lineId] && meta[r.lineId].description) || `Line ${r.lineId}`);
         if (!r.needsBoqJc) return { label, raw: true, before: "Build Type", after: "No BOQ (billed on the Dispatch Invoice)" };
         return { label, before, after: r.newMfcQuantity };
       });
