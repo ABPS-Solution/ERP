@@ -1299,6 +1299,10 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         <div class="menu-card" id="mod-tourexpense" onclick="switchActiveDashboardModule('tourexpense'); initializeTourExpensePanel();"><span class="mc-label">Tour Expense Tracker</span></div>
         <div class="menu-card" id="mod-cashexpenses" onclick="switchActiveDashboardModule('cashexpenses'); initializeCashExpensesPanel();"><span class="mc-label">Daily Cash / UPI / Online Expenses</span></div>
       </div>
+      <div class="sec-label">Bank</div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-bankdocuments" style="display:none;" onclick="switchActiveDashboardModule('bankdocuments')"><span class="mc-label">Bank Related Documents</span></div>
+      </div>
       <div class="sec-label">Costing</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-projectcosting" onclick="switchActiveDashboardModule('projectcosting')"><span class="mc-label">Project Costing</span></div>
@@ -2682,6 +2686,25 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 
     <!-- EMPLOYEE DETAILS -->
     <div id="te-panel-employees" style="display:none;"></div>
+    </div>
+  </div>
+
+  <div id="canvas-module-bankdocuments" class="workspace-panel" style="display:none;">
+    <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
+      <div></div>
+      <button class="nav-btn-styled" onclick="returnToDashboard()">Return to Main Dashboard</button>
+    </div>
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Bank Related Documents</h2>
+      <div style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; max-width:760px;">
+        <div style="flex:1; min-width:260px;">
+          <label class="field-label" style="margin-top:0;">Document Type</label>
+          <select id="bankdoc-type" onchange="bankDocTypeChanged()" style="width:100%; padding:9px 10px; border:1.5px solid var(--border); border-radius:var(--radius); font-size:0.9rem;"></select>
+        </div>
+        <button class="nav-btn-styled" id="bankdoc-download-btn" disabled style="width:auto; padding:10px 22px; background:#15803d;" onclick="downloadBankDocument()">Download Excel</button>
+      </div>
+      <div id="bankdoc-desc" style="margin-top:10px; font-size:0.85rem; color:#475569; max-width:760px;"></div>
+      <div id="bankdoc-feedback" style="display:none;"></div>
     </div>
   </div>
 
@@ -6591,6 +6614,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 <script src="accounts/travel-tickets.js"></script>
 <script src="accounts/accounts-dashboard.js"></script>
 <script src="accounts/project-costing.js"></script>
+<script src="accounts/bank-documents.js"></script>
 <script src="design/item-code-format.js"></script>
 <script src="design/item-codes.js"></script>
 <script src="design/material-descriptions.js"></script>

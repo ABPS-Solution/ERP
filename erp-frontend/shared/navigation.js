@@ -304,6 +304,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canTourExpense = userPermissionsObject.tourExpense === true;
   const canCashExpenses = userPermissionsObject.cashExpenses === true;
   const canProjectCosting = userPermissionsObject.projectCosting === true;
+  const canBankDocuments = userPermissionsObject.bankDocuments === true;
   const canTravelTickets = userPermissionsObject.travelTickets === true;
   const canViewAccountsDashboard = userPermissionsObject.viewAccountsDashboard === true;
   const canItemCode = userPermissionsObject.itemCodeAccess === true;
@@ -521,6 +522,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-tourexpense"))  document.getElementById("mod-tourexpense").style.display  = canTourExpense  ? "block" : "none";
   if (document.getElementById("mod-cashexpenses")) document.getElementById("mod-cashexpenses").style.display = canCashExpenses ? "block" : "none";
   if (document.getElementById("mod-projectcosting")) document.getElementById("mod-projectcosting").style.display = canProjectCosting ? "block" : "none";
+  if (document.getElementById("mod-bankdocuments")) document.getElementById("mod-bankdocuments").style.display = canBankDocuments ? "block" : "none";
   if (document.getElementById("mod-traveltickets")) document.getElementById("mod-traveltickets").style.display = canTravelTickets ? "block" : "none";
   if (document.getElementById("mod-accounts-dashboard-wrapper")) document.getElementById("mod-accounts-dashboard-wrapper").style.display = canViewAccountsDashboard ? "block" : "none";
   if (document.getElementById("mod-itemcode"))     document.getElementById("mod-itemcode").style.display     = canItemCode     ? "block" : "none";
@@ -549,7 +551,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   });
 
   const accountsBlock = document.getElementById("dashboard-accounts-department-header-block");
-  if (accountsBlock) accountsBlock.style.display = (canTourExpense || canCashExpenses || canProjectCosting || canTravelTickets || canViewAccountsDashboard) ? "block" : "none";
+  if (accountsBlock) accountsBlock.style.display = (canTourExpense || canCashExpenses || canProjectCosting || canBankDocuments || canTravelTickets || canViewAccountsDashboard) ? "block" : "none";
   const designBlock = document.getElementById("dashboard-design-department-header-block");
   if (designBlock) designBlock.style.display = (canItemCode || canCreateBOQ || canAuthorizeBOQ || canUpdateBOQ || canAuthorizeBOQUpdate || canUploadDrawings) ? "block" : "none";
   const purchaseBlock = document.getElementById("dashboard-purchase-department-header-block");
@@ -859,6 +861,7 @@ function switchActiveDashboardModule(targetSectionId) {
   if (targetSectionId === "tourexpense" && typeof initializeTourExpensePanel === "function") initializeTourExpensePanel();
   if (targetSectionId === "cashexpenses" && typeof initializeCashExpensesPanel === "function") initializeCashExpensesPanel();
   if (targetSectionId === "projectcosting" && typeof initializeProjectCostingPanel === "function") initializeProjectCostingPanel();
+  if (targetSectionId === "bankdocuments" && typeof initializeBankDocumentsPanel === "function") initializeBankDocumentsPanel();
   if (targetSectionId === "traveltickets" && typeof initializeTravelTicketsPanel === "function") initializeTravelTicketsPanel();
   if (targetSectionId === "itemcode" && typeof initializeItemCodePanel === "function") initializeItemCodePanel();
   // Project department (15 Sep 2026 port) — same init-on-open convention.
