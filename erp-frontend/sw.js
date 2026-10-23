@@ -53,7 +53,7 @@
 // avoid needing every user to clear site data by hand.
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-const CACHE_VERSION = 'erp-v593';
+const CACHE_VERSION = 'erp-v594';
 const CACHE_NAME = `erp-shell-${CACHE_VERSION}`;
 
 self.addEventListener('message', (event) => {

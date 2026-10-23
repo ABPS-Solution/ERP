@@ -177,12 +177,12 @@ async function initializeStoreEntryWorkspaceQueue() {
           <div style="max-width:620px; margin:-6px 0 14px;">
             <label class="field-label">Or: Delivery Challan No (returning material)</label>
             <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-              <input type="text" id="se-processing-dc-${item.gateNumber}" list="se-processing-dc-list-${item.gateNumber}" autocomplete="off"
+              <input type="text" id="se-processing-dc-${item.gateNumber}" autocomplete="off"
                 placeholder="Type the ABPS Delivery Challan No..."
-                onfocus="grnLoadProcessingChallans(${jsArg(item.gateNumber)})" oninput="grnProcessingChallanChanged(${jsArg(item.gateNumber)})"
+                onfocus="grnOpenDcSearch(${jsArg(item.gateNumber)})" oninput="grnProcessingChallanChanged(${jsArg(item.gateNumber)}); grnRenderDcSearch(${jsArg(item.gateNumber)})"
+                onblur="setTimeout(grnHideDcSearch, 150)"
                 style="flex:1; min-width:260px; max-width:360px; padding:6px; border:1.5px solid var(--border); border-radius:3px;">
-              <datalist id="se-processing-dc-list-${item.gateNumber}"></datalist>
-              <span style="font-size:0.75rem; font-weight:700; color:#b45309;">Only for Processing or Service return material.</span>
+              <span style="font-size:0.75rem; font-weight:700; color:#b45309;">Only for Processing or Service or Store Related (DC) return material.</span>
             </div>
             <div id="se-processing-msg-${item.gateNumber}" style="font-size:0.72rem; font-weight:700; margin-top:3px;"></div>
           </div>
@@ -241,8 +241,7 @@ async function initializeStoreEntryWorkspaceQueue() {
 window.grnOpenProcessingChallans = window.grnOpenProcessingChallans || {};
 async function grnLoadProcessingChallans(gateNum) {
   const input = document.getElementById(`se-processing-dc-${gateNum}`);
-  const list = document.getElementById(`se-processing-dc-list-${gateNum}`);
-  if (!input || !list || input.dataset.loaded === "1") return;
+  if (!input || input.dataset.loaded === "1") return;
   input.dataset.loaded = "1";
   try {
     const data = await apFetch({ action: "fetchOpenProcessingReturns" });
@@ -255,11 +254,47 @@ async function grnLoadProcessingChallans(gateNum) {
       it.rec += Number(r.receivedQty) || 0; it.exp += Number(r.expectedQty) || 0;
     });
     window.grnOpenProcessingChallans[gateNum] = byDc;
-    list.innerHTML = Object.entries(byDc).map(([dc, v]) =>
-      `<option value="${escapeHtml(dc)}">${escapeHtml(v.vendor || "")}</option>`).join("");
     grnProcessingChallanChanged(gateNum);
   } catch (e) { input.dataset.loaded = ""; }
 }
+// Challan search dropdown: one shared box on <body> (position:fixed) so the
+// card's scroll area never clips it.
+async function grnOpenDcSearch(gateNum) {
+  await grnLoadProcessingChallans(gateNum);
+  grnRenderDcSearch(gateNum);
+}
+function grnRenderDcSearch(gateNum) {
+  const input = document.getElementById(`se-processing-dc-${gateNum}`);
+  if (!input) return;
+  let dd = document.getElementById("grn-dc-search-dd");
+  if (!dd) {
+    dd = document.createElement("div");
+    dd.id = "grn-dc-search-dd";
+    dd.style.cssText = "position:fixed; z-index:9999; background:#fff; border:1.5px solid var(--brand); border-radius:0 0 6px 6px; box-shadow:0 8px 20px rgba(0,0,0,0.15); max-height:280px; overflow-y:auto; display:none;";
+    document.body.appendChild(dd);
+  }
+  const byDc = window.grnOpenProcessingChallans[gateNum] || {};
+  const q = input.value.trim().toLowerCase();
+  const hits = Object.entries(byDc).filter(([dc, v]) => !q || dc.toLowerCase().includes(q) || (v.vendor || "").toLowerCase().includes(q));
+  dd.innerHTML = hits.length ? hits.map(([dc, v]) => {
+    const due = Object.entries(v.items).map(([name, it]) => `${name}: ${fmtQty(Math.max(0, it.exp - it.rec))} due`).join(" · ");
+    return `<div onmousedown="event.preventDefault()" onclick="grnPickDc(${jsArg(gateNum)}, ${jsArg(dc)})"
+      style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9;" onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
+      <div style="font-family:monospace; font-weight:800; color:var(--brand);">${escapeHtml(dc)}</div>
+      <div style="font-size:0.8rem; font-weight:600; color:#111827;">${escapeHtml(v.vendor || "")}</div>
+      <div style="font-size:0.74rem; color:var(--muted); margin-top:2px;">${escapeHtml(due)}</div></div>`;
+  }).join("") : `<div style="padding:10px 12px; color:var(--muted); font-size:0.82rem;">${Object.keys(byDc).length ? "No challan matches." : "No Delivery Challan has material due back."}</div>`;
+  const r = input.getBoundingClientRect();
+  dd.style.left = r.left + "px"; dd.style.top = r.bottom + "px"; dd.style.width = Math.max(r.width, 320) + "px";
+  dd.style.display = "block";
+}
+function grnHideDcSearch() { const dd = document.getElementById("grn-dc-search-dd"); if (dd) dd.style.display = "none"; }
+function grnPickDc(gateNum, dc) {
+  const input = document.getElementById(`se-processing-dc-${gateNum}`);
+  if (input) { input.value = dc; grnProcessingChallanChanged(gateNum); }
+  grnHideDcSearch();
+}
+window.addEventListener("scroll", e => { if (e.target && e.target.id !== "grn-dc-search-dd") grnHideDcSearch(); }, true);
 function grnProcessingChallanChanged(gateNum) {
   const input = document.getElementById(`se-processing-dc-${gateNum}`);
   const msg = document.getElementById(`se-processing-msg-${gateNum}`);
