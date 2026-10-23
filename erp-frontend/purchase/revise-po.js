@@ -981,7 +981,7 @@ function collectRPOLines() {
       lineKey: l.lineKey || "", projectIds: l.legacyProject ? [] : (Array.isArray(l.projectIds) ? l.projectIds : (l.projectId ? [l.projectId] : [])),
       legacyProject: l.legacyProject ? String(l.legacyProject).trim() : "",
       description: (l.description || "").trim(),
-      additionalDescription: (l.description || "").trim(), unit: "Lump Sum",
+      additionalDescription: (l.description || "").trim(), unit: "Lot",
       quantity: 1, vendorDiscussedQty: 1,
       rate: parseFloat(l.rate) || 0, discountPercent: parseFloat(l.discountPercent) || 0,
       allocations: [], _sourceAllocations: [], _allocationTouched: true, _received: 0,
@@ -1125,7 +1125,7 @@ function rpoTransportRowsHtml(lineItems) {
   const lbl = "font-size:0.66rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;";
   const inp = "width:100%; height:34px; box-sizing:border-box; padding:5px; border:1.5px solid #cbd5e1; border-radius:4px; font-weight:700; text-align:center;";
   const projOpts = (window.cpoActiveProjects || []).map(p => `<option value="${esc(p)}"></option>`).join("");
-  const units = ["Trip", "Lump Sum", "KM", "Truck", "Nos"];
+  const units = ["Lot", "Trip", "KM", "Truck", "Nos"];
   const rows = lineItems.map((li, idx) => {
     if (li._removed) return "";
     if (!Array.isArray(li.projectIds)) li.projectIds = li.projectId ? [li.projectId] : [];
@@ -1205,7 +1205,7 @@ function rpoToggleTransportLegacy(idx, on) {
 function rpoAddTransportRow() {
   const st = window.rpoActive;
   if (!st) return;
-  st.lineItems.push({ projectIds: [], description: "", quantity: 1, unit: "Lump Sum", rate: "", discountPercent: 0 });
+  st.lineItems.push({ projectIds: [], description: "", quantity: 1, unit: "Lot", rate: "", discountPercent: 0 });
   renderPORevisionCard();
 }
 

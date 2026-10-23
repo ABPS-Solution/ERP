@@ -972,7 +972,7 @@ function cpoTransportRowHtmlOld(row, idx) {
   const esc = (t) => (t || "").toString().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   const lbl = "font-size:0.66rem; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;";
   const inp = "width:100%; height:36px; box-sizing:border-box; padding:6px; border:1.5px solid #cbd5e1; border-radius:4px; font-weight:700; font-size:1rem; text-align:center;";
-  const units = ["Trip", "Lump Sum", "KM", "Truck", "Nos"];
+  const units = ["Lot", "Trip", "KM", "Truck", "Nos"];
   const unitOpts = (units.includes(row.unit) || !row.unit ? units : [row.unit, ...units])
     .map(u => `<option value="${esc(u)}" ${(row.unit || "Trip") === u ? "selected" : ""}>${esc(u)}</option>`).join("");
   const projOpts = (window.cpoActiveProjects || []).map(p => `<option value="${esc(p)}"></option>`).join("");
@@ -1030,7 +1030,7 @@ function cpoTransportPayloadRows() {
   return window.cpoMaterialRows.map(r => ({
     description: (r.additionalDescription || "").trim(), additionalDescription: (r.additionalDescription || "").trim(),
     projectIds: r.isLegacy ? [] : cpoTransportProjects(r), legacyProject: r.isLegacy ? (r.legacyProject || "").trim() : "", lineKey: r.lineKey || "",
-    quantity: 1, unit: "Lump Sum", rate: parseFloat(r.rate) || 0,
+    quantity: 1, unit: "Lot", rate: parseFloat(r.rate) || 0,
     discountPercent: parseFloat(r.discountPercent) || 0, amount: Number(r.amount) || 0,
   }));
 }
@@ -1145,7 +1145,7 @@ function handleCPOVendorChange() {
 function addCPOMaterialRow() {
   const id = ++window.cpoRowSeq;
   window.cpoMaterialRows.push(cpoIsTransport()
-    ? { id, description: "", additionalDescription: "", itemCode: "", projectIds: [], lineKey: "", quantity: 1, unit: "Lump Sum", rate: "", discountPercent: "", allocations: [] }
+    ? { id, description: "", additionalDescription: "", itemCode: "", projectIds: [], lineKey: "", quantity: 1, unit: "Lot", rate: "", discountPercent: "", allocations: [] }
     : { id, description: "", additionalDescription: "", itemCode: "", quantity: "", unit: "", rate: "", discountPercent: "", projectIds: [], allocations: [], designRatePerQuantity: null });
   renderCPOMaterialRows();
   persistCPODraft();
