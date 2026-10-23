@@ -302,7 +302,7 @@ function executeClientSideStoreTicketFilterSearch() {
     
     const day = istDay(ticket.dateCreated);
     const matchDate = (!dateFrom || day >= dateFrom) && (!dateTo || day <= dateTo);
-    const textHay = [ticket.ticketId, ticket.requestedBy, ticket.actionedBy, ticket.jobCardNumber, ...(ticket.jobCardNumbers || []), ticket.boqId, ticket.legacyCompanyName]
+    const textHay = [ticket.ticketId, ticket.parentTicketId, ...(ticket.releaseTicketIds || []), ticket.requestedBy, ticket.actionedBy, ticket.jobCardNumber, ...(ticket.jobCardNumbers || []), ticket.boqId, ticket.legacyCompanyName]
       .filter(Boolean).join(" ").toLowerCase();
     const matchText = !freeText || textHay.includes(freeText);
     return matchStore && matchProject && matchMaterial && matchStatus && matchDept && matchDate && matchText;
@@ -313,10 +313,19 @@ function executeClientSideStoreTicketFilterSearch() {
     return;
   }
   {
+    window.matrixLastResults = filteredOutputList;
+    const countRow = document.createElement("div");
+    countRow.style.cssText = "display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;";
+    const dl = document.createElement("button");
+    dl.className = "nav-btn-styled";
+    dl.style.cssText = "width:auto; padding:7px 16px; background:#15803d;";
+    dl.textContent = "Download to Excel";
+    dl.onclick = matrixDownloadResults;
     const countEl = document.createElement("div");
+    countRow.appendChild(countEl); countRow.appendChild(dl);
     countEl.style.cssText = "font-size:0.85rem; font-weight:700; color:#475569;";
-    countEl.textContent = `${filteredOutputList.length} ticket${filteredOutputList.length === 1 ? "" : "s"} found${masterStoreTicketsHistoryCacheCollection.length >= 2000 ? " (searching the latest 2,000 tickets)" : ""}.`;
-    resultsFeedZone.appendChild(countEl);
+    countEl.textContent = `${filteredOutputList.length} ticket${filteredOutputList.length === 1 ? "" : "s"} found${window.matrixSearchCapped ? " (showing the latest 2,000; narrow the filters to see older ones)" : ""}.`;
+    resultsFeedZone.appendChild(countRow);
   }
 
   filteredOutputList.forEach(ticket => {
@@ -372,6 +381,8 @@ function executeClientSideStoreTicketFilterSearch() {
             ${(ticket.jobCardNumbers || []).length > 1
               ? `<span>Job Cards:</span> <strong style="color:var(--brand);">${escapeHtml(ticket.jobCardNumbers.map(j => (String(j).match(/^JC_Set-\d+/) || [j])[0]).join(", "))}</strong>`
               : `<span>Job Card Number:</span> <strong style="color:var(--brand);">${escapeHtml(ticket.jobCardNumber || "—")}</strong>`}
+            ${ticket.parentTicketId ? `<span style="margin-left:15px;">From:</span> <a href="javascript:void(0)" onclick="event.stopPropagation(); matrixOpenLinkedTicket(${jsArg(ticket.parentTicketId)})" style="font-family:monospace; font-weight:700; color:#b45309;">${escapeHtml(ticket.parentTicketId)}</a>` : ""}
+            ${(ticket.releaseTicketIds || []).length ? `<span style="margin-left:15px;">Release ticket:</span> ${ticket.releaseTicketIds.map(id => `<a href="javascript:void(0)" onclick="event.stopPropagation(); matrixOpenLinkedTicket(${jsArg(id)})" style="font-family:monospace; font-weight:700; color:#15803d;">${escapeHtml(id)}</a>`).join(", ")}` : ""}
             ${ticket.pdfUrl ? `<a href="${escapeHtml(driveLink(ticket.pdfUrl))}" target="_blank" onclick="event.stopPropagation()" style="margin-left:15px; font-weight:700; color:var(--brand);">View Ticket PDF ↗</a>` : ""}
           </div>
           <div class="meta-row-line-block" style="margin-top:6px; font-size:0.85rem;">
@@ -404,6 +415,37 @@ function executeClientSideStoreTicketFilterSearch() {
   });
 }
 
+// One row per material; opens in Excel.
+function matrixDownloadResults() {
+  const list = window.matrixLastResults || [];
+  const cols = ["Ticket No", "Status", "Store", "Outgoing Use", "Project / Company", "BOQ", "Job Card(s)", "Requested By", "Requested On",
+    "Approved / Rejected By", "Approved / Rejected On", "Item Code", "Material", "Unit", "Requested Qty", "Issued Qty", "Linked Ticket"];
+  const q = v => { const s = v == null ? "" : String(v); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+  const lines = [cols.join(",")];
+  list.forEach(t => {
+    const jcs = (t.jobCardNumbers && t.jobCardNumbers.length ? t.jobCardNumbers : [t.jobCardNumber]).filter(Boolean).join(" ");
+    const linked = [t.parentTicketId, ...(t.releaseTicketIds || [])].filter(Boolean).join(" ");
+    const base = [t.ticketId, t.status, t.storeTargetScope || "Raw Materials Store", outwardUseLabel(t.department), t.projectId || t.legacyCompanyName || "",
+      t.boqId || "", jcs, t.requestedBy || "", t.dateCreated ? formatOrdinalDateTime(t.dateCreated) : "",
+      t.actionedBy || "", t.dateActioned ? formatOrdinalDateTime(t.dateActioned) : ""];
+    const items = Array.isArray(t.items) && t.items.length ? t.items : [{}];
+    items.forEach(i => lines.push(base.concat([i.itemCode || "", i.materialName || "", i.unitType || "",
+      i.quantity != null ? trimNum(i.quantity) : "", i.released != null ? trimNum(i.released) : "", linked]).map(q).join(",")));
+  });
+  const blob = new Blob(["\ufeff" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `Material Issue Tickets ${new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" })}.csv`;
+  document.body.appendChild(a); a.click(); a.remove();
+}
+// Clicking a linked ticket searches for it.
+function matrixOpenLinkedTicket(id) {
+  const el = document.getElementById("matrix-free-text");
+  if (el) el.value = id;
+  ["matrix-date-from", "matrix-date-to"].forEach(x => { const e = document.getElementById(x); if (e) e.value = ""; });
+  document.querySelectorAll('input[name="matrixStoreFilter"]:checked, input[name="matrixStatusFilter"]:checked, input[name="matrixDepartmentFilter"]:checked').forEach(cb => cb.checked = false);
+  triggerStoreTicketMatrixSearch();
+}
 function toggleMatrixCardBody(ticketId) {
   const body = document.getElementById(`matrix-card-body-${ticketId}`);
   const caret = document.getElementById(`matrix-card-caret-${ticketId}`);

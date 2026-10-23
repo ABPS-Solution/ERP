@@ -2113,6 +2113,26 @@ function triggerStoreTicketMatrixSearch() {
   matrixActiveProjectSearchQuery = matrixActiveProjectSearchDisplay.toLowerCase();
   document.getElementById("matrix-material-search-dropdown").style.display = "none";
   document.getElementById("matrix-project-search-dropdown").style.display = "none";
+  storeTicketServerSearch();
+}
+// Searches every ticket on the server, then draws with the same filters.
+async function storeTicketServerSearch() {
+  const feed = document.getElementById("store-historical-matrix-results-feed");
+  const val = id => (document.getElementById(id)?.value || "").trim();
+  const checked = name => Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(cb => cb.value);
+  if (feed) feed.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">Searching...</div>`;
+  try {
+    const d = await apFetch({ action: "fetchAllHistoricalStoreTicketsStream",
+      stores: checked("matrixStoreFilter"), statuses: checked("matrixStatusFilter"), departments: checked("matrixDepartmentFilter"),
+      dateFrom: val("matrix-date-from"), dateTo: val("matrix-date-to"), project: matrixActiveProjectSearchDisplay,
+      material: matrixActiveMaterialSearchDisplay, text: val("matrix-free-text") });
+    if (!d.success) { if (feed) feed.innerHTML = `<div style="color:#b91c1c; padding:12px;">${escapeHtml(d.error || "Search failed.")}</div>`; return; }
+    masterStoreTicketsHistoryCacheCollection = d.tickets || [];
+    window.matrixSearchCapped = !!d.capped;
+  } catch (e) {
+    if (e.message !== "SESSION_EXPIRED" && feed) feed.innerHTML = `<div style="color:#b91c1c; padding:12px;">${escapeHtml(e.message)}</div>`;
+    return;
+  }
   executeClientSideStoreTicketFilterSearch();
 }
 
