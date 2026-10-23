@@ -576,7 +576,7 @@ function handleMcProductSearch(query, projectId, lineId) {
     <div onclick="selectMcProduct(${jsArg(projectId)}, ${lineId}, ${jsArg(item.itemCode)}, ${jsArg(item.productName)}, ${jsArg(item.rating||'')}, ${jsArg(item.make||'')}, ${jsArg(item.unit||'')})"
       style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
-      ${escapeHtml(item.productName)}${item.rating ? ` - <span style="color:var(--brand); font-weight:700;">${escapeHtml(item.rating)}</span>` : ""}
+      ${escapeHtml(item.productName)}${item.rating ? ` - <span style="color:var(--brand); font-weight:700;">${escapeHtml(item.rating)}</span>` : ""}${item.make ? ` - <span style="color:#475569;">Make: ${escapeHtml(item.make)}</span>` : ""}
     </div>`).join("");
   dropdown.style.display = "block";
 }
@@ -817,6 +817,12 @@ function ensureProductRenameModalEl() {
   return el;
 }
 
+// "Name - Rating - Make: X" for an item code (catalog), else name - rating.
+function mcRenameFullName(itemCode, name, rating, make) {
+  const c = (window.itemCodeCatalogCache || []).find(x => x.itemCode === itemCode);
+  if (c && c.combinedName) return c.combinedName;
+  return [name, rating, make ? "Make: " + make : ""].filter(Boolean).join(" - ");
+}
 function openProductRenameModal(projectId, lineId) {
   window._mcRenameTarget = { projectId, lineId };
   window._mcRenamePreview = null;
@@ -830,7 +836,7 @@ function openProductRenameModal(projectId, lineId) {
     </div>
     <div style="border:1.5px solid var(--border); border-radius:var(--radius); background:#f8fafc; padding:10px 12px; margin-bottom:14px;">
       <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--muted); letter-spacing:0.03em;">Current product</div>
-      <div style="font-size:0.9rem; font-weight:700; color:#111827; margin-top:2px;">${escapeHtml(state.standardProductName || '')}${state.standardProductRating ? ' - ' + escapeHtml(state.standardProductRating) : ''}</div>
+      <div style="font-size:0.9rem; font-weight:700; color:#111827; margin-top:2px;">${escapeHtml(mcRenameFullName(state.standardItemCode, state.standardProductName, state.standardProductRating, state.make))}</div>
     </div>
     <label style="display:block; font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--muted); letter-spacing:0.03em; margin-bottom:5px;">New product</label>
     <input type="text" id="mc-rename-search-input" placeholder="Type the new product (name, rating or item code)..." autocomplete="off"
@@ -866,7 +872,7 @@ function handleProductRenameSearch(query) {
     <div onclick="document.getElementById('mc-rename-search-results').style.display='none'; selectProductRenameCandidate(${jsArg(item.itemCode)})"
       style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
-      ${escapeHtml(item.productName)}${item.rating ? ` - <span style="color:var(--brand); font-weight:700;">${escapeHtml(item.rating)}</span>` : ""}
+      ${escapeHtml(item.productName)}${item.rating ? ` - <span style="color:var(--brand); font-weight:700;">${escapeHtml(item.rating)}</span>` : ""}${item.make ? ` - <span style="color:#475569;">Make: ${escapeHtml(item.make)}</span>` : ""}
     </div>`).join("") || `<div style="padding:8px 12px; font-size:0.8rem; color:var(--muted);">No matches.</div>`;
 }
 
@@ -889,9 +895,9 @@ async function selectProductRenameCandidate(newItemCode) {
     previewZone.innerHTML = `
       <div style="border:1.5px solid var(--border); border-radius:var(--radius); padding:12px 14px; background:#f8fafc;">
         <div style="font-size:0.78rem; color:var(--muted); font-weight:700; text-transform:uppercase;">From</div>
-        <div style="font-size:0.9rem; margin-bottom:8px;">${escapeHtml(data.oldProductName)}</div>
+        <div style="font-size:0.9rem; margin-bottom:8px;">${escapeHtml((() => { const st = mcLineItemState[target.projectId][target.lineId]; return mcRenameFullName(st.standardItemCode, st.standardProductName || data.oldProductName, st.standardProductRating, st.make); })())}</div>
         <div style="font-size:0.78rem; color:var(--muted); font-weight:700; text-transform:uppercase;">To</div>
-        <div style="font-size:0.95rem; font-weight:700; color:var(--brand);">${escapeHtml(data.newProductName)}${data.newRating ? ' - ' + escapeHtml(data.newRating) : ''}</div>
+        <div style="font-size:0.95rem; font-weight:700; color:var(--brand);">${escapeHtml(mcRenameFullName(newItemCode, data.newProductName, data.newRating, null))}</div>
         <div style="font-size:0.8rem; color:#475569; margin-top:8px;">${alsoNote}</div>
       </div>
       <div style="display:flex; justify-content:flex-end; margin-top:12px;">
