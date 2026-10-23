@@ -1261,6 +1261,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
   <div id="dept-tabs-bar" class="dept-tabs-bar" style="display:none;">
     <span class="dept-tabs-label">Departments</span>
     <button class="dept-tab" id="dept-tab-admin" data-accent="#7c3aed" onclick="handleDepartmentTabClick('admin')">Admin</button>
+    <button class="dept-tab" id="dept-tab-approvals" data-accent="#0f766e" onclick="handleDepartmentTabClick('approvals')" style="display:none;">Approvals</button>
     <!-- Marketing/Project/Design/Purchase/Store/QA/Production order and
          accent colors match Portal's own dept-tabs-bar exactly (Portal has
          no separate "Admin" tab — Security & Login Access lives under its
@@ -1297,7 +1298,6 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         <div class="menu-card" id="mod-traveltickets" onclick="switchActiveDashboardModule('traveltickets'); initializeTravelTicketsPanel();"><span class="mc-label">Travel Ticket / Hotel Booking</span></div>
         <div class="menu-card" id="mod-tourexpense" onclick="switchActiveDashboardModule('tourexpense'); initializeTourExpensePanel();"><span class="mc-label">Tour Expense Tracker</span></div>
         <div class="menu-card" id="mod-cashexpenses" onclick="switchActiveDashboardModule('cashexpenses'); initializeCashExpensesPanel();"><span class="mc-label">Daily Cash / UPI / Online Expenses</span></div>
-        <div class="menu-card" id="mod-projectcosting" onclick="switchActiveDashboardModule('projectcosting')"><span class="mc-label">Project Costing</span></div>
       </div>
     </div>
 
@@ -1400,12 +1400,10 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-purchase-material-list" onclick="navigateToPurchaseWorkspacePanel('purchase-material-list')"><span class="mc-label">List of Material to Raise Purchase Order</span></div>
         <div class="menu-card" id="mod-purchase-create-po"  onclick="navigateToPurchaseWorkspacePanel('purchase-create-po')"><span class="mc-label">Create Raw Material Purchase Order</span></div>
-        <div class="menu-card" id="mod-purchase-authorize-po"  onclick="navigateToPurchaseWorkspacePanel('purchase-authorize-po')"><span class="mc-label">Authorize Raw Material Purchase Order</span></div>
       </div>
       <div class="sec-label">PO Revision</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-revise-rm-po" onclick="navigateToPurchaseWorkspacePanel('purchase-revise-po')"><span class="mc-label">Revise Raw Material Purchase Order</span></div>
-        <div class="menu-card" id="mod-authorize-rm-po-revision" onclick="navigateToPurchaseWorkspacePanel('purchase-authorize-po-revision')"><span class="mc-label">Authorize Raw Material Purchase Order Revision</span></div>
       </div>
       <div class="sec-label">Tracking & Search</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
@@ -1457,9 +1455,6 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       </div>
       <div class="sec-label">Material Requests Admin Approval</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
-        <div class="menu-card" id="mod-boq-increase-approvals"  onclick="navigateToStoreWorkspacePanel('boq-increase-approvals')"><span class="mc-label">Approve Excess Material Request</span></div>
-        <div class="menu-card" id="mod-material-change-approvals" style="display:none;" onclick="navigateToStoreWorkspacePanel('material-change-approvals')"><span class="mc-label">Approve Production Material Change Request</span></div>
-        <div class="menu-card" id="mod-consumable-purchase-approvals" style="display:none;" onclick="navigateToStoreWorkspacePanel('consumable-purchase-approvals')"><span class="mc-label">Approve Production Memo Purchase Requests</span></div>
       </div>
       <div class="sec-label">Raw Materials Store Outward</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
@@ -1475,16 +1470,13 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <div class="sec-label">Delivery Challan</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-material-outward" onclick="switchActiveDashboardModule('material-outward')"><span class="mc-label">Material Outward on Delivery Challan</span></div>
-        <div class="menu-card" id="mod-authorize-material-outward" onclick="switchActiveDashboardModule('authorize-material-outward')"><span class="mc-label">Authorize Material Outward on Delivery Challan</span></div>
         <div class="menu-card" id="mod-search-material-outward" onclick="switchActiveDashboardModule('search-material-outward')"><span class="mc-label">Search Material Outward on Delivery Challan</span></div>
         <div class="menu-card" id="mod-expected-processing-returns" onclick="switchActiveDashboardModule('expected-processing-returns')"><span class="mc-label">Not Returned Delivery Challan Material</span></div>
       </div>
       <div class="sec-label">Dispatch Invoice</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-create-project-dispatch-invoice"              onclick="switchActiveDashboardModule('create-project-dispatch-invoice')"><span class="mc-label">Create Project Dispatch Invoice</span></div>
-        <div class="menu-card" id="mod-authorize-project-dispatch-invoice"           onclick="switchActiveDashboardModule('authorize-project-dispatch-invoice')"><span class="mc-label">Authorize Project Dispatch Invoice</span></div>
         <div class="menu-card" id="mod-revise-project-dispatch-invoice"              onclick="switchActiveDashboardModule('revise-project-dispatch-invoice')"><span class="mc-label">Revise Project Dispatch Invoice</span></div>
-        <div class="menu-card" id="mod-authorize-project-dispatch-invoice-revision"  onclick="switchActiveDashboardModule('authorize-project-dispatch-invoice-revision')"><span class="mc-label">Authorize Project Dispatch Invoice Revision</span></div>
       </div>
     </div>
 
@@ -1550,6 +1542,36 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <div class="sec-label">Finished Goods</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-fg-add"                  onclick="switchActiveDashboardModule('fg-add')"><span class="mc-label">Add to Finished Goods Store</span></div>
+      </div>
+    </div>
+
+    <!-- ── APPROVALS (23 Oct 2026): authorize / approve screens gathered from
+         their departments. Cards keep their ids, so permissions work as before. -->
+    <div id="dashboard-approvals-department-header-block" class="dept-block" style="display:none; --dept-accent:#0f766e;">
+      <div class="dept-header">
+        <div class="dept-bar" style="background:#0f766e;"></div>
+        <span class="dept-name">Approvals</span>
+      </div>
+      <div class="sec-label">Accounts</div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-projectcosting" onclick="switchActiveDashboardModule('projectcosting')"><span class="mc-label">Project Costing</span></div>
+      </div>
+      <div class="sec-label">Purchase</div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-purchase-authorize-po"  onclick="navigateToPurchaseWorkspacePanel('purchase-authorize-po')"><span class="mc-label">Authorize Raw Material Purchase Order</span></div>
+        <div class="menu-card" id="mod-authorize-rm-po-revision" onclick="navigateToPurchaseWorkspacePanel('purchase-authorize-po-revision')"><span class="mc-label">Authorize Raw Material Purchase Order Revision</span></div>
+      </div>
+      <div class="sec-label">Production / Store</div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-boq-increase-approvals"  onclick="navigateToStoreWorkspacePanel('boq-increase-approvals')"><span class="mc-label">Approve Excess Material Request</span></div>
+        <div class="menu-card" id="mod-material-change-approvals" style="display:none;" onclick="navigateToStoreWorkspacePanel('material-change-approvals')"><span class="mc-label">Approve Production Material Change Request</span></div>
+        <div class="menu-card" id="mod-consumable-purchase-approvals" style="display:none;" onclick="navigateToStoreWorkspacePanel('consumable-purchase-approvals')"><span class="mc-label">Approve Production Memo Purchase Requests</span></div>
+      </div>
+      <div class="sec-label">Dispatch</div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-authorize-material-outward" onclick="switchActiveDashboardModule('authorize-material-outward')"><span class="mc-label">Authorize Material Outward on Delivery Challan</span></div>
+        <div class="menu-card" id="mod-authorize-project-dispatch-invoice"           onclick="switchActiveDashboardModule('authorize-project-dispatch-invoice')"><span class="mc-label">Authorize Project Dispatch Invoice</span></div>
+        <div class="menu-card" id="mod-authorize-project-dispatch-invoice-revision"  onclick="switchActiveDashboardModule('authorize-project-dispatch-invoice-revision')"><span class="mc-label">Authorize Project Dispatch Invoice Revision</span></div>
       </div>
     </div>
 

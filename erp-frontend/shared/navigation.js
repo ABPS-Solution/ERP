@@ -282,7 +282,7 @@ async function navigateToModule(key) {
 // index.html but no enforceDynamicModuleRoleGateways visibility logic yet,
 // so refreshDepartmentTabsBar's own block-display check keeps all 5 tabs
 // hidden until the batch that owns that department adds real gating.
-const DEPT_TAB_KEYS = ['accounts', 'design', 'purchase', 'admin', 'marketing', 'project', 'store', 'qa', 'production'];
+const DEPT_TAB_KEYS = ['accounts', 'design', 'purchase', 'admin', 'approvals', 'marketing', 'project', 'store', 'qa', 'production'];
 const DEPT_TAB_STORAGE_KEY = 'erpActiveDeptTab';
 // Same reasoning as Portal's deptTabVisibleKeys: selectDepartmentTab must
 // consult which departments are actually permission-visible (set once per
@@ -587,8 +587,25 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   // Hide the pair together whenever every card in that grid ended up
   // hidden. Ported from Portal's shared/navigation.js.
   hideEmptyDashboardSections();
+  hideEmptyDepartmentBlocks();
 
   refreshDepartmentTabsBar();
+}
+
+// A department shows only when it has something to open (23 Oct 2026): the
+// Approvals block is built from cards moved out of other departments, so a
+// department's old permission check can leave it with nothing left in it.
+function hideEmptyDepartmentBlocks() {
+  document.querySelectorAll('[id$="-department-header-block"]').forEach(block => {
+    const visible = (el) => el.style.display !== 'none' && !(el.closest('.dashboard-grid') && el.closest('.dashboard-grid').style.display === 'none');
+    const hasCard = Array.from(block.querySelectorAll('.menu-card')).some(visible);
+    const hasPill = Array.from(block.querySelectorAll('.dept-dash-pill')).some(p => {
+      for (let e = p; e && e !== block; e = e.parentElement) if (e.style.display === 'none') return false;
+      return true;
+    });
+    if (block.id === 'dashboard-approvals-department-header-block') block.style.display = (hasCard || hasPill) ? 'block' : 'none';
+    else if (!hasCard && !hasPill) block.style.display = 'none';
+  });
 }
 
 function hideEmptyDashboardSections() {
