@@ -1094,7 +1094,7 @@ function ticketJobCardDisplayReset(text) {
   const disp = document.getElementById("ticket-job-card-display");
   const textEl = document.getElementById("ticket-job-card-display-text");
   const hidden = document.getElementById("ticket-job-card-dropdown");
-  const list = document.getElementById("ticket-job-card-dropdown-list");
+  const list = document.getElementById("ticket-job-card-pills");
   if (textEl) textEl.textContent = text;
   if (hidden) hidden.value = "";
   if (list) { list.style.display = "none"; list.innerHTML = ""; }
@@ -1106,7 +1106,7 @@ function ticketJobCardDisplayEnable() {
 }
 // Job Cards show as buttons (JC_Set-1, JC_Set-2 ...): click to pick or unpick, or Select All.
 function ticketJobCardPopulate(options) {
-  const list = document.getElementById("ticket-job-card-dropdown-list");
+  const list = document.getElementById("ticket-job-card-pills");
   const disp = document.getElementById("ticket-job-card-display");
   if (!list) return;
   window.ticketJobCardOptions = options;
@@ -1115,7 +1115,7 @@ function ticketJobCardPopulate(options) {
   ticketJobCardPopulateRefresh();
 }
 function ticketJobCardPopulateRefresh() {
-  const list = document.getElementById("ticket-job-card-dropdown-list");
+  const list = document.getElementById("ticket-job-card-pills");
   const opts = window.ticketJobCardOptions || [];
   if (!list || !opts.length) return;
   const picked = new Set(window.ticketSelectedJobCards || []);
@@ -1153,7 +1153,7 @@ function toggleTicketJobCard(jobCardNumber, on, skipRefresh) {
 function toggleTicketJobCardDropdown() {
   const disp = document.getElementById("ticket-job-card-display");
   if (!disp || disp.dataset.disabled === "1") return;
-  const list = document.getElementById("ticket-job-card-dropdown-list");
+  const list = document.getElementById("ticket-job-card-pills");
   const isOpen = list.style.display === "block";
   document.querySelectorAll("[id$='-dropdown-list']").forEach(l => l.style.display = "none");
   list.style.display = isOpen ? "none" : "block";
@@ -1162,7 +1162,7 @@ function selectTicketJobCard(jobCardNumber, label) {
   if (jobCardNumber === "__BULK__") {
     document.getElementById("ticket-job-card-dropdown").value = "";
     document.getElementById("ticket-job-card-display-text").textContent = label;
-    document.getElementById("ticket-job-card-dropdown-list").style.display = "none";
+    document.getElementById("ticket-job-card-pills").style.display = "none";
     resetMaterialRequestCascadingLockState();
     ticketBulkOpen();
     return;
@@ -1170,14 +1170,14 @@ function selectTicketJobCard(jobCardNumber, label) {
   ticketBulkClose();
   document.getElementById("ticket-job-card-dropdown").value = jobCardNumber;
   document.getElementById("ticket-job-card-display-text").textContent = label;
-  document.getElementById("ticket-job-card-dropdown-list").style.display = "none";
+  document.getElementById("ticket-job-card-pills").style.display = "none";
   handleTicketJobCardChange(jobCardNumber);
 }
 document.addEventListener("click", (e) => {
   if (!e.target.closest("#ticket-boq-display") && !e.target.closest("#ticket-boq-dropdown-list") &&
-      !e.target.closest("#ticket-job-card-display") && !e.target.closest("#ticket-job-card-dropdown-list")) {
+      !e.target.closest("#ticket-job-card-display") && !e.target.closest("#ticket-job-card-pills")) {
     const l1 = document.getElementById("ticket-boq-dropdown-list"); if (l1) l1.style.display = "none";
-    const l2 = document.getElementById("ticket-job-card-dropdown-list"); if (l2) l2.style.display = "none";
+
   }
 });
 
@@ -2606,7 +2606,7 @@ renderDraftBasketTableViewportRows = (orig => function () {
 })(renderDraftBasketTableViewportRows);
 document.addEventListener("change", e => { if (e.target.closest && e.target.closest("#cmit-main-section")) cmitDraftSaveSoon(); });
 document.addEventListener("input", e => { if (e.target.closest && e.target.closest("#cmit-main-section")) cmitDraftSaveSoon(); });
-document.addEventListener("click", e => { if (e.target.closest && (e.target.closest("#ticket-boq-dropdown-list") || e.target.closest("#ticket-job-card-dropdown-list"))) cmitDraftSaveSoon(); });
+document.addEventListener("click", e => { if (e.target.closest && (e.target.closest("#ticket-boq-dropdown-list") || e.target.closest("#ticket-job-card-pills"))) cmitDraftSaveSoon(); });
 
 // ── Production Memo for Purchase (migration 249) ─────────────────────────
 // Adds a "Production Memo Purchase Material" row to the basket. It is sent
