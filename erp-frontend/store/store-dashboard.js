@@ -153,7 +153,7 @@ function sdRenderDashboard(data) {
   sdChartDept = new Chart(ctx1, {
     type: "bar",
     data: {
-      labels: deptLabels,
+      labels: deptLabels.map(outwardUseLabel),
       datasets: [{ label:"Tickets", data: deptLabels.map(d => byDept[d]),
         backgroundColor: ["rgba(37,99,235,0.7)","rgba(16,185,129,0.7)","rgba(245,158,11,0.7)","rgba(239,68,68,0.7)","rgba(139,92,246,0.7)","rgba(236,72,153,0.7)"],
         borderRadius: 4 }]

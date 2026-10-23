@@ -571,7 +571,7 @@ function ticketBatchCardsHtml(tickets) {
           <div>
             <div style="font-weight:800; color:var(--brand);">Bulk Ticket <span style="font-family:monospace;">${bid}</span>
               <span style="font-size:0.7rem; background:#dbeafe; color:#1e40af; padding:2px 8px; border-radius:999px; margin-left:6px;">${list.length} JOB CARDS</span></div>
-            <div style="font-size:0.82rem; color:#475569; margin-top:4px;">${escapeHtml(f.projectId || "")} · ${escapeHtml(f.department || "")} · ${escapeHtml(f.storeTargetScope || "Raw Materials Store")} · by ${escapeHtml(f.requestedBy || "")}</div>
+            <div style="font-size:0.82rem; color:#475569; margin-top:4px;">${escapeHtml(f.projectId || "")} · ${escapeHtml(outwardUseLabel(f.department))} · ${escapeHtml(f.storeTargetScope || "Raw Materials Store")} · by ${escapeHtml(f.requestedBy || "")}</div>
             <div style="font-size:0.78rem; color:var(--muted); margin-top:2px;">Tickets: ${list.map(t => escapeHtml(t.ticketId)).join(", ")}</div>
           </div>
         </div>

@@ -2680,7 +2680,7 @@ function ticketSubmitSuccessHtml(result, outwardPurposeVal) {
       <div style="background:#15803d; color:#fff; padding:14px 18px; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
         <div>
           <div style="font-size:1.05rem; font-weight:800;">${result.ticketId ? "Material Issue Ticket created" : "Sent for approval"}</div>
-          <div style="font-size:0.85rem; opacity:0.9; margin-top:2px;">${lines.length} item${lines.length === 1 ? "" : "s"} raised${outwardPurposeVal ? ` · Purpose: ${escapeHtml(outwardPurposeVal)}` : ""}</div>
+          <div style="font-size:0.85rem; opacity:0.9; margin-top:2px;">${lines.length} item${lines.length === 1 ? "" : "s"} raised${outwardPurposeVal ? ` · Purpose: ${escapeHtml(outwardUseLabel(outwardPurposeVal))}` : ""}</div>
         </div>
         <button class="nav-btn-styled" style="width:auto; background:#fff; color:#15803d; padding:9px 18px; font-weight:800; font-size:0.85rem;" onclick="resetStoreCreateTicketToInitialState()">+ Create New Ticket</button>
       </div>

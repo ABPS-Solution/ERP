@@ -50,7 +50,7 @@ function cprRenderPendingCard(r) {
             <span style="margin-left:8px;">By:</span> <strong style="color:#111827;">${escapeHtml(r.requestedBy || "")}</strong>
             <span style="margin-left:8px;">|</span>
             <strong style="color:#111827; margin-left:8px;">${escapeHtml(formatOrdinalDateTime(r.requestedAt))}</strong>
-            <span style="margin-left:12px;">Dept:</span> <strong style="color:#111827;">${escapeHtml(r.department || "—")}</strong>
+            <span style="margin-left:12px;">Dept:</span> <strong style="color:#111827;">${escapeHtml(outwardUseLabel(r.department) || "—")}</strong>
           </div>
         </div>
       </div>

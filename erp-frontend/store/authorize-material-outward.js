@@ -59,7 +59,7 @@ function amoRenderCard(c) {
     <div style="margin-top:12px; border-top:1px dashed var(--border); padding-top:12px;">
       ${ticketBoxes}
       <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; margin:6px 0 14px;">
-        ${field("Purpose", c.outward_type, true)}
+        ${field("Purpose", outwardUseLabel(c.outward_type), true)}
         ${field("Status", c.returnable_status, true)}
         ${field("Challan No", c.challan_number, true, true)}
         ${field("Tickets", tickets.map(t => t.ticketId).join(", "))}
@@ -99,7 +99,7 @@ function amoRenderCard(c) {
       <div onclick="amoToggle(${id})" style="display:flex; justify-content:space-between; align-items:center; gap:10px; cursor:pointer; flex-wrap:wrap;">
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
           <span style="font-family:monospace; font-weight:800; background:var(--brand); color:#fff; padding:3px 8px; border-radius:4px;">${escapeHtml(c.challan_number || `Draft #${id}`)}</span>
-          <span style="font-weight:700;">${escapeHtml(c.outward_type || "")}</span>
+          <span style="font-weight:700;">${escapeHtml(outwardUseLabel(c.outward_type))}</span>
           <span style="color:var(--muted);">${amoConsigneeLabel(c)}:</span> <strong>${escapeHtml(c.consignee_name || "—")}</strong>
         </div>
         <div style="display:flex; align-items:center; gap:12px; font-size:0.82rem; color:var(--muted);">
