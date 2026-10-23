@@ -376,7 +376,7 @@ async function loadCboqAllowedProductsInner(projectId) {
     window.cboqAllowedOptionsList = data.options || [];
 
     if (!data.options || data.options.length === 0) {
-      if (search) search.placeholder = "— No Products Cleared for a New BOQ —";
+      if (search) search.placeholder = "— No product left needing a new BOQ —";
       if (banner) {
         banner.style.display = "block";
         banner.textContent = data.message || "No products are cleared for manufacturing yet. check Manufacturing Clearance.";
