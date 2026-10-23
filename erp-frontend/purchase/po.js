@@ -1726,7 +1726,7 @@ async function submitCreatePO() {
       if (!(row.allocations || []).length) continue;
       if (!needByCode[row.itemCode]) {
         try {
-          const res = await apFetch({ action: "fetchOpenPRNsForItemCode", itemCode: row.itemCode });
+          const res = await apFetch({ action: "fetchOpenPRNsForItemCode", itemCode: row.itemCode, excludePoNo: window.cpoEditingPoNo || null });
           needByCode[row.itemCode] = Object.fromEntries(((res && res.prns) || []).map(p => [p.prnId, Number(p.stillToOrder) || 0]));
         } catch (e) { needByCode[row.itemCode] = null; }
       }

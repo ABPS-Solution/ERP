@@ -7,7 +7,7 @@ async function openCPOAllocationPicker(rowId) {
 
   let prns = [], memoReqs = [], pendingBoqs = [];
   try {
-    const res = await apFetch({ action: "fetchOpenPRNsForItemCode", itemCode: row.itemCode });
+    const res = await apFetch({ action: "fetchOpenPRNsForItemCode", itemCode: row.itemCode, excludePoNo: window.cpoEditingPoNo || null });
     prns = (res && res.success) ? (res.prns || []) : [];
     memoReqs = (res && res.success) ? (res.memoRequests || []) : [];
     pendingBoqs = (res && res.success) ? (res.pendingBoqs || []) : [];
@@ -51,6 +51,7 @@ async function openCPOAllocationPicker(rowId) {
       <div style="flex:1; min-width:0;">
         <div style="font-weight:700; font-size:0.78rem; color:var(--brand); white-space:normal; line-height:1.4;">${escapeHtml(p.productName || "")}${p.productRating ? " " + p.productRating : ""}</div>
         <div style="font-size:0.72rem; color:var(--muted);">${p.projectId || ""}</div>
+        ${(p.waitingPos || []).length ? `<div style="font-size:0.72rem; color:#b45309; font-weight:600; margin-top:2px;">${fmtQty(p.prnStillToOrder)} needed, ${fmtQty(p.waitingQty)} already on ${escapeHtml(p.waitingPos.map(w => w.poNo + " (" + fmtQty(w.qty) + ")").join(", "))} waiting for authorization</div>` : ""}
       </div>
       <span style="font-size:0.9rem; font-weight:700; color:#15803d; background:#dcfce7; padding:2px 8px; border-radius:4px; white-space:nowrap;">Needs ${fmtQty(p.stillToOrder)}</span>
       <input type="number" min="0" max="${Number(p.stillToOrder) || 0}" step="any"
