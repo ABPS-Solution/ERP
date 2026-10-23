@@ -2536,7 +2536,7 @@ function cpoRenderNextPoNumber() {
   const note = document.getElementById("cpo-next-po-no-note");
   if (typed) { el.textContent = cpoCurrentPOPrefix() + typed.padStart(5, "0"); if (note) note.textContent = ""; return; }
   el.textContent = cpoNextPoNoCache || "—";
-  if (note) note.textContent = cpoPoNoReserved ? " (reserved for you)" : " (reserved once a row is complete)";
+  if (note) note.textContent = cpoPoNoReserved ? " (reserved for you)" : "";
 }
 async function cpoShowNextPoNumber() {
   cpoRenderNextPoNumber();
