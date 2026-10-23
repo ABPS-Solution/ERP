@@ -894,7 +894,7 @@ async function selectProductRenameCandidate(newItemCode) {
     const boqs = data.boqs || [];
     const jcCount = boqs.reduce((n, b) => n + (b.jobCards || []).length, 0);
     const alsoNote = boqs.length
-      ? `Its BOQ${boqs.some(b => b.newPrnId) ? ", PRN" : ""}${jcCount ? ` and ${jcCount} Job Card${jcCount === 1 ? "" : "s"}` : ""} are updated too.`
+      ? `Its current BOQ is retired (kept as history) and stock reserved for it is freed. Design then makes a new BOQ for the new product in Create BOQ.`
       : "No BOQ yet, only the product is changed.";
     previewZone.innerHTML = `
       <div style="border:1.5px solid var(--border); border-radius:var(--radius); padding:12px 14px; background:#f8fafc;">
