@@ -14,6 +14,7 @@ async function initializeStoreHistoryMatrixWorkspace() {
   const projInput = document.getElementById("matrix-project-search-input");
   if (matInput) matInput.value = "";
   if (projInput) projInput.value = "";
+  ["matrix-date-from", "matrix-date-to", "matrix-free-text"].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
   matrixActiveMaterialSearchQuery = "";
   matrixActiveProjectSearchQuery = "";
   matrixActiveMaterialSearchDisplay = "";

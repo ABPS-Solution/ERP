@@ -274,7 +274,13 @@ function executeClientSideStoreTicketFilterSearch() {
   summaryParts.push(checkedStatusLabels.length ? `Statuses: ${valSpan(checkedStatusLabels.join(", or "))}` : `Statuses: ${valSpan("ALL")}`);
   if (matrixActiveMaterialSearchQuery) summaryParts.push(`Material: ${valSpan(`"${matrixActiveMaterialSearchDisplay}"`)}`);
   if (matrixActiveProjectSearchQuery) summaryParts.push(`Project ID: ${valSpan(`"${matrixActiveProjectSearchDisplay}"`)}`);
-  if (checkedDeptLabels.length) summaryParts.push(`Department: ${valSpan(checkedDeptLabels.join(", or "))}`);
+  if (checkedDeptLabels.length) summaryParts.push(`Department: ${valSpan(checkedDeptLabels.map(outwardUseLabel).join(", or "))}`);
+  const dateFrom = document.getElementById("matrix-date-from")?.value || "";
+  const dateTo = document.getElementById("matrix-date-to")?.value || "";
+  const freeText = (document.getElementById("matrix-free-text")?.value || "").trim().toLowerCase();
+  if (dateFrom || dateTo) summaryParts.push(`Requested: ${valSpan((dateFrom ? formatOrdinalDate(dateFrom) : "start") + " to " + (dateTo ? formatOrdinalDate(dateTo) : "today"))}`);
+  if (freeText) summaryParts.push(`Text: ${valSpan(`"${escapeHtml(freeText)}"`)}`);
+  const istDay = (d) => d ? new Date(d).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }) : "";
   const summaryEl = document.getElementById("matrix-search-summary-text");
   if (summaryEl) { summaryEl.style.display = "block"; summaryEl.innerHTML = `Searching for:<br>${summaryParts.join(" | ")}`; }
 
@@ -294,12 +300,23 @@ function executeClientSideStoreTicketFilterSearch() {
     const matchStatus   = (checkedStatuses.length === 0 || checkedStatuses.indexOf(statusStr) !== -1);
     const matchDept     = (checkedDepartments.length === 0 || checkedDepartments.indexOf(ticketDeptStr) !== -1);
     
-    return matchStore && matchProject && matchMaterial && matchStatus && matchDept;
+    const day = istDay(ticket.dateCreated);
+    const matchDate = (!dateFrom || day >= dateFrom) && (!dateTo || day <= dateTo);
+    const textHay = [ticket.ticketId, ticket.requestedBy, ticket.actionedBy, ticket.jobCardNumber, ...(ticket.jobCardNumbers || []), ticket.boqId, ticket.legacyCompanyName]
+      .filter(Boolean).join(" ").toLowerCase();
+    const matchText = !freeText || textHay.includes(freeText);
+    return matchStore && matchProject && matchMaterial && matchStatus && matchDept && matchDate && matchText;
   });
 
   if (filteredOutputList.length === 0) {
     resultsFeedZone.innerHTML = `<div style="text-align:center; padding:20px; background:#fff; border:1px solid var(--border); border-radius:4px; color:var(--muted); font-size:0.85rem;">No historical tickets matched your current combination.</div>`;
     return;
+  }
+  {
+    const countEl = document.createElement("div");
+    countEl.style.cssText = "font-size:0.85rem; font-weight:700; color:#475569;";
+    countEl.textContent = `${filteredOutputList.length} ticket${filteredOutputList.length === 1 ? "" : "s"} found${masterStoreTicketsHistoryCacheCollection.length >= 2000 ? " (searching the latest 2,000 tickets)" : ""}.`;
+    resultsFeedZone.appendChild(countEl);
   }
 
   filteredOutputList.forEach(ticket => {
@@ -309,12 +326,15 @@ function executeClientSideStoreTicketFilterSearch() {
     let itemsArray = Array.isArray(ticket.items) ? ticket.items : [];
     
     let itemsTableRowsHtml = "";
+    const tdB = "border-left:1.5px solid var(--border); border-bottom:1px solid var(--border);";
     itemsArray.forEach(i => {
-      const mappedQty = (i.released !== undefined && i.released !== null) ? i.released : i.quantity;
+      const issued = (i.released !== undefined && i.released !== null) ? i.released : null;
       itemsTableRowsHtml += `
         <tr>
-          <td style="padding:6px; color:var(--text); font-weight:600; text-align:left;">${escapeHtml(i.materialName)}</td>
-          <td style="padding:6px; font-family:monospace; font-weight:700; font-size:1.05rem; text-align:right; color:var(--brand);">${fmtQty(mappedQty)} ${i.unitType || 'Pcs'}</td>
+          <td style="padding:7px 8px; color:var(--text); font-weight:600; text-align:left; border-bottom:1px solid var(--border);">${escapeHtml(i.materialName)}${i.itemCode ? `<div style="font-family:monospace; font-size:0.74rem; color:var(--muted); font-weight:500;">${escapeHtml(i.itemCode)}</div>` : ""}</td>
+          <td style="padding:7px 8px; text-align:center; color:#475569; ${tdB}">${escapeHtml(i.unitType || "")}</td>
+          <td style="padding:7px 8px; font-family:monospace; font-weight:700; text-align:center; ${tdB}">${fmtQty(i.quantity)}</td>
+          <td style="padding:7px 8px; font-family:monospace; font-weight:700; text-align:center; color:${issued == null ? "var(--muted)" : (Number(issued) + 1e-9 < Number(i.quantity) ? "#b45309" : "#15803d")}; ${tdB}">${issued == null ? "-" : fmtQty(issued)}</td>
         </tr>`;
     });
 
@@ -349,7 +369,10 @@ function executeClientSideStoreTicketFilterSearch() {
             ${ticket.legacyCompanyName
               ? `<span style="background:#fef3c7; color:#92400e; font-weight:700; padding:2px 6px; border-radius:4px; margin-right:8px;">LEGACY</span><span>Company:</span> <strong style="margin-right:15px; color:var(--brand);">${escapeHtml(ticket.legacyCompanyName)}</strong>`
               : `<span>Project ID:</span> <strong style="margin-right:15px; color:var(--brand);">${ticket.projectId || "None"}</strong>`}
-            <span>Job Card Number:</span> <strong style="color:var(--brand);">${ticket.jobCardNumber || "—"}</strong>
+            ${(ticket.jobCardNumbers || []).length > 1
+              ? `<span>Job Cards:</span> <strong style="color:var(--brand);">${escapeHtml(ticket.jobCardNumbers.map(j => (String(j).match(/^JC_Set-\d+/) || [j])[0]).join(", "))}</strong>`
+              : `<span>Job Card Number:</span> <strong style="color:var(--brand);">${escapeHtml(ticket.jobCardNumber || "—")}</strong>`}
+            ${ticket.pdfUrl ? `<a href="${escapeHtml(driveLink(ticket.pdfUrl))}" target="_blank" onclick="event.stopPropagation()" style="margin-left:15px; font-weight:700; color:var(--brand);">View Ticket PDF ↗</a>` : ""}
           </div>
           <div class="meta-row-line-block" style="margin-top:6px; font-size:0.85rem;">
             <span>Requested By:</span> <strong style="margin-right:15px; color:#111827;">${escapeHtml(ticket.requestedBy || "—")}</strong>
@@ -360,12 +383,16 @@ function executeClientSideStoreTicketFilterSearch() {
         </div>
       </div>
       <div id="matrix-card-body-${ticket.ticketId}" style="display:none; padding-top:8px; border-top:1px dashed var(--border); margin-top:6px;">
+        ${ticket.justificationNotes ? `<div style="font-size:0.82rem; color:#475569; background:#f8fafc; border:1px solid var(--border); border-radius:4px; padding:8px 10px; margin-bottom:8px;"><strong>Notes:</strong> ${escapeHtml(ticket.justificationNotes)}</div>` : ""}
         <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:6px;">
-          <table class="prn-bordered-table mit-pps-table" style="width:100%; font-size:0.82rem; border-collapse:collapse; table-layout:fixed;">
+          <table class="prn-bordered-table mit-pps-table" style="width:100%; font-size:0.84rem; border-collapse:collapse; table-layout:fixed; border:1.5px solid #94a3b8;">
+            <colgroup><col style="width:auto;"><col style="width:90px;"><col style="width:120px;"><col style="width:120px;"></colgroup>
             <thead>
-              <tr style="border-bottom:1px solid #e2e8f0; font-size:0.7rem; color:var(--muted); font-weight:bold; text-transform:uppercase;">
-                <th style="text-align:left; padding:4px;">Material Description</th>
-                <th style="text-align:right; padding:4px;">Quantity</th>
+              <tr style="background:#f8fafc; font-size:0.7rem; color:var(--muted); font-weight:bold; text-transform:uppercase;">
+                <th style="text-align:left; padding:7px 8px; border-bottom:2px solid #94a3b8;">Material Name</th>
+                <th style="text-align:center; padding:7px 8px; border-left:1.5px solid var(--border); border-bottom:2px solid #94a3b8;">Unit</th>
+                <th style="text-align:center; padding:7px 8px; border-left:1.5px solid var(--border); border-bottom:2px solid #94a3b8;">Requested</th>
+                <th style="text-align:center; padding:7px 8px; border-left:1.5px solid var(--border); border-bottom:2px solid #94a3b8;">Issued</th>
               </tr>
             </thead>
             <tbody>${itemsTableRowsHtml}</tbody>

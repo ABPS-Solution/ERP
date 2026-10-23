@@ -4587,6 +4587,14 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
               <label for="ms_st_rejected">Rejected</label>
               <input type="checkbox" name="matrixStatusFilter" value="Rejected by Admin" id="ms_st_rejected_admin">
               <label for="ms_st_rejected_admin">Rejected by Admin</label>
+              <input type="checkbox" name="matrixStatusFilter" value="Pending Material Change Review" id="ms_st_mc_pending">
+              <label for="ms_st_mc_pending">Pending Material Change</label>
+              <input type="checkbox" name="matrixStatusFilter" value="Material Change Approved" id="ms_st_mc_approved">
+              <label for="ms_st_mc_approved">Material Change Approved</label>
+              <input type="checkbox" name="matrixStatusFilter" value="Material Change Rejected" id="ms_st_mc_rejected">
+              <label for="ms_st_mc_rejected">Material Change Rejected</label>
+              <input type="checkbox" name="matrixStatusFilter" value="Material Change Cancelled" id="ms_st_mc_cancelled">
+              <label for="ms_st_mc_cancelled">Material Change Cancelled</label>
             </div>
           </div>
         </div>
@@ -4638,8 +4646,18 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
               <label for="m_dept_processing">Processing</label>
               <input type="checkbox" name="matrixDepartmentFilter" value="Service" id="m_dept_service">
               <label for="m_dept_service">Service</label>
+              <input type="checkbox" name="matrixDepartmentFilter" value="Spares" id="m_dept_spares">
+              <label for="m_dept_spares">Spares</label>
+              <input type="checkbox" name="matrixDepartmentFilter" value="Sample" id="m_dept_sample">
+              <label for="m_dept_sample">Store Related (DC)</label>
             </div>
           </div>
+        </div>
+
+        <div style="display:flex; flex-wrap:wrap; gap:24px; margin-top:10px; border-top:1px dashed rgba(0, 86, 179, 0.15); padding-top:12px; width:100%; align-items:flex-end;">
+          <div style="width:180px;"><label class="field-label" style="margin-top:0;">Requested From</label><input type="date" id="matrix-date-from" style="width:100%;"></div>
+          <div style="width:180px;"><label class="field-label" style="margin-top:0;">Requested To</label><input type="date" id="matrix-date-to" style="width:100%;"></div>
+          <div style="flex:1; min-width:220px;"><label class="field-label" style="margin-top:0;">Ticket No. / Requested By / Job Card</label><input type="text" id="matrix-free-text" placeholder="e.g. TKT_26-27_00033, Mahesh, Set-3" autocomplete="off" style="width:100%; padding:9px 12px; border:1.5px solid var(--border); border-radius:var(--radius); font-size:0.88rem;"></div>
         </div>
 
         <div style="display:flex; justify-content:flex-end; margin-top:14px; border-top:1px dashed rgba(0, 86, 179, 0.15); padding-top:12px;">
