@@ -166,6 +166,7 @@ function renderStoreManagerApprovalsCardsFeed(pendingTicketsList) {
           <td style="padding:6px; color:#111827; font-weight:600; font-size:0.9rem; text-align:center; vertical-align:middle;">${jcAllotted}</td>
           <td class="ticket-jc-remaining-cell" data-itemcode="${item.itemCode}" style="padding:6px; font-weight:700; font-size:0.9rem; text-align:center; vertical-align:middle; color:#0369a1;">${jcRemaining !== null ? fmtQty(jcRemaining) : "—"}</td>
           <td style="padding:6px; color:var(--muted); font-size:0.95rem; font-weight:600; text-align:center; vertical-align:middle;">${item.unitType || 'Pcs'}</td>
+          <td style="padding:6px; font-family:monospace; font-weight:700; font-size:1.0rem; text-align:center; vertical-align:middle; color:${item.currentStock != null && Number(item.currentStock) + 1e-9 < reqQty ? '#b91c1c' : '#111827'};">${item.currentStock != null ? fmtQty(item.currentStock) : "—"}</td>
           <td style="padding:6px; font-family:monospace; font-weight:700; font-size:1.05rem; color:var(--brand); text-align:center; vertical-align:middle;">${fmtQty(reqQty)}</td>
           <td style="padding:6px; text-align:center; vertical-align:middle;">
             <input type="number" class="ticket-actual-qty-input" data-itemcode="${item.itemCode}" data-requested="${reqQty}" data-jcremaining="${jcRemaining !== null ? jcRemaining : ''}"
@@ -192,6 +193,7 @@ ${spareCellsHtml}
             <span style="margin-left:8px;">Department:</span> <strong style="color:#111827;">${escapeHtml(outwardUseLabel(ticket.department) || "General Store")}</strong>
             ${ticket.outwardPurpose ? `<span style="margin-left:8px;">Purpose:</span> <strong style="color:#111827;">${escapeHtml(outwardUseLabel(ticket.outwardPurpose))}</strong>` : ""}
             <span style="margin-left:8px;">Ticket Created By:</span> <strong style="color:#111827;">${escapeHtml(ticket.requestedBy)}</strong>
+            ${ticket.dateCreated ? `<span style="margin-left:8px;">Created:</span> <strong style="color:#111827;">${escapeHtml(formatOrdinalDateTime(ticket.dateCreated))}</strong>` : ""}
             <span id="ticket-card-caret-${ticket.ticketId}" style="float:right; font-weight:700; color:var(--muted);">▸</span>
           </div>
           <div class="meta-row-line-block" style="margin-top:6px; font-size:0.85rem;">
@@ -212,6 +214,7 @@ ${spareCellsHtml}
               <col style="width:110px;">
               <col style="width:110px;">
               <col style="width:90px;">
+              <col style="width:110px;">
               <col style="width:140px;">
               <col style="width:140px;">
               ${isServiceTicket ? "" : `<col style="width:130px;">
@@ -223,6 +226,7 @@ ${spareCellsHtml}
                 <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:center;">BOQ Allotted Qty</th>
                 <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:center;">BOQ Remaining Qty</th>
                 <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:center;">Unit</th>
+                <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:center;">Current Stock Count</th>
                 <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:center;">Requested Quantity</th>
                 <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:center;">Actual Quantity *</th>
                 ${isServiceTicket ? "" : `<th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:center;">Spare Stock Needed</th>
