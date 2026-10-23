@@ -90,15 +90,22 @@ function showSuccessWithReset(elementId, message, resetButtonLabel, resetFnCall,
   if (!el) return;
   // An entry with a label but no url means the document failed to generate;
   // say so rather than silently showing no link.
-  const links = (docLinks || []).filter(d => d && (d.url || d.label)).map(d => d.url
-    ? `<div style="margin-top:8px;"><a href="${d.url}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700;">${d.label} ↗</a></div>`
-    : `<div style="margin-top:8px; font-size:0.8rem; color:#b45309; font-weight:600;">${d.label}: The document could not be created just now. The record is saved; ask an admin to regenerate the document.</div>`
-  ).join("");
-  el.style.cssText = "display:block; background:#f0fdf4; border-left:4px solid var(--accent); color:#15803d; padding:14px; margin-bottom:14px; border-radius:var(--radius);";
+  const docs = (docLinks || []).filter(d => d && (d.url || d.label));
+  const okLinks = docs.filter(d => d.url).map(d =>
+    `<a href="${d.url}" target="_blank" rel="noopener" style="display:inline-flex; align-items:center; gap:6px; padding:7px 14px; background:#fff; border:1.5px solid #86efac; border-radius:999px; color:var(--brand); font-weight:700; font-size:0.84rem; text-decoration:none;">📄 ${d.label} ↗</a>`).join("");
+  const failed = docs.filter(d => !d.url).map(d =>
+    `<div style="margin-top:8px; font-size:0.8rem; color:#b45309; font-weight:600;">${d.label}: The document could not be created just now. The record is saved; ask an admin to regenerate the document.</div>`).join("");
+  el.style.cssText = "display:block; background:#f0fdf4; border:1.5px solid #86efac; border-left:5px solid #16a34a; color:#14532d; padding:16px 18px; margin-bottom:14px; border-radius:var(--radius);";
   el.innerHTML = `
-    <div style="font-weight:700; font-size:0.92rem;">${message}</div>
-    ${links}
-    <button class="nav-btn-styled" style="background:var(--accent); color:#fff; margin-top:12px; padding:7px 18px; font-weight:700; font-size:0.82rem;" onclick="${resetFnCall}">+ ${resetButtonLabel}</button>
+    <div style="display:flex; gap:14px; align-items:flex-start;">
+      <div style="flex:0 0 auto; width:32px; height:32px; border-radius:50%; background:#16a34a; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:1.05rem;">✓</div>
+      <div style="flex:1; min-width:0;">
+        <div style="font-weight:600; font-size:0.92rem; line-height:1.5;">${message}</div>
+        ${okLinks ? `<div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;">${okLinks}</div>` : ""}
+        ${failed}
+        <button class="nav-btn-styled" style="width:auto; background:#16a34a; color:#fff; margin-top:14px; padding:8px 18px; font-weight:700; font-size:0.84rem;" onclick="${resetFnCall}">+ ${resetButtonLabel}</button>
+      </div>
+    </div>
   `;
 }
 

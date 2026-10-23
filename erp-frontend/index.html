@@ -1477,7 +1477,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
         <div class="menu-card" id="mod-material-outward" onclick="switchActiveDashboardModule('material-outward')"><span class="mc-label">Material Outward on Delivery Challan</span></div>
         <div class="menu-card" id="mod-authorize-material-outward" onclick="switchActiveDashboardModule('authorize-material-outward')"><span class="mc-label">Authorize Material Outward on Delivery Challan</span></div>
         <div class="menu-card" id="mod-search-material-outward" onclick="switchActiveDashboardModule('search-material-outward')"><span class="mc-label">Search Material Outward on Delivery Challan</span></div>
-        <div class="menu-card" id="mod-expected-processing-returns" onclick="switchActiveDashboardModule('expected-processing-returns')"><span class="mc-label">Expected Processing Material Return</span></div>
+        <div class="menu-card" id="mod-expected-processing-returns" onclick="switchActiveDashboardModule('expected-processing-returns')"><span class="mc-label">Not Returned Delivery Challan Material</span></div>
       </div>
       <div class="sec-label">Dispatch Invoice</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
@@ -4470,7 +4470,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
     </div>
 
     <div id="canvas-module-expected-processing-returns" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 class="panel-title">Expected Processing Material Return</h2>
+      <h2 class="panel-title">Not Returned Delivery Challan Material</h2>
       <p style="font-size:0.82rem; color:var(--muted); margin:6px 0 14px;">Processing material that has been sent to an outside vendor (its Delivery Challan is authorized), and what is expected back. Click a ticket to see its materials. Returning material is received through normal Gate Entry.</p>
       <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:14px;">
         <input type="text" id="epmr-search" placeholder="Search ticket, vendor, company, material..." autocomplete="off" oninput="epmrRender()" style="flex:1; min-width:220px; padding:8px; border:1px solid var(--border); border-radius:var(--radius);" />

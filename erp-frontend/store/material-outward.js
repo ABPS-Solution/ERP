@@ -537,7 +537,9 @@ async function mowGenerateCheckingDraft(challanId) {
     if (feed) feed.style.display = "none";
     const draft = mowDraftsCache.find(d => String(d.challan_id) === String(challanId));
     showSuccessWithReset("mow-feedback-banner",
-      `Delivery Challan ${escapeHtml(draft?.challan_number || "#" + challanId)} saved. Draft #${escapeHtml(String(data.draftNumber))} generated — print it for review. It now waits in Authorize Material Outward on Delivery Challan.`,
+      `<div style="font-size:1.05rem; font-weight:800; margin-bottom:4px;">Delivery Challan ${escapeHtml(draft?.challan_number || "#" + challanId)} saved</div>
+       <div>Draft #${escapeHtml(String(data.draftNumber))} is ready. Print it for review.</div>
+       <div style="color:#166534; margin-top:2px;">Next: it waits in <strong>Authorize Material Outward on Delivery Challan</strong>.</div>`,
       wasEditing ? "Edit Another Challan" : "Create New Challan",
       wasEditing ? "mowSwitchTab('editing')" : "mowSwitchTab('new')",
       [{ url: data.url ? driveLink(data.url) : "", label: "Draft #" + data.draftNumber }]);
