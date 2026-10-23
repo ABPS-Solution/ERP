@@ -195,7 +195,7 @@ async function parseGateDocumentsWithAI() {
     if (!data.success) return abpsAlert("AI Processing failed: " + data.error);
     activeParsedGatePayloadCache = data.extractedData;
 
-    if (!activeParsedGatePayloadCache || !Array.isArray(activeParsedGatePayloadCache.lineItems)) {
+    if (!activeParsedGatePayloadCache || !Array.isArray(activeParsedGatePayloadCache.lineItems) || !activeParsedGatePayloadCache.lineItems.length) {
       activeParsedGatePayloadCache = activeParsedGatePayloadCache || {};
       activeParsedGatePayloadCache.lineItems = [];
       abpsAlert("AI could not detect any line items on this document. Please try a clearer scan or a different document.");
