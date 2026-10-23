@@ -327,7 +327,8 @@ function executeClientSideStoreTicketFilterSearch() {
     const mappedStorageScope = ticket.storeTargetScope || "Raw Materials Store";
 
     let cleanCreatedDate = formatOrdinalDateTime(ticket.dateCreated);
-    let cleanActionedDate = ticket.dateActioned ? formatOrdinalDateTime(ticket.dateActioned) : "Not Actioned Yet";
+    let cleanActionedDate = ticket.dateActioned ? formatOrdinalDateTime(ticket.dateActioned) : "Not yet";
+    const actionWord = /reject/i.test(currentStatus) ? "Rejected" : (/cancel/i.test(currentStatus) ? "Cancelled" : "Approved");
 
     card.innerHTML = `
       <div class="contact-summary-header-row" onclick="toggleMatrixCardBody(${jsArg(ticket.ticketId)})" style="margin-bottom:0; padding-bottom:6px; cursor:pointer;">
@@ -350,13 +351,15 @@ function executeClientSideStoreTicketFilterSearch() {
               : `<span>Project ID:</span> <strong style="margin-right:15px; color:var(--brand);">${ticket.projectId || "None"}</strong>`}
             <span>Job Card Number:</span> <strong style="color:var(--brand);">${ticket.jobCardNumber || "—"}</strong>
           </div>
+          <div class="meta-row-line-block" style="margin-top:6px; font-size:0.85rem;">
+            <span>Requested By:</span> <strong style="margin-right:15px; color:#111827;">${escapeHtml(ticket.requestedBy || "—")}</strong>
+            <span>Requested On:</span> <strong style="margin-right:15px; color:#111827;">${cleanCreatedDate}</strong>
+            <span>${actionWord} By:</span> <strong style="margin-right:15px; color:#111827;">${escapeHtml(ticket.actionedBy || "Pending")}</strong>
+            <span>${actionWord} On:</span> <strong style="color:#111827;">${cleanActionedDate}</strong>
+          </div>
         </div>
       </div>
       <div id="matrix-card-body-${ticket.ticketId}" style="display:none; padding-top:8px; border-top:1px dashed var(--border); margin-top:6px;">
-        <div style="font-size:0.8rem; line-height:1.5; margin-bottom:8px; color:#4a5568; text-align:left;">
-          <strong>Requested By:</strong> ${escapeHtml(ticket.requestedBy)} | <strong>Actioned By:</strong> ${escapeHtml(ticket.actionedBy || "Pending Review")}<br/>  
-          <strong>Created On:</strong> ${cleanCreatedDate} | <strong>Actioned On:</strong> ${cleanActionedDate}
-        </div>
         <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:6px;">
           <table class="prn-bordered-table mit-pps-table" style="width:100%; font-size:0.82rem; border-collapse:collapse; table-layout:fixed;">
             <thead>

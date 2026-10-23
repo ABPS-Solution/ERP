@@ -58,7 +58,14 @@ function potEnhanceAll() {
   if (!potCache.options) return;
   document.querySelectorAll("input[type=text]").forEach(input => {
     const m = input.id && input.id.match(POT_INPUT_RE);
-    if (!m || input.readOnly || input.disabled) return;
+    if (!m) return;
+    if (input.readOnly || input.disabled) {
+      // View-only screen (Authorize): no pick list, just show the value.
+      const sel = input.previousElementSibling && input.previousElementSibling.classList.contains("pot-select") ? input.previousElementSibling : null;
+      if (sel) sel.remove();
+      if (input.style.display === "none") input.style.display = "";
+      return;
+    }
     const type = POT_FIELDS[m[2]];
     let select = input.previousElementSibling && input.previousElementSibling.classList.contains("pot-select") ? input.previousElementSibling : null;
     if (!select) { select = potBuildSelect(input, type); input.parentNode.insertBefore(select, input); potSync(input, select); return; }
