@@ -617,6 +617,22 @@ async function cloneItemCodeIntoCreateForm(itemCode) {
     subSelect.disabled = false;
     if (document.getElementById("icf-new-fixed-make")) document.getElementById("icf-new-fixed-make").value = item.make || "";
   } else {
+    // No saved format (made with the admin manual bypass) under a Fixed
+    // Format type: admins clone into manual mode; others get the matching
+    // Sub-Option selected (values left blank) to fill in.
+    const fixedForm = document.getElementById("icf-new-fixed-form");
+    if (fixedForm && icfCurrentFormats.length) {
+      const manualCb = document.getElementById("icf-new-admin-manual-checkbox");
+      const canManual = manualCb && document.getElementById("icf-new-admin-manual-toggle")?.style.display !== "none";
+      if (canManual) {
+        manualCb.checked = true;
+        handleIcfAdminManualToggle(true);
+      } else {
+        const match = icfCurrentFormats.find(f => (f.subOption || "").trim().toLowerCase() === (item.productName || "").trim().toLowerCase());
+        if (match) { subSelect.value = match.formatId; handleIcfSubOptionChange(String(match.formatId), null); }
+        if (document.getElementById("icf-new-fixed-make")) document.getElementById("icf-new-fixed-make").value = item.make || "";
+      }
+    }
     if (document.getElementById("itemcode-new-name")) document.getElementById("itemcode-new-name").value = item.productName || "";
     if (document.getElementById("itemcode-new-rating")) document.getElementById("itemcode-new-rating").value = item.rating || "";
     if (document.getElementById("itemcode-new-unit")) document.getElementById("itemcode-new-unit").value = item.unit || "";
