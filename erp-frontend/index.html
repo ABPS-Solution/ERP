@@ -1591,6 +1591,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       </div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-security" onclick="switchActiveDashboardModule('security'); initializeSecurityAdminPanel('access');"><span class="mc-label">Security &amp; Login Access</span></div>
+        <div class="menu-card" id="mod-pending-work" style="display:none;" onclick="openPendingWorkDashboard()"><span class="mc-label">Pending Work Dashboard</span></div>
         <div class="menu-card" id="mod-system-settings" onclick="switchActiveDashboardModule('security'); initializeSecurityAdminPanel('system');"><span class="mc-label">System Settings</span></div>
       </div>
     </div>
@@ -5730,14 +5731,10 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <div id="sd-body" class="dd-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
 
         <!-- ROW 1: Live Queues — needs action right now -->
-        <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(6,1fr); gap:10px; flex:0 0 80px; min-height:0;">
+        <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
           <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Pending Ticket Approvals</div>
             <div class="dd-stat-val" id="sd-s-pending" style="color:#b45309;">—</div>
-          </div>
-          <div class="dd-stat-card stat-live">
-            <div class="dd-stat-label">BOQs Needing PRN</div>
-            <div class="dd-stat-val" id="sd-s-boqneedprn" style="color:#b45309;">—</div>
           </div>
           <div class="dd-stat-card stat-live">
             <div class="dd-stat-label">Gate Entries Awaiting GRN</div>
@@ -6369,6 +6366,17 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
        department's own dashboard. Its Custom-period toolbar HTML
        (adm-period-btns/adm-custom-zone) lives in #dashboard-global-toolbar
        alongside every other dashboard's, not here. -->
+  <div id="canvas-module-pending-work" class="workspace-panel" style="display:none;">
+    <div class="navigation-action-header-row" style="margin-bottom:15px; display:flex; align-items:center; justify-content:space-between;">
+      <button class="nav-btn-styled" style="width:auto; background:var(--accent);" onclick="loadPendingWorkDashboard()">Refresh</button>
+      <button class="nav-btn-styled" onclick="exitPendingWorkDashboard()">Return to Main Dashboard</button>
+    </div>
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Pending Work Dashboard</h2>
+      <div id="pwk-body"></div>
+    </div>
+  </div>
+
   <div id="canvas-module-admin-dashboard" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
     <div id="adm-body" class="dd-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
 
@@ -6756,6 +6764,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
      Invoice split, ported from Portal's migrations 208-209). File kept
      on disk, unlinked. -->
 <script src="project/admin-dashboard.js"></script>
+<script src="project/pending-work-dashboard.js"></script>
 <!-- Live updates: loads LAST, it wraps apFetch and buildMultiContactDirectoryInterface. -->
 <script src="shared/liveUpdates.js"></script>
 </body>

@@ -412,6 +412,8 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canProjectTimeline = userPermissionsObject.projectTimeline === true;
   const canDailyTimeline = userPermissionsObject.dailyTimeline === true;
   const canViewAdminDashboard = userPermissionsObject.viewAdminDashboard === true;
+  const canViewPendingWork = userPermissionsObject.viewPendingWorkDashboard === true;
+  if (document.getElementById("mod-pending-work")) document.getElementById("mod-pending-work").style.display = canViewPendingWork ? "block" : "none";
 
   if (document.getElementById("mod-manufacturing-clearance")) document.getElementById("mod-manufacturing-clearance").style.display = canManufacturingClearance ? "block" : "none";
   if (document.getElementById("mod-project-timeline")) document.getElementById("mod-project-timeline").style.display = canProjectTimeline ? "block" : "none";
@@ -558,7 +560,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const purchaseBlock = document.getElementById("dashboard-purchase-department-header-block");
   if (purchaseBlock) purchaseBlock.style.display = (canViewMaterialListPurchase || canViewRejectedMaterial || canCreatePO || canAuthorizePO || canPPSTracking || canSearchVendorCostingInfo || userPermissionsObject.vendorDirectory === true || canReviseRMPO || canAuthorizeRMPORevision || canSearchRMPO || canViewPurchaseDashboard) ? "block" : "none";
   const adminBlock = document.getElementById("dashboard-admin-department-header-block");
-  if (adminBlock) adminBlock.style.display = (canSecurity || canViewAdminDashboard) ? "block" : "none";
+  if (adminBlock) adminBlock.style.display = (canSecurity || canViewAdminDashboard || canViewPendingWork) ? "block" : "none";
   const marketingBlock = document.getElementById("dashboard-marketing-department-header-block");
   if (marketingBlock) marketingBlock.style.display = (canEnterCard || canViewEmailLeads || canUploadCommissioning || canUploadPurchaseOrder || canUploadRevisedPo || canSearchCompany || canSearchTasks || canSearchStatus || canSearchQual || canSearchCityState || canMeetingPreparation || canMorningMeeting || canNewsLeads) ? "block" : "none";
   const projectBlock = document.getElementById("dashboard-project-department-header-block");
