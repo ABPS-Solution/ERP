@@ -639,6 +639,11 @@ async function cloneItemCodeIntoCreateForm(itemCode) {
     if (document.getElementById("itemcode-new-make")) document.getElementById("itemcode-new-make").value = item.make || "";
   }
 
+  // Manual-bypass boxes always carry the cloned item too, so an admin can
+  // tick "Create manually" and edit the full name / rating freely.
+  [["itemcode-new-name", item.productName], ["itemcode-new-rating", item.rating], ["itemcode-new-unit", item.unit], ["itemcode-new-make", item.make]]
+    .forEach(([id, v]) => { const el = document.getElementById(id); if (el) el.value = v || ""; });
+
   const banner = document.getElementById("itemcode-feedback-banner");
   if (item.formatId && !formatStillValid) {
     banner.style.cssText = "display:block; background:#fffbeb; border-color:#d97706; color:#92400e; padding:10px; border-left:4px solid #d97706; border-radius:var(--radius); font-size:0.85rem;";
