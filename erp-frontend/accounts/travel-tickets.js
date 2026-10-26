@@ -347,9 +347,9 @@ async function ttkAddNewCompany(companyName) {
       ttkCachedCompanies.push(data.company);
       ttkSelectCompany(data.company.companyName);
     } else {
-      abpsAlert("Could not add company: " + data.error);
+      abpsAlert("Could not add the company. " + data.error);
     }
-  } catch (e) { abpsAlert("Network error adding company: " + e.message); }
+  } catch (e) { abpsAlert("Could not add the company. " + friendlyErr(e)); }
 }
 
 function ttkRemoveCompanyChip(companyName) {
@@ -464,7 +464,7 @@ async function ttkProcessWithGemini() {
     if (status) status.textContent = "✓ Fields filled from Gemini — please review before saving.";
   } catch (e) {
     if (status) status.textContent = "";
-    showTicketFeedback("Network error: " + e.message, "error");
+    showTicketFeedback(friendlyErr(e), "error");
   } finally {
     if (btn) btn.disabled = ttkInvoiceFiles.length === 0;
   }
@@ -565,7 +565,7 @@ async function submitTravelTicket() {
     } else {
       showTicketFeedback(data.error, "error");
     }
-  } catch (e) { hideBlockingOverlay(); showTicketFeedback("Network error: " + e.message, "error"); }
+  } catch (e) { hideBlockingOverlay(); showTicketFeedback(friendlyErr(e), "error"); }
 }
 
 // ── Search / Manage ───────────────────────────────────────────────────
@@ -805,7 +805,7 @@ async function ttkStartEdit(ticketId) {
     ttkRenderCompanyChips();
     ttkRenderTravellerRows();
     enhanceAllDateInputsForDMY();
-  } catch (e) { showTicketFeedback("Network error: " + e.message, "error"); }
+  } catch (e) { showTicketFeedback(friendlyErr(e), "error"); }
 }
 
 async function ttkCancelTicket(ticketId) {
@@ -824,7 +824,7 @@ async function ttkCancelTicket(ticketId) {
     } else {
       showTicketFeedback(data.error, "error");
     }
-  } catch (e) { hideBlockingOverlay(); showTicketFeedback("Network error: " + e.message, "error"); }
+  } catch (e) { hideBlockingOverlay(); showTicketFeedback(friendlyErr(e), "error"); }
 }
 
 // ── Search / Manage Hotels ────────────────────────────────────────────

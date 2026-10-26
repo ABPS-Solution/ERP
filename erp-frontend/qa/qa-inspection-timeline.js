@@ -107,7 +107,7 @@ async function qaitLoadQueue() {
     qaitRenderSummary();
     qaitRenderTable();
   } catch (e) {
-    showPurchaseFeedback("qait-feedback", "Network error: " + e.message, "error", true);
+    showPurchaseFeedback("qait-feedback", friendlyErr(e), "error", true);
   }
 }
 
@@ -184,7 +184,7 @@ async function qaitFetchDetail(projectId) {
       qaitDetailCache.set(projectId, data);
     }
   } catch (e) {
-    qaitDetailCache.set(projectId, { error: "Network error: " + e.message });
+    qaitDetailCache.set(projectId, { error: friendlyErr(e) });
   }
   qaitRenderTable();
 }
@@ -315,7 +315,7 @@ async function qaitSetInspectionSchedule(projectId) {
     await qaitFetchDetail(projectId);
     await qaitLoadQueue();
   } catch (e) {
-    if (e.message !== "SESSION_EXPIRED") abpsAlert("Network error: " + e.message);
+    if (e.message !== "SESSION_EXPIRED") abpsAlert(friendlyErr(e));
   } finally {
     hideBlockingOverlay();
   }
@@ -332,7 +332,7 @@ async function qaitSetMilestoneDate(projectId, milestoneKey) {
     await qaitFetchDetail(projectId);
     await qaitLoadQueue();
   } catch (e) {
-    abpsAlert("Network error: " + e.message);
+    abpsAlert(friendlyErr(e));
   }
 }
 
@@ -348,7 +348,7 @@ async function qaitRecordCall(projectId) {
     qaitDetailCache.delete(projectId);
     await qaitFetchDetail(projectId);
   } catch (e) {
-    if (e.message !== "SESSION_EXPIRED") abpsAlert("Network error: " + e.message);
+    if (e.message !== "SESSION_EXPIRED") abpsAlert(friendlyErr(e));
   } finally {
     hideBlockingOverlay();
   }
@@ -377,7 +377,7 @@ async function qaitUploadDocument(projectId) {
     qaitDetailCache.delete(projectId);
     await qaitFetchDetail(projectId);
   } catch (e) {
-    if (e.message !== "SESSION_EXPIRED") abpsAlert("Upload error: " + e.message);
+    if (e.message !== "SESSION_EXPIRED") abpsAlert("Could not upload. " + friendlyErr(e));
   } finally {
     hideBlockingOverlay();
   }
@@ -392,7 +392,7 @@ async function qaitDeleteDocument(projectId, documentId) {
     qaitDetailCache.delete(projectId);
     await qaitFetchDetail(projectId);
   } catch (e) {
-    if (e.message !== "SESSION_EXPIRED") abpsAlert("Network error: " + e.message);
+    if (e.message !== "SESSION_EXPIRED") abpsAlert(friendlyErr(e));
   } finally {
     hideBlockingOverlay();
   }

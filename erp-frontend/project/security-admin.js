@@ -204,7 +204,7 @@ async function handleProductionSubDeptClick(personKey, subDept) {
     } else {
       showBOQBanner("sa-feedback", data.error || "Failed to update.", "error");
     }
-  } catch (e) { showBOQBanner("sa-feedback", "Network error: " + e.message, "error"); }
+  } catch (e) { showBOQBanner("sa-feedback", friendlyErr(e), "error"); }
 }
 
 function laPersonButtonHtml(u, color) {
@@ -277,7 +277,7 @@ async function toggleUserLoginAnywhere(personKey, enabled) {
       renderSecurityAdminUsers(); // revert the button to server state
     }
   } catch (e) {
-    showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
+    showBOQBanner("sa-feedback", friendlyErr(e), "error");
     renderSecurityAdminUsers();
   }
 }
@@ -314,7 +314,7 @@ async function submitAddAllowedNetwork() {
       showBOQBanner("sa-feedback", data.error || "Failed to add network.", "error");
     }
   } catch (e) {
-    showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
+    showBOQBanner("sa-feedback", friendlyErr(e), "error");
   }
 }
 
@@ -325,7 +325,7 @@ async function deactivateNetwork(networkId) {
     if (data.success) { showBOQBanner("sa-feedback", "Network deactivated.", "success"); loadAllowedNetworks(); }
     else showBOQBanner("sa-feedback", data.error || "Failed to deactivate.", "error");
   } catch (e) {
-    showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
+    showBOQBanner("sa-feedback", friendlyErr(e), "error");
   }
 }
 
@@ -364,7 +364,7 @@ async function submitAddHoliday() {
       showBOQBanner("sa-feedback", data.error || "Failed to add holiday.", "error");
     }
   } catch (e) {
-    showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
+    showBOQBanner("sa-feedback", friendlyErr(e), "error");
   }
 }
 
@@ -375,7 +375,7 @@ async function submitDeleteHoliday(date) {
     if (data.success) { showBOQBanner("sa-feedback", "Holiday deleted.", "success"); loadHolidays(); }
     else showBOQBanner("sa-feedback", data.error || "Failed to delete.", "error");
   } catch (e) {
-    showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
+    showBOQBanner("sa-feedback", friendlyErr(e), "error");
   }
 }
 
@@ -405,7 +405,7 @@ async function submitDeleteTrustedDevice(deviceId) {
     if (data.success) { showBOQBanner("sa-feedback", "Trusted device deleted.", "success"); loadTrustedDevices(); }
     else showBOQBanner("sa-feedback", data.error || "Failed to delete.", "error");
   } catch (e) {
-    showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
+    showBOQBanner("sa-feedback", friendlyErr(e), "error");
   }
 }
 
@@ -484,7 +484,7 @@ async function activateOutageModeNow() {
     if (data.success) { showBOQBanner("sa-feedback", "Outage Mode activated.", "success"); loadSecuritySettings(); }
     else showBOQBanner("sa-feedback", data.error || "Failed to activate.", "error");
   } catch (e) {
-    showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
+    showBOQBanner("sa-feedback", friendlyErr(e), "error");
   }
 }
 
@@ -494,7 +494,7 @@ async function deactivateOutageModeNow() {
     if (data.success) { showBOQBanner("sa-feedback", "Outage Mode deactivated.", "success"); loadSecuritySettings(); }
     else showBOQBanner("sa-feedback", data.error || "Failed to deactivate.", "error");
   } catch (e) {
-    showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
+    showBOQBanner("sa-feedback", friendlyErr(e), "error");
   }
 }
 
@@ -603,7 +603,7 @@ async function handlePinFlipClick(personKey) {
       const backEl = document.getElementById(`pinflip-back-${safeId}`);
       if (backEl) backEl.textContent = data.code;
     } catch (e) {
-      showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
+      showBOQBanner("sa-feedback", friendlyErr(e), "error");
       return;
     }
   }
@@ -665,7 +665,7 @@ async function submitAdminResetPin(personKey, newPin) {
       if (input) { input.disabled = false; input.value = ''; input.focus(); }
     }
   } catch (e) {
-    showPinChangeBanner("Connection error: " + e.message, true);
+    showPinChangeBanner(friendlyErr(e), true);
     if (input) { input.disabled = false; input.value = ''; input.focus(); }
   }
 }
@@ -716,7 +716,7 @@ async function submitClearUserPinLockout(personKey) {
     if (data.success) { showBOQBanner("sa-feedback", "Lockout cleared.", "success"); loadSecurityAdminPinUsers(); }
     else showBOQBanner("sa-feedback", data.error || "Failed to clear lockout.", "error");
   } catch (e) {
-    showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
+    showBOQBanner("sa-feedback", friendlyErr(e), "error");
   }
 }
 
@@ -812,7 +812,7 @@ async function saveDeviceRestriction(deviceId) {
       showBOQBanner("sa-feedback", data.error || "Failed to save restriction.", "error");
     }
   } catch (e) {
-    showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
+    showBOQBanner("sa-feedback", friendlyErr(e), "error");
   }
 }
 
@@ -823,7 +823,7 @@ async function submitDeleteRegisteredDevice(deviceId) {
     if (data.success) { showBOQBanner("sa-feedback", "Device deleted.", "success"); loadRegisteredDevices(); }
     else showBOQBanner("sa-feedback", data.error || "Failed to delete.", "error");
   } catch (e) {
-    showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
+    showBOQBanner("sa-feedback", friendlyErr(e), "error");
   }
 }
 
@@ -965,7 +965,7 @@ async function saDeviceAddPersonCommit(modal) {
     saRenderDeviceAddPersonChips(modal);
     loadRegisteredDevices(); // background refresh of the underlying table; the modal itself renders from its own tracked state above
   } catch (e) {
-    abpsAlert("Connection error: " + e.message);
+    abpsAlert(friendlyErr(e));
   }
 }
 
@@ -1151,7 +1151,7 @@ async function toggleUserAdminTier(enabled) {
     pmUserIsAdmin = enabled;
     renderPermissionMatrix();
   } catch (e) {
-    abpsAlert('Connection error: ' + e.message);
+    abpsAlert(friendlyErr(e));
   }
 }
 
@@ -1172,7 +1172,7 @@ async function togglePermissionMatrixPill(dbColumn) {
   } catch (e) {
     pmUserValues[dbColumn] = wasEnabled;
     renderPermissionMatrix();
-    showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
+    showBOQBanner("sa-feedback", friendlyErr(e), "error");
   }
 }
 
@@ -1186,7 +1186,7 @@ async function submitRemoveUserFromSystem(personKey) {
     showBOQBanner("sa-feedback", `${data.name} has been removed from the system.`, "success");
     await loadSecurityAdminPinUsers();
   } catch (e) {
-    if (e.message !== "SESSION_EXPIRED") showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
+    if (e.message !== "SESSION_EXPIRED") showBOQBanner("sa-feedback", friendlyErr(e), "error");
   }
 }
 
@@ -1207,7 +1207,7 @@ async function submitAddUserToSystem(deptSlug, deptName) {
     showBOQBanner("sa-feedback", `${data.name} added to ${data.department} (user ID ${data.personKey}). Grant access in the Permissions tab, then give them an enrollment code to log in.`, "success");
     await loadSecurityAdminPinUsers();
   } catch (e) {
-    if (e.message !== "SESSION_EXPIRED") showBOQBanner("sa-feedback", "Connection error: " + e.message, "error");
+    if (e.message !== "SESSION_EXPIRED") showBOQBanner("sa-feedback", friendlyErr(e), "error");
   }
 }
 
@@ -1290,7 +1290,7 @@ async function removeSignatorySignature() {
     await loadSignatorySignature();
   } catch (err) {
     if (err && err.message === 'SESSION_EXPIRED') return;
-    abpsAlert(err.message || 'Remove failed.');
+    abpsAlert(friendlyErr(err));
   }
 }
 
@@ -1344,7 +1344,7 @@ async function loadOfficeHours() {
           ${keep ? `<button class="nav-btn-styled" style="width:auto; padding:9px 18px; background:#e2e8f0; color:#334155;" onclick="saveOfficeHoursKeepOn(true)">Clear</button>` : ""}
         </div>
         <div id="oh-msg" style="margin-top:10px; font-size:0.85rem;"></div>` : `<div style="color:var(--muted);">Only admins can keep ERP on later.</div>`}`;
-  } catch (e) { body.textContent = "Could not load: " + e.message; }
+  } catch (e) { body.textContent = "Could not load. " + friendlyErr(e); }
 }
 async function saveOfficeHoursKeepOn(clear) {
   const msg = document.getElementById("oh-msg");
@@ -1359,5 +1359,5 @@ async function saveOfficeHoursKeepOn(clear) {
       return;
     }
     loadOfficeHours();
-  } catch (e) { if (msg) msg.textContent = e.message; }
+  } catch (e) { if (msg) msg.textContent = friendlyErr(e); }
 }

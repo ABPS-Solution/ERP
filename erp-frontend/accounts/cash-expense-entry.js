@@ -144,5 +144,5 @@ async function submitCashExpense() {
     } else {
       showCashExpenseFeedback(data.error, "error");
     }
-  } catch (e) { hideBlockingOverlay(); showCashExpenseFeedback("Network error: " + e.message, "error"); }
+  } catch (e) { hideBlockingOverlay(); showCashExpenseFeedback(friendlyErr(e), "error"); }
 }

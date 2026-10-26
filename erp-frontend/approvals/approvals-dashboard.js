@@ -91,10 +91,10 @@ function apdOpenApproval(cardId) {
 async function apdLoadDashboard(customVal) {
   try {
     const data = await apFetch({ action: "fetchApprovalsDashboardData", periodType: apdCurrentPeriod, periodValue: customVal || "" });
-    if (!data.success) { abpsAlert("Approvals Dashboard load failed: " + data.error); return; }
+    if (!data.success) { abpsAlert("Could not load the dashboard. " + data.error); return; }
     apdRender(data);
   } catch (e) {
-    if (e.message !== "SESSION_EXPIRED") abpsAlert("Approvals Dashboard error: " + e.message);
+    if (e.message !== "SESSION_EXPIRED") abpsAlert("Could not load the dashboard. " + friendlyErr(e));
   }
 }
 

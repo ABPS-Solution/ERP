@@ -834,7 +834,7 @@ async function submitUpdateBOQ() {
     }
   } catch(e) {
     hideBlockingOverlay();
-    showBOQBanner(feedbackId, "Network error: " + e.message, "error");
+    showBOQBanner(feedbackId, friendlyErr(e), "error");
   } finally {
     _submitUpdateBOQInProgress = false;
     btn.disabled = false;

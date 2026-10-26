@@ -48,7 +48,7 @@ async function downloadBankDocument() {
   } catch (e) {
     if (e.message !== "SESSION_EXPIRED" && fb) {
       fb.style.cssText = "display:block; margin-top:14px; padding:10px 14px; border-radius:var(--radius); background:#fef2f2; border:1px solid #fca5a5; color:#991b1b; font-weight:600; font-size:0.88rem;";
-      fb.textContent = e.message;
+      fb.textContent = friendlyErr(e);
     }
   } finally {
     if (btn) { btn.textContent = "Download Excel"; bankDocTypeChanged(); }

@@ -212,7 +212,7 @@ async function submitStockSweep() {
       showBOQBanner("sweep-feedback", data.error || "Failed to record sweep.", "error");
     }
   } catch(e) {
-    showBOQBanner("sweep-feedback", "Network error: " + e.message, "error");
+    showBOQBanner("sweep-feedback", friendlyErr(e), "error");
   } finally {
     hideBlockingOverlay();
   }
@@ -242,7 +242,7 @@ async function submitStockCountDown() {
       showBOQBanner("sweep-feedback", escapeHtml(data.error || "Failed to record count down."), "error");
     }
   } catch (e) {
-    showBOQBanner("sweep-feedback", "Network error: " + escapeHtml(e.message), "error");
+    showBOQBanner("sweep-feedback", escapeHtml(friendlyErr(e)), "error");
   } finally {
     hideBlockingOverlay();
   }

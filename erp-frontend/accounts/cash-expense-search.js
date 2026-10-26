@@ -217,7 +217,7 @@ async function cesDeleteVoucher(expenseId) {
     hideBlockingOverlay();
     if (!data.success) { abpsAlert(data.error); return; }
     runCashExpenseSearch();
-  } catch (e) { hideBlockingOverlay(); abpsAlert("Network error: " + e.message); }
+  } catch (e) { hideBlockingOverlay(); abpsAlert(friendlyErr(e)); }
 }
 
 // Actual Amount correction for an already-closed voucher — plain input
@@ -248,6 +248,6 @@ async function cesSaveActual(expenseId, previousValue) {
   } catch (e) {
     input.disabled = false;
     input.value = previousValue;
-    if (errEl) errEl.textContent = "Network error: " + e.message;
+    if (errEl) errEl.textContent = friendlyErr(e);
   }
 }

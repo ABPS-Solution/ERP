@@ -137,12 +137,12 @@ async function submitFinishedGoodsAddEntry(department, canvasId) {
           </button>
         </div>`;
     } else {
-      abpsAlert("Submission failed: " + (data.error || "Unknown error."));
+      abpsAlert("Could not save. " + (data.error || "Please try again."));
       submitBtn.disabled = false;
       submitBtn.textContent = "Add to Finished Goods Store";
     }
   } catch(err) {
-    abpsAlert("Network error: " + err.message);
+    abpsAlert(friendlyErr(err));
     submitBtn.disabled = false;
     submitBtn.textContent = "Add to Finished Goods Store";
   }
@@ -730,7 +730,7 @@ async function submitFGAddItem() {
     }
   } catch(e) {
     hideBlockingOverlay();
-    showBOQBanner("fg-add-feedback", "Network error: " + e.message, "error");
+    showBOQBanner("fg-add-feedback", friendlyErr(e), "error");
   } finally {
     _submitFGAddItemInProgress = false;
     btn.disabled = false;

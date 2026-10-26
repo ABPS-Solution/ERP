@@ -96,8 +96,8 @@ async function pjdLoadDashboard(customVal) {
       periodValue: customVal || "",
       todayOverride: localStorage.getItem("erpPtlTodayOverride") || ""
     });
-    if (!data.success) { abpsAlert("Project Dashboard load failed: " + data.error); return; }
+    if (!data.success) { abpsAlert("Could not load the dashboard. " + data.error); return; }
   } catch (e) {
-    if (e.message !== "SESSION_EXPIRED") abpsAlert("Project Dashboard error: " + e.message);
+    if (e.message !== "SESSION_EXPIRED") abpsAlert("Could not load the dashboard. " + friendlyErr(e));
   }
 }

@@ -192,7 +192,7 @@ async function executeItemCodeSearch() {
     resultsZone.style.display = "block";
   } catch (e) {
     banner.style.cssText = "display:block; background:#fee2e2; border-color:#b91c1c; color:#b91c1c; padding:10px; border-left:4px solid #b91c1c;";
-    banner.textContent = "Search failed: " + e.message;
+    banner.textContent = "Search did not work. " + friendlyErr(e);
   } finally {
     btn.disabled = false;
     btn.textContent = "Search";
@@ -313,7 +313,7 @@ async function submitNewItemCode() {
 
   if (!typeOfMat) { abpsAlert("Type of Material is required."); return; }
   if (!itemCode || itemCode === "Loading..." || itemCode === "Error — refresh") {
-    abpsAlert("Item Code not loaded yet. Please wait or refresh.");
+    abpsAlert("The item code list is still loading. Wait a moment, or refresh the page.");
     return;
   }
 
@@ -424,11 +424,11 @@ async function submitNewItemCode() {
       banner.scrollIntoView({ behavior: "smooth", block: "nearest" });
     } else {
       banner.style.cssText = "display:block; background:#fee2e2; border-color:#b91c1c; color:#b91c1c; padding:12px; border-left:4px solid #b91c1c; border-radius:var(--radius);";
-      banner.textContent = "Failed: " + data.error;
+      banner.textContent = data.error;
     }
   } catch (e) {
     banner.style.cssText = "display:block; background:#fee2e2; border-color:#b91c1c; color:#b91c1c; padding:12px; border-left:4px solid #b91c1c; border-radius:var(--radius);";
-    banner.textContent = "Network error: " + e.message;
+    banner.textContent = friendlyErr(e);
   } finally {
     btn.disabled = false;
     btn.textContent = "Create Item Code";
@@ -583,7 +583,7 @@ function handleIcfSubOptionChange(formatIdStr, initialValues) {
 
 async function cloneItemCodeIntoCreateForm(itemCode) {
   const item = (window.itemCodeCatalogCache || []).find(c => c.itemCode === itemCode);
-  if (!item) { abpsAlert("Could not find that item code's details — try refreshing the search."); return; }
+  if (!item) { abpsAlert("Could not find that item code. Search again."); return; }
 
   await revealItemCodeCreateForm();
 
@@ -735,7 +735,7 @@ async function handleIcfEntryModeChange(newMode) {
     await apFetch({ action: "saveItemCodeTypeConfig", typeOfMaterial: icfFmtCurrentType, entryMode: newMode, operatorName: appActiveOperatorIdentityString });
     await loadItemCodeTypeConfigIntoCache(true);
   } catch (e) {
-    showBOQBanner("itemcode-feedback-banner", "⚠️ Failed to update entry mode: " + e.message, "error");
+    showBOQBanner("itemcode-feedback-banner", "⚠️ Could not change the entry mode. " + friendlyErr(e), "error");
   }
 }
 
@@ -823,7 +823,7 @@ async function submitIcfSaveFormat() {
     closeIcfFormatEditor();
     handleIcfFormatTypeChange(icfFmtCurrentType);
   } catch (e) {
-    showBOQBanner("itemcode-feedback-banner", "⚠️ Network error: " + e.message, "error");
+    showBOQBanner("itemcode-feedback-banner", "⚠️ " + friendlyErr(e), "error");
   }
 }
 
@@ -838,7 +838,7 @@ async function submitIcfDeactivateFormat() {
     closeIcfFormatEditor();
     handleIcfFormatTypeChange(icfFmtCurrentType);
   } catch (e) {
-    showBOQBanner("itemcode-feedback-banner", "⚠️ Network error: " + e.message, "error");
+    showBOQBanner("itemcode-feedback-banner", "⚠️ " + friendlyErr(e), "error");
   }
 }
 
@@ -978,6 +978,6 @@ async function toggleItemCodeConsumable(itemCode, box) {
   } catch (e) {
     if (e.message === "SESSION_EXPIRED") return;
     box.checked = !box.checked;
-    abpsAlert(e.message);
+    abpsAlert(friendlyErr(e));
   }
 }

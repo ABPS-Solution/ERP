@@ -186,10 +186,10 @@ async function ddLoadDashboard(customVal) {
       periodValue: customVal || "",
       todayOverride: localStorage.getItem("erpPtlTodayOverride") || "",
     });
-    if (!data.success) { abpsAlert("Dashboard load failed: " + data.error); return; }
+    if (!data.success) { abpsAlert("Could not load the dashboard. " + data.error); return; }
     ddRenderDashboard(data);
   } catch(e) {
-    abpsAlert("Dashboard error: " + e.message);
+    abpsAlert("Could not load the dashboard. " + friendlyErr(e));
   }
 }
 

@@ -214,7 +214,7 @@ async function mowSaveDraftAndReload(challanId, ticketIds, existingDraft) {
     window._mowSelectedPoolTickets.clear();
     await loadMaterialOutwardServiceQueue();
   } catch (err) {
-    abpsAlert(err.message);
+    abpsAlert(friendlyErr(err));
     if (btn) { btn.disabled = false; btn.textContent = challanId ? `+ Add Selected to Draft Challan #${challanId}` : "+ Start New Challan From Selected"; }
   }
 }
@@ -616,7 +616,7 @@ Click OK to reject.`)) return;
     if (refreshBtn) refreshBtn.textContent = "Refresh Queue";
   } catch (err) {
     hideBlockingOverlay();
-    abpsAlert(err.message);
+    abpsAlert(friendlyErr(err));
   }
 }
 

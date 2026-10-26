@@ -243,7 +243,7 @@ async function iwsLoadLineDetail(i, cell, showName) {
         ${rej ? `<div style="background:#fff; border:1.5px solid #cbd5e1; border-radius:var(--radius); padding:10px 12px;"><div style="font-size:0.7rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:6px;">Not OK / Missing</div><ul style="margin:0; padding-left:18px;">${rej}</ul></div>` : ""}
         ${chg ? `<div style="background:#fff; border:1.5px solid #cbd5e1; border-radius:var(--radius); padding:10px 12px;"><div style="font-size:0.7rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:6px;">Gate / GRN history</div><ul style="margin:0; padding-left:18px;">${chg}</ul></div>` : ""}
       </div>`;
-  } catch (e) { cell.textContent = e.message; }
+  } catch (e) { cell.textContent = friendlyErr(e); }
 }
 
 // CSV opens straight in Excel.

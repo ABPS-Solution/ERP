@@ -137,10 +137,10 @@ async function pd2LoadDashboard(customVal) {
       periodValue: customVal || "",
       todayOverride: localStorage.getItem("erpPtlTodayOverride") || "",
     });
-    if (!data.success) { abpsAlert("Production Dashboard load failed: " + data.error); return; }
+    if (!data.success) { abpsAlert("Could not load the dashboard. " + data.error); return; }
     pd2RenderDashboard(data);
   } catch(e) {
-    abpsAlert("Production Dashboard error: " + e.message);
+    abpsAlert("Could not load the dashboard. " + friendlyErr(e));
   }
 }
 

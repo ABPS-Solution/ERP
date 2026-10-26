@@ -97,7 +97,7 @@ async function parseCard() {
     // + lib/gemini.js's parseBusinessCard) and returns clean structured
     // fields at data.parsed — not raw Gemini API JSON to parse ourselves.
     if (data && data.success === false) {
-      abpsAlert("Card processing failed: " + (data.error || "Unknown server error."));
+      abpsAlert("Could not read the card. " + (data.error || "Please try again."));
       return;
     }
     if (data && data.parsed) {
@@ -121,7 +121,7 @@ async function parseCard() {
       abpsAlert("AI could not read the card. Please try a clearer image.");
     }
   } catch (e) {
-    abpsAlert("Card Processing network execution crash: " + e.message);
+    abpsAlert("Could not read the card. " + friendlyErr(e));
   } finally {
     btn.disabled = false;
     btn.classList.remove("loading");
@@ -339,10 +339,10 @@ async function triggerCityStateQuerySearchExecution() {
         
         canvas.style.display = "block"; 
      } else {
-        abpsAlert("Geographic search error: " + (data.error || "No records match."));
+        abpsAlert((data.error || "No leads match these places."));
      }
   } catch (e) {
-     abpsAlert("Geographic layout request connection crash: " + e.message);
+     abpsAlert("Could not search. " + friendlyErr(e));
   } finally {
      btn.classList.remove("loading"); btn.textContent = "Search Location";
   }
@@ -1255,7 +1255,7 @@ async function commitTargetedLeadsMutationsRows(leadRef) {
     let companySaveOk = true;
     if (!carrierCompanyId && Object.keys(companyFieldsPayload).length > 0) {
       companySaveOk = false;
-      abpsAlert("Lead details saved, but company details (Company Name, City, State, Country, Address, Website, Type of Customer/Industry) could not be saved — company not identified. Please search the lead again and retry.");
+      abpsAlert("Lead details were saved, but the company details were not (the company could not be found). Search the lead again and save once more.");
     }
     if (carrierCompanyId && Object.keys(companyFieldsPayload).length > 0) {
       const cr = await apFetch({
@@ -1265,7 +1265,7 @@ async function commitTargetedLeadsMutationsRows(leadRef) {
         fields: companyFieldsPayload
       });
       companySaveOk = !!cr.success;
-      if (!companySaveOk) abpsAlert("Lead details saved, but company details failed: " + (cr.error || "Unknown error"));
+      if (!companySaveOk) abpsAlert("Lead details were saved, but the company details were not. " + (cr.error || "Please try again."));
     }
 
     if (r.success) {
@@ -1293,7 +1293,7 @@ async function commitTargetedLeadsMutationsRows(leadRef) {
         }
       }
     }
-  } catch(e) { abpsAlert(e.message); } finally { if(btn) { btn.disabled = false; btn.innerHTML = "Save Modifications"; } }
+  } catch(e) { abpsAlert(friendlyErr(e)); } finally { if(btn) { btn.disabled = false; btn.innerHTML = "Save Modifications"; } }
 }
 
 async function removeLeadRowEntirely(leadRef, encodedCompanyNameForConfirm, encodedContactNameForConfirm) {
@@ -1323,7 +1323,7 @@ async function removeLeadRowEntirely(leadRef, encodedCompanyNameForConfirm, enco
         triggerSequentialSearch(currentActiveModuleContext);
         
     } catch(e) { 
-        abpsAlert("Network request execution failure: " + e.message); 
+        abpsAlert(friendlyErr(e)); 
         btn.disabled = false;
         btn.innerHTML = "Delete Record";
     }
@@ -1611,14 +1611,14 @@ async function submitLead() {
       }, 500); 
     }
     else {
-      abpsAlert("Submission failed: " + (d.error || "Unknown server error."));
+      abpsAlert("Could not save. " + (d.error || "Please try again."));
     }
   } catch (e) {
     // apFetch already shows its own "session expired, please log in again"
     // message and redirects — an extra "Submission failed" alert on top of
     // that would be redundant and confusing.
     if (e.message !== "SESSION_EXPIRED") {
-      abpsAlert("Submission failed. Please check your network connection.\n" + e.message);
+      abpsAlert("Could not submit. " + friendlyErr(e));
     }
   } finally {
     btn.disabled = false;
@@ -1654,7 +1654,7 @@ async function triggerQualificationSearch() {
             canvasLastParentWorkspaceId = "workspace-searchQualification";
             canvas.style.display = "block"; document.getElementById("workspace-searchQualification").appendChild(canvas);
         }
-    } catch(e) { abpsAlert(e.message); } finally { btn.classList.remove("loading"); btn.textContent = "Search Type of Customer"; }
+    } catch(e) { abpsAlert(friendlyErr(e)); } finally { btn.classList.remove("loading"); btn.textContent = "Search Type of Customer"; }
 }
 
 async function triggerEngineerSearch() {
@@ -1679,7 +1679,7 @@ async function triggerEngineerSearch() {
           canvasLastParentWorkspaceId = "workspace-searchEngineer";
           canvas.style.display = "block"; document.getElementById("workspace-searchEngineer").appendChild(canvas);
         } else { abpsAlert("No leads found for this engineer."); }
-    } catch(e) { abpsAlert(e.message); } finally { btn.classList.remove("loading"); btn.textContent = "Search Leads"; }
+    } catch(e) { abpsAlert(friendlyErr(e)); } finally { btn.classList.remove("loading"); btn.textContent = "Search Leads"; }
 }
 
 function renderLeadMatrixEngineerCheckboxes() {
@@ -1769,7 +1769,7 @@ async function executeLeadMatrixFilterSearch() {
       document.getElementById("workspace-searchStatus").appendChild(canvas);
     }
   } catch(e) {
-    abpsAlert("Leads matrix execution request dropped: " + e.message);
+    abpsAlert("Could not search. " + friendlyErr(e));
   } finally {
     if (btn.classList.contains("loading")) {
       btn.classList.remove("loading");
@@ -2019,7 +2019,7 @@ async function triggerEmailLeadDatabaseActionPipeline(index) {
       });
     }
   } catch(e) {
-    abpsAlert("Error: " + e.message);
+    abpsAlert(friendlyErr(e));
     actionBtn.disabled = false;
     actionBtn.textContent = "Add in CRM / Create Task";
     actionBtn.style.display = "inline-flex";
@@ -2174,7 +2174,7 @@ async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
   const activeWorkingFile = fileObjects[opsFlagTypeString];
   
   if (!activeWorkingFile) {
-    abpsAlert(`Please capture or select the corresponding document before running the AI engine.`);
+    abpsAlert(`Take or choose a photo of the document first.`);
     return;
   }
 
@@ -2356,7 +2356,7 @@ async function executeMarketingOperationsDocumentCommit(opsFlagTypeString) {
   } catch(err) {
     if (feedbackBanner) {
       feedbackBanner.style.cssText = "display: block; background: #fee2e2; border-color: #b91c1c; color: #b91c1c; padding: 12px; margin-bottom: 14px; border-left: 4px solid #b91c1c;";
-      feedbackBanner.innerHTML = `<strong>Network Exception:</strong> ${err.message}`;
+      feedbackBanner.innerHTML = `<strong>Could not continue.</strong> ${escapeHtml(friendlyErr(err))}`;
     }
     if (targetBtn) {
       targetBtn.disabled = false;
@@ -2379,7 +2379,7 @@ let poReviewState = null;
 
 async function extractPurchaseOrderForReview() {
   const activeWorkingFile = targetPurchaseOrderFileObj;
-  if (!activeWorkingFile) { abpsAlert("Please capture or select the Purchase Order document before running the AI engine."); return; }
+  if (!activeWorkingFile) { abpsAlert("Take or choose the Purchase Order document first."); return; }
 
   const leadDropEl = document.getElementById("purchase-order-lead-dropdown");
   if (!leadDropEl || !leadDropEl.value.trim()) {
@@ -2467,7 +2467,7 @@ async function extractPurchaseOrderForReview() {
     document.getElementById("purchase-order-inputs-container").style.display = "none";
     renderPurchaseOrderReview();
   } catch(e) {
-    showBOQBanner("purchase-order-feedback-banner", "Network error: " + e.message, "error", true);
+    showBOQBanner("purchase-order-feedback-banner", friendlyErr(e), "error", true);
   } finally {
     hideBlockingOverlay();
     if (targetBtn) { targetBtn.disabled = false; targetBtn.innerHTML = "Process Purchase Order with AI"; }
@@ -2959,7 +2959,7 @@ async function submitReviewedPurchaseOrder() {
       if (btn) { btn.disabled = false; btn.innerHTML = "Submit PO"; }
     }
   } catch(e) {
-    showBOQBanner("purchase-order-review-feedback", "Network error: " + e.message, "error", true);
+    showBOQBanner("purchase-order-review-feedback", friendlyErr(e), "error", true);
     if (btn) { btn.disabled = false; btn.innerHTML = "Submit PO"; }
   } finally {
     hideBlockingOverlay();
@@ -3522,11 +3522,11 @@ async function openMergeLeadPicker(targetLeadId, encodedCompany) {
   if (!(await abpsConfirm(`Merge ${source.leadId} into ${targetLeadId}? This cannot be undone.`))) return;
   try {
     const m = await apFetch({ action: "mergeLeads", sourceLeadId: source.leadId, targetLeadId });
-    if (!m.success) { abpsAlert(m.error || "Merge failed."); return; }
+    if (!m.success) { abpsAlert(m.error || "Could not merge the leads. Please try again."); return; }
     abpsAlert("Leads merged. Search again to see the combined lead.");
     const srcCard = document.getElementById(`contact-parent-wrapper-${source.leadId}`);
     if (srcCard) srcCard.remove();
-  } catch (e) { if (e.message !== "SESSION_EXPIRED") abpsAlert("Merge failed."); }
+  } catch (e) { if (e.message !== "SESSION_EXPIRED") abpsAlert("Could not merge the leads. Please try again."); }
 }
 
 

@@ -248,7 +248,7 @@ async function removeIsolatedTaskItem(leadRef, taskId, event) {
     await globalExecutionScopeReloader(leadRef, activeScopeNode); 
     
   } catch(e) { 
-    abpsAlert("Deletion failed: " + e.message); 
+    abpsAlert("Could not delete. " + friendlyErr(e)); 
     btn.disabled = false;
     btn.textContent = "Delete";
   }
@@ -390,7 +390,7 @@ async function executeTaskMatrixSearch(opts) {
         document.getElementById(`matrix-edit-task-btn-${t.id}`).onclick = function() { injectMatrixInlineTaskForm(t, card); };
       });
     }
-  } catch(e) { if (live) throw e; abpsAlert("Task matrix engine fetch error: " + e.message); } 
+  } catch(e) { if (live) throw e; abpsAlert("Could not search. " + friendlyErr(e)); } 
   finally { btn.classList.remove("loading"); btn.textContent = "Run Tasks Search"; }
 }
 
@@ -479,7 +479,7 @@ async function commitMatrixTaskMutations(formNode, fallbackLeadId, btnNode) {
     }
   } catch(e) {
     if (e.message === "SESSION_EXPIRED") return;
-    abpsAlert("Matrix Update Error: " + e.message);
+    abpsAlert("Could not save. " + friendlyErr(e));
     btnNode.disabled = false; btnNode.innerHTML = "Save Task";
   }
 }
@@ -499,7 +499,7 @@ async function removeMatrixTaskFromEngine(taskId, event) {
     });
     if (r.success) { executeTaskMatrixSearch(); }
   } catch(e) { 
-    abpsAlert(e.message); 
+    abpsAlert(friendlyErr(e)); 
     btn.classList.remove("loading");
     btn.textContent = "Delete";
   }
@@ -542,7 +542,7 @@ async function archiveEmailLeadFromSystemDatabaseCache(messageId, elementIndex) 
     else if (cardNode) cardNode.remove();
     
   } catch(e) {
-    abpsAlert("Connection Error: Deletion parameter could not be tracked: " + e.message);
+    abpsAlert("Could not delete. " + friendlyErr(e));
     deleteBtn.disabled = false; 
     deleteBtn.textContent = "Delete";
   }

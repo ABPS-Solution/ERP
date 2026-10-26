@@ -312,7 +312,7 @@ async function updatePORevisionUI() {
   } catch (e) {
     hideBlockingOverlay();
     btn.disabled = false; btn.textContent = "Save & Generate Draft";
-    showPurchaseFeedback("rpo-feedback", "Network error: " + e.message, "error");
+    showPurchaseFeedback("rpo-feedback", friendlyErr(e), "error");
   }
 }
 
@@ -360,7 +360,7 @@ async function generateRevisionCheckingDraftUI() {
     }
   } catch (e) {
     hideBlockingOverlay();
-    showPurchaseFeedback("rpo-feedback", "Network error: " + e.message, "error");
+    showPurchaseFeedback("rpo-feedback", friendlyErr(e), "error");
   }
 }
 
@@ -1105,7 +1105,7 @@ async function submitPORevisionUI() {
   } catch (e) {
     hideBlockingOverlay();
     btn.disabled = false; btn.textContent = "Submit Revision for Authorization";
-    showPurchaseFeedback("rpo-feedback", "Network error: " + e.message, "error");
+    showPurchaseFeedback("rpo-feedback", friendlyErr(e), "error");
   }
 }
 
@@ -1309,7 +1309,7 @@ async function cancelPOEntirely(poNo) {
       showPurchaseFeedback("rpo-feedback", data.error || "Cancellation failed.", "error");
     }
   } catch (e) {
-    showPurchaseFeedback("rpo-feedback", "Network error: " + e.message, "error");
+    showPurchaseFeedback("rpo-feedback", friendlyErr(e), "error");
   }
 }
 
@@ -1329,7 +1329,7 @@ async function dismissPORevision(poNo) {
       showPurchaseFeedback("rpo-feedback", data.error || "Failed.", "error");
     }
   } catch (e) {
-    showPurchaseFeedback("rpo-feedback", "Network error: " + e.message, "error");
+    showPurchaseFeedback("rpo-feedback", friendlyErr(e), "error");
   }
 }
 
@@ -1976,7 +1976,7 @@ async function authorizePORevisionUI(requestId, confirmStale) {
     hideBlockingOverlay();
     if (authBtn) { authBtn.disabled = false; authBtn.textContent = "Authorize Revision"; }
     if (rejBtn) rejBtn.disabled = false;
-    showPurchaseFeedback("apor-feedback", "Network error: " + e.message, "error");
+    showPurchaseFeedback("apor-feedback", friendlyErr(e), "error");
   }
 }
 
@@ -1995,7 +1995,7 @@ async function rejectPORevisionUI(requestId) {
       showPurchaseFeedback("apor-feedback", data.error || "Rejection failed.", "error");
     }
   } catch (e) {
-    showPurchaseFeedback("apor-feedback", "Network error: " + e.message, "error");
+    showPurchaseFeedback("apor-feedback", friendlyErr(e), "error");
   }
 }
 

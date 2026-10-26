@@ -58,7 +58,7 @@ function initializeGoogleSignInButton() {
 async function handleGooglePlatformCredentialResponse(response) {
   const selectedEngineer = document.getElementById("app-auth-active-engineer-identity").value;
   if (!selectedEngineer) {
-    abpsAlert("Identity Verification Failed: You must select your individual Engineer Name before logging in with your Google Account credentials.");
+    abpsAlert("Pick your own name before logging in with Google.");
     return;
   }
 
@@ -96,12 +96,12 @@ async function handleGooglePlatformCredentialResponse(response) {
       if (googleBtnMount) googleBtnMount.style.display = "flex";
       if (processingLoader) processingLoader.style.display = "none";
     } else {
-      abpsAlert("Authentication Error: " + data.error);
+      abpsAlert("Could not log in. " + data.error);
       if (googleBtnMount) googleBtnMount.style.display = "flex";
       if (processingLoader) processingLoader.style.display = "none";
     }
   } catch (e) {
-    abpsAlert("Connection verification failure: " + e.message);
+    abpsAlert("Could not log in. " + friendlyErr(e));
     if (googleBtnMount) googleBtnMount.style.display = "flex";
     if (processingLoader) processingLoader.style.display = "none";
   }

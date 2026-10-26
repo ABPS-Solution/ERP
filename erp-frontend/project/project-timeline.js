@@ -876,7 +876,7 @@ async function ptlSetMilestoneOverride(nodeId) {
     if (!data.success) { abpsAlert(data.error || "Could not set this date."); return; }
     await selectPtlProject(projectId);
   } catch (e) {
-    abpsAlert("Network error: " + e.message);
+    abpsAlert(friendlyErr(e));
   }
 }
 
@@ -889,7 +889,7 @@ async function ptlClearMilestoneOverride(nodeId) {
     if (!data.success) { abpsAlert(data.error || "Could not clear this override."); return; }
     await selectPtlProject(projectId);
   } catch (e) {
-    abpsAlert("Network error: " + e.message);
+    abpsAlert(friendlyErr(e));
   }
 }
 
@@ -906,7 +906,7 @@ async function ptlSetSystemDate(fieldId) {
     if (node) node.actual = data.actualDate;
     ptlRender();
   } catch (e) {
-    abpsAlert("Network error: " + e.message);
+    abpsAlert(friendlyErr(e));
   }
 }
 
@@ -2208,7 +2208,7 @@ async function ptlMarkMilestoneDone(nodeId) {
     if (node) node.actual = data.actualDate;
     ptlRender();
   } catch (e) {
-    abpsAlert("Network error: " + e.message);
+    abpsAlert(friendlyErr(e));
   }
 }
 
@@ -2334,7 +2334,7 @@ async function ptlParseLdClauseNow() {
     ptlLdPanelState.candidateConfidence = c.confidence;
     ptlLdPanelState.parseRaw = c;
   } catch (e) {
-    abpsAlert("Network error: " + e.message);
+    abpsAlert(friendlyErr(e));
   }
   ptlLdPanelState.loadingParse = false;
   ptlRenderLdPanel();
@@ -2363,7 +2363,7 @@ async function ptlSaveLdTerms() {
     ptlCloseLdPanel();
     await selectPtlProject(ptlData.project.projectId);
   } catch (e) {
-    abpsAlert("Network error: " + e.message);
+    abpsAlert(friendlyErr(e));
   }
 }
 

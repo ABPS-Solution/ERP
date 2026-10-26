@@ -217,7 +217,7 @@ async function ensureFileToken(fileId) {
     return _fileTokenCache.token;
   }
   const data = await apFetch({ action: "mintFileToken", fileId });
-  if (!data.success) throw new Error(data.error || "Could not open document.");
+  if (!data.success) throw apUserError(data.error || "Could not open the document. Please try again.");
   _fileTokenCache = { token: data.fileToken, fileId, mintedAt: Date.now() };
   return data.fileToken;
 }
@@ -238,7 +238,7 @@ document.addEventListener("click", async (e) => {
     if (w) w.location = href; else window.open(href, '_blank');
   } catch (err) {
     if (w) w.close();
-    abpsAlert("Could not open document: " + err.message);
+    abpsAlert("Could not open the document. " + friendlyErr(err));
   }
 }, true);
 
@@ -285,6 +285,28 @@ async function erpRunAsJob(payload, timeoutMs) {
   return asResponse({ success: false, error: "This is taking too long. Please check later whether it was saved before trying again." });
 }
 
+// friendlyErr(e) — what to show a person for a caught error. Messages from
+// the server, and the connection messages apFetch makes, pass through; a
+// coding error ("x is not defined") never reaches the screen as-is.
+function friendlyErr(e) {
+  if (!e) return "Something went wrong. Please try again.";
+  if (e.userFacing) return e.message;
+  if (e.message === "SESSION_EXPIRED") return "Your login has expired. Please log in again.";
+  if (e.name === "TimeoutError" || e.name === "AbortError") return "The server took too long to answer. Check whether it was saved before trying again.";
+  if (e instanceof TypeError && /fetch|network|load failed/i.test(e.message || "")) return "No connection to the server. Check the internet and try again.";
+  if (e instanceof TypeError || e instanceof ReferenceError || e instanceof SyntaxError || e instanceof RangeError) {
+    console.error("Page error:", e);
+    return "Something went wrong on this page. Please refresh the page and try again.";
+  }
+  return e.message || "Something went wrong. Please try again.";
+}
+
+function apUserError(message) {
+  const err = new Error(message);
+  err.userFacing = true;
+  return err;
+}
+
 async function apFetch(payload) {
   // _timeoutMs: a longer wait for one slow call (e.g. AI reading a PO); never sent.
   const apTimeoutMs = payload._timeoutMs || 60000;
@@ -292,12 +314,20 @@ async function apFetch(payload) {
   payload.sessionToken = localStorage.getItem("erpSessionToken");
   const init = () => ({ method: "POST", body: JSON.stringify(payload), signal: AbortSignal.timeout(apTimeoutMs) });
   let res;
-  if (apTimeoutMs > 60000) {
-    // Long calls run as a server job (lib/asyncJobs.js) so no single request
-    // lasts long enough for Firebase's 60s cut.
-    res = await erpRunAsJob(payload, apTimeoutMs);
-  } else {
-    res = await erpFetchWithRetry(GAS_URL, init());
+  try {
+    if (apTimeoutMs > 60000) {
+      // Long calls run as a server job (lib/asyncJobs.js) so no single request
+      // lasts long enough for Firebase's 60s cut.
+      res = await erpRunAsJob(payload, apTimeoutMs);
+    } else {
+      res = await erpFetchWithRetry(GAS_URL, init());
+    }
+  } catch (err) {
+    if (err && (err.name === "TimeoutError" || err.name === "AbortError")) {
+      throw apUserError("The server took too long to answer. Check whether it was saved before trying again.");
+    }
+    if (err instanceof TypeError) throw apUserError("No connection to the server. Check the internet and try again.");
+    throw err;
   }
   // A non-JSON body (Cloud Run 502/503 page, 413 too large) becomes a
   // readable error instead of "Unexpected token <".
@@ -305,11 +335,11 @@ async function apFetch(payload) {
   if (!contentType.includes("application/json")) {
     return { success: false, error: res.status === 413
       ? "The upload is too large. Please use smaller files."
-      : "Server error (HTTP " + res.status + "). Please try again." };
+      : "The server could not answer just now. Please try again in a minute." };
   }
   const data = await res.json();
   if (!res.ok && data && typeof data.error !== "string") {
-    return { success: false, error: "Server error (HTTP " + res.status + ")" };
+    return { success: false, error: "The server could not answer just now. Please try again in a minute." };
   }
   if (!data.success && data.code === "SESSION_EXPIRED") {
     clearAppLocalStorageKeepingDeviceKeys({ keepDrafts: true });
@@ -353,7 +383,7 @@ window.addEventListener("unhandledrejection", function(event) {
   if (appContainer && appContainer.style.display !== "none") {
     const banner = document.createElement("div");
     banner.style.cssText = "position:fixed; top:60px; left:50%; transform:translateX(-50%); background:#fee2e2; border:1px solid #fca5a5; color:#b91c1c; padding:10px 20px; border-radius:6px; font-size:0.85rem; font-weight:700; z-index:9999; box-shadow:0 4px 12px rgba(0,0,0,0.1);";
-    banner.textContent = "Network error. Please check your connection and try again.";
+    banner.textContent = friendlyErr(event.reason);
     document.body.appendChild(banner);
     setTimeout(() => banner.remove(), 5000);
   }
