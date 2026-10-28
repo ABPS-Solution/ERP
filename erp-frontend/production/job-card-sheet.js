@@ -29,7 +29,7 @@ function jcshBOQPopulate(options) {
   if (!list) return;
   list.innerHTML = options.map(o => o.pending ? `
     <div style="padding:8px 10px; border-bottom:1px solid #f1f5f9; font-size:0.82rem; line-height:1.35; color:var(--muted); background:#f8fafc; cursor:not-allowed;">${o.label} <span style="font-size:0.7rem; font-weight:800; color:#475569; background:#e2e8f0; padding:2px 8px; border-radius:999px; white-space:nowrap;">BOQ authorization pending</span></div>` : `
-    <div onclick="event.stopPropagation(); selectJCSHBOQ('${o.value.replace(/'/g,"\\'")}', \`${o.label.replace(/\`/g,"'")}\`)"
+    <div onclick="event.stopPropagation(); selectJCSHBOQ(${jsArg(o.value)}, ${jsArg(o.label)})"
       style="padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem; line-height:1.35;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${o.label}</div>`).join("");
 }
@@ -71,7 +71,7 @@ function jcshJobCardPopulate(options) {
   const list = document.getElementById("jcsh-jobcard-dropdown-list");
   if (!list) return;
   list.innerHTML = options.map(o => `
-    <div onclick="event.stopPropagation(); selectJCSHJobCard('${o.value.replace(/'/g,"\\'")}', \`${o.label.replace(/\`/g,"'")}\`)"
+    <div onclick="event.stopPropagation(); selectJCSHJobCard(${jsArg(o.value)}, ${jsArg(o.label)})"
       style="padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem; line-height:1.35;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${o.label}</div>`).join("");
 }

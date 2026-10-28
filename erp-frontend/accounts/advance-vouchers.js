@@ -122,7 +122,7 @@ function advHandleCompanySearch(query) {
       style="padding:8px 10px; cursor:pointer; font-size:0.85rem; border-bottom:1px solid #f1f5f9;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${escapeHtml(c.companyName)}</div>`).join("");
   if (!exactHit && query.trim()) {
-    html += `<div onmousedown="event.preventDefault(); advAddNewCompany('${query.trim().replace(/'/g, "\\'")}')"
+    html += `<div onmousedown="event.preventDefault(); advAddNewCompany(${jsArg(query.trim())})"
       style="padding:8px 10px; cursor:pointer; font-size:0.85rem; color:var(--brand); font-weight:700;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">+ Add "${escapeHtml(query.trim())}" as a new company</div>`;
   }

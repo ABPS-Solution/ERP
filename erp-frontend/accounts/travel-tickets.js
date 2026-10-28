@@ -320,7 +320,7 @@ function ttkHandleCompanySearch(query) {
       style="padding:8px 10px; cursor:pointer; font-size:0.85rem; border-bottom:1px solid #f1f5f9;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${escapeHtml(c.companyName)}</div>`).join("");
   if (!exactHit && query.trim()) {
-    html += `<div onmousedown="event.preventDefault(); ttkAddNewCompany('${query.trim().replace(/'/g, "\\'")}')"
+    html += `<div onmousedown="event.preventDefault(); ttkAddNewCompany(${jsArg(query.trim())})"
       style="padding:8px 10px; cursor:pointer; font-size:0.85rem; color:var(--brand); font-weight:700;"
       onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">+ Add "${escapeHtml(query.trim())}" as a new company</div>`;
   }
@@ -362,7 +362,7 @@ function ttkRenderCompanyChips() {
   if (!wrap) return;
   wrap.innerHTML = ttkSelectedCompanies.map(c => `
     <span style="background:var(--brand); color:#fff; padding:4px 10px; border-radius:14px; font-size:0.8rem; display:inline-flex; align-items:center; gap:6px;">
-      ${escapeHtml(c)} <span onclick="ttkRemoveCompanyChip('${c.replace(/'/g, "\\'")}')" style="cursor:pointer; font-weight:700;">✕</span>
+      ${escapeHtml(c)} <span onclick="ttkRemoveCompanyChip(${jsArg(c)})" style="cursor:pointer; font-weight:700;">✕</span>
     </span>`).join("");
 }
 

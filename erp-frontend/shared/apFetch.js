@@ -307,11 +307,25 @@ function apUserError(message) {
   return err;
 }
 
+
+// Last real user input (click, key, scroll, touch). Calls made within 2 minutes
+// of one tell the server the user is active, which keeps the login alive.
+window._abpsLastUserInput = Date.now();
+["pointerdown", "keydown", "wheel", "touchstart"].forEach(ev =>
+  document.addEventListener(ev, () => { window._abpsLastUserInput = Date.now(); }, { capture: true, passive: true }));
+function abpsUserIsActive() { return Date.now() - (window._abpsLastUserInput || 0) < 120000; }
+function abpsMarkActivity(payload) {
+  if (!abpsUserIsActive()) return;
+  payload._userActive = true;
+  try { localStorage.setItem("erpSessionExpiry", new Date(Date.now() + 2 * 3600 * 1000).toISOString()); } catch (e) {}
+}
+
 async function apFetch(payload) {
   // _timeoutMs: a longer wait for one slow call (e.g. AI reading a PO); never sent.
   const apTimeoutMs = payload._timeoutMs || 60000;
   delete payload._timeoutMs;
   payload.sessionToken = localStorage.getItem("erpSessionToken");
+  abpsMarkActivity(payload);
   const init = () => ({ method: "POST", body: JSON.stringify(payload), signal: AbortSignal.timeout(apTimeoutMs) });
   let res;
   try {
