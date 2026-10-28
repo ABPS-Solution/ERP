@@ -52,7 +52,7 @@ function jsArg(value) {
 }
 
 function fmtQty(n) {
-  return (Number(n) || 0).toString();
+  return String(Math.round((Number(n) || 0) * 1000) / 1000);
 }
 
 // Trims trailing zeros from a NUMERIC-column value Postgres returns as a
