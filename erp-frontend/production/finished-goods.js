@@ -417,7 +417,7 @@ function fgJobCardPopulate(options) {
   const allOn = options.length > 0 && options.every(o => sel.has(o.value));
   const row = (o, i) => `
     <label onclick="event.stopPropagation();" style="display:flex; align-items:center; gap:8px; padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem; line-height:1.35;">
-      <input type="checkbox" style="width:auto;" ${sel.has(o.value) ? "checked" : ""} onchange="fgToggleJobCard(${i}, this.checked)"> ${escapeHtml(o.label)}</label>`;
+      <input type="checkbox" style="width:auto;" ${sel.has(o.value) ? "checked" : ""} onchange="fgToggleJobCard(${i}, this.checked)"> ${o.label}</label>`;
   list.innerHTML = (options.length > 1 ? `
     <label onclick="event.stopPropagation();" style="display:flex; align-items:center; gap:8px; padding:8px 10px; cursor:pointer; border-bottom:2px solid #cbd5e1; font-size:0.82rem; font-weight:700; background:#f8fafc;">
       <input type="checkbox" style="width:auto;" ${allOn ? "checked" : ""} onchange="fgToggleAllJobCards(this.checked)"> Select all (${options.length})</label>` : "")
@@ -551,7 +551,7 @@ async function triggerFGBOQValidation() {
 
     updateFGSubmitButtonState();
   } catch(e) {
-    zone.innerHTML = `<div style="padding:12px; background:#fff5f5; border:1.5px solid #fca5a5; border-radius:var(--radius); color:#b91c1c; font-size:0.85rem;">Network error checking BOQ: ${e.message}</div>`;
+    zone.innerHTML = `<div style="padding:12px; background:#fff5f5; border:1.5px solid #fca5a5; border-radius:var(--radius); color:#b91c1c; font-size:0.85rem;">Network error checking BOQ: ${escapeHtml(e.message)}</div>`;
     window.fgBOQValidationPassed = false;
     window.fgBOQValidationRan = false;
     updateFGSubmitButtonState();

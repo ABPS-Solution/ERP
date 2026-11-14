@@ -278,7 +278,7 @@ async function submitMaterialRequestTicketToBackend() {
     hideBlockingOverlay();
     if (feedbackBanner) {
       feedbackBanner.style.cssText = "display: block; background: #fee2e2; border-color: #b91c1c; color: #b91c1c; padding: 12px; margin-bottom: 12px; border-left: 4px solid #b91c1c; text-align: left;";
-      feedbackBanner.innerHTML = `<strong>Network Request Connection Error:</strong> ${err.message}`;
+      feedbackBanner.innerHTML = `<strong>Network Request Connection Error:</strong> ${escapeHtml(err.message)}`;
       feedbackBanner.scrollIntoView({ behavior: "smooth", block: "center" });
     }
     submitBtn.disabled = false;
@@ -1014,7 +1014,7 @@ async function initializeStoreManagerApprovalsWorkspace() {
     startPendingTicketsQueuePolling();
 
   } catch (error) {
-    cardsFeedZone.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">Network Exception: ${error.message}</div>`;
+    cardsFeedZone.innerHTML = `<div style="text-align:center; padding:20px; color:var(--warn); font-weight:700;">Network Exception: ${escapeHtml(error.message)}</div>`;
   }
 }
 
@@ -1383,7 +1383,7 @@ async function openFGReleaseSelectionModal(ticketId) {
       </div>
     </div>`;
   } catch(e) {
-    overlay.innerHTML = `<div style="background:#fff; border-radius:8px; padding:20px;">Network error: ${e.message}</div>`;
+    overlay.innerHTML = `<div style="background:#fff; border-radius:8px; padding:20px;">Network error: ${escapeHtml(e.message)}</div>`;
   }
 }
 

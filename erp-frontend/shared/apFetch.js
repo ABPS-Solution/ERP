@@ -326,6 +326,8 @@ async function apFetch(payload) {
   delete payload._timeoutMs;
   payload.sessionToken = localStorage.getItem("erpSessionToken");
   abpsMarkActivity(payload);
+  // One id per call (kept on retries): the server answers a repeat with the first reply.
+  if (!payload._requestId && window.crypto && crypto.randomUUID) payload._requestId = crypto.randomUUID();
   const init = () => ({ method: "POST", body: JSON.stringify(payload), signal: AbortSignal.timeout(apTimeoutMs) });
   let res;
   try {
