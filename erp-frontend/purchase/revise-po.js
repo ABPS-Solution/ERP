@@ -1238,6 +1238,7 @@ function rpoAddTransportProject(idx, projectId) {
   const pid = (projectId || "").trim();
   if (!li || !pid) return;
   if (!Array.isArray(li.projectIds)) li.projectIds = li.projectId ? [li.projectId] : [];
+  if (rpoSvcType() === "Labour") li.projectIds = [];
   if (!li.projectIds.includes(pid)) li.projectIds.push(pid);
   renderPORevisionCard();
 }

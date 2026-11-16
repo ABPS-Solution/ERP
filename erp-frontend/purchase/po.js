@@ -842,7 +842,7 @@ const CPO_PO_TYPES = ["Material", "Transport", "Repair", "Labour"];
 const CPO_TYPE_NOTES = {
   Transport: "Rows are free text with a Project ID each. Nothing is received into stock; mark it Completed once the trip is done.",
   Repair: "Rows are free text with a quantity in NOS. No item code and nothing is received into stock.",
-  Labour: "Rows are free text with a quantity in NOS and a Project ID each. No item code and nothing is received into stock.",
+  Labour: "Rows are free text with a quantity in NOS and one Project ID per row. No item code and nothing is received into stock.",
 };
 function cpoPoTypeButtonsHtml() {
   return CPO_PO_TYPES.map(t => `<button type="button" class="cpo-type-btn" data-type="${t}" onclick="onCPOPoTypeChange('${t}')"
@@ -892,6 +892,7 @@ function cpoAddTransportProject(rowId, projectId) {
   const pid = (projectId || "").trim();
   if (!row || !pid) return;
   const list = cpoTransportProjects(row);
+  if (window.cpoPoType === "Labour") list.length = 0; // one project per Labour row
   if (!list.includes(pid)) list.push(pid);
   renderCPOMaterialRows(); recalcCPOTotals(); persistCPODraft();
   setTimeout(() => { const el = document.getElementById(`cpo-tproj-${rowId}-ta-input`); if (el) el.focus(); }, 0);
@@ -950,7 +951,7 @@ function cpoTransportRowHtmlV2(row, idx) {
             oninput="updateCPORowField(${row.id},'legacyProject',this.value); cpoRefreshRowStatus(${row.id});"
             style="width:100%; max-width:520px; padding:9px; font-weight:600; border:1.5px solid ${(row.legacyProject || "").trim() ? "var(--border)" : "#f59e0b"}; border-radius:var(--radius);" />
         </div>` : `<div>
-          <div style="${lbl}">Project ID(s) *  <span style="text-transform:none; font-weight:500;">— add every project this is for; the cost is split equally</span></div>
+          <div style="${lbl}">Project ID(s) *  <span style="text-transform:none; font-weight:500;">— ${window.cpoPoType === "Labour" ? "one project per row" : "add every project this is for; the cost is split equally"}</span></div>
           <div>${chips}</div>
           <div style="position:relative; max-width:520px;">
             <input type="text" id="${taId}-ta-input" placeholder="Type Project ID or Customer Name..." autocomplete="off"
