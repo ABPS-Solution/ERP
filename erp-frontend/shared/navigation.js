@@ -546,6 +546,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
     "mod-qa-dashboard-wrapper":        canViewQaDashboard,
     "mod-project-dashboard-wrapper":   userPermissionsObject.viewProjectDashboard === true,
     "mod-approvals-dashboard-wrapper": userPermissionsObject.viewApprovalsDashboard === true,
+    "mod-buffer-suggestions-wrapper":  userPermissionsObject.viewBufferSuggestions === true,
   };
   Object.keys(dashMap).forEach(function(id) {
     const el = document.getElementById(id);

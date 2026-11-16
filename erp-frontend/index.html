@@ -1589,6 +1589,9 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
           <div id="mod-admin-dashboard-wrapper" style="display:none;">
             <button class="dept-dash-pill" id="mod-admin-dashboard" onclick="navigateToAdminDashboard()" style="background:#eff6ff; color:#2563eb;">📊 Admin Dashboard</button>
           </div>
+          <div id="mod-buffer-suggestions-wrapper" style="display:none;">
+            <button class="dept-dash-pill" id="mod-buffer-suggestions" onclick="navigateToBufferSuggestions()" style="background:#eff6ff; color:#2563eb;">Buffer Suggestions</button>
+          </div>
           <div id="mod-pending-work-wrapper" style="display:none;">
             <button class="dept-dash-pill" id="mod-pending-work" onclick="openPendingWorkDashboard()" style="background:#eff6ff; color:#2563eb;">📊 Pending Work Dashboard</button>
           </div>
@@ -6374,6 +6377,10 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
     <div id="pwk-body" class="dd-body" style="padding:6px 14px 10px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-content:start; gap:14px; box-sizing:border-box;"></div>
   </div>
 
+  <div id="canvas-module-buffer-suggestions" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
+    <div id="buf-body" style="padding:10px 14px; box-sizing:border-box; height:calc(100vh - 100px); overflow-y:auto;"></div>
+  </div>
+
   <div id="canvas-module-admin-dashboard" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
     <div id="adm-body" class="dd-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow-x:hidden; overflow-y:auto;">
 
@@ -6772,6 +6779,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
      Invoice split, ported from Portal's migrations 208-209). File kept
      on disk, unlinked. -->
 <script src="project/admin-dashboard.js"></script>
+<script src="project/buffer-suggestions.js"></script>
 <script src="project/pending-work-dashboard.js"></script>
 <!-- Live updates: loads LAST, it wraps apFetch and buildMultiContactDirectoryInterface. -->
 <script src="shared/liveUpdates.js"></script>
