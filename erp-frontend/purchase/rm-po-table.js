@@ -181,7 +181,9 @@ async function rptLoad() {
   }
 }
 
+const rptIsSvc = (t) => t === "Transport" || t === "Repair" || t === "Labour";
 function rptDeliveryCell(r) {
+  if (r.poType === "Repair" || r.poType === "Labour") return rptDash;
   if (r.poType === "Transport") return r.status === "Completed" ? '<span class="rpt-badge" style="background:#dcfce7; color:#15803d;">Completed</span>' : rptDash;
   if (!r.deliveryState) return `<span style="font-size:0.78rem; color:#64748b;">${rptEsc(r.status)}</span>`;
   const c = r.deliveryState === "Fully received" ? ["#dcfce7", "#15803d"] : r.deliveryState === "Partly received" ? ["#fef3c7", "#b45309"] : ["#e2e8f0", "#475569"];
@@ -208,7 +210,7 @@ function rptTextMatches(r, q) {
 // [header, sort key, cell, align, width %]
 const RPT_COLS = [
   ["PO Number", "poNo", r => `${r.pdfUrl ? `<a class="rpt-po-link" href="${driveLink(r.pdfUrl)}" target="_blank" rel="noopener" title="${r.pdfIsDraft ? "Open draft" : "Open PO document"}">${rptEsc(r.poNo)}</a>`
-    : `<span style="font-weight:800; color:var(--brand); font-family:monospace; font-size:0.95rem; white-space:nowrap;">${rptEsc(r.poNo)}</span>`}${r.poType === "Transport" ? '<div><span class="rpt-badge" style="background:#ede9fe; color:#6d28d9; margin-top:4px;">Transport</span></div>' : ""}`, "left", 12],
+    : `<span style="font-weight:800; color:var(--brand); font-family:monospace; font-size:0.95rem; white-space:nowrap;">${rptEsc(r.poNo)}</span>`}${rptIsSvc(r.poType) ? `<div><span class="rpt-badge" style="background:#ede9fe; color:#6d28d9; margin-top:4px;">${rptEsc(r.poType)}</span></div>` : ""}`, "left", 12],
   ["PO Date", "orderDate", r => r.orderDate ? formatOrdinalDate(r.orderDate) : rptDash, "center", 8],
   ["Vendor Name", "vendorName", r => `<div style="font-weight:600;">${rptEsc(r.vendorName)}</div>`, "left", 12],
   ["Project ID(s)", "projectIds", r => r.projectIds.length ? `<div style="font-size:0.76rem; line-height:1.4;">${r.projectIds.map(rptEsc).join("<br>")}</div>` : rptDash, "left", 11],
@@ -330,11 +332,11 @@ function rptDetailHtml(r) {
   const th = (t, al) => `<th style="padding:8px 6px; text-align:${al || "center"}; vertical-align:middle; background:var(--highlight-bg); font-weight:800; overflow-wrap:normal; word-break:normal; ${CELL_B}">${t}</th>`;
   const td = (x, al) => `<td style="padding:8px 6px; text-align:${al || "center"}; vertical-align:top; overflow-wrap:anywhere; ${CELL_B}">${x}</td>`;
   const cols = (ws) => `<colgroup>${ws.map(w => `<col style="width:${w}%;">`).join("")}</colgroup>`;
-  const poText = (l) => (r.poType === "Transport" ? (l.additionalDescription || l.materialName) : (l.materialName || l.additionalDescription)) || "";
+  const poText = (l) => (rptIsSvc(r.poType) ? (l.additionalDescription || l.materialName) : (l.materialName || l.additionalDescription)) || "";
   let table;
-  if (r.poType === "Transport") {
-    table = `<table style="width:100%; table-layout:fixed; border-collapse:collapse; font-size:0.85rem; min-width:560px; background:#fff;">${cols([46, 22, 12, 7, 13])}<thead><tr>${th("Description", "left")}${th("Projects", "left")}${th("Rate")}${th("Discount %")}${th("Amount")}</tr></thead>
-      <tbody>${r.lines.map(l => `<tr>${td(rptEsc(poText(l)), "left")}${td(l.projectIds.map(rptEsc).join("<br>") || "-", "left")}${td(rptMoney(l.rate))}${td(l.discountPercent ? trimNum(l.discountPercent) : "-")}${td(`<strong>${rptMoney(l.amount)}</strong>`)}</tr>`).join("")}</tbody></table>`;
+  if (rptIsSvc(r.poType)) {
+    table = `<table style="width:100%; table-layout:fixed; border-collapse:collapse; font-size:0.85rem; min-width:560px; background:#fff;">${r.poType === "Transport" ? cols([46, 22, 12, 7, 13]) : cols([38, 20, 9, 11, 7, 15])}<thead><tr>${th("Description", "left")}${th("Projects", "left")}${r.poType !== "Transport" ? th("Qty") : ""}${th(r.poType === "Transport" ? "Amount" : "Rate")}${th("Discount %")}${th("Amount")}</tr></thead>
+      <tbody>${r.lines.map(l => `<tr>${td(rptEsc(poText(l)), "left")}${td(l.projectIds.map(rptEsc).join("<br>") || "-", "left")}${r.poType !== "Transport" ? td(trimNum(l.orderedQty) + " " + rptEsc(l.unit || "NOS")) : ""}${td(rptMoney(l.rate))}${td(l.discountPercent ? trimNum(l.discountPercent) : "-")}${td(`<strong>${rptMoney(l.amount)}</strong>`)}</tr>`).join("")}</tbody></table>`;
   } else {
     const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
     const sched = (l) => l.schedule.length ? l.schedule.map(s => {
@@ -357,7 +359,7 @@ function rptDetailHtml(r) {
       </div>
       <div style="padding:14px 16px 18px;">
         <div class="sec-label" style="margin:0 0 8px;">PO Details</div>${header}
-        <div class="sec-label" style="margin:16px 0 8px;">${r.poType === "Transport" ? "Rows" : "Materials"}</div>
+        <div class="sec-label" style="margin:16px 0 8px;">${rptIsSvc(r.poType) ? "Rows" : "Materials"}</div>
         <div style="overflow-x:auto; border:${B}; border-radius:var(--radius);">${r.lines.length ? table : '<div style="padding:14px; text-align:center; color:var(--muted);">No lines.</div>'}</div>
       </div></div>`;
 }

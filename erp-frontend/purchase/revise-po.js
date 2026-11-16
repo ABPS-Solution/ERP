@@ -202,7 +202,7 @@ async function openPORevisionForEdit(requestId, poNo) {
   try {
     const data = await apFetch({ action: "fetchPOForRevision", poNo, requestId });
     if (!data.success) { zone.innerHTML = `<div style="color:#b91c1c; padding:14px; background:#fef2f2; border-radius:6px;">${escapeHtml(data.error)}</div>`; return; }
-    if (data.po && data.po.poType === "Transport") {
+    if (data.po && rpoIsService(data.po)) {
       await rpoEnsureProjects();
       window.rpoActive = { po: data.po, lineItems: (data.lineItems || []).map(l => ({ ...l })),
         kind: data.editingRevisionKind || "Standalone", editMode: true, requestId: data.editingRequestId || requestId };
@@ -231,7 +231,7 @@ async function updatePORevisionUI() {
   const st = window.rpoActive;
   if (!st || !st.editMode) return;
   const lines = collectRPOLines();
-  if (st.po && st.po.poType === "Transport") {
+  if (st.po && rpoIsService(st.po)) {
     const tErr = rpoTransportError(lines);
     if (tErr) return showPurchaseFeedback("rpo-feedback", "⚠️ " + tErr, "error");
   }
@@ -519,7 +519,7 @@ async function openPORevision(poNo, changedOnly) {
   try {
     const data = await apFetch({ action: "fetchPOForRevision", poNo, changedOnly });
     if (!data.success) { zone.innerHTML = `<div style="color:#b91c1c; padding:14px; background:#fef2f2; border-radius:6px;">${escapeHtml(data.error)}</div>`; return; }
-    if (data.po && data.po.poType === "Transport") {
+    if (data.po && rpoIsService(data.po)) {
       await rpoEnsureProjects();
       window.rpoActive = { po: data.po, lineItems: (data.lineItems || []).map(l => ({ ...l })), kind: "Standalone" };
       renderPORevisionCard();
@@ -548,7 +548,7 @@ function renderPORevisionCard() {
   const { po, lineItems, kind } = st;
   const fmt = (n) => (Number(n)||0).toLocaleString("en-IN",{maximumFractionDigits:2});
 
-  const isTransportRev = po.poType === "Transport";
+  const isTransportRev = rpoIsService(po);
   const rowsHtml = isTransportRev ? rpoTransportRowsHtml(lineItems) : lineItems.map((li, idx) => {
     if (kind === "PRN Driven" && !li.changed && !li._removed && !li.isNew) return ""; // unchanged — not shown, but still counted in the totals below
 
@@ -975,15 +975,15 @@ function saveRPOAllocationModal(idx) {
 
 function collectRPOLines() {
   const st = window.rpoActive;
-  if (st.po && st.po.poType === "Transport") {
+  if (st.po && rpoIsService(st.po)) {
     // Shaped so the shared material checks in submit / update pass through;
     // rpoTransportError does the real checks for these rows.
     return st.lineItems.filter(l => !l._removed).map(l => ({
-      lineKey: l.lineKey || "", projectIds: l.legacyProject ? [] : (Array.isArray(l.projectIds) ? l.projectIds : (l.projectId ? [l.projectId] : [])),
+      lineKey: l.lineKey || "", projectIds: (l.legacyProject || st.po.poType === "Repair") ? [] : (Array.isArray(l.projectIds) ? l.projectIds : (l.projectId ? [l.projectId] : [])),
       legacyProject: l.legacyProject ? String(l.legacyProject).trim() : "",
       description: (l.description || "").trim(),
-      additionalDescription: (l.description || "").trim(), unit: "Lot",
-      quantity: 1, vendorDiscussedQty: 1,
+      additionalDescription: (l.description || "").trim(), unit: st.po.poType === "Transport" ? "Lot" : "NOS",
+      quantity: st.po.poType === "Transport" ? 1 : (parseFloat(l.quantity) || 0), vendorDiscussedQty: st.po.poType === "Transport" ? 1 : (parseFloat(l.quantity) || 0),
       rate: parseFloat(l.rate) || 0, discountPercent: parseFloat(l.discountPercent) || 0,
       allocations: [], _sourceAllocations: [], _allocationTouched: true, _received: 0,
     }));
@@ -1026,7 +1026,7 @@ async function submitPORevisionUI() {
   const st = window.rpoActive;
   if (!st) return;
   const lines = collectRPOLines();
-  if (st.po && st.po.poType === "Transport") {
+  if (st.po && rpoIsService(st.po)) {
     const tErr = rpoTransportError(lines);
     if (tErr) return showPurchaseFeedback("rpo-feedback", "⚠️ " + tErr, "error");
   }
@@ -1129,6 +1129,9 @@ async function submitPORevisionUI() {
 // ── Transport PO revisions (15 Oct 2026) ────────────────────────────────
 // A Transport PO's rows are free text with a Project ID each. The revision
 // carries the full new row list; authorizing it replaces the PO's rows.
+const RPO_SERVICE_TYPES = ["Transport", "Repair", "Labour"];
+function rpoIsService(po) { return !!po && RPO_SERVICE_TYPES.includes(po.poType); }
+function rpoSvcType() { return (window.rpoActive && window.rpoActive.po && window.rpoActive.po.poType) || "Transport"; }
 async function rpoEnsureProjects() {
   try { await ensureSharedProjectTypeaheadData(); } catch (e) { /* the search box loads on first use */ }
   if (Array.isArray(window.cpoActiveProjects) && window.cpoActiveProjects.length) return;
@@ -1145,13 +1148,14 @@ function rpoTransportRowsHtml(lineItems) {
   const inp = "width:100%; height:34px; box-sizing:border-box; padding:5px; border:1.5px solid #cbd5e1; border-radius:4px; font-weight:700; text-align:center;";
   const projOpts = (window.cpoActiveProjects || []).map(p => `<option value="${esc(p)}"></option>`).join("");
   const units = ["Lot", "Trip", "KM", "Truck", "Nos"];
+  const hasQty = rpoSvcType() !== "Transport", noProj = rpoSvcType() === "Repair";
   const rows = lineItems.map((li, idx) => {
     if (li._removed) return "";
     if (!Array.isArray(li.projectIds)) li.projectIds = li.projectId ? [li.projectId] : [];
     const taId = `rpo-tproj-${idx}`;
     const meta = window.sharedProjectMeta || {};
     const chips = li.projectIds.map(p => `<span style="display:inline-flex; align-items:center; gap:6px; background:#e0f2fe; color:var(--brand); font-size:0.78rem; font-weight:700; padding:4px 8px; border-radius:4px; margin:0 6px 6px 0;">${esc(p)}${meta[p] && meta[p].companyName ? ` <span style="font-weight:500; color:#475569;">(${esc(meta[p].companyName)})</span>` : ""}<button type="button" onclick="rpoRemoveTransportProject(${idx}, ${jsArg(p)})" style="border:none; background:none; color:#b91c1c; font-weight:800; cursor:pointer; padding:0;">×</button></span>`).join("");
-    const amt = (parseFloat(li.rate) || 0) * (100 - (parseFloat(li.discountPercent) || 0)) / 100;
+    const amt = (hasQty ? (parseFloat(li.quantity) || 0) : 1) * (parseFloat(li.rate) || 0) * (100 - (parseFloat(li.discountPercent) || 0)) / 100;
     return `<div style="background:#fff; border:1.5px solid #475569; border-radius:8px; margin-bottom:12px;">
       <div style="display:flex; align-items:center; gap:12px; padding:8px 12px; border-bottom:1px solid #cbd5e1; border-radius:8px 8px 0 0; background:${li.lineKey ? "#e0f2fe" : "#dbeafe"};">
         <span style="font-weight:800; font-size:0.85rem;">Row ${idx + 1}${li.lineKey ? "" : " (new)"}</span>
@@ -1159,10 +1163,10 @@ function rpoTransportRowsHtml(lineItems) {
         <button onclick="rpoRemoveTransportRow(${idx})" title="Remove row" style="background:#fef2f2; border:1px solid #fecaca; color:#dc2626; cursor:pointer; width:28px; height:28px; border-radius:4px;">✕</button>
       </div>
       <div style="padding:10px 12px; display:flex; flex-direction:column; gap:10px;">
-        <label style="display:inline-flex; align-items:center; gap:6px; font-size:0.8rem; font-weight:700; color:#475569; cursor:pointer; width:fit-content;">
+        ${noProj ? "" : `<label style="display:inline-flex; align-items:center; gap:6px; font-size:0.8rem; font-weight:700; color:#475569; cursor:pointer; width:fit-content;">
           <input type="checkbox" ${(li._legacyOn || li.legacyProject) ? "checked" : ""} onchange="rpoToggleTransportLegacy(${idx}, this.checked)" style="width:16px; height:16px;">
-          Old project (not in ERP)</label>
-        ${(li._legacyOn || li.legacyProject) ? `<div><div style="${lbl}">Old project / company name *</div>
+          Old project (not in ERP)</label>`}
+        ${noProj ? "" : (li._legacyOn || li.legacyProject) ? `<div><div style="${lbl}">Old project / company name *</div>
           <input type="text" value="${esc(li.legacyProject || "")}" autocomplete="off" oninput="updateRPORowField(${idx},'legacyProject',this.value)"
             style="width:100%; max-width:520px; padding:9px; font-weight:600; border:1.5px solid var(--border); border-radius:var(--radius);" /></div>` : `
         <div><div style="${lbl}">Project ID(s) *</div><div>${chips}</div>
@@ -1176,8 +1180,9 @@ function rpoTransportRowsHtml(lineItems) {
         <div><div style="${lbl}">Description *</div>
           <textarea rows="1" oninput="updateRPORowField(${idx},'description',this.value); this.style.height='auto'; this.style.height=this.scrollHeight+'px';"
             style="width:100%; box-sizing:border-box; padding:7px 9px; border:1.5px solid #cbd5e1; border-radius:4px; font-family:inherit; resize:none; overflow:hidden;">${esc(li.description)}</textarea></div>
-        <div style="display:grid; grid-template-columns:repeat(2, minmax(0, 220px)); gap:10px;">
-          <div><div style="${lbl}">Amount (₹) *</div><input type="number" min="0" step="any" value="${esc(li.rate)}" oninput="updateRPORowField(${idx},'rate',this.value)" style="${inp}"></div>
+        <div style="display:grid; grid-template-columns:repeat(${hasQty ? 3 : 2}, minmax(0, 220px)); gap:10px;">
+          ${hasQty ? `<div><div style="${lbl}">Quantity (NOS) *</div><input type="number" min="0" step="any" value="${esc(li.quantity)}" oninput="updateRPORowField(${idx},'quantity',this.value)" style="${inp}"></div>` : ""}
+          <div><div style="${lbl}">${hasQty ? "Rate (₹)" : "Amount (₹)"} *</div><input type="number" min="0" step="any" value="${esc(li.rate)}" oninput="updateRPORowField(${idx},'rate',this.value)" style="${inp}"></div>
           <div><div style="${lbl}">Disc %</div><input type="number" min="0" max="100" step="any" value="${esc(li.discountPercent)}" oninput="updateRPORowField(${idx},'discountPercent',this.value)" style="${inp}"></div>
         </div>
         ${li.projectIds.length > 1 && amt > 0 ? `<div style="font-size:0.78rem; color:#475569;">Split equally: ₹${(amt / li.projectIds.length).toLocaleString("en-IN", { maximumFractionDigits: 2 })} per project</div>` : ""}
@@ -1224,7 +1229,7 @@ function rpoToggleTransportLegacy(idx, on) {
 function rpoAddTransportRow() {
   const st = window.rpoActive;
   if (!st) return;
-  st.lineItems.push({ projectIds: [], description: "", quantity: 1, unit: "Lot", rate: "", discountPercent: 0 });
+  st.lineItems.push({ projectIds: [], description: "", quantity: 1, unit: rpoSvcType() === "Transport" ? "Lot" : "NOS", rate: "", discountPercent: 0 });
   renderPORevisionCard();
 }
 
@@ -1255,10 +1260,11 @@ function rpoTransportError(lines) {
   if (!lines.length) return "Keep at least one row. To cancel the whole PO, use Cancel this PO entirely.";
   for (let i = 0; i < lines.length; i++) {
     const l = lines[i];
-    if (!l.legacyProject && !(l.projectIds || []).length)
+    if (rpoSvcType() !== "Repair" && !l.legacyProject && !(l.projectIds || []).length)
       return `Row ${i + 1}: add at least one Project ID, or tick Old project and type its name.`;
     if (!(l.description || "").trim()) return `Row ${i + 1}: Description is required.`;
-    if (!(Number(l.rate) > 0)) return `Row ${i + 1}: Amount must be greater than 0.`;
+    if (rpoSvcType() !== "Transport" && !(Number(l.quantity) > 0)) return `Row ${i + 1}: Quantity must be greater than 0.`;
+    if (!(Number(l.rate) > 0)) return `Row ${i + 1}: ${rpoSvcType() === "Transport" ? "Amount" : "Rate"} must be greater than 0.`;
   }
   return "";
 }
@@ -1276,6 +1282,7 @@ function aporTransportSummary(r) {
     const changes = [];
     if (pl(cur) !== pl(l)) changes.push(`projects ${pl(cur)} → ${pl(l)}`);
     if ((cur.description || cur.additionalDescription || "") !== (l.description || "")) changes.push("description changed");
+    if (Math.abs((Number(cur.quantity) || 0) - (Number(l.quantity) || 0)) > 1e-9 && r.poType !== "Transport") changes.push(`quantity ${fmt(cur.quantity)} → ${fmt(l.quantity)}`);
     if (Math.abs((Number(cur.rate) || 0) - (Number(l.rate) || 0)) > 1e-9) changes.push(`amount ${fmt(cur.rate)} → ${fmt(l.rate)}`);
     if (Math.abs((Number(cur.discountPercent) || 0) - (Number(l.discountPercent) || 0)) > 1e-9) changes.push(`disc ${fmt(cur.discountPercent)}% → ${fmt(l.discountPercent)}%`);
     if (changes.length) out.push(`<li><strong>${label}</strong>: ${changes.join(", ")}</li>`);
@@ -1292,14 +1299,15 @@ function aporTransportRowsHtml(r) {
   const rows = (r.revisedLineItems || []).map((l, idx) => `<tr style="border-bottom:1px solid var(--border);">
       <td style="padding:8px; font-family:monospace; font-size:0.8rem;">${escapeHtml((Array.isArray(l.projectIds) && l.projectIds.length ? l.projectIds : [l.projectId]).filter(Boolean).join(", "))}</td>
       <td style="padding:8px;">${escapeHtml(l.description || "")}</td>
+      ${r.poType !== "Transport" ? `<td style="padding:8px; text-align:center;">${fmt(l.quantity)}</td>` : ""}
       <td style="padding:8px; text-align:center;">${fmt(l.rate)}</td>
       <td style="padding:8px; text-align:center;">${fmt(l.discountPercent)}%</td>
       <td style="padding:8px; text-align:right; font-weight:700;"><span id="apor-amount-${rid}-${idx}">0</span></td>
     </tr>`).join("");
-  return `<div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:8px;">Transport rows after this revision</div>
+  return `<div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:8px;">${escapeHtml(r.poType || "Transport")} rows after this revision</div>
     <table style="width:100%; border-collapse:collapse; background:#fff; border:1px solid var(--border); font-size:0.85rem;">
       <thead><tr style="background:#f1f5f9;"><th style="padding:8px; text-align:left;">Projects</th><th style="padding:8px; text-align:left;">Description</th>
-        <th style="padding:8px;">Amount</th><th style="padding:8px;">Disc</th><th style="padding:8px; text-align:right;">After Disc</th></tr></thead>
+        ${r.poType !== "Transport" ? '<th style="padding:8px;">Qty</th>' : ""}<th style="padding:8px;">${r.poType === "Transport" ? "Amount" : "Rate"}</th><th style="padding:8px;">Disc</th><th style="padding:8px; text-align:right;">After Disc</th></tr></thead>
       <tbody>${rows || `<tr><td colspan="5" style="padding:12px; text-align:center; color:var(--muted);">No rows.</td></tr>`}</tbody>
     </table>`;
 }
@@ -1441,7 +1449,7 @@ function renderAPORCard(r) {
   const isCancel = r.revisionKind === "Cancellation";
   const hc = r.headerChanges || {};
   const rid = r.requestId;
-  const isTransportRev = r.poType === "Transport";
+  const isTransportRev = rpoIsService(r);
 
   // PO Change Summary — every line the draft actually touches, in the
   // same bullet style as Revise PO's own "PRN Change Summary".
