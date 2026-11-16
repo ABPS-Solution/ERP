@@ -141,6 +141,7 @@ async function admLoadDashboard(customVal) {
     });
     if (!data.success) { abpsAlert("Could not load the dashboard. " + data.error); return; }
     admRenderDashboard(data);
+    admLoadOdd();
   } catch (e) {
     abpsAlert("Could not load the dashboard. " + friendlyErr(e));
   }
@@ -200,4 +201,53 @@ function admRenderDashboard(data) {
       }
     });
   }
+}
+
+// ── Items to check (odd-activity flags) ──────────────────────────────
+const ADM_ODD_GROUPS = ["Access", "Stock and store", "Purchasing and documents", "System"];
+async function admLoadOdd() {
+  const list = document.getElementById("adm-odd-list");
+  if (!list) return;
+  try {
+    const showRev = !!(document.getElementById("adm-odd-showrev") || {}).checked;
+    const d = await apFetch({ action: "fetchOddActivityFlags", includeReviewed: showRev });
+    if (!d.success) { list.innerHTML = '<div style="color:#b91c1c; font-size:0.85rem;">Could not load the items.</div>'; return; }
+    admRenderOdd(d.flags, d.lastRun);
+  } catch (e) {
+    list.innerHTML = '<div style="color:#b91c1c; font-size:0.85rem;">' + escapeHtml(friendlyErr(e)) + "</div>";
+  }
+}
+function admOddWhen(ts) {
+  return new Date(ts).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
+}
+function admRenderOdd(flags, lastRun) {
+  const open = flags.filter(f => !f.reviewed_at);
+  document.getElementById("adm-odd-count").textContent = open.length ? "(" + open.length + ")" : "";
+  const last = document.getElementById("adm-odd-last");
+  const stale = !lastRun || (Date.now() - new Date(lastRun.run_at).getTime()) > 26 * 3600e3;
+  last.style.color = stale ? "#b91c1c" : "#64748b";
+  last.textContent = !lastRun ? "The check has not run yet."
+    : "Last checked " + admOddWhen(lastRun.run_at) + (lastRun.failed ? ". Could not run: " + lastRun.failed : "");
+  const list = document.getElementById("adm-odd-list");
+  if (!flags.length) { list.innerHTML = '<div style="color:#15803d; font-size:0.85rem; padding:6px 0;">Nothing to check.</div>'; return; }
+  list.innerHTML = ADM_ODD_GROUPS.map(g => {
+    const rows = flags.filter(f => f.group_name === g);
+    if (!rows.length) return "";
+    return '<div style="font-size:0.72rem; font-weight:800; color:#475569; text-transform:uppercase; margin:8px 0 2px;">' + escapeHtml(g) + "</div>" +
+      rows.map(f => {
+        const done = !!f.reviewed_at;
+        return '<div style="display:flex; gap:10px; align-items:flex-start; padding:5px 0; border-top:1px solid #f1f5f9;' + (done ? " opacity:0.55;" : "") + '">' +
+          '<div style="flex:1; min-width:0;"><div style="font-size:0.85rem; font-weight:700; color:#0f172a;">' + escapeHtml(f.title) + "</div>" +
+          (f.detail ? '<div style="font-size:0.78rem; color:#475569;">' + escapeHtml(f.detail) + "</div>" : "") +
+          '<div style="font-size:0.72rem; color:#94a3b8;">' + admOddWhen(f.first_seen) + (f.person_name ? " · " + escapeHtml(f.person_name) : "") + "</div></div>" +
+          '<button type="button" style="width:auto; padding:4px 12px; font-size:0.78rem;" onclick="admReviewOdd(' + f.flag_id + ',' + (done ? "true" : "false") + ')">' + (done ? "Undo" : "Reviewed") + "</button></div>";
+      }).join("");
+  }).join("");
+}
+async function admReviewOdd(id, undo) {
+  try {
+    const d = await apFetch({ action: "reviewOddActivityFlag", flagId: id, undo: !!undo });
+    if (!d.success) { abpsAlert(d.error || "Could not save."); return; }
+    admLoadOdd();
+  } catch (e) { abpsAlert(friendlyErr(e)); }
 }

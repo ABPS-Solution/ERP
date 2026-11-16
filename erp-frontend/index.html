@@ -6375,7 +6375,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
   </div>
 
   <div id="canvas-module-admin-dashboard" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
-    <div id="adm-body" class="dd-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow:hidden;">
+    <div id="adm-body" class="dd-body" style="padding:0 14px 10px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 100px); box-sizing:border-box; overflow-x:hidden; overflow-y:auto;">
 
       <!-- ROW 1: Live — stock value, on-order value, LD exposure, late POs -->
       <div class="dd-stat-row" style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; flex:0 0 80px; min-height:0;">
@@ -6424,6 +6424,17 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
           <div class="dd-stat-label">Tour Advances Outstanding</div>
           <div class="dd-stat-val" id="adm-s-advances" style="color:#b45309;">—</div>
         </div>
+      </div>
+
+      <!-- Items to check: odd-activity flags (lib/oddActivity.js) -->
+      <div class="dd-card" id="adm-odd-card" style="padding:8px 12px; flex:0 0 auto;">
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <div class="dd-card-title" style="margin:0;">Items to check <span id="adm-odd-count" style="font-weight:800; color:#b91c1c;"></span></div>
+          <span id="adm-odd-last" style="font-size:0.75rem; color:#64748b;"></span>
+          <label style="margin-left:auto; font-size:0.78rem; color:#475569; display:inline-flex; gap:6px; align-items:center; cursor:pointer;">
+            <input type="checkbox" id="adm-odd-showrev" onchange="admLoadOdd()"> Show reviewed (30 days)</label>
+        </div>
+        <div id="adm-odd-list" style="max-height:260px; overflow-y:auto; margin-top:6px;"></div>
       </div>
 
       <!-- ROW 3: Chart -->
