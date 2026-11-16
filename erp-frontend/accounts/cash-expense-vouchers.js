@@ -100,11 +100,6 @@ function cevRenderCard(v) {
             <div style="font-size:0.76rem; color:var(--muted); margin-top:5px;">${v.paymentMode === 'Online' ? 'Online — no pool balance is affected either way.' : 'Less than the advance comes back into the balance; more is pulled from it.'}</div>
           </div>
           <div style="flex:1; min-width:180px;">
-            <label class="field-label">Voucher ID</label>
-            <input type="text" id="cev-voucherid-${v.expenseId}" placeholder="e.g. physical voucher number"
-              style="width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:6px; box-sizing:border-box;">
-          </div>
-          <div style="flex:1; min-width:180px;">
             <label class="field-label">Remark</label>
             <input type="text" id="cev-remark-${v.expenseId}" placeholder="Optional"
               style="width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:6px; box-sizing:border-box;">
@@ -126,13 +121,11 @@ async function cevCloseVoucher(expenseId) {
   if (actualAmount === "" || Number(actualAmount) < 0 || Number.isNaN(Number(actualAmount))) {
     return showCashExpenseFeedback("Enter a valid Actual Amount (0 or more).", "error");
   }
-  const voucherIdInput = document.getElementById(`cev-voucherid-${expenseId}`);
-  const voucherId = voucherIdInput ? voucherIdInput.value.trim() : "";
   const remarkInput = document.getElementById(`cev-remark-${expenseId}`);
   const remark = remarkInput ? remarkInput.value.trim() : "";
   showBlockingOverlay("Closing voucher...");
   try {
-    const data = await apFetch({ action: "closeCashExpenseVoucher", expenseId, actualAmount: Number(actualAmount), voucherId, remark });
+    const data = await apFetch({ action: "closeCashExpenseVoucher", expenseId, actualAmount: Number(actualAmount), remark });
     hideBlockingOverlay();
     if (!data.success) { showCashExpenseFeedback(data.error, "error"); return; }
     cevOpenVouchers = cevOpenVouchers.filter(v => v.expenseId !== expenseId);
@@ -140,6 +133,7 @@ async function cevCloseVoucher(expenseId) {
     cevRender();
     if (typeof loadCashExpenseShellRangeFlag === "function") loadCashExpenseShellRangeFlag();
     document.getElementById("ce-feedback").style.display = "none"; // clear any prior error banner
+    if (data.voucherId) abpsAlert("Voucher closed. Voucher ID: " + data.voucherId);
   } catch (e) {
     hideBlockingOverlay();
     showCashExpenseFeedback(friendlyErr(e), "error");
