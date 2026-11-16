@@ -279,6 +279,7 @@ async function openQARevisionDetail(grnNumber) {
         <ul style="margin:0; padding-left:18px; font-size:0.82rem; color:#7f1d1d;">${data.blockers.map(b => `<li>${b}</li>`).join("")}</ul>
         <div style="font-size:0.78rem; color:#7f1d1d; margin-top:8px;">Downstream activity has already moved past this Q/A. Correct it with a manual stock adjustment instead.</div>
       </div>` : ''}
+      ${pqrButtonsHtml(grnNumber, data.lineItems)}
       <div style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);">
         <table class="store-basket-data-table row-lined-table" style="width:100%; border-collapse:collapse;">
           <thead><tr style="background:#f8fafc;">
@@ -1044,3 +1045,72 @@ async function commitRejectedMaterialActionToBackend(grnNum, btn) {
   }
 }
 
+
+// ── Return from production (16 Nov 2026) ───────────────────────────────
+// Material that passed Q/A and was issued, then proved defective on use.
+function pqrButtonsHtml(grnNumber, lines) {
+  const usable = (lines || []).filter(l => (parseFloat(l.okQuantity) || 0) > 0);
+  if (!usable.length) return "";
+  return `<div style="margin-bottom:12px; padding:10px 12px; background:#fffbeb; border:1px solid #fcd34d; border-radius:var(--radius);">
+    <div style="font-weight:700; font-size:0.85rem; margin-bottom:6px;">Found defective in production?</div>
+    ${usable.map(l => `<button class="nav-btn-styled" style="padding:4px 10px; font-size:0.75rem; margin:0 6px 6px 0; background:#b45309;"
+        onclick="pqrOpen(${jsArg(grnNumber)}, ${l.ledgerId})">Return from production: ${escapeHtml(l.itemCode)}</button>`).join("")}
+    <div id="pqr-panel-${escapeHtml(grnNumber)}"></div></div>`;
+}
+
+async function pqrOpen(grnNumber, ledgerId) {
+  const box = document.getElementById("pqr-panel-" + grnNumber);
+  if (!box) return;
+  box.innerHTML = `<div style="padding:10px; color:var(--muted);">Loading tickets...</div>`;
+  try {
+    const data = await apFetch({ action: "fetchProductionQualityReturnDetail", ledgerId });
+    if (!data.success) { box.innerHTML = `<p style="color:var(--warn);">${escapeHtml(data.error)}</p>`; return; }
+    const tk = data.tickets || [];
+    if (!tk.length) { box.innerHTML = `<p style="color:var(--muted); font-size:0.85rem;">No approved production ticket has issued this material.</p>`; return; }
+    const th = "padding:5px 8px; font-size:0.72rem; text-align:left; text-transform:uppercase; color:var(--muted);";
+    box.innerHTML = `<div style="margin-top:8px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:12px;">
+      <div style="font-size:0.85rem; margin-bottom:8px;"><b>${escapeHtml(data.line.itemCode)}</b> · ${escapeHtml(data.line.materialName || '')} · passed Q/A: ${trimNum(data.line.okQuantity)} ${escapeHtml(data.line.unitType || '')}</div>
+      <div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse;">
+        <thead><tr style="background:#f8fafc;"><th style="${th}">Ticket</th><th style="${th}">Project</th><th style="${th}">Job Card</th><th style="${th}">Issued on</th>
+          <th style="${th}">Issued</th><th style="${th}">Already returned</th><th style="${th}">Return now</th></tr></thead>
+        <tbody>${tk.map(t => `<tr style="border-top:1px solid var(--border);">
+          <td style="padding:6px 8px; font-weight:700;">${escapeHtml(t.ticketId)}</td>
+          <td style="padding:6px 8px; font-size:0.82rem;">${escapeHtml(t.projectId || '—')}</td>
+          <td style="padding:6px 8px; font-size:0.82rem;">${escapeHtml(t.jobCardNumber || '—')}</td>
+          <td style="padding:6px 8px; font-size:0.82rem;">${t.dateActioned ? formatOrdinalDate(t.dateActioned) : '—'}</td>
+          <td style="padding:6px 8px;">${trimNum(t.issuedQty)}</td><td style="padding:6px 8px;">${trimNum(t.returnedQty)}</td>
+          <td style="padding:6px 8px;"><input type="number" min="0" step="0.001" class="pqr-qty" data-ticket="${escapeHtml(t.ticketId)}"
+            data-max="${Math.round((Number(t.issuedQty) - Number(t.returnedQty)) * 1000) / 1000}" style="width:90px; padding:4px; border:1px solid var(--border); border-radius:4px;"></td></tr>`).join("")}</tbody></table></div>
+      <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:10px;">
+        <div style="flex:2; min-width:220px;"><label class="field-label">Reason *</label>
+          <textarea id="pqr-reason" rows="2" style="width:100%; box-sizing:border-box; padding:6px; border:1px solid var(--border); border-radius:4px;" placeholder="What went wrong on use?"></textarea></div>
+        <div style="flex:1; min-width:200px;"><label class="field-label">Action for returned material *</label>
+          <select id="pqr-action" style="width:100%; padding:7px; border:1px solid var(--border); border-radius:4px;"><option value="">-- Select --</option>
+            ${(data.actions || []).map(x => `<option value="${escapeHtml(x)}">${escapeHtml(x)}</option>`).join("")}</select></div>
+      </div>
+      <button class="nav-btn-styled" style="margin-top:10px;" onclick="pqrSubmit(${ledgerId})">Submit Return</button>
+    </div>`;
+  } catch (e) { box.innerHTML = `<p style="color:var(--warn);">${escapeHtml(friendlyErr(e))}</p>`; }
+}
+
+async function pqrSubmit(ledgerId) {
+  const returns = [...document.querySelectorAll(".pqr-qty")].map(i => ({ ticketId: i.dataset.ticket, quantity: Number(i.value) || 0, max: Number(i.dataset.max) }))
+    .filter(r => r.quantity > 0);
+  if (!returns.length) return abpsAlert("Enter the quantity returned against at least one ticket.");
+  const over = returns.find(r => r.quantity > r.max + 1e-9);
+  if (over) return abpsAlert(`Ticket ${over.ticketId} can return at most ${trimNum(over.max)}.`);
+  const reason = document.getElementById("pqr-reason").value.trim();
+  const action = document.getElementById("pqr-action").value;
+  if (!reason) return abpsAlert("Enter the reason for the return.");
+  if (!action) return abpsAlert("Pick the action for the returned material.");
+  const total = returns.reduce((t, r) => t + r.quantity, 0);
+  if (!await abpsConfirm(`Return ${trimNum(total)} as Not OK? The GRN line moves from OK to Not OK, the BOQ used quantity goes back down, and the material goes to Rejected & Missing.`)) return;
+  showBlockingOverlay("Recording return...");
+  try {
+    const data = await apFetch({ action: "commitProductionQualityReturn", ledgerId, reason, action, returns: returns.map(r => ({ ticketId: r.ticketId, quantity: r.quantity })) });
+    hideBlockingOverlay();
+    if (!data.success) return abpsAlert(data.error);
+    await abpsAlert("Return recorded. The material is now in Rejected & Missing.");
+    if (typeof runQARevisionSearch === "function") runQARevisionSearch();
+  } catch (e) { hideBlockingOverlay(); abpsAlert(friendlyErr(e)); }
+}
