@@ -1589,9 +1589,6 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
           <div id="mod-admin-dashboard-wrapper" style="display:none;">
             <button class="dept-dash-pill" id="mod-admin-dashboard" onclick="navigateToAdminDashboard()" style="background:#eff6ff; color:#2563eb;">📊 Admin Dashboard</button>
           </div>
-          <div id="mod-buffer-suggestions-wrapper" style="display:none;">
-            <button class="dept-dash-pill" id="mod-buffer-suggestions" onclick="navigateToBufferSuggestions()" style="background:#eff6ff; color:#2563eb;">Buffer Suggestions</button>
-          </div>
           <div id="mod-pending-work-wrapper" style="display:none;">
             <button class="dept-dash-pill" id="mod-pending-work" onclick="openPendingWorkDashboard()" style="background:#eff6ff; color:#2563eb;">📊 Pending Work Dashboard</button>
           </div>
@@ -1600,6 +1597,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-security" onclick="switchActiveDashboardModule('security'); initializeSecurityAdminPanel('access');"><span class="mc-label">Security &amp; Login Access</span></div>
         <div class="menu-card" id="mod-system-settings" onclick="switchActiveDashboardModule('security'); initializeSecurityAdminPanel('system');"><span class="mc-label">System Settings</span></div>
+        <div class="menu-card" id="mod-buffer-suggestions" onclick="navigateToBufferSuggestions()" style="display:none;"><span class="mc-label">Buffer Suggestions</span></div>
       </div>
     </div>
 

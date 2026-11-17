@@ -530,6 +530,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-itemcode"))     document.getElementById("mod-itemcode").style.display     = canItemCode     ? "block" : "none";
   if (document.getElementById("mod-security"))     document.getElementById("mod-security").style.display     = canSecurity     ? "block" : "none";
   if (document.getElementById("mod-system-settings")) document.getElementById("mod-system-settings").style.display = canSecurity ? "block" : "none";
+  if (document.getElementById("mod-buffer-suggestions")) document.getElementById("mod-buffer-suggestions").style.display = userPermissionsObject.viewBufferSuggestions === true ? "block" : "none";
 
   // Dashboard-wrapper pills (show entire pill wrapper, not just a plain card)
   // — same shape as Portal's own dashMap loop.
@@ -546,7 +547,6 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
     "mod-qa-dashboard-wrapper":        canViewQaDashboard,
     "mod-project-dashboard-wrapper":   userPermissionsObject.viewProjectDashboard === true,
     "mod-approvals-dashboard-wrapper": userPermissionsObject.viewApprovalsDashboard === true,
-    "mod-buffer-suggestions-wrapper":  userPermissionsObject.viewBufferSuggestions === true,
   };
   Object.keys(dashMap).forEach(function(id) {
     const el = document.getElementById(id);
