@@ -104,6 +104,7 @@ function eibRender() {
       <td ${td}><input type="text" value="${escapeHtml(m.note || "")}" placeholder="e.g. MD, Raipur Region" oninput="eibSetField(${i}, 'note', this.value)" style="padding:5px; font-size:0.8rem;"></td>
       <td ${td}><select onchange="eibSetField(${i}, 'section', this.value)" style="width:auto; padding:5px;">
         <option value="Leads" ${m.section === "Leads" ? "selected" : ""}>Leads Received through Email</option>
+        <option value="Customer Queries" ${m.section === "Customer Queries" ? "selected" : ""}>Customer Queries Received through Email</option>
         <option value="Excluded" ${m.section === "Excluded" ? "selected" : ""}>Excluded (internal mailbox)</option>
       </select></td>
       <td ${td}><select onchange="eibSetField(${i}, 'arrivesVia', this.value)" style="width:auto; padding:5px;">

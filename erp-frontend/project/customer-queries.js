@@ -7,7 +7,7 @@
 // (multi-filter search, reopen). Backend: routes/project-queries.js.
 // ═══════════════════════════════════════════════════════════════════════
 const CQ_STAGE_OPTIONS = ['Drawing Approval', 'Inspection Call & Clearance', 'Products Received at Site', 'I & C and Hand over to Customer', 'Others'];
-const CQ_DEPARTMENT_OPTIONS = ['Marketing', 'Design', 'QA', 'Service', 'Accounts', 'Project'];
+const CQ_DEPARTMENT_OPTIONS = ['Marketing', 'Design', 'QA', 'Service', 'Accounts', 'Purchase', 'Store', 'Production', 'Project'];
 const CQ_ABOUT_OPTIONS = [['Project', 'Existing project'], ['Old Project', 'Old project (before the system)'], ['Pending PO', 'Order not yet in the system']];
 let cqFilterDept = '';
 let cqFilterAbout = '';
@@ -947,8 +947,8 @@ function renderCqResolvedList() {
 
 function cqRenderResolvedDetail(q) {
   return `<div style="padding:14px; border-top:1px solid var(--border); font-size:0.85rem;">
-    <div><strong>Standard Product Name(s):</strong> ${(q.standardProductNames || []).map(escapeHtml).join(', ')}</div>
-    <div><strong>Order Product Description(s):</strong> ${(q.orderProductDescriptions || []).map(escapeHtml).join('; ') || '—'}</div>
+    <div><strong>Standard Product Name(s):</strong> ${escapeHtml((q.standardProductNames || []).join(', '))}</div>
+    <div><strong>Order Product Description(s):</strong> ${escapeHtml((q.orderProductDescriptions || []).join('; ')) || '—'}</div>
     <div><strong>Customer Query Date:</strong> ${formatOrdinalDate(q.customerQueryDate)}</div>
     <div><strong>Customer Query:</strong> ${escapeHtml(q.customerQuery || '—')}</div>
     <div><strong>Target Closing Date:</strong> ${formatOrdinalDate(q.targetClosingDate)}</div>
