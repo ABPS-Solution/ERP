@@ -196,7 +196,7 @@ function mmRender() {
       <td><strong>${escapeHtml(r.companyName)}</strong>${r.contactPerson && !/^tbd$/i.test(r.contactPerson) ? `<div>${escapeHtml(r.contactPerson)}</div>` : ""}${mmEnquiryName(r) ? `<div class="nlr-sub">${escapeHtml(mmEnquiryName(r))}</div>` : ""}${r.city || r.state ? `<div class="nlr-sub">${escapeHtml([r.city, r.state].filter(Boolean).join(", "))}</div>` : ""}${r.businessVertical ? `<div class="nlr-sub">${escapeHtml(r.businessVertical)}</div>` : ""}</td>
       <td class="nlr-summary">${escapeHtml(r.summary) || '<span class="nlr-none">No details entered</span>'}</td>
       <td>${mmProgressHtml(r)}</td>
-      <td style="text-align:center;"><div style="font-weight:700;">${r.daysInStage} day${r.daysInStage === 1 ? "" : "s"}</div><div class="nlr-sub">${escapeHtml(r.stage)}</div></td>
+      <td style="text-align:center;"><div style="font-weight:700;">${r.daysInStage} day${r.daysInStage === 1 ? "" : "s"}</div><div class="nlr-sub">since ${escapeHtml((r.stage || "").toLowerCase())}</div></td>
       <td>${escapeHtml(r.lostReason) || ""}</td>
     </tr>
     <tr id="mm-lead-row-${id}" style="display:none;"><td colspan="9" class="nlr-lead-cell"><div id="mm-lead-box-${id}"></div></td></tr>`; }).join("");
