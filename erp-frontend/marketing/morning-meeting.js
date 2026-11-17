@@ -209,7 +209,7 @@ function mmRender() {
         <colgroup><col style="width:5%"><col style="width:8%"><col style="width:8%"><col style="width:9%"><col style="width:14%"><col style="width:20%"><col style="width:25%"><col style="width:5%"><col style="width:6%"></colgroup>
         <thead><tr>
           <th class="nlr-center">Sr No</th><th class="nlr-center">Lead Status</th><th class="nlr-center">Lead Created</th><th>ABPS Engineer</th>
-          <th>Customer Name</th><th>Information Summary</th><th>Progress</th>
+          <th>Customer Name</th><th>Information Summary</th><th>Progress Dates</th>
           <th class="nlr-center">Days in Stage</th><th>Reason for Order Lost</th>
         </tr></thead>
         <tbody>${body}</tbody>
