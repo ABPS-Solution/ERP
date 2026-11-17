@@ -1376,7 +1376,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       </div>
       <div class="sec-label">Customer Communication</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
-        <div class="menu-card" id="mod-customer-queries" onclick="switchActiveDashboardModule('customer-queries')"><span class="mc-label">Customer Queries</span></div>
+        <div class="menu-card" id="mod-customer-queries" onclick="switchActiveDashboardModule('customer-queries')"><span class="mc-label">Customer Queries Received through Email</span></div>
       </div>
     </div>
 
@@ -1605,7 +1605,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-security" onclick="switchActiveDashboardModule('security'); initializeSecurityAdminPanel('access');"><span class="mc-label">Security &amp; Login Access</span></div>
         <div class="menu-card" id="mod-system-settings" onclick="switchActiveDashboardModule('security'); initializeSecurityAdminPanel('system');"><span class="mc-label">System Settings</span></div>
-        <div class="menu-card" id="mod-items-to-check" onclick="switchActiveDashboardModule('items-to-check')" style="display:none;"><span class="mc-label">Items to check</span></div>
+        <div class="menu-card" id="mod-items-to-check" onclick="switchActiveDashboardModule('items-to-check')" style="display:none;"><span class="mc-label">Unusual Activity to Check</span></div>
         <div class="menu-card" id="mod-buffer-suggestions" onclick="navigateToBufferSuggestions()" style="display:none;"><span class="mc-label">Buffer Suggestions</span></div>
       </div>
     </div>
@@ -6006,7 +6006,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <button class="nav-btn-styled" onclick="exitCustomerQueriesBackToMenu()">Return to Main Dashboard</button>
     </div>
     <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-    <h2 class="panel-title">Customer Queries</h2>
+    <h2 class="panel-title">Customer Queries Received through Email</h2>
     <div id="cq-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
 
     <div style="display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap;">
@@ -6046,7 +6046,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
             <label class="field-label" style="margin-top:0;">Query about</label>
             <select id="cq-res-about" style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);">
               <option value="">All queries</option>
-              <option value="Project">Existing project</option>
+              <option value="Project">Active project</option>
               <option value="Old Project">Old project (before the system)</option>
               <option value="Pending PO">Order not yet in the system</option>
               <option value="Unlinked">Not linked to a project</option>
@@ -6485,7 +6485,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <button class="nav-btn-styled" onclick="exitItemsToCheckBackToMenu()">Return to Main Dashboard</button>
     </div>
     <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-      <h2 class="panel-title">Items to check</h2>
+      <h2 class="panel-title">Unusual Activity to Check</h2>
       <div id="itc-body"></div>
     </div>
   </div>

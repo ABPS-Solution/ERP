@@ -23,8 +23,7 @@ async function itcLoad() {
   if (!body) return;
   body.innerHTML = '<div style="padding:12px; color:#64748b;">Loading...</div>';
   try {
-    const showRev = !!(document.getElementById("itc-showrev") || {}).checked;
-    const d = await apFetch({ action: "fetchOddActivityFlags", includeReviewed: showRev });
+    const d = await apFetch({ action: "fetchOddActivityFlags" });
     if (!d.success) { body.innerHTML = '<div style="padding:12px; color:#b91c1c;">' + escapeHtml(d.error || "Could not load the items.") + "</div>"; return; }
     itcFlags = d.flags || [];
     itcRender(itcFlags, d.lastRun);
@@ -53,12 +52,12 @@ function itcRender(flags, lastRun) {
   const rows = ITC_GROUPS.map(g => {
     const list = flags.filter(f => f.group_name === g);
     if (!list.length) return "";
-    return '<tr><td colspan="4" style="padding:8px 12px; background:#f1f5f9; font-size:0.75rem; font-weight:800; text-transform:uppercase; color:#1e3a8a;">' + escapeHtml(g) + "</td></tr>" +
+    return '<tr><td colspan="5" style="padding:8px 12px; background:#f1f5f9; font-size:0.75rem; font-weight:800; text-transform:uppercase; color:#1e3a8a;">' + escapeHtml(g) + "</td></tr>" +
       list.map(f => {
         const done = !!f.reviewed_at;
         return '<tr style="' + (done ? "opacity:0.6;" : "") + '">' +
-          td('<div style="font-weight:700; color:#0f172a;">' + escapeHtml(f.title) + "</div>" +
-            (f.detail ? '<div style="font-size:0.82rem; color:#475569; margin-top:2px;">' + escapeHtml(f.detail) + "</div>" : "")) +
+          td('<div style="font-weight:700; color:#0f172a;">' + escapeHtml(f.title) + "</div>") +
+          td(f.explanation ? '<div style="font-size:0.8rem; color:#475569; line-height:1.4;">' + escapeHtml(f.explanation) + "</div>" : '<span style="color:#94a3b8;">-</span>') +
           td(f.person_name ? escapeHtml(f.person_name) : '<span style="color:#94a3b8;">-</span>') +
           td(itcWhen(f.first_seen)) +
           td('<button type="button" class="nav-btn-styled" style="padding:5px 14px; font-size:0.8rem;' + (done ? " background:#718096;" : "") + '" onclick="itcReview(' + f.flag_id + "," + (done ? "true" : "false") + ')">' + (done ? "Undo" : "Reviewed") + "</button>", "center") + "</tr>";
@@ -67,11 +66,10 @@ function itcRender(flags, lastRun) {
   document.getElementById("itc-body").innerHTML =
     '<div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:14px;">' +
     '<span style="font-size:0.85rem; color:' + (stale ? "#b91c1c" : "#475569") + '; font-weight:' + (stale ? "700" : "400") + ';">' + escapeHtml(lastTxt) + "</span>" +
-    '<label style="margin-left:auto; font-size:0.85rem; color:#334155; display:inline-flex; gap:6px; align-items:center; cursor:pointer;">' +
-    '<input type="checkbox" id="itc-showrev" ' + (document.getElementById("itc-showrev") && document.getElementById("itc-showrev").checked ? "checked" : "") + ' onchange="itcLoad()"> Show reviewed (last 30 days)</label></div>' +
+    '</div>' +
     '<div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px;">' + chips + "</div>" +
     (flags.length
-      ? '<div style="overflow-x:auto;"><table style="width:100%;"><thead><tr>' + th("Item", "52%") + th("Person", "16%") + th("First seen", "20%") + th("Action", "12%", "center") + "</tr></thead><tbody>" + rows + "</tbody></table></div>"
+      ? '<div style="overflow-x:auto;"><table style="width:100%;"><thead><tr>' + th("Unusual Activity", "20%") + th("What it means", "38%") + th("User", "14%") + th("First seen", "16%") + th("Action", "12%", "center") + "</tr></thead><tbody>" + rows + "</tbody></table></div>"
       : '<div style="padding:18px; text-align:center; color:#15803d; font-weight:700; border:2px solid #94a3b8; border-radius:var(--radius); background:#f0fdf4;">Nothing to check.</div>');
 }
 

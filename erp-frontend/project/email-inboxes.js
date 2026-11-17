@@ -55,11 +55,12 @@ function eibCountCell(c) {
            : `<span style="color:var(--muted);">None</span>`;
 }
 
-const EIB_SECTION_ORDER = { "Leads": 0, "Customer Queries": 1, "Excluded": 2 };
-const EIB_SECTION_SHADE = { "Leads": "#dbeafe", "Customer Queries": "#dbeafe", "Excluded": "#fee2e2" };
+const EIB_SECTION_ORDER = { "Leads": 0, "Customer Queries": 1, "Both": 2, "Excluded": 3 };
+const EIB_SECTION_SHADE = { "Leads": "#dbeafe", "Customer Queries": "#dbeafe", "Both": "#dbeafe", "Excluded": "#fee2e2" };
 const EIB_SECTION_LABEL = {
   "Leads": "Leads Received through Email",
   "Customer Queries": "Customer Queries Received through Email",
+  "Both": "Leads and Customer Queries (both)",
   "Excluded": "Excluded (not in any section)",
 };
 function eibSectionSort(a, b, key, tieKey) {
@@ -84,7 +85,7 @@ function eibRender() {
     return `<tr style="background:${EIB_SECTION_SHADE[c.feed] || "#fff"};">
       <td ${td}><strong>${escapeHtml(c.email)}</strong></td>
       <td ${td}><select ${revoked ? "disabled" : ""} onchange="eibSetFeed(${i}, this.value)" style="width:auto; padding:5px;">
-        ${["Leads", "Customer Queries", "Excluded"].map(f => `<option value="${f}" ${c.feed === f ? "selected" : ""}>${EIB_SECTION_LABEL[f]}</option>`).join("")}
+        ${["Leads", "Customer Queries", "Both", "Excluded"].map(f => `<option value="${f}" ${c.feed === f ? "selected" : ""}>${EIB_SECTION_LABEL[f]}</option>`).join("")}
       </select></td>
       <td ${td}><span style="font-weight:700; color:${revoked ? "var(--warn)" : "var(--accent)"};">${revoked ? "Disconnected" : "Connected"}</span></td>
       <td ${td}>${eibCountCell(c.last7Days)}</td>
@@ -105,6 +106,7 @@ function eibRender() {
       <td ${td}><select onchange="eibSetField(${i}, 'section', this.value)" style="width:auto; padding:5px;">
         <option value="Leads" ${m.section === "Leads" ? "selected" : ""}>Leads Received through Email</option>
         <option value="Customer Queries" ${m.section === "Customer Queries" ? "selected" : ""}>Customer Queries Received through Email</option>
+        <option value="Both" ${m.section === "Both" ? "selected" : ""}>Leads and Customer Queries (both)</option>
         <option value="Excluded" ${m.section === "Excluded" ? "selected" : ""}>Excluded (internal mailbox)</option>
       </select></td>
       <td ${td}><select onchange="eibSetField(${i}, 'arrivesVia', this.value)" style="width:auto; padding:5px;">

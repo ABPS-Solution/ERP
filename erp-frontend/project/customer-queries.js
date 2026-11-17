@@ -8,9 +8,9 @@
 // ═══════════════════════════════════════════════════════════════════════
 const CQ_STAGE_OPTIONS = ['Drawing Approval', 'Inspection Call & Clearance', 'Products Received at Site', 'I & C and Hand over to Customer', 'Others'];
 const CQ_DEPARTMENT_OPTIONS = ['Marketing', 'Design', 'QA', 'Service', 'Accounts', 'Purchase', 'Store', 'Production', 'Project'];
-const CQ_ABOUT_OPTIONS = [['Project', 'Existing project'], ['Old Project', 'Old project (before the system)'], ['Pending PO', 'Order not yet in the system']];
-let cqFilterDept = '';
-let cqFilterAbout = '';
+const CQ_ABOUT_OPTIONS = [['Project', 'Active project'], ['Old Project', 'Old project (before the system)'], ['Pending PO', 'Order not yet in the system']];
+let cqFilterDept = [];
+let cqFilterAbout = [];
 const CQ_BUCKETS = [
   ['', 'All'], ['Overdue', 'Overdue'], ['Today', 'Today'], ['Tomorrow', 'Tomorrow'],
   ['ThisWeek', 'This Week'], ['NextWeek', 'Next Week'], ['ThisMonth', 'This Month'],
@@ -123,16 +123,21 @@ function renderCqBucketBar() {
   bar.innerHTML = CQ_BUCKETS.map(([val, label]) => `
     <button type="button" class="nav-btn-styled cq-bucket-btn" data-bucket="${val}" onclick="selectCqBucket('${val}')"
       style="padding:6px 14px; font-size:0.8rem; border:1.5px solid var(--border); background:${val === cqActiveBucket ? 'var(--accent)' : '#fff'}; color:${val === cqActiveBucket ? '#fff' : 'var(--text)'};">${label}</button>
-  `).join("") + `
-    <select onchange="cqFilterDept=this.value; loadCqPendingQueries();" style="padding:6px 10px; border:1.5px solid var(--border); border-radius:var(--radius); font-size:0.8rem;">
-      <option value="">All departments</option>
-      ${CQ_DEPARTMENT_OPTIONS.map(d => `<option value="${d}" ${cqFilterDept === d ? 'selected' : ''}>${d}</option>`).join('')}
-    </select>
-    <select onchange="cqFilterAbout=this.value; loadCqPendingQueries();" style="padding:6px 10px; border:1.5px solid var(--border); border-radius:var(--radius); font-size:0.8rem;">
-      <option value="">All queries</option>
-      ${CQ_ABOUT_OPTIONS.map(([v, l]) => `<option value="${v}" ${cqFilterAbout === v ? 'selected' : ''}>${l}</option>`).join('')}
-      <option value="Unlinked" ${cqFilterAbout === 'Unlinked' ? 'selected' : ''}>Not linked to a project</option>
-    </select>`;
+  `).join("");
+  const chip = (on, label, fn, arg) => `<button type="button" class="nav-btn-styled" onclick="${fn}(${arg})" style="padding:5px 12px; font-size:0.78rem; border:1.5px solid ${on ? 'var(--accent)' : 'var(--border)'}; background:${on ? 'var(--accent)' : '#fff'}; color:${on ? '#fff' : 'var(--text)'};">${label}</button>`;
+  const row = (title, chips) => `<div style="flex-basis:100%; display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:6px;"><span style="font-size:0.75rem; font-weight:800; text-transform:uppercase; color:#475569; min-width:96px;">${title}</span>${chips}</div>`;
+  bar.innerHTML += row('Department', chip(!cqFilterDept.length, 'All', 'cqToggleFilter', "'dept',''") + CQ_DEPARTMENT_OPTIONS.map(d => chip(cqFilterDept.includes(d), d, 'cqToggleFilter', `'dept','${d}'`)).join(''))
+    + row('Query about', chip(!cqFilterAbout.length, 'All', 'cqToggleFilter', "'about',''") + CQ_ABOUT_OPTIONS.map(([v, l]) => chip(cqFilterAbout.includes(v), l, 'cqToggleFilter', `'about','${v}'`)).join('') + chip(cqFilterAbout.includes('Unlinked'), 'Not linked to a project', 'cqToggleFilter', "'about','Unlinked'"));
+}
+
+function cqToggleFilter(kind, val) {
+  const key = kind === 'dept' ? 'cqFilterDept' : 'cqFilterAbout';
+  let cur = kind === 'dept' ? cqFilterDept : cqFilterAbout;
+  cur = !val ? [] : (cur.includes(val) ? cur.filter(x => x !== val) : [...cur, val]);
+  if (kind === 'dept') cqFilterDept = cur; else cqFilterAbout = cur;
+  renderCqBucketBar();
+  loadCqPendingQueries();
+
 }
 
 async function ensureCqProjectData(forceRefresh = false) {
@@ -430,7 +435,7 @@ async function selectCqCreateProject(messageId, projectId) {
   s.customerName = (cqProjectMeta[projectId] && cqProjectMeta[projectId].companyName) || "";
   s.standardProductNames = []; s.orderProductDescriptions = [];
   await ensureCqProductsForProject(projectId);
-  renderCqIncomingList();
+  renderCqCreateForm(messageId);
 }
 
 async function submitCqCreateQuery(messageId) {
@@ -513,7 +518,7 @@ async function loadCqPendingQueries() {
   cqOpenPendingId = null;
   try {
     const data = await apFetch({ action: "fetchPendingCustomerQueries", bucket: cqActiveBucket || undefined,
-      concernedDepartment: cqFilterDept || undefined, queryAbout: cqFilterAbout || undefined });
+      concernedDepartment: cqFilterDept.length ? cqFilterDept : undefined, queryAbout: cqFilterAbout.length ? cqFilterAbout : undefined });
     if (!data.success) { list.innerHTML = `<div style="padding:14px; color:#b91c1c;">${escapeHtml(data.error || "Failed to load.")}</div>`; return; }
     cqPendingQueries = data.queries || [];
     renderCqPendingList();
