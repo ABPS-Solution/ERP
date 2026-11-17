@@ -13,7 +13,7 @@ function navigateToBufferSuggestions() {
   document.querySelectorAll(".workspace-panel").forEach(p => p.style.display = "none");
   const c = document.getElementById("canvas-module-buffer-suggestions");
   if (c) c.style.display = "block";
-  showDashboardGlobalToolbar("Buffer Suggestions", "", bufReturnToMain);
+  window.scrollTo(0, 0);
   bufLoad();
 }
 
@@ -38,8 +38,8 @@ async function bufLoad() {
 }
 
 function bufRender(rows, history) {
-  const th = (t, a) => '<th style="padding:8px; text-align:' + (a || "center") + '; background:#f1f5f9; font-size:0.78rem;">' + t + "</th>";
-  const td = (t, a) => '<td style="padding:8px; text-align:' + (a || "center") + '; border-top:1px solid #e2e8f0; font-size:0.85rem;">' + t + "</td>";
+  const th = (t, a, w) => '<th style="padding:10px 12px; text-align:' + (a || "center") + '; font-size:0.8rem;' + (w ? ' width:' + w + ';' : '') + '">' + t + "</th>";
+  const td = (t, a) => '<td style="padding:10px 12px; text-align:' + (a || "center") + '; font-size:0.88rem;">' + t + "</td>";
   const trs = rows.map((r, i) => {
     const sug = r.enoughData ? trimNum(r.suggestedPercent) + "%" : '<span style="color:#94a3b8;">Not enough data</span>';
     const same = r.enoughData && Number(r.suggestedPercent) === Number(r.currentPercent);
@@ -54,11 +54,11 @@ function bufRender(rows, history) {
   const hist = (history || []).map(h => "<tr>" + td(escapeHtml(h.type_of_material), "left") + td(trimNum(h.old_percent) + "% to " + trimNum(h.new_percent) + "%") +
     td(escapeHtml(h.approved_by || "")) + td(new Date(h.approved_at).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", year: "numeric" })) + "</tr>").join("");
   document.getElementById("buf-body").innerHTML =
-    '<div style="font-size:0.82rem; color:#475569; margin-bottom:8px;">Based on finished BOQs (every Job Card complete): how much more than the BOQ quantity production actually used. A suggestion appears once a type has ' +
+    '<div style="font-size:0.84rem; color:#334155; margin-bottom:14px; padding:10px 14px; background:#f0f9ff; border-left:4px solid #0369a1; border-radius:var(--radius); line-height:1.5;">Based on finished BOQs (every Job Card complete): how much more than the BOQ quantity production actually used. A suggestion appears once a type has ' +
     (rows[0] ? rows[0].needed : 5) + " finished BOQs. The buffer can never go above " + bufCap + "%. Switchgear and LT Capacitors are decided per item and are not listed.</div>" +
-    '<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; background:#fff; border:1px solid #e2e8f0;"><thead><tr>' +
-    th("Type of Material", "left") + th("Buffer now") + th("Finished BOQs") + th("Average extra used") + th("Suggested") + th("") + "</tr></thead><tbody>" + trs + "</tbody></table></div>" +
-    (hist ? '<div style="font-weight:800; margin:14px 0 6px;">Recent changes</div><div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; background:#fff; border:1px solid #e2e8f0;"><thead><tr>' +
+    '<div style="overflow-x:auto;"><table style="width:100%;"><thead><tr>' +
+    th("Type of Material", "left", "28%") + th("Buffer now", "center", "12%") + th("Finished BOQs", "center", "14%") + th("Average extra used", "center", "16%") + th("Suggested", "center", "14%") + th("Action", "center", "16%") + "</tr></thead><tbody>" + trs + "</tbody></table></div>" +
+    (hist ? '<div style="font-weight:800; margin:22px 0 8px; color:#1e3a8a;">Recent changes</div><div style="overflow-x:auto;"><table style="width:100%;"><thead><tr>' +
       th("Type of Material", "left") + th("Change") + th("Approved by") + th("Date") + "</tr></thead><tbody>" + hist + "</tbody></table></div>" : "");
 }
 

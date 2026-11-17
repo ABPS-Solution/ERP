@@ -825,6 +825,10 @@
   #canvas-module-security table { border-collapse: collapse !important; border: 2px solid #94a3b8; background: #fff; }
   #canvas-module-security th, #canvas-module-security td { border: 2px solid #94a3b8 !important; vertical-align: middle; }
   #canvas-module-security thead th, #canvas-module-security thead tr { background: #e0e7ff !important; color: #1e3a8a; }
+  #canvas-module-buffer-suggestions table, #canvas-module-items-to-check table { border-collapse: collapse !important; border: 2px solid #94a3b8; background: #fff; }
+  #canvas-module-buffer-suggestions th, #canvas-module-buffer-suggestions td, #canvas-module-items-to-check th, #canvas-module-items-to-check td { border: 2px solid #94a3b8 !important; vertical-align: middle; }
+  #canvas-module-buffer-suggestions thead th, #canvas-module-buffer-suggestions thead tr, #canvas-module-items-to-check thead th, #canvas-module-items-to-check thead tr { background: #e0e7ff !important; color: #1e3a8a; }
+  #canvas-module-buffer-suggestions tbody tr:hover td, #canvas-module-items-to-check tbody tr:hover td { background: #f8fafc; }
   #fgstock-live-view table { border-collapse: collapse !important; border: 2px solid #94a3b8; background: #fff; table-layout: fixed; }
   #fgstock-live-view th, #fgstock-live-view td { border: 2px solid #94a3b8 !important; vertical-align: middle; word-break: break-word; }
   #fgstock-live-view thead tr, #fgstock-live-view thead th { background: #e0e7ff !important; color: #1e3a8a !important; }
@@ -1370,6 +1374,10 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-project-status" onclick="switchActiveDashboardModule('project-status')"><span class="mc-label">Project Status</span></div>
       </div>
+      <div class="sec-label">Customer Communication</div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-customer-queries" onclick="switchActiveDashboardModule('customer-queries')"><span class="mc-label">Customer Queries</span></div>
+      </div>
     </div>
 
     <!-- ── DESIGN ───────────────────────────────────────────────────────── -->
@@ -1597,6 +1605,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-security" onclick="switchActiveDashboardModule('security'); initializeSecurityAdminPanel('access');"><span class="mc-label">Security &amp; Login Access</span></div>
         <div class="menu-card" id="mod-system-settings" onclick="switchActiveDashboardModule('security'); initializeSecurityAdminPanel('system');"><span class="mc-label">System Settings</span></div>
+        <div class="menu-card" id="mod-items-to-check" onclick="switchActiveDashboardModule('items-to-check')" style="display:none;"><span class="mc-label">Items to check</span></div>
         <div class="menu-card" id="mod-buffer-suggestions" onclick="navigateToBufferSuggestions()" style="display:none;"><span class="mc-label">Buffer Suggestions</span></div>
       </div>
     </div>
@@ -5991,6 +6000,97 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
        it's this department's own dashboard.
        ═══════════════════════════════════════════════════════════════ -->
 
+  <div id="canvas-module-customer-queries" class="workspace-panel" style="display:none;">
+    <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
+      <div></div>
+      <button class="nav-btn-styled" onclick="exitCustomerQueriesBackToMenu()">Return to Main Dashboard</button>
+    </div>
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+    <h2 class="panel-title">Customer Queries</h2>
+    <div id="cq-feedback" style="display:none; padding:12px; margin-bottom:12px; border-left:4px solid; border-radius:var(--radius);"></div>
+
+    <div style="display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap;">
+      <button class="nav-btn-styled" id="cq-mode-btn-incoming" onclick="switchCqMode('incoming')" style="background:var(--accent); font-weight:700; padding:9px 20px;">Incoming Queries</button>
+      <button class="nav-btn-styled" id="cq-mode-btn-pending" onclick="switchCqMode('pending')" style="background:#718096; font-weight:700; padding:9px 20px;">Current Pending Queries</button>
+      <button class="nav-btn-styled" id="cq-mode-btn-resolved" onclick="switchCqMode('resolved')" style="background:#718096; font-weight:700; padding:9px 20px;">Resolved Queries</button>
+    </div>
+
+    <div id="cq-mode-incoming">
+      <div style="display:flex; justify-content:space-between; margin-bottom:12px; gap:10px; flex-wrap:wrap;">
+        <button class="nav-btn-styled" onclick="toggleCqManualForm()" style="background:var(--accent); color:#fff; padding:7px 16px; font-size:0.82rem;">+ Add New Customer Query</button>
+        <button class="nav-btn-styled" id="cq-incoming-refresh-btn" onclick="refreshCqIncomingEmailsNow()" style="background:var(--brand); color:#fff; padding:7px 16px; font-size:0.82rem;">Check for New Emails</button>
+      </div>
+      <div id="cq-create-form-manual" style="display:none; border:1.5px solid var(--brand); border-radius:var(--radius); padding:14px; margin-bottom:16px; background:#fff;"></div>
+      <div id="cq-incoming-list"></div>
+    </div>
+
+    <div id="cq-mode-pending" style="display:none;">
+      <div id="cq-unattributed-zone" style="display:none;"></div>
+      <div id="cq-bucket-bar" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; align-items:center;"></div>
+      <div id="cq-pending-list"></div>
+    </div>
+
+    <div id="cq-mode-resolved" style="display:none;">
+      <div style="background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:16px;">
+        <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--brand); margin-bottom:12px;">Search Resolved Queries</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:12px;">
+          <div>
+            <label class="field-label" style="margin-top:0;">Project ID, Company or PO Number</label>
+            <input type="text" id="cq-res-project-input" placeholder="Type to search..." style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" />
+          </div>
+          <div>
+            <label class="field-label" style="margin-top:0;">Standard Product Name</label>
+            <input type="text" id="cq-res-product-input" placeholder="Type product name..." style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" />
+          </div>
+          <div>
+            <label class="field-label" style="margin-top:0;">Query about</label>
+            <select id="cq-res-about" style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);">
+              <option value="">All queries</option>
+              <option value="Project">Existing project</option>
+              <option value="Old Project">Old project (before the system)</option>
+              <option value="Pending PO">Order not yet in the system</option>
+              <option value="Unlinked">Not linked to a project</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:12px;">
+          <div>
+            <label class="field-label" style="margin-top:0;">Actual Closing Date From</label>
+            <input type="date" id="cq-res-date-from" style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" />
+          </div>
+          <div>
+            <label class="field-label" style="margin-top:0;">Actual Closing Date To</label>
+            <input type="date" id="cq-res-date-to" style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" />
+          </div>
+        </div>
+        <div style="margin-bottom:12px;">
+          <label class="field-label" style="margin-top:0;">Concerned Department</label>
+          <div class="pill-group">
+            <input type="checkbox" id="cq-res-dept-Marketing" name="cq-res-dept" value="Marketing"><label for="cq-res-dept-Marketing">Marketing</label>
+            <input type="checkbox" id="cq-res-dept-Design" name="cq-res-dept" value="Design"><label for="cq-res-dept-Design">Design</label>
+            <input type="checkbox" id="cq-res-dept-QA" name="cq-res-dept" value="QA"><label for="cq-res-dept-QA">QA</label>
+            <input type="checkbox" id="cq-res-dept-Service" name="cq-res-dept" value="Service"><label for="cq-res-dept-Service">Service</label>
+            <input type="checkbox" id="cq-res-dept-Accounts" name="cq-res-dept" value="Accounts"><label for="cq-res-dept-Accounts">Accounts</label>
+            <input type="checkbox" id="cq-res-dept-Project" name="cq-res-dept" value="Project"><label for="cq-res-dept-Project">Project</label>
+          </div>
+        </div>
+        <div style="margin-bottom:14px;">
+          <label class="field-label" style="margin-top:0;">Name of Stage</label>
+          <div class="pill-group">
+            <input type="checkbox" id="cq-res-stage-1" name="cq-res-stage" value="Drawing Approval"><label for="cq-res-stage-1">Drawing Approval</label>
+            <input type="checkbox" id="cq-res-stage-2" name="cq-res-stage" value="Inspection Call &amp; Clearance"><label for="cq-res-stage-2">Inspection Call &amp; Clearance</label>
+            <input type="checkbox" id="cq-res-stage-3" name="cq-res-stage" value="Products Received at Site"><label for="cq-res-stage-3">Products Received at Site</label>
+            <input type="checkbox" id="cq-res-stage-4" name="cq-res-stage" value="I &amp; C and Hand over to Customer"><label for="cq-res-stage-4">I &amp; C and Hand over to Customer</label>
+            <input type="checkbox" id="cq-res-stage-5" name="cq-res-stage" value="Others"><label for="cq-res-stage-5">Others</label>
+          </div>
+        </div>
+        <button class="nav-btn-styled" style="background:var(--accent); padding:9px 22px; font-weight:700;" onclick="searchCqResolvedQueries()">Search</button>
+      </div>
+      <div id="cq-resolved-list"></div>
+    </div>
+    </div>
+  </div>
+
   <div id="canvas-module-order-payment" class="workspace-panel" style="display:none;">
     <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
       <div></div>
@@ -6376,8 +6476,26 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
     <div id="pwk-body" class="dd-body" style="padding:6px 14px 10px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-content:start; gap:14px; box-sizing:border-box;"></div>
   </div>
 
-  <div id="canvas-module-buffer-suggestions" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
-    <div id="buf-body" style="padding:10px 14px; box-sizing:border-box; height:calc(100vh - 100px); overflow-y:auto;"></div>
+  <div id="canvas-module-items-to-check" class="workspace-panel" style="display:none;">
+    <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
+      <div></div>
+      <button class="nav-btn-styled" onclick="exitItemsToCheckBackToMenu()">Return to Main Dashboard</button>
+    </div>
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Items to check</h2>
+      <div id="itc-body"></div>
+    </div>
+  </div>
+
+  <div id="canvas-module-buffer-suggestions" class="workspace-panel" style="display:none;">
+    <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
+      <div></div>
+      <button class="nav-btn-styled" onclick="bufReturnToMain()">Return to Main Dashboard</button>
+    </div>
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Buffer Suggestions</h2>
+      <div id="buf-body"></div>
+    </div>
   </div>
 
   <div id="canvas-module-admin-dashboard" class="workspace-panel" style="display:none; padding:0; background:var(--bg);">
@@ -6430,17 +6548,6 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
           <div class="dd-stat-label">Tour Advances Outstanding</div>
           <div class="dd-stat-val" id="adm-s-advances" style="color:#b45309;">—</div>
         </div>
-      </div>
-
-      <!-- Items to check: odd-activity flags (lib/oddActivity.js) -->
-      <div class="dd-card" id="adm-odd-card" style="padding:8px 12px; flex:0 0 auto;">
-        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-          <div class="dd-card-title" style="margin:0;">Items to check <span id="adm-odd-count" style="font-weight:800; color:#b91c1c;"></span></div>
-          <span id="adm-odd-last" style="font-size:0.75rem; color:#64748b;"></span>
-          <label style="margin-left:auto; font-size:0.78rem; color:#475569; display:inline-flex; gap:6px; align-items:center; cursor:pointer;">
-            <input type="checkbox" id="adm-odd-showrev" onchange="admLoadOdd()"> Show reviewed (30 days)</label>
-        </div>
-        <div id="adm-odd-list" style="max-height:260px; overflow-y:auto; margin-top:6px;"></div>
       </div>
 
       <!-- ROW 3: Chart -->
@@ -6779,6 +6886,8 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
      on disk, unlinked. -->
 <script src="project/admin-dashboard.js"></script>
 <script src="project/buffer-suggestions.js"></script>
+<script src="project/customer-queries.js"></script>
+<script src="project/items-to-check.js"></script>
 <script src="project/pending-work-dashboard.js"></script>
 <!-- Live updates: loads LAST, it wraps apFetch and buildMultiContactDirectoryInterface. -->
 <script src="shared/liveUpdates.js"></script>

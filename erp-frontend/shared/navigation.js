@@ -419,6 +419,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-project-timeline")) document.getElementById("mod-project-timeline").style.display = canProjectTimeline ? "block" : "none";
   if (document.getElementById("mod-daily-timeline")) document.getElementById("mod-daily-timeline").style.display = canDailyTimeline ? "block" : "none";
   if (document.getElementById("mod-project-status")) document.getElementById("mod-project-status").style.display = canProjectStatus ? "block" : "none";
+  if (document.getElementById("mod-customer-queries")) document.getElementById("mod-customer-queries").style.display = userPermissionsObject.customerQueryManagement === true ? "block" : "none";
   if (document.getElementById("mod-create-project-dispatch-invoice")) document.getElementById("mod-create-project-dispatch-invoice").style.display = canCreateProjectDispatchInvoice ? "block" : "none";
   if (document.getElementById("mod-authorize-project-dispatch-invoice")) document.getElementById("mod-authorize-project-dispatch-invoice").style.display = canAuthorizeProjectDispatchInvoice ? "block" : "none";
   if (document.getElementById("mod-revise-project-dispatch-invoice")) document.getElementById("mod-revise-project-dispatch-invoice").style.display = canReviseProjectDispatchInvoice ? "block" : "none";
@@ -531,6 +532,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-security"))     document.getElementById("mod-security").style.display     = canSecurity     ? "block" : "none";
   if (document.getElementById("mod-system-settings")) document.getElementById("mod-system-settings").style.display = canSecurity ? "block" : "none";
   if (document.getElementById("mod-buffer-suggestions")) document.getElementById("mod-buffer-suggestions").style.display = userPermissionsObject.viewBufferSuggestions === true ? "block" : "none";
+  if (document.getElementById("mod-items-to-check")) document.getElementById("mod-items-to-check").style.display = userPermissionsObject.viewItemsToCheck === true ? "block" : "none";
 
   // Dashboard-wrapper pills (show entire pill wrapper, not just a plain card)
   // — same shape as Portal's own dashMap loop.
@@ -561,11 +563,11 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const purchaseBlock = document.getElementById("dashboard-purchase-department-header-block");
   if (purchaseBlock) purchaseBlock.style.display = (canViewMaterialListPurchase || canViewRejectedMaterial || canCreatePO || canAuthorizePO || canPPSTracking || canSearchVendorCostingInfo || userPermissionsObject.vendorDirectory === true || canReviseRMPO || canAuthorizeRMPORevision || canSearchRMPO || canViewPurchaseDashboard) ? "block" : "none";
   const adminBlock = document.getElementById("dashboard-admin-department-header-block");
-  if (adminBlock) adminBlock.style.display = (canSecurity || canViewAdminDashboard || canViewPendingWork) ? "block" : "none";
+  if (adminBlock) adminBlock.style.display = (canSecurity || canViewAdminDashboard || canViewPendingWork || userPermissionsObject.viewItemsToCheck === true || userPermissionsObject.viewBufferSuggestions === true) ? "block" : "none";
   const marketingBlock = document.getElementById("dashboard-marketing-department-header-block");
   if (marketingBlock) marketingBlock.style.display = (canEnterCard || canViewEmailLeads || canUploadCommissioning || canUploadPurchaseOrder || canUploadRevisedPo || canSearchCompany || canSearchTasks || canSearchStatus || canSearchQual || canSearchCityState || canMeetingPreparation || canMorningMeeting || canNewsLeads) ? "block" : "none";
   const projectBlock = document.getElementById("dashboard-project-department-header-block");
-  if (projectBlock) projectBlock.style.display = (canManufacturingClearance || canProjectTimeline || canDailyTimeline || canProjectStatus || canOrderPaymentProgress || userPermissionsObject.viewProjectDashboard === true) ? "block" : "none";
+  if (projectBlock) projectBlock.style.display = (canManufacturingClearance || canProjectTimeline || canDailyTimeline || canProjectStatus || canOrderPaymentProgress || userPermissionsObject.customerQueryManagement === true || userPermissionsObject.viewProjectDashboard === true) ? "block" : "none";
   // Batch 6 (16 Sep 2026): Store's own screens landed, so this is no
   // longer keyed on Project Invoice Generation alone.
   const storeBlock = document.getElementById("dashboard-store-department-header-block");
@@ -878,6 +880,8 @@ function switchActiveDashboardModule(targetSectionId) {
   if (targetSectionId === "daily-timeline" && typeof initializeDailyTimelinePanel === "function") initializeDailyTimelinePanel();
   if (targetSectionId === "project-status" && typeof initializeProjectStatusPanel === "function") initializeProjectStatusPanel();
   if (targetSectionId === "order-payment" && typeof initializeOrderPaymentPanel === "function") initializeOrderPaymentPanel();
+  if (targetSectionId === "customer-queries" && typeof initializeCustomerQueriesWorkspace === "function") initializeCustomerQueriesWorkspace();
+  if (targetSectionId === "items-to-check" && typeof initializeItemsToCheckPanel === "function") initializeItemsToCheckPanel();
   // Project Dispatch Invoice's four sections (19 Sep 2026, ported from
   // Portal's migrations 208-209 -- was one "project-invoice" screen/
   // permission). Each is a plain top-level panel via the generic
