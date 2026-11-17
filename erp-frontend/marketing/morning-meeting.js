@@ -216,6 +216,27 @@ function mmRender() {
       </table></div>` : `<div style="color:var(--warn); font-weight:700; padding:10px 0;">No leads for these filters.</div>`}`;
 }
 
+// Download PDF: the same filters, and the same clicked count, as the table on screen.
+async function mmDownloadPdf() {
+  const f = mmReadFilters();
+  if ((f.startDate && !f.endDate) || (!f.startDate && f.endDate)) { abpsAlert("Pick both dates first."); return; }
+  const btn = document.getElementById("mm-pdf-btn");
+  if (btn) { btn.disabled = true; btn.textContent = "Preparing PDF..."; }
+  try {
+    const data = await apFetch({ action: "generateMorningMeetingPdf", ...f,
+      countKey: mmCellFilter ? mmCellFilter.countKey : "", engineerKey: mmCellFilter ? mmCellFilter.engineerKey : "", _timeoutMs: 60000 });
+    if (!data.success) { abpsAlert(data.error || "Could not make the PDF."); return; }
+    const link = document.createElement("a");
+    link.href = "data:application/pdf;base64," + data.base64;
+    link.download = data.fileName;
+    document.body.appendChild(link); link.click(); link.remove();
+  } catch (e) {
+    abpsAlert(friendlyErr(e));
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = "Download PDF"; }
+  }
+}
+
 // After a lead is saved from an opened row: update its Lead Status / lost
 // reason in the Morning Meeting and New Leads Report rows straight away.
 function mmPatchLeadAfterSave(leadId, fields) {
