@@ -229,8 +229,8 @@ function showMaterialProjectBreakdownModal(itemCode, materialName, unit, totalQt
   const byPrn = {};
   const reqDatesByPrn = {};
   filteredRows.forEach(r => {
-    // Production Memo Purchase Material (migration 249) has no PRN.
-    const pid = r.prnId || (r.isMemoPurchase ? `Production Memo Purchase Material for ${r.projectId || r.memoTarget || ""}` : "Unassigned");
+    // Memo Purchase Material (migration 249) has no PRN.
+    const pid = r.prnId || (r.isMemoPurchase ? `Memo Purchase Material for ${r.projectId || r.memoTarget || ""}` : "Unassigned");
     const qty = Math.max(0, Number(r.stillToOrderQty) || 0);
     if (qty <= 0) return;
     if (!byPrn[pid]) byPrn[pid] = 0;

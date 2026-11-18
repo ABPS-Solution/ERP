@@ -64,9 +64,9 @@ function ticketBulkRemaining(jc, code) {
   return r ? Number(r.remainingQty) || 0 : null;
 }
 
-// Production Memo material (outside the BOQ): one shared stock for all Job
+// Memo material (outside the BOQ): one shared stock for all Job
 // Cards, given out in set order; what stock can't cover becomes that Job
-// Card's Production Memo Purchase Request, less what is already coming.
+// Card's Memo Purchase Request, less what is already coming.
 function ticketBulkIsMemo(code) {
   const st = window._ticketBulk;
   return [...st.selected].some(jc => (st.mats[jc] || []).some(r => r.itemCode === code && r.isConsumable));
@@ -182,7 +182,7 @@ function ticketBulkSearch(q) {
       style="padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.85rem;" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background=''">
       <span style="font-weight:600;">${escapeHtml(m.materialName)}</span>
       <span style="color:var(--muted); font-size:0.75rem;"> · ${escapeHtml(m.itemCode)} · ${escapeHtml(m.unitType || "")}</span>
-      ${m.isConsumable ? `<span style="font-size:0.65rem; background:#ede9fe; color:#5b21b6; padding:1px 5px; border-radius:3px; font-weight:bold; margin-left:4px;">Production Memo</span>` : ""}
+      ${m.isConsumable ? `<span style="font-size:0.65rem; background:#ede9fe; color:#5b21b6; padding:1px 5px; border-radius:3px; font-weight:bold; margin-left:4px;">Memo</span>` : ""}
       ${inBasket ? `<span style="font-size:0.7rem; color:#15803d; font-weight:800; margin-left:6px;">IN BASKET</span>` : ""}
     </div>`;
   }).join("");
@@ -253,8 +253,8 @@ function ticketBulkRenderEditor() {
         </div>
       </div>
       ${isMemo ? `<div id="tbulk-memo-note" style="margin-bottom:8px; padding:8px 10px; background:#f5f3ff; border:1px solid #c4b5fd; border-radius:4px; font-size:0.8rem; color:#5b21b6;">
-        <strong>Production Memo Purchase Material.</strong> In stock: <strong>${fmtQty(ticketBulkMemoStock(m.itemCode))} ${escapeHtml(m.unitType || "")}</strong>, shared by all sets in set order.
-        What stock can't cover becomes a Production Memo Purchase Request for that Job Card (less what is already requested / on order for it).</div>` : ""}
+        <strong>Memo Purchase Material.</strong> In stock: <strong>${fmtQty(ticketBulkMemoStock(m.itemCode))} ${escapeHtml(m.unitType || "")}</strong>, shared by all sets in set order.
+        What stock can't cover becomes a Memo Purchase Request for that Job Card (less what is already requested / on order for it).</div>` : ""}
       <div style="max-height:380px; overflow-y:auto; border:1px solid var(--border); border-radius:4px; background:#fff;">
         <table style="width:100%; border-collapse:collapse;">
           ${isMemo
@@ -382,7 +382,7 @@ function ticketBulkRenderBasket() {
         return `<span style="display:inline-block; margin:1px 6px 1px 0; ${over ? "color:#b45309; font-weight:800;" : ""}">${escapeHtml(ticketBulkSetLabel(jc))}: ${fmtQty(q)}${over ? " (excess)" : ""}</span>`;
       });
       return `<tr>
-        <td style="${td} font-weight:600;">${escapeHtml(m.materialName)}<div style="font-size:0.72rem; color:var(--muted);">${escapeHtml(code)}${memoSplit ? ` <span style="font-size:0.65rem; background:#ede9fe; color:#5b21b6; padding:1px 5px; border-radius:3px; font-weight:bold;">Production Memo</span>` : ""}</div></td>
+        <td style="${td} font-weight:600;">${escapeHtml(m.materialName)}<div style="font-size:0.72rem; color:var(--muted);">${escapeHtml(code)}${memoSplit ? ` <span style="font-size:0.65rem; background:#ede9fe; color:#5b21b6; padding:1px 5px; border-radius:3px; font-weight:bold;">Memo</span>` : ""}</div></td>
         <td style="${td} text-align:center;">${escapeHtml(m.unitType || "")}</td>
         <td style="${td} font-size:0.78rem;"><div style="max-height:66px; overflow-y:auto;">${parts.join("")}</div></td>
         <td style="${td} text-align:center; font-weight:800;">${fmtQty(total)}</td>
@@ -431,7 +431,7 @@ async function ticketBulkSelectRange(spec) {
 function ticketBulkSetStore(v) {
   const st = window._ticketBulk; if (!st) return;
   st.store = v;
-  // Production Memo material is Raw Materials Store only.
+  // Memo material is Raw Materials Store only.
   if (v !== "Raw Materials Store") {
     Object.keys(st.qty).forEach(k => { const code = k.slice(k.lastIndexOf("|") + 1); if (ticketBulkIsMemo(code)) delete st.qty[k]; });
     if (st.edit && ticketBulkIsMemo(st.edit.code)) st.edit = null;
@@ -466,7 +466,7 @@ async function ticketBulkSubmit() {
   });
   if (mats.some(m => m.isConsumable && Object.values(memoSplits[m.itemCode] || {}).some(sp => sp.memo > 0))
       && !(document.getElementById("ticket-department-outgoing-dropdown")?.value)) {
-    return ticketBulkFeedback("<strong>Choose the Outgoing Use department first</strong>, so the Production Memo quantity can be asked.");
+    return ticketBulkFeedback("<strong>Choose the Outgoing Use department first</strong>, so the Memo quantity can be asked.");
   }
   const jobCards = st.jcs.filter(j => st.selected.has(j.jobCardNumber)).map(j => {
     const jc = j.jobCardNumber, items = [], excessItems = [], memoPurchaseItems = [];
@@ -521,7 +521,7 @@ async function ticketBulkSubmit() {
         <span style="font-weight:800; min-width:70px;">${escapeHtml(ticketBulkSetLabel(t.jobCardNumber))}</span>
         ${t.ticketId ? `<span style="font-family:monospace; font-weight:700;">${escapeHtml(t.ticketId)}</span>` : ""}
         ${t.excessTicketId ? `<span style="font-size:0.8rem; color:#b45309; font-weight:700;">Excess request ${escapeHtml(t.excessTicketId)}</span>` : ""}
-        ${(t.memoRequestIds || []).length ? `<span style="font-size:0.8rem; color:#5b21b6; font-weight:700;">Production Memo request ${(t.memoRequestIds || []).map(escapeHtml).join(", ")}</span>` : ""}
+        ${(t.memoRequestIds || []).length ? `<span style="font-size:0.8rem; color:#5b21b6; font-weight:700;">Memo request ${(t.memoRequestIds || []).map(escapeHtml).join(", ")}</span>` : ""}
       </div>`).join("");
     panel.style.padding = "20px";
     panel.innerHTML = `

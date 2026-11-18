@@ -344,7 +344,7 @@ function materialChangeConflictMessage(itemCode, newNormalTotal, jcRemaining) {
 }
 
 // Submit helpers. Raw Materials Store rows over the Job Card limit go as an
-// Excess Material Request; memo rows as Production Memo purchase requests.
+// Excess Material Request; memo rows as Memo purchase requests.
 function basketNormalItems() { return (dynamicTicketShoppingBasketArray || []).filter(r => !r.isMaterialChange && !r.isMemoPurchase); }
 function basketIsExcessRow(r, store) { return !!r.requiresBOQIncreaseFlag && (store || "Raw Materials Store") === "Raw Materials Store"; }
 function basketIssueItems(store) {

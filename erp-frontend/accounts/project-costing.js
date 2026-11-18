@@ -128,7 +128,7 @@ function pcostRender() {
       <col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:11%"><col style="width:9%">
     </colgroup><thead><tr>
       <th>Sr No</th><th>Project</th><th>PO Value (Basic)</th><th>Design Estimated Costing</th><th>Design MSR %</th>
-      <th>Current RM PO Costing</th><th>Current Production Memo Costing</th><th>Current Transport Costing</th><th>Total Current Costing</th>
+      <th>Current RM PO Costing</th><th>Current Memo Costing</th><th>Current Transport Costing</th><th>Total Current Costing</th>
       <th>Payment Received</th><th>Actual MSR %</th></tr></thead><tbody>`;
   rows.forEach((r, i) => {
     const open = pcostOpen.has(r.projectId);
@@ -174,7 +174,7 @@ async function pcostLoadBreakdown(projectId) {
     const pendHtml = pending.length ? `<div style="margin-bottom:8px; text-align:left;"><span class="pcost-flag">Pending BOQs</span> ` +
       pending.map(p => `${escapeHtml(p.name || p.itemCode)}${p.isFg ? " (Finished Goods)" : ""}`).join(", ") + `</div>` : "";
     cell.innerHTML = pendHtml + `<div class="pcost-box"><table class="prn-view-table pcost-table" style="font-size:12px;">
-      <thead><tr><th style="width:40%">BOQ</th><th>Status</th><th>Design Costing</th><th>RM PO Costing</th><th>Production Memo Costing</th><th>Total Current</th><th>Current vs Design</th></tr></thead><tbody>` +
+      <thead><tr><th style="width:40%">BOQ</th><th>Status</th><th>Design Costing</th><th>RM PO Costing</th><th>Memo Costing</th><th>Total Current</th><th>Current vs Design</th></tr></thead><tbody>` +
       boqs.map(b => {
         const d = b.currentCosting - b.designCosting;
         const fg = b.isFg ? `<div class="pcost-muted">Finished Goods BOQ: its cost is already inside the main BOQ, so it is not added to Design Estimated Costing</div>` : "";

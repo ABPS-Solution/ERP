@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════════
-// store/consumable-requests.js — Approve Production Memo Purchase Requests
+// store/consumable-requests.js — Approve Memo Purchase Requests
 // (perm_approve_consumable_purchase, migration 238), plus the Service
 // consumable requests section on List of Material to Raise Purchase Order.
 // Backend: routes/consumables.js.
@@ -24,7 +24,7 @@ async function initializeConsumablePurchaseApprovalsWorkspace() {
     if (!data.success) throw new Error(data.error || 'Could not load requests.');
     const pending = data.pending || [];
     feed.innerHTML = `
-      ${pending.length ? `<div style="display:flex; flex-direction:column; gap:14px;">${pending.map(cprRenderPendingCard).join('')}</div>` : '<div style="text-align:center; padding:30px; color:var(--muted); font-size:0.9rem; background:#fff; border:1px solid var(--border); border-radius:6px;"><h3 style="color:var(--accent);">No Pending Production Memo Purchase Requests</h3></div>'}`;
+      ${pending.length ? `<div style="display:flex; flex-direction:column; gap:14px;">${pending.map(cprRenderPendingCard).join('')}</div>` : '<div style="text-align:center; padding:30px; color:var(--muted); font-size:0.9rem; background:#fff; border:1px solid var(--border); border-radius:6px;"><h3 style="color:var(--accent);">No Pending Memo Purchase Requests</h3></div>'}`;
   } catch (e) {
     if (e.message === 'SESSION_EXPIRED') return;
     feed.innerHTML = `<div style="color:#b91c1c; padding:12px;">${escapeHtml(e.message)}</div>`;
@@ -117,7 +117,7 @@ async function renderServiceConsumableRequestsToOrder(mountId) {
     const reqs = (data && data.success && data.requests) || [];
     if (!reqs.length) { mount.innerHTML = ''; return; }
     mount.innerHTML = `
-      <div style="margin:18px 0 8px; font-weight:800; color:#7c3aed;">Service Production Memo requests (approved, to order)</div>
+      <div style="margin:18px 0 8px; font-weight:800; color:#7c3aed;">Service Memo requests (approved, to order)</div>
       <div style="font-size:0.8rem; color:var(--muted); margin-bottom:6px;">These have no BOQ, so raise an RM PO for the item as usual, then enter its PO number here to close the request. The stock arrives as free stock.</div>
       <div style="overflow-x:auto;"><table class="grid-lines-table" style="width:100%; border-collapse:collapse; font-size:0.85rem; min-width:760px;">
         <thead><tr style="background:#f8fafc;">

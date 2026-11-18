@@ -1691,7 +1691,7 @@ function updateCPOAllocTotals(lineQty) {
   const fmt = (n) => (Number(n) || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 });
   if (overCap.length) {
     el.style.cssText = "padding:12px 20px; border-top:1px solid var(--border); font-size:0.82rem; font-weight:700; background:#fef2f2; color:#b91c1c;";
-    el.textContent = `${overCap.length} PRN(s) / Production Memo request(s) allocated more than they still need.`;
+    el.textContent = `${overCap.length} PRN(s) / Memo request(s) allocated more than they still need.`;
   } else if (sum > lineQty + 1e-9) {
     el.style.cssText = "padding:12px 20px; border-top:1px solid var(--border); font-size:0.82rem; font-weight:700; background:#fef2f2; color:#b91c1c;";
     el.textContent = `Allocated ${fmt(sum)}, but the Vendor Discussed Qty is only ${fmt(lineQty)}.`;
@@ -1715,7 +1715,7 @@ function saveCPOAllocationPicker(rowId) {
     if (q <= 0) continue;
     const cap = parseFloat(inp.dataset.max) || 0;
     if (q > cap + 1e-9) {
-      abpsAlert(`${inp.dataset.prnid || (inp.dataset.boqid ? "PRN pending " + inp.dataset.boqid : ("Production Memo request #" + inp.dataset.memoid))} only needs ${cap} more of this material, cannot allocate ${q}.`);
+      abpsAlert(`${inp.dataset.prnid || (inp.dataset.boqid ? "PRN pending " + inp.dataset.boqid : ("Memo request #" + inp.dataset.memoid))} only needs ${cap} more of this material, cannot allocate ${q}.`);
       return;
     }
     sum += q;

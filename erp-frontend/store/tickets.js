@@ -655,24 +655,24 @@ async function addItemToShoppingBasketRow() {
       (r.isConsumable || r.memoAllowed) && (r.materialName || "").replace(/\s+/g, '').toLowerCase() === cleanSearchKey);
     if (consMatch) {
       const existingCons = ticketFindBasketLine_(consMatch.itemCode, cleanSearchKey);
-      // What is in stock is issued now; the rest becomes the Production Memo
+      // What is in stock is issued now; the rest becomes the Memo
       // purchase quantity on the same row (memoQty, migration 249).
       const totalCons = Math.round((quantity + (existingCons ? (Number(existingCons.quantity) || 0) + (Number(existingCons.memoQty) || 0) : 0)) * 1000) / 1000;
       const canIssue = Math.max(0, Number(consMatch.remainingQty) || 0);
       const issueQty = Math.min(totalCons, canIssue);
       const shortQty = Math.round((totalCons - issueQty) * 1000) / 1000;
-      // Already requested / on order through Production Memo for this Job Card
+      // Already requested / on order through Memo for this Job Card
       // is still coming, so only the rest is asked again (13 Oct 2026).
       const memoComing = Math.max(0, Number(consMatch.memoComing) || 0);
       const memoQty = Math.max(0, Math.round((shortQty - memoComing) * 1000) / 1000);
       if (shortQty > 0 && memoComing > 0) {
-        abpsAlert(`${fmtQty(memoComing)} ${consMatch.unitType || 'units'} of ${materialName} is already requested / on order through Production Memo for this BOQ.`
+        abpsAlert(`${fmtQty(memoComing)} ${consMatch.unitType || 'units'} of ${materialName} is already requested / on order through Memo for this BOQ.`
           + (memoQty > 0 ? ` Only ${fmtQty(memoQty)} more will be asked.` : ` Nothing more will be asked; issue the rest when it arrives.`));
       }
       const deptForMemo = document.getElementById("ticket-department-outgoing-dropdown")?.value || "";
       if (memoQty > 0 && !deptForMemo) {
         restoreAddBtn();
-        abpsAlert(`Only ${fmtQty(canIssue)} ${consMatch.unitType || 'units'} of ${materialName} is in stock. Choose the Outgoing Use department first, so the rest can be asked through Production Memo.`);
+        abpsAlert(`Only ${fmtQty(canIssue)} ${consMatch.unitType || 'units'} of ${materialName} is in stock. Choose the Outgoing Use department first, so the rest can be asked through Memo.`);
         return;
       }
       if (existingCons) {
@@ -841,7 +841,7 @@ function renderDraftBasketTableViewportRows() {
       tr.style.background = "#f5f3ff";
       tr.innerHTML = `
       <td style="font-weight:600; padding:10px 8px;">${escapeHtml(rowItem.materialName)}
-        <span style="font-size:0.65rem; background:#ede9fe; color:#5b21b6; padding:1px 5px; border-radius:3px; font-weight:bold; margin-left:4px;">Production Memo for Purchase</span></td>
+        <span style="font-size:0.65rem; background:#ede9fe; color:#5b21b6; padding:1px 5px; border-radius:3px; font-weight:bold; margin-left:4px;">Memo for Purchase</span></td>
       <td style="text-align:center; font-weight:700; font-size:0.95rem;">${escapeHtml(rowItem.unitType || "")}</td>
       <td style="font-family:monospace; font-weight:700; font-size:1.05rem; text-align:center;">${fmtQty(rowItem.quantity)}</td>
       <td style="text-align:center;">
@@ -863,7 +863,7 @@ function renderDraftBasketTableViewportRows() {
       <td style="font-weight:600; padding:10px 8px;">
         ${escapeHtml(rowItem.materialName)} 
         ${rowItem.requiresBOQIncreaseFlag ? '<span style="font-size:0.65rem; background:#fef3c7; color:#b45309; padding:1px 4px; border-radius:3px; font-weight:bold; margin-left:4px;">EXCEEDS JOB CARD LIMIT</span>' : ''}
-        ${Number(rowItem.memoQty) > 0 ? `<span style="font-size:0.65rem; background:#ede9fe; color:#5b21b6; padding:1px 5px; border-radius:3px; font-weight:bold; margin-left:4px;">Production Memo for Purchase</span>` : ''}
+        ${Number(rowItem.memoQty) > 0 ? `<span style="font-size:0.65rem; background:#ede9fe; color:#5b21b6; padding:1px 5px; border-radius:3px; font-weight:bold; margin-left:4px;">Memo for Purchase</span>` : ''}
       </td>
       <td style="text-align:center; font-weight:700; font-size:0.95rem;">${rowItem.unitType}</td>
       <td style="font-family:monospace; font-weight:700; font-size:1.05rem; text-align:center;">${Number(rowItem.memoQty) > 0
@@ -1988,7 +1988,7 @@ async function loadItemCatalogForSelectedProjectAndStore() {
         jcmFetchService.records.forEach(r => {
           const opt = document.createElement("option");
           opt.value = r.materialName; if (r.itemCode) opt.dataset.itemcode = r.itemCode;
-          opt.textContent = r.isConsumable ? r.materialName + "  · Production Memo Purchase Material" : (r.memoAllowed && !(Number(r.remainingQty) > 0) ? r.materialName + "  · Not in stock, ask through Production Memo" : r.materialName);
+          opt.textContent = r.isConsumable ? r.materialName + "  · Memo Purchase Material" : (r.memoAllowed && !(Number(r.remainingQty) > 0) ? r.materialName + "  · Not in stock, ask through Memo" : r.materialName);
           // Two Spare Store items can legitimately share the same Name +
           // Rating and differ only by Make (e.g. SIEMENS vs L&T variants) —
           // the dropdown option text/value alone can't tell them apart.
@@ -2160,7 +2160,7 @@ async function loadItemCatalogForSelectedProjectAndStore() {
             uniqueMaterialsMap[r.materialName] = true;
             let opt = document.createElement("option");
             opt.value = r.materialName; if (r.itemCode) opt.dataset.itemcode = r.itemCode;
-            opt.textContent = r.isConsumable ? r.materialName + "  · Production Memo Purchase Material" : r.materialName;
+            opt.textContent = r.isConsumable ? r.materialName + "  · Memo Purchase Material" : r.materialName;
             if (r.itemCode) opt.dataset.itemcode = r.itemCode;
             itemDrop.appendChild(opt);
           }
@@ -2608,9 +2608,9 @@ document.addEventListener("change", e => { if (e.target.closest && e.target.clos
 document.addEventListener("input", e => { if (e.target.closest && e.target.closest("#cmit-main-section")) cmitDraftSaveSoon(); });
 document.addEventListener("click", e => { if (e.target.closest && (e.target.closest("#ticket-boq-dropdown-list") || e.target.closest("#ticket-job-card-pills"))) cmitDraftSaveSoon(); });
 
-// ── Production Memo for Purchase (migration 249) ─────────────────────────
-// Adds a "Production Memo Purchase Material" row to the basket. It is sent
-// with the ticket and goes to Approve Production Memo Purchase Requests;
+// ── Memo for Purchase (migration 249) ─────────────────────────
+// Adds a "Memo Purchase Material" row to the basket. It is sent
+// with the ticket and goes to Approve Memo Purchase Requests;
 // once approved it is listed in List of Material to Raise Purchase Order
 // (never on a PRN, never reserved).
 function ticketOpenConsumableRequest(itemCode, materialName, unit) {
@@ -2628,7 +2628,7 @@ function ticketOpenConsumableRequest(itemCode, materialName, unit) {
   wrap.innerHTML = `
     <div style="background:var(--card, #fff); border-radius:var(--radius, 8px); max-width:480px; width:100%; box-shadow:0 12px 32px rgba(0,0,0,0.25); overflow:hidden;">
       <div style="background:var(--brand); color:#fff; padding:14px 20px; display:flex; justify-content:space-between; align-items:center;">
-        <h3 style="margin:0; font-size:1.05rem; color:#fff;">Production Memo for Purchase</h3>
+        <h3 style="margin:0; font-size:1.05rem; color:#fff;">Memo for Purchase</h3>
         <button type="button" id="memo-purchase-x" aria-label="Close" style="background:none; border:none; font-size:1.5rem; line-height:1; cursor:pointer; color:#fff; width:auto; padding:0;">×</button>
       </div>
       <div style="padding:18px 20px;">
@@ -2674,7 +2674,7 @@ function ticketSubmitSuccessHtml(result, outwardPurposeVal) {
   if (result.ticketId) line("#15803d", "#dcfce7", "Material Issue Ticket", [result.ticketId], "Waiting in <strong>Approve Material Issue Tickets</strong> for Store to hand over.");
   if (result.excessTicketId) line("#b45309", "#fef3c7", "Excess Material Request", [result.excessTicketId], "Waiting in <strong>Approve Excess Material Request</strong>.");
   if (result.changeTicketId) line("#b45309", "#fef3c7", "Material Change Request", [result.changeTicketId], "Waiting in <strong>Approve Production Material Change Request</strong>.");
-  if ((result.memoRequestIds || []).length) line("#5b21b6", "#ede9fe", "Production Memo for Purchase", result.memoRequestIds.map(id => "#" + id), "Waiting in <strong>Approve Production Memo Purchase Requests</strong>.");
+  if ((result.memoRequestIds || []).length) line("#5b21b6", "#ede9fe", "Memo for Purchase", result.memoRequestIds.map(id => "#" + id), "Waiting in <strong>Approve Memo Purchase Requests</strong>.");
   return `
     <div style="background:var(--card, #fff); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; margin:10px 0;">
       <div style="background:#15803d; color:#fff; padding:14px 18px; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">

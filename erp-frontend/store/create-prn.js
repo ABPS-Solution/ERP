@@ -61,7 +61,7 @@ async function openCPOAllocationPicker(rowId) {
         style="width:100px; text-align:center; font-weight:700; padding:6px; border:1.5px solid var(--brand); border-radius:4px; font-size:1.05rem;">
     </div>`).join("");
 
-  // Production Memo Purchase Material (migration 249): approved memo
+  // Memo Purchase Material (migration 249): approved memo
   // requests for this item, no PRN. A request already on this row keeps
   // its quantity even if the list no longer shows it as outstanding.
   const memoRowsHtml = memoReqs.map(m => {
@@ -70,7 +70,7 @@ async function openCPOAllocationPicker(rowId) {
     return `
     <div style="display:flex; align-items:center; gap:12px; padding:11px 12px; border:1px solid #c4b5fd; background:#f5f3ff; border-radius:6px; margin-bottom:6px; font-size:0.85rem;">
       <div style="flex:1; min-width:0;">
-        <div style="font-weight:700; font-size:0.78rem; color:#5b21b6;">Production Memo Purchase Material · #${m.requestId}</div>
+        <div style="font-weight:700; font-size:0.78rem; color:#5b21b6;">Memo Purchase Material · #${m.requestId}</div>
         <div style="font-size:0.72rem; color:var(--muted);">${escapeHtml(m.jobCardNumber || m.legacyCompanyName || m.projectId || "")} · ${escapeHtml(m.department || "")}</div>
       </div>
       <span style="font-size:0.9rem; font-weight:700; color:#15803d; background:#dcfce7; padding:2px 8px; border-radius:4px; white-space:nowrap;">Needs ${fmtQty(cap)}</span>
