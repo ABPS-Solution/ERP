@@ -289,6 +289,17 @@ async function commitGateEntryRecordsToBackend() {
 
   if ([...document.querySelectorAll('.gate-row-qty-input')].some(i => i.value === '' || !(Number(i.value) >= 0))) return abpsAlert("Every Invoice Qty must be a number of 0 or more.");
 
+  // The AI can read one invoice line twice. Make the operator look before saving.
+  {
+    const seen = {}, dups = [];
+    (activeParsedGatePayloadCache.lineItems || []).forEach(li => {
+      const k = String(li.rawDescriptionLine || li.materialName || '').trim().toUpperCase().replace(/\s+/g, ' ');
+      if (!k) return;
+      if (seen[k]) { if (!dups.includes(k)) dups.push(k); } else seen[k] = 1;
+    });
+    if (dups.length && !(await abpsConfirm('The same material is listed more than once: ' + dups.join(', ') + '. Check it against the invoice. Save anyway?'))) return;
+  }
+
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle;"></div> Generating Gate Entry...';
   showBlockingOverlay("Saving Gate Entry...");
