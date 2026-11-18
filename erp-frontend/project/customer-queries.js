@@ -120,13 +120,13 @@ async function attributeCqCommunication(communicationId) {
 
 function renderCqBucketBar() {
   const bar = document.getElementById("cq-bucket-bar");
-  bar.innerHTML = CQ_BUCKETS.map(([val, label]) => `
+  const bucketBtns = CQ_BUCKETS.map(([val, label]) => `
     <button type="button" class="nav-btn-styled cq-bucket-btn" data-bucket="${val}" onclick="selectCqBucket('${val}')"
       style="padding:6px 14px; font-size:0.8rem; border:1.5px solid var(--border); background:${val === cqActiveBucket ? 'var(--accent)' : '#fff'}; color:${val === cqActiveBucket ? '#fff' : 'var(--text)'};">${label}</button>
   `).join("");
   const chip = (on, label, fn, arg) => `<button type="button" class="nav-btn-styled" onclick="${fn}(${arg})" style="padding:5px 12px; font-size:0.78rem; border:1.5px solid ${on ? 'var(--accent)' : 'var(--border)'}; background:${on ? 'var(--accent)' : '#fff'}; color:${on ? '#fff' : 'var(--text)'};">${label}</button>`;
   const row = (title, chips) => `<div style="flex-basis:100%; display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:6px;"><span style="font-size:0.75rem; font-weight:800; text-transform:uppercase; color:#475569; min-width:96px;">${title}</span>${chips}</div>`;
-  bar.innerHTML += row('Department', chip(!cqFilterDept.length, 'All', 'cqToggleFilter', "'dept',''") + CQ_DEPARTMENT_OPTIONS.map(d => chip(cqFilterDept.includes(d), d, 'cqToggleFilter', `'dept','${d}'`)).join(''))
+  bar.innerHTML = row('Time Range', bucketBtns) + row('Department', chip(!cqFilterDept.length, 'All', 'cqToggleFilter', "'dept',''") + CQ_DEPARTMENT_OPTIONS.map(d => chip(cqFilterDept.includes(d), d, 'cqToggleFilter', `'dept','${d}'`)).join(''))
     + row('Query about', chip(!cqFilterAbout.length, 'All', 'cqToggleFilter', "'about',''") + CQ_ABOUT_OPTIONS.map(([v, l]) => chip(cqFilterAbout.includes(v), l, 'cqToggleFilter', `'about','${v}'`)).join('') + chip(cqFilterAbout.includes('Unlinked'), 'Not linked to a project', 'cqToggleFilter', "'about','Unlinked'"));
 }
 
@@ -250,6 +250,7 @@ async function toggleCqManualForm() {
     cqOpenCreateFormFor = null;
     zone.style.display = "none";
     zone.innerHTML = "";
+    cqSyncManualBtn();
     return;
   }
   cqOpenCreateFormFor = 'manual';
@@ -264,6 +265,12 @@ async function toggleCqManualForm() {
   await ensureCqProjectData();
   zone.style.display = "block";
   renderCqCreateForm('manual');
+  cqSyncManualBtn();
+}
+
+function cqSyncManualBtn() {
+  const b = document.getElementById("cq-manual-btn");
+  if (b) b.textContent = cqOpenCreateFormFor === 'manual' ? 'Collapse Form' : '+ Add New Customer Query';
 }
 
 function renderCqCreateForm(messageId) {
@@ -461,6 +468,7 @@ async function submitCqCreateQuery(messageId) {
         const zone = document.getElementById("cq-create-form-manual");
         zone.style.display = "none"; zone.innerHTML = "";
       }
+      cqSyncManualBtn();
       await loadCqIncomingEmails();
     } else {
       showBOQBanner(bannerId, "⚠️ " + (data.error || "Failed."), "error");
