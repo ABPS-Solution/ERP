@@ -65,6 +65,7 @@ function switchCqMode(mode) {
 // AI-guessed. A sent email the scan couldn't tie to exactly one query by
 // thread or recipient shows here until a human assigns it.
 async function loadCqUnattributed() {
+  return; // sent mail is no longer scanned (18 Nov 2026)
   const zone = document.getElementById("cq-unattributed-zone");
   try {
     const data = await apFetch({ action: "fetchUnattributedCommunications" });
@@ -732,14 +733,13 @@ function renderCqPendingEditForm(queryId) {
         </div>
       </div>` : ''}
       <div style="display:flex; justify-content:flex-end; align-items:center; gap:12px; margin-top:12px; flex-wrap:wrap;">
-        <label style="display:flex; align-items:center; gap:6px; font-size:0.8rem; font-weight:700; ${q.hasResolutionEmail ? 'color:var(--text);' : 'color:var(--muted); cursor:not-allowed;'}">
-          <input type="checkbox" ${q.hasResolutionEmail ? '' : 'disabled'} ${s.customerInformedConfirmed ? 'checked' : ''}
+        <label style="display:flex; align-items:center; gap:6px; font-size:0.8rem; font-weight:700; color:var(--text);">
+          <input type="checkbox"  ${s.customerInformedConfirmed ? 'checked' : ''}
             onchange="updateCqPendingField(${queryId},'customerInformedConfirmed',this.checked)" />
           Did we inform the Customer?
         </label>
         <button class="nav-btn-styled" style="background:#15803d; padding:9px 22px; font-weight:700;" onclick="submitCqCloseQuery(${queryId})">Close Query</button>
       </div>
-      ${!q.hasResolutionEmail ? `<div style="font-size:0.72rem; color:var(--muted); margin-top:6px; text-align:right;">No Resolution email detected yet for this query — send it, then "Check for my email now" to unlock the checkbox.</div>` : ''}
     </div>
   `;
   renderCqCommunicationsList(queryId);
