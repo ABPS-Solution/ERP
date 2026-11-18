@@ -293,7 +293,7 @@ function renderCqCreateForm(messageId) {
       </div>
     </div>`;
   const companyBlock = about === 'Project' ? '' : `
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
       <div>
         <label class="field-label" style="margin-top:0;">Company Name *</label>
         <input type="text" value="${esc(s.legacyCompanyName)}" oninput="updateCqCreateField('${messageId}','legacyCompanyName',this.value)"
@@ -306,64 +306,74 @@ function renderCqCreateForm(messageId) {
           style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" />
       </div>` : '<div></div>'}
     </div>`;
-  zone.innerHTML = aboutPicker + companyBlock + `
+  const inp = 'width:100%; padding:9px 10px; border:1.5px solid var(--border); border-radius:var(--radius); font-size:0.88rem; box-sizing:border-box;';
+  const ro = inp + ' background:#f1f5f9; color:#334155;';
+  const lbl = (t, hint) => `<label class="field-label" style="margin-top:0;">${t}${hint ? ` <span style="font-weight:400; text-transform:none; color:var(--muted);">${hint}</span>` : ''}</label>`;
+  const sec = (n, title, body, hidden) => `
+    <div style="${hidden ? 'display:none;' : ''} border:1.5px solid var(--border); border-radius:var(--radius); background:#fff; margin-bottom:14px; overflow:hidden;">
+      <div style="display:flex; align-items:center; gap:10px; padding:9px 14px; background:#f1f5f9; border-bottom:1.5px solid var(--border);">
+        <span style="width:22px; height:22px; border-radius:50%; background:var(--brand); color:#fff; font-size:0.75rem; font-weight:800; display:inline-flex; align-items:center; justify-content:center;">${n}</span>
+        <span style="font-size:0.8rem; font-weight:800; text-transform:uppercase; letter-spacing:0.03em; color:#1e3a8a;">${title}</span>
+      </div>
+      <div style="padding:14px;">${body}</div>
+    </div>`;
+  const uniqProducts = products.filter((p, i, a) => a.findIndex(x => x.standardProductName === p.standardProductName) === i);
+  const projectBlock = `
     <div style="${about === 'Project' ? '' : 'display:none;'}">
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
-      <div style="position:relative;">
-        <label class="field-label" style="margin-top:0;">Project ID or Customer Name *</label>
-        <input type="text" id="cq-cf-project-${messageId}" autocomplete="off" value="${esc(s.projectId)}"
-          oninput="handleCqCreateProjectInput('${messageId}', this.value)"
-          style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" />
-        <div id="cq-cf-project-dd-${messageId}" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:220px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+        <div style="position:relative;">
+          ${lbl('Project ID or Customer Name *')}
+          <input type="text" id="cq-cf-project-${messageId}" autocomplete="off" value="${esc(s.projectId)}" placeholder="Start typing a Project ID or company name"
+            oninput="handleCqCreateProjectInput('${messageId}', this.value)" style="${inp}" />
+          <div id="cq-cf-project-dd-${messageId}" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--brand); border-top:none; border-radius:0 0 4px 4px; max-height:220px; overflow-y:auto; z-index:200; box-shadow:0 6px 16px rgba(0,0,0,0.15);"></div>
+        </div>
+        <div>
+          ${lbl('Customer Name')}
+          <input type="text" readonly value="${esc(s.customerName)}" style="${ro}" />
+        </div>
       </div>
-      <div>
-        <label class="field-label" style="margin-top:0;">Customer Name</label>
-        <input type="text" readonly value="${esc(s.customerName)}" style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius); background:#f1f5f9;" />
-      </div>
-    </div>
-    </div>
-    <div style="margin-top:12px;">
-      <label class="field-label" style="margin-top:0;">Customer Email ${isManual ? '*' : ''}</label>
+    </div>`;
+  const emailBlock = `
+    <div style="margin-top:14px;">
+      ${lbl('Customer Email ' + (isManual ? '*' : ''))}
       <input type="email" ${isManual ? '' : 'readonly'} value="${esc(s.customerEmail)}"
         ${isManual ? `oninput="updateCqCreateField('${messageId}','customerEmail',this.value)"` : ''}
-        placeholder="${isManual ? 'Required — used to detect our reply to this customer' : ''}"
-        style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius); ${isManual ? '' : 'background:#f1f5f9;'}" />
-    </div>
-
-    <div style="margin-top:12px; ${about === 'Project' ? '' : 'display:none;'}">
-      <label class="field-label" style="margin-top:0;">Standard Product Name * (select one or more)</label>
+        placeholder="${isManual ? 'Required. Used to detect our reply to this customer' : ''}"
+        style="${isManual ? inp : ro}" />
+    </div>`;
+  const productBlock = `
+    <div>
+      ${lbl('Standard Product Name *', '(select one or more)')}
       <div class="pill-group">
-        ${products.length === 0 ? `<span style="font-size:0.78rem; color:var(--muted);">${s.projectId ? 'No Standard Product Names found for this project.' : 'Select a Project first.'}</span>` : products.map(p => `
+        ${uniqProducts.length === 0 ? `<span style="font-size:0.8rem; color:var(--muted);">${s.projectId ? 'No Standard Product Names found for this project.' : 'Select a Project first.'}</span>` : uniqProducts.map(p => `
           <input type="checkbox" id="cq-cf-prod-${messageId}-${escapeHtml(p.standardProductName)}" name="cq-cf-prod-${messageId}" value="${esc(p.standardProductName)}"
             ${s.standardProductNames.includes(p.standardProductName) ? 'checked' : ''} onchange="updateCqCreateProducts('${messageId}')" />
           <label for="cq-cf-prod-${messageId}-${escapeHtml(p.standardProductName)}">${escapeHtml(p.standardProductName)}</label>
         `).join('')}
       </div>
-      ${s.orderProductDescriptions.length ? `<div style="font-size:0.78rem; color:var(--muted); margin-top:4px;">Order Product Description: ${escapeHtml(s.orderProductDescriptions.join('; '))}</div>` : ''}
-    </div>
-
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:12px;">
+      ${s.orderProductDescriptions.length ? `<div style="font-size:0.8rem; color:#475569; margin-top:8px; padding:8px 10px; background:#f8fafc; border-left:3px solid var(--brand);"><strong>Order Product Description:</strong> ${escapeHtml(s.orderProductDescriptions.join('; '))}</div>` : ''}
+    </div>`;
+  const stageBlock = `
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; ${about === 'Project' ? 'margin-top:14px;' : ''}">
       <div>
-        <label class="field-label" style="margin-top:0;">Name of Stage *</label>
-        <select id="cq-cf-stage-${messageId}" onchange="updateCqCreateField('${messageId}','stageName',this.value); renderCqIncomingList();" style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);">
-          <option value="">— Select Stage —</option>
+        ${lbl('Name of Stage *')}
+        <select id="cq-cf-stage-${messageId}" onchange="updateCqCreateField('${messageId}','stageName',this.value); renderCqIncomingList();" style="${inp}">
+          <option value="">Select stage</option>
           ${CQ_STAGE_OPTIONS.map(o => `<option value="${o}" ${s.stageName === o ? 'selected' : ''}>${o}</option>`).join('')}
         </select>
-        ${s.stageName === 'Others' ? `<input type="text" placeholder="Describe the stage" value="${esc(s.stageOtherText)}" oninput="updateCqCreateField('${messageId}','stageOtherText',this.value)" style="width:100%; margin-top:6px; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" />` : ''}
+        ${s.stageName === 'Others' ? `<input type="text" placeholder="Describe the stage" value="${esc(s.stageOtherText)}" oninput="updateCqCreateField('${messageId}','stageOtherText',this.value)" style="${inp} margin-top:6px;" />` : ''}
       </div>
       <div>
-        <label class="field-label" style="margin-top:0;">Customer Query Date *</label>
-        <input type="date" value="${esc(s.customerQueryDate)}" oninput="updateCqCreateField('${messageId}','customerQueryDate',this.value)" style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" />
+        ${lbl('Customer Query Date *')}
+        <input type="date" value="${esc(s.customerQueryDate)}" oninput="updateCqCreateField('${messageId}','customerQueryDate',this.value)" style="${inp}" />
       </div>
-    </div>
-
-    <div style="margin-top:12px;">
-      <label class="field-label" style="margin-top:0;">Customer Query</label>
-      <textarea rows="3" oninput="updateCqCreateField('${messageId}','customerQuery',this.value)" style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);">${esc(s.customerQuery)}</textarea>
-    </div>
-
-    <div style="margin-top:12px;">
-      <label class="field-label" style="margin-top:0;">Concerned Departments * (select one or more)</label>
+    </div>`;
+  const detailBlock = `
+    ${lbl('Customer Query')}
+    <textarea rows="3" placeholder="What is the customer asking?" oninput="updateCqCreateField('${messageId}','customerQuery',this.value)" style="${inp} resize:vertical;">${esc(s.customerQuery)}</textarea>`;
+  const whoBlock = `
+    <div>
+      ${lbl('Concerned Departments *', '(select one or more)')}
       <div class="pill-group">
         ${CQ_DEPARTMENT_OPTIONS.map(d => `
           <input type="checkbox" id="cq-cf-dept-${messageId}-${d}" name="cq-cf-dept-${messageId}" value="${d}" ${s.concernedDepartments.includes(d) ? 'checked' : ''} onchange="updateCqCreateDepartments('${messageId}')" />
@@ -371,20 +381,23 @@ function renderCqCreateForm(messageId) {
         `).join('')}
       </div>
     </div>
-
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:12px;">
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:14px;">
       <div>
-        <label class="field-label" style="margin-top:0;">ABPS Responsible Person *</label>
-        <input type="text" value="${esc(s.abpsResponsiblePerson)}" oninput="updateCqCreateField('${messageId}','abpsResponsiblePerson',this.value)" style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" />
+        ${lbl('ABPS Responsible Person *')}
+        <input type="text" value="${esc(s.abpsResponsiblePerson)}" oninput="updateCqCreateField('${messageId}','abpsResponsiblePerson',this.value)" style="${inp}" />
       </div>
       <div>
-        <label class="field-label" style="margin-top:0;">Target Closing Date Given by Departments *</label>
-        <input type="date" value="${esc(s.targetClosingDate)}" oninput="updateCqCreateField('${messageId}','targetClosingDate',this.value)" style="width:100%; padding:8px; border:1.5px solid var(--border); border-radius:var(--radius);" />
+        ${lbl('Target Closing Date Given by Departments *')}
+        <input type="date" value="${esc(s.targetClosingDate)}" oninput="updateCqCreateField('${messageId}','targetClosingDate',this.value)" style="${inp}" />
       </div>
-    </div>
-
-    <div style="text-align:right; margin-top:14px;">
-      <button class="nav-btn-styled" style="background:var(--accent); padding:9px 22px; font-weight:700;" onclick="submitCqCreateQuery('${messageId}')">Create Query</button>
+    </div>`;
+  zone.innerHTML =
+    sec(1, 'What is this query about', aboutPicker + companyBlock + projectBlock + emailBlock) +
+    sec(2, 'Products and stage', (about === 'Project' ? productBlock : '') + stageBlock) +
+    sec(3, 'The query', detailBlock) +
+    sec(4, 'Who and by when', whoBlock) + `
+    <div style="text-align:right;">
+      <button class="nav-btn-styled" style="background:var(--accent); padding:10px 28px; font-weight:700; font-size:0.9rem;" onclick="submitCqCreateQuery('${messageId}')">Create Query</button>
     </div>
   `;
 }
