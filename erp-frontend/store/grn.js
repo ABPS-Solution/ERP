@@ -218,6 +218,7 @@ async function initializeStoreEntryWorkspaceQueue() {
           </div>
         </div>`;
       feed.appendChild(card);
+      if (item.defaultPoNo) sePrefillConverters(item.gateNumber);
     });
 
     // "Suggested matches" (AI item-code pills) removed 29 Sep 2026 — operators pick the material themselves.

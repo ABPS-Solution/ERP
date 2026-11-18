@@ -418,6 +418,7 @@ async function checkStoreEntryPONumber(gateNum) {
       // once shown, even after the number was corrected.
       input.style.borderColor = "var(--border)";
       msg.textContent = "";
+      sePrefillConverters(gateNum);
     }
   } catch(e) { msg.textContent = ""; }
 }

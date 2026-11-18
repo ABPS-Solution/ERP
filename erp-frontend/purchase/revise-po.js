@@ -611,7 +611,10 @@ function renderPORevisionCard() {
         ? `<span style="font-size:0.72rem; color:#64748b;" title="Material has been received on this row, so it cannot be removed">Cannot remove: received</span>`
         : `<button onclick="rpoRemoveRow(${idx})" style="font-size:0.72rem; padding:3px 10px; background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; border-radius:4px; cursor:pointer; font-weight:700;">Remove row</button>`,
       vdqAttrs: `min="${Number(li.receivedQty)||0}" class="rpo-vdq" data-idx="${idx}" value="${formatQtyTrimmed(li.quantity)}" oninput="updateRPORowField(${idx},'quantity',this.value)" onblur="handleRPOQtyBlur(${idx})"`,
-      rateAttrs: `class="rpo-rate" data-idx="${idx}" value="${formatQtyTrimmed(li.rate)}" oninput="updateRPORowField(${idx},'rate',this.value)"`,
+      rateAttrs: rpoDocFactor(li)
+        ? `class="rpo-rate" data-idx="${idx}" value="${formatQtyTrimmed(Math.round((parseFloat(li.rate) || 0) * rpoDocFactor(li) * 10000) / 10000)}" oninput="rpoRateDocInput(${idx},this.value)"`
+        : `class="rpo-rate" data-idx="${idx}" value="${formatQtyTrimmed(li.rate)}" oninput="updateRPORowField(${idx},'rate',this.value)"`,
+      docNote: rpoDocFactor(li) ? `PO document unit: ${li.docUnit}. 1 ${li.docUnit} = ${formatQtyTrimmed(li.unitConversion)} ${li.unit}. Quantity is in ${li.unit}; Rate / Qty is per ${li.docUnit}.` : '',
       discAttrs: `class="rpo-disc" data-idx="${idx}" value="${formatQtyTrimmed(li.discountPercent)}" oninput="updateRPORowField(${idx},'discountPercent',this.value)"`,
       diffAttrs: `class="rpo-costing-diff" data-idx="${idx}"`,
       amountId: `rpo-amount-${idx}`,
@@ -746,6 +749,19 @@ function renderPORevisionCard() {
 // every keystroke, so a later full re-render (e.g. after saving the
 // Allocate to PRNs modal on a DIFFERENT row) never loses an in-progress
 // edit on this one — nothing here is ever read back out of the DOM.
+// Rows bought in a different unit from stock (docUnit + unitConversion from the PO): the Rate box is
+// per document unit, the stored rate stays per stock unit. Quantity stays in stock unit.
+function rpoDocFactor(li) { return li && li.docUnit && Number(li.unitConversion) > 0 ? Number(li.unitConversion) : 0; }
+function rpoRateDocInput(idx, value) {
+  const li = window.rpoActive?.lineItems[idx];
+  if (!li) return;
+  const f = rpoDocFactor(li);
+  const v = parseFloat(value);
+  li.rate = (f && !isNaN(v)) ? Math.round(v / f * 1e6) / 1e6 : value;
+  updateRPORowAmount(idx);
+  updateRPOGrandTotal();
+}
+
 function updateRPORowField(idx, field, value) {
   const li = window.rpoActive?.lineItems[idx];
   if (!li) return;
@@ -2055,6 +2071,7 @@ function poRevRowHtml(o) {
         <div style="display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;">
           <span style="font-weight:700; font-size:0.95rem; color:#111827;">${esc(o.description)}</span>
           <span style="font-size:0.78rem; color:#64748b;">${esc(o.unit || '')}</span>
+          ${o.docNote ? `<span style="font-size:0.75rem; font-weight:700; color:#78350f; background:#fffbeb; border:1px solid #fde68a; border-radius:4px; padding:2px 8px;">${esc(o.docNote)}</span>` : ''}
         </div>
         <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(110px, 1fr)); border:1.5px solid #cbd5e1; border-radius:6px; overflow:hidden; margin:-1px 0 0 -1px;">
           <div style="${calcCell}"><div style="${lbl}">Old PO Qty</div><div style="${val} color:#1a2332;">${fmt(o.oldQty)}</div></div>

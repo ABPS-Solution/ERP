@@ -103,6 +103,26 @@ function updateSEUnitConverterLock(gateNumber, idx) {
   }
 }
 
+// sePrefillConverters — when the PO was bought in a different unit from stock, fill the
+// still-blank Unit Converter from the PO (the store can still change it).
+async function sePrefillConverters(gateNumber) {
+  const poInput = document.getElementById('se-po-number-' + gateNumber);
+  const po = poInput ? poInput.value.trim() : '';
+  if (!po) return;
+  let conv = {};
+  try { const d = await apFetch({ action: 'fetchPoUnitConversions', poNo: po }); conv = (d && d.conversions) || {}; } catch (e) { return; }
+  document.querySelectorAll('.se-item-code-' + gateNumber).forEach(codeEl => {
+    const idx = codeEl.dataset.idx;
+    const c = conv[(codeEl.value || '').trim()];
+    const inp = document.querySelector('.se-unit-converter-' + gateNumber + '[data-idx="' + idx + '"]');
+    const inv = document.querySelector('.se-invoice-unit-' + gateNumber + '[data-idx="' + idx + '"]');
+    if (!c || !inp || !inv || inp.readOnly || inp.value) return;
+    if (!sameStockUnit(inv.value.trim(), c.docUnit)) return;
+    inp.value = c.factor;
+    inp.title = 'Filled from the PO (1 ' + c.docUnit + ' = ' + c.factor + '). You can change it.';
+  });
+}
+
 async function checkVendorOpenRejections() {
   const banner = document.getElementById('gate-vendor-rejection-banner');
   const vendorName = document.getElementById('gate-meta-vendor').value.trim();
