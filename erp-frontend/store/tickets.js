@@ -652,7 +652,7 @@ async function addItemToShoppingBasketRow() {
     const jobCardForCons = document.getElementById("ticket-job-card-dropdown")?.value || "";
     await ticketEnsureJcmCache_("Raw Materials Store", jobCardForCons, projectId);
     const consMatch = (window._ticketJobCardMaterialsCache.records || []).find(r =>
-      r.isConsumable && (r.materialName || "").replace(/\s+/g, '').toLowerCase() === cleanSearchKey);
+      (r.isConsumable || r.memoAllowed) && (r.materialName || "").replace(/\s+/g, '').toLowerCase() === cleanSearchKey);
     if (consMatch) {
       const existingCons = ticketFindBasketLine_(consMatch.itemCode, cleanSearchKey);
       // What is in stock is issued now; the rest becomes the Production Memo
@@ -684,7 +684,7 @@ async function addItemToShoppingBasketRow() {
         dynamicTicketShoppingBasketArray.push({
           materialName: consMatch.materialName, itemCode: consMatch.itemCode, quantity: issueQty, memoQty, shortQty,
           unitType: consMatch.unitType || "NOS", requiresBOQIncreaseFlag: false,
-          allottedRemainingLimit: canIssue, boqId: consMatch.boqId || "", isConsumable: true,
+          allottedRemainingLimit: canIssue, boqId: consMatch.boqId || "", isConsumable: !!consMatch.isConsumable,
         });
       }
       qtyInput.value = ""; ticketItemTaClear();
@@ -1906,14 +1906,14 @@ function ticketIsServiceItemMode_() {
   return dept === "Service" || dept === "Sample" || !!document.getElementById("ticket-legacy-project-toggle")?.checked;
 }
 function ticketJcmCacheKeyFor_(activeStoreScope, jobCardNumberVal, projectId) {
-  return ticketIsServiceItemMode_() ? ("SERVICE|" + activeStoreScope + "|" + projectId) : (jobCardNumberVal + "|" + projectId);
+  return ticketIsServiceItemMode_() ? ("SERVICE|" + (document.getElementById("ticket-department-outgoing-dropdown")?.value || "") + "|" + activeStoreScope + "|" + projectId) : (jobCardNumberVal + "|" + projectId);
 }
 async function ticketEnsureJcmCache_(activeStoreScope, jobCardNumberVal, projectId) {
   const cacheKey = ticketJcmCacheKeyFor_(activeStoreScope, jobCardNumberVal, projectId);
   if (window._ticketJobCardMaterialsCache && window._ticketJobCardMaterialsCache.key === cacheKey) return cacheKey;
   try {
     const data = ticketIsServiceItemMode_()
-      ? await apFetch({ action: "fetchServiceItemCatalog", typeOfStore: activeStoreScope })
+      ? await apFetch({ action: "fetchServiceItemCatalog", typeOfStore: activeStoreScope, department: document.getElementById("ticket-department-outgoing-dropdown")?.value || "" })
       : await apFetch({ action: "fetchJobCardMaterials", jobCardNumber: jobCardNumberVal, projectId: projectId });
     window._ticketJobCardMaterialsCache = { key: cacheKey, records: data.records || [] };
   } catch (e) {
@@ -1962,7 +1962,7 @@ async function loadItemCatalogForSelectedProjectAndStore() {
       const jcmCacheKeyService = ticketJcmCacheKeyFor_(activeStoreScope, "", chosenProjectVal);
       let jcmFetchService;
       try {
-        jcmFetchService = await apFetch({ action: "fetchServiceItemCatalog", typeOfStore: activeStoreScope });
+        jcmFetchService = await apFetch({ action: "fetchServiceItemCatalog", typeOfStore: activeStoreScope, department: document.getElementById("ticket-department-outgoing-dropdown")?.value || "" });
       } catch (e) {
         jcmFetchService = { success: false, records: [], error: e.message };
       }
@@ -1988,7 +1988,7 @@ async function loadItemCatalogForSelectedProjectAndStore() {
         jcmFetchService.records.forEach(r => {
           const opt = document.createElement("option");
           opt.value = r.materialName; if (r.itemCode) opt.dataset.itemcode = r.itemCode;
-          opt.textContent = r.isConsumable ? r.materialName + "  · Production Memo Purchase Material" : r.materialName;
+          opt.textContent = r.isConsumable ? r.materialName + "  · Production Memo Purchase Material" : (r.memoAllowed && !(Number(r.remainingQty) > 0) ? r.materialName + "  · Not in stock, ask through Production Memo" : r.materialName);
           // Two Spare Store items can legitimately share the same Name +
           // Rating and differ only by Make (e.g. SIEMENS vs L&T variants) —
           // the dropdown option text/value alone can't tell them apart.
