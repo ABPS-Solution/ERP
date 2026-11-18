@@ -365,7 +365,7 @@ function renderSrchPOResultsAsPOCards(list) {
           <span style="background:var(--accent); color:#fff; font-weight:700; padding:3px 10px; font-family:monospace;">${po.poNo}</span>
           <span style="margin-left:8px; font-weight:700;">${escapeHtml(po.vendorName)}</span>
           ${po.revisionNumber ? `<span style="margin-left:8px; font-size:0.72rem; color:var(--muted);">V${po.revisionNumber}</span>` : ""}
-          ${po.poType && po.poType !== "Material" ? `<span style="margin-left:8px; font-size:0.72rem; font-weight:800; padding:2px 8px; border-radius:999px; background:#ede9fe; color:#6d28d9;">${po.poType}${po.completedAt ? " · Completed" : ""}</span>` : ""}
+          ${po.poType && po.poType !== "Material" ? `<span style="margin-left:8px; font-size:0.72rem; font-weight:800; padding:2px 8px; border-radius:999px; background:#ede9fe; color:#6d28d9;">${poTypeLabel(po.poType)}${po.completedAt ? " · Completed" : ""}</span>` : ""}
         </div>
         <div style="font-size:1rem; color:#334155; font-weight:600;">${formatOrdinalDate(po.orderDate)} &nbsp;|&nbsp; Grand Total: <strong style="color:var(--brand);">${fmt(po.grandTotal)}</strong></div>
       </div>
@@ -838,6 +838,7 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
 // Same form, same flow. Rows are free text with a Project ID each: no item
 // code, no PRN allocation, nothing received into stock.
 function cpoIsTransport() { return ["Transport", "Repair", "Labour"].includes(window.cpoPoType); }
+const poTypeLabel = (t) => (t === "Labour" ? "Service" : t);
 const CPO_PO_TYPES = ["Material", "Transport", "Repair", "Labour"];
 const CPO_TYPE_NOTES = {
   Transport: "Rows are free text with a Project ID each. Nothing is received into stock; mark it Completed once the trip is done.",
@@ -846,7 +847,7 @@ const CPO_TYPE_NOTES = {
 };
 function cpoPoTypeButtonsHtml() {
   return CPO_PO_TYPES.map(t => `<button type="button" class="cpo-type-btn" data-type="${t}" onclick="onCPOPoTypeChange('${t}')"
-    style="width:auto; padding:7px 16px; border-radius:999px; font-weight:700; font-size:0.85rem; cursor:pointer;">${t}</button>`).join("");
+    style="width:auto; padding:7px 16px; border-radius:999px; font-weight:700; font-size:0.85rem; cursor:pointer;">${poTypeLabel(t)}</button>`).join("");
 }
 
 function cpoApplyPoTypeLabels() {

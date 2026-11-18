@@ -321,7 +321,7 @@ function rptDetailHtml(r) {
   const pdRow = (cols, cells) => `<div class="rpt-pd-row" style="display:grid; grid-template-columns:${cols}; margin-left:-1.5px;">${cells}</div>`;
   const pdf = r.pdfUrl ? `<a href="${driveLink(r.pdfUrl)}" target="_blank" rel="noopener" style="font-weight:700;">${r.pdfIsDraft ? "View Draft" : "View PO"} ↗</a>` : "";
   const header = `<div style="border:${B}; border-bottom:none; border-radius:var(--radius); background:#fff; overflow:hidden;">
-      ${pdRow("repeat(7, minmax(0, 1fr))", cell("PO Type", r.poType) + cell("Vendor GSTIN", h.vendorGstin)
+      ${pdRow("repeat(7, minmax(0, 1fr))", cell("PO Type", poTypeLabel(r.poType)) + cell("Vendor GSTIN", h.vendorGstin)
         + cell("Vendor Contact Name", h.vendorContact) + cell("Vendor Contact Number", h.vendorPhone) + cell("Vendor Contact Email", h.vendorEmail)
         + cell("Vendor City / State", [h.vendorCity, h.vendorState].filter(Boolean).join(", "))
         + cell("Trade Type", h.tradeType === "Import" ? `Import${h.usdRate ? " (USD rate " + trimNum(Number(h.usdRate)) + ")" : ""}` : h.tradeType))}
