@@ -825,9 +825,9 @@
   #canvas-module-security table { border-collapse: collapse !important; border: 2px solid #94a3b8; background: #fff; }
   #canvas-module-security th, #canvas-module-security td { border: 2px solid #94a3b8 !important; vertical-align: middle; }
   #canvas-module-security thead th, #canvas-module-security thead tr { background: #e0e7ff !important; color: #1e3a8a; }
-  #canvas-module-buffer-suggestions table, #canvas-module-items-to-check table { border-collapse: collapse !important; border: 2px solid #94a3b8; background: #fff; }
-  #canvas-module-buffer-suggestions th, #canvas-module-buffer-suggestions td, #canvas-module-items-to-check th, #canvas-module-items-to-check td { border: 2px solid #94a3b8 !important; vertical-align: middle; }
-  #canvas-module-buffer-suggestions thead th, #canvas-module-buffer-suggestions thead tr, #canvas-module-items-to-check thead th, #canvas-module-items-to-check thead tr { background: #e0e7ff !important; color: #1e3a8a; }
+  #canvas-module-memo-tracking table, #canvas-module-buffer-suggestions table, #canvas-module-items-to-check table { border-collapse: collapse !important; border: 2px solid #94a3b8; background: #fff; }
+  #canvas-module-memo-tracking th, #canvas-module-memo-tracking td, #canvas-module-buffer-suggestions th, #canvas-module-buffer-suggestions td, #canvas-module-items-to-check th, #canvas-module-items-to-check td { border: 2px solid #94a3b8 !important; vertical-align: middle; }
+  #canvas-module-memo-tracking thead th, #canvas-module-memo-tracking thead tr, #canvas-module-buffer-suggestions thead th, #canvas-module-buffer-suggestions thead tr, #canvas-module-items-to-check thead th, #canvas-module-items-to-check thead tr { background: #e0e7ff !important; color: #1e3a8a; }
   #canvas-module-buffer-suggestions tbody tr:hover td, #canvas-module-items-to-check tbody tr:hover td { background: #f8fafc; }
   #fgstock-live-view table { border-collapse: collapse !important; border: 2px solid #94a3b8; background: #fff; table-layout: fixed; }
   #fgstock-live-view th, #fgstock-live-view td { border: 2px solid #94a3b8 !important; vertical-align: middle; word-break: break-word; }
@@ -1551,6 +1551,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-store-ticket"            onclick="navigateToStoreWorkspacePanel('store-material-request')"><span class="mc-label">Create Material Issue Ticket</span></div>
         <div class="menu-card" id="mod-job-card-sheet"          onclick="switchActiveDashboardModule('job-card-sheet')"><span class="mc-label">Job Card Sheet</span></div>
+        <div class="menu-card" id="mod-memo-tracking" onclick="switchActiveDashboardModule('memo-tracking')" style="display:none;"><span class="mc-label">Memo Purchase Requests Tracking</span></div>
       </div>
       <div class="sec-label">Finished Goods</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
@@ -6478,6 +6479,17 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
     <div id="pwk-body" class="dd-body" style="padding:6px 14px 10px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-content:start; gap:14px; box-sizing:border-box;"></div>
   </div>
 
+  <div id="canvas-module-memo-tracking" class="workspace-panel" style="display:none;">
+    <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
+      <div></div>
+      <button class="nav-btn-styled" onclick="exitMemoTrackingBackToMenu()">Return to Main Dashboard</button>
+    </div>
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Memo Purchase Requests Tracking</h2>
+      <div id="mt-body"></div>
+    </div>
+  </div>
+
   <div id="canvas-module-items-to-check" class="workspace-panel" style="display:none;">
     <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
       <div></div>
@@ -6890,6 +6902,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 <script src="project/buffer-suggestions.js"></script>
 <script src="project/customer-queries.js"></script>
 <script src="project/items-to-check.js"></script>
+<script src="production/memo-tracking.js"></script>
 <script src="project/pending-work-dashboard.js"></script>
 <!-- Live updates: loads LAST, it wraps apFetch and buildMultiContactDirectoryInterface. -->
 <script src="shared/liveUpdates.js"></script>

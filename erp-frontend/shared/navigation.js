@@ -460,6 +460,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canProductionPlanning    = userPermissionsObject.productionPlanning === true;
   const canCreateStoreTicket     = userPermissionsObject.storeCreateTicket === true;
   const canJobCardSheet          = userPermissionsObject.jobCardSheet === true;
+  const canMemoTracking          = userPermissionsObject.viewMemoTracking === true;
   const canAddFinishedGoods      = userPermissionsObject.addFinishedGoodsStore === true;
   const canViewProductionDashboard = userPermissionsObject.viewProductionDashboard === true;
 
@@ -520,6 +521,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-production-planning")) document.getElementById("mod-production-planning").style.display = canProductionPlanning ? "block" : "none";
   if (document.getElementById("mod-store-ticket"))        document.getElementById("mod-store-ticket").style.display        = canCreateStoreTicket ? "block" : "none";
   if (document.getElementById("mod-job-card-sheet"))      document.getElementById("mod-job-card-sheet").style.display      = canJobCardSheet ? "block" : "none";
+  if (document.getElementById("mod-memo-tracking"))       document.getElementById("mod-memo-tracking").style.display       = canMemoTracking ? "block" : "none";
   if (document.getElementById("mod-fg-add"))              document.getElementById("mod-fg-add").style.display              = canAddFinishedGoods ? "block" : "none";
 
   if (document.getElementById("mod-tourexpense"))  document.getElementById("mod-tourexpense").style.display  = canTourExpense  ? "block" : "none";
@@ -579,7 +581,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   // Production department block (Batch 7, 16 Sep 2026)
   const productionBlock = document.getElementById("dashboard-production-department-header-block");
   if (productionBlock) productionBlock.style.display = (canAssignMRD || canReviseMRD || canProductionPlanning
-    || canCreateStoreTicket || canJobCardSheet || canAddFinishedGoods || canViewProductionDashboard)
+    || canCreateStoreTicket || canJobCardSheet || canMemoTracking || canAddFinishedGoods || canViewProductionDashboard)
     ? "block" : "none";
   // Quality Assurance department block (Batch 8, 16 Sep 2026)
   const qaBlock = document.getElementById("dashboard-qa-department-header-block");
@@ -882,6 +884,7 @@ function switchActiveDashboardModule(targetSectionId) {
   if (targetSectionId === "order-payment" && typeof initializeOrderPaymentPanel === "function") initializeOrderPaymentPanel();
   if (targetSectionId === "customer-queries" && typeof initializeCustomerQueriesWorkspace === "function") initializeCustomerQueriesWorkspace();
   if (targetSectionId === "items-to-check" && typeof initializeItemsToCheckPanel === "function") initializeItemsToCheckPanel();
+  if (targetSectionId === "memo-tracking" && typeof initializeMemoTrackingPanel === "function") initializeMemoTrackingPanel();
   // Project Dispatch Invoice's four sections (19 Sep 2026, ported from
   // Portal's migrations 208-209 -- was one "project-invoice" screen/
   // permission). Each is a plain top-level panel via the generic
