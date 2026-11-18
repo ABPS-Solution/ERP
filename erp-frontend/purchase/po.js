@@ -784,6 +784,7 @@ async function initializeCreatePOPanel(authorizePoNo = null, containerId = "crea
           return {
             id: window.cpoRowSeq, description: li.description || "", additionalDescription: li.additionalDescription || "", itemCode: li.itemCode || "",
             quantity: li.quantity, unit: li.unit || "", rate: li.rate, discountPercent: li.discountPercent || 0,
+            docUnit: li.docUnit || "", unitConversion: li.unitConversion || "", docQuantity: li.docQuantity ?? "", docRate: li.docRate ?? "",
             projectIds: [], allocations: li.allocations || [], memoAllocations: li.memoAllocations || [], boqAllocations: li.boqAllocations || [],
             projectIds: Array.isArray(li.projectIds) ? li.projectIds : (li.projectId ? [li.projectId] : []), lineKey: li.lineKey || "",
             legacyProject: li.legacyProject || "", isLegacy: !!li.legacyProject,
@@ -1298,14 +1299,18 @@ function renderCPOMaterialRows() {
         ${nameBlock}
         <div style="display:grid; grid-template-columns:repeat(8, minmax(0, 1fr)); border:1.5px solid #cbd5e1; border-radius:6px; overflow:hidden;">
           <div style="${cellIn}"><div style="${cellLbl}">Quantity *</div>
-            <input type="number" min="0" step="any" class="cpo-qty" data-rowid="${row.id}" value="${row.quantity}" oninput="updateCPORowField(${row.id},'quantity',this.value)" onblur="handleCPOQtyBlur(${row.id})" style="${inputCss}"></div>
+            <input type="number" min="0" step="any" class="cpo-qty" data-rowid="${row.id}" value="${cpoDocActive(row) ? (row.docQuantity ?? '') : row.quantity}" oninput="cpoInputField(${row.id},'quantity',this.value)" onblur="handleCPOQtyBlur(${row.id})" style="${inputCss}">
+            ${cpoDocActive(row) ? `<div class="cpo-stockqty" data-rowid="${row.id}" style="font-size:0.7rem; color:#64748b; margin-top:2px;">${cpoStockQtyText(row)}</div>` : ''}</div>
           <div style="${cellCalc}"><div style="${cellLbl}">Unit</div>
-            <div style="height:36px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.95rem; color:#334155;">${row.unit ? esc(row.unit) : '—'}</div></div>
+            <select onchange="cpoSetDocUnit(${row.id}, this.value)" title="Unit shown on the PO document. Stock unit is ${esc(row.unit || '')}" style="width:100%; height:36px; box-sizing:border-box; border:1.5px solid #cbd5e1; border-radius:4px; font-weight:700; font-size:0.9rem; text-align:center; background:#fff;">
+              <option value="">${row.unit ? esc(row.unit) : '—'}</option>
+              ${CPO_DOC_UNITS.filter(u => !sameStockUnit(u, row.unit)).map(u => `<option value="${u}" ${cpoDocActive(row) && sameStockUnit(row.docUnit, u) ? 'selected' : ''}>${u}</option>`).join('')}
+            </select></div>
           <div style="${cellCalc}"><div style="${cellLbl}">Design Rate / Qty</div>
             <div style="height:36px; display:flex; align-items:center; justify-content:center; font-family:monospace; font-weight:700; font-size:1.02rem; color:#334155;">${hasDesignRate ? fmtQty(designRate) : '—'}</div></div>
           <div style="${cellCalc} border-left:1px solid #cbd5e1;"><div style="${cellLbl}">Last Ordered Rate</div>${rmpoLastOrderedCell(row.itemCode)}</div>
           <div style="${cellIn} border-left:1px solid #cbd5e1;"><div style="${cellLbl}">Rate / Qty *</div>
-            <input type="number" min="0" step="any" class="cpo-rate" data-rowid="${row.id}" value="${row.rate}" oninput="updateCPORowField(${row.id},'rate',this.value)"
+            <input type="number" min="0" step="any" class="cpo-rate" data-rowid="${row.id}" value="${cpoDocActive(row) ? (row.docRate ?? '') : row.rate}" oninput="cpoInputField(${row.id},'rate',this.value)"
               ${rateLocked ? 'disabled title="Enter Quantity and Allocate to PRNs first"' : ''}
               style="${inputCss} ${isOverRate ? 'border-color:#dc2626; background:#fef2f2;' : (rateLocked ? 'background:#f1f5f9; cursor:not-allowed;' : '')}"></div>
           <div style="${cellIn} border-left:1px solid #cbd5e1;"><div style="${cellLbl}">Disc %</div>
@@ -1315,6 +1320,13 @@ function renderCPOMaterialRows() {
           <div style="${cellCalc}"><div style="${cellLbl}">Amount</div>
             <div style="height:36px; display:flex; align-items:center; justify-content:center; font-family:monospace; font-weight:800; font-size:1.1rem; color:#0f172a;"><span class="cpo-amount-cell" data-rowid="${row.id}">0</span></div></div>
         </div>
+        ${cpoDocActive(row) ? `<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:8px 12px; background:#fffbeb; border:1.5px solid #fde68a; border-radius:6px;">
+          <span style="font-size:0.82rem; font-weight:800; color:#78350f;">PO document unit: ${esc(row.docUnit)}. Stock unit: ${esc(row.unit)}.</span>
+          <span style="font-size:0.85rem; font-weight:700;">1 ${esc(row.docUnit)} =</span>
+          <input type="number" min="0" step="any" value="${esc(row.unitConversion ?? '')}" oninput="cpoSetConversion(${row.id}, this.value)" placeholder="required" style="width:110px; height:32px; box-sizing:border-box; padding:4px 6px; border:1.5px solid ${(parseFloat(row.unitConversion) > 0) ? '#cbd5e1' : '#dc2626'}; border-radius:4px; font-weight:700; text-align:center;">
+          <span style="font-size:0.85rem; font-weight:700;">${esc(row.unit)}</span>
+          <span style="font-size:0.75rem; color:#78350f;">Stock, PRN allocation and receiving stay in ${esc(row.unit)}. Rate / Qty above is per ${esc(row.docUnit)}.</span>
+        </div>` : ''}
         <div>
           <label style="${cellLbl} display:block;">Description of Material *</label>
           <textarea rows="1" data-rowid="${row.id}" placeholder="Required — e.g. color, variant, spec detail..."
@@ -1355,6 +1367,7 @@ function cpoRowMissing(row) {
     return missing;
   }
   if (!row.itemCode) missing.push('material');
+  if (cpoDocActive(row) && !(parseFloat(row.unitConversion) > 0)) missing.push('unit conversion');
   if (!(parseFloat(row.quantity) > 0)) missing.push('quantity');
   if (!row._allocationTouched) missing.push('PRN allocation');
   if (row.rate === '' || row.rate == null || isNaN(parseFloat(row.rate))) missing.push('Rate / Qty');
@@ -1447,6 +1460,7 @@ function selectCPOMaterial(rowId, itemCode, combinedName, unitType) {
   row.description = combinedName;
   row.itemCode = itemCode;
   row.unit = unitType || "Nos";
+  row.docUnit = ""; row.unitConversion = ""; row.docQuantity = ""; row.docRate = "";
   row.allocations = []; // old allocations were tied to the previous item code
   row.memoAllocations = [];
   row.boqAllocations = [];
@@ -1459,6 +1473,62 @@ function selectCPOMaterial(rowId, itemCode, combinedName, unitType) {
   row._editingName = false;
   document.getElementById(`cpo-desc-dd-${rowId}`).style.display = "none";
   renderCPOMaterialRows();
+  persistCPODraft();
+}
+
+// Purchase unit different from the stock unit (18 Nov 2026). row.quantity and row.rate stay
+// in the stock unit (allocations, design rate, stock all use them); when a different unit is
+// picked, the Quantity and Rate boxes edit docQuantity / docRate and the stock values are derived.
+const CPO_DOC_UNITS = ["Litre", "Meter", "KG", "NOS", "SET", "ROL", "PKT"];
+function cpoDocActive(row) { return !!row && !!row.docUnit && !!row.unit && !sameStockUnit(row.docUnit, row.unit); }
+function cpoRecalcFromDoc(row) {
+  const f = parseFloat(row.unitConversion) || 0;
+  if (!cpoDocActive(row) || !(f > 0)) return;
+  const dq = parseFloat(row.docQuantity);
+  const dr = parseFloat(row.docRate);
+  row.quantity = isNaN(dq) ? "" : Math.round(dq * f * 1000) / 1000;
+  row.rate = isNaN(dr) ? "" : Math.round(dr / f * 1e6) / 1e6;
+}
+function cpoInputField(rowId, which, value) {
+  const row = window.cpoMaterialRows.find(r => r.id === rowId);
+  if (!row) return;
+  if (!cpoDocActive(row)) return updateCPORowField(rowId, which, value);
+  row[which === 'quantity' ? 'docQuantity' : 'docRate'] = value;
+  cpoRecalcFromDoc(row);
+  const el = document.querySelector('.cpo-stockqty[data-rowid="' + rowId + '"]');
+  if (el) el.textContent = cpoStockQtyText(row);
+  updateCPORowAmount(rowId);
+  recalcCPOTotals();
+  persistCPODraft();
+}
+function cpoStockQtyText(row) {
+  const q = parseFloat(row.quantity);
+  return isNaN(q) ? "" : "= " + fmtQty(q) + " " + (row.unit || "");
+}
+function cpoSetDocUnit(rowId, unit) {
+  const row = window.cpoMaterialRows.find(r => r.id === rowId);
+  if (!row) return;
+  const wasActive = cpoDocActive(row);
+  if (!unit || sameStockUnit(unit, row.unit)) {
+    if (wasActive) { row.quantity = ""; row.rate = ""; }
+    row.docUnit = ""; row.unitConversion = ""; row.docQuantity = ""; row.docRate = "";
+  } else {
+    if (!wasActive) { row.docQuantity = ""; row.docRate = ""; row.unitConversion = ""; row.quantity = ""; row.rate = ""; }
+    row.docUnit = unit;
+  }
+  handleCPOQtyBlur(row.id);
+  renderCPOMaterialRows();
+  persistCPODraft();
+}
+function cpoSetConversion(rowId, value) {
+  const row = window.cpoMaterialRows.find(r => r.id === rowId);
+  if (!row) return;
+  row.unitConversion = value;
+  cpoRecalcFromDoc(row);
+  const el = document.querySelector('.cpo-stockqty[data-rowid="' + rowId + '"]');
+  if (el) el.textContent = cpoStockQtyText(row);
+  updateCPORowAmount(rowId);
+  recalcCPOTotals();
   persistCPODraft();
 }
 
@@ -1770,6 +1840,7 @@ async function submitCreatePO() {
     lineItems: window.cpoMaterialRows.map(r => ({
       description: r.description, additionalDescription: r.additionalDescription || "",
       itemCode: r.itemCode, quantity: parseFloat(r.quantity) || 0,
+      ...(cpoDocActive(r) ? { docUnit: r.docUnit, unitConversion: parseFloat(r.unitConversion) || 0, docQuantity: parseFloat(r.docQuantity) || 0, docRate: parseFloat(r.docRate) || 0 } : {}),
       unit: r.unit, rate: parseFloat(r.rate) || 0, discountPercent: parseFloat(r.discountPercent) || 0,
       amount: Number(r.amount) || 0,
       deliveryDate: r.deliveryDate || null,
@@ -1893,6 +1964,7 @@ async function authorizePOFromForm() {
     lineItems: window.cpoMaterialRows.map(r => ({
       description: r.description, additionalDescription: r.additionalDescription || "",
       itemCode: r.itemCode, quantity: parseFloat(r.quantity) || 0,
+      ...(cpoDocActive(r) ? { docUnit: r.docUnit, unitConversion: parseFloat(r.unitConversion) || 0, docQuantity: parseFloat(r.docQuantity) || 0, docRate: parseFloat(r.docRate) || 0 } : {}),
       unit: r.unit, rate: parseFloat(r.rate) || 0, discountPercent: parseFloat(r.discountPercent) || 0,
       amount: Number(r.amount) || 0,
       deliveryDate: r.deliveryDate || null,
@@ -2034,6 +2106,7 @@ function buildCPOEditPayload(banner) {
     lineItems: cpoIsTransport() ? cpoTransportPayloadRows() : window.cpoMaterialRows.map(r => ({
       description: r.description, additionalDescription: r.additionalDescription || "",
       itemCode: r.itemCode, quantity: parseFloat(r.quantity) || 0,
+      ...(cpoDocActive(r) ? { docUnit: r.docUnit, unitConversion: parseFloat(r.unitConversion) || 0, docQuantity: parseFloat(r.docQuantity) || 0, docRate: parseFloat(r.docRate) || 0 } : {}),
       unit: r.unit, rate: parseFloat(r.rate) || 0, discountPercent: parseFloat(r.discountPercent) || 0,
       amount: Number(r.amount) || 0,
       deliveryDate: r.deliveryDate || null,
