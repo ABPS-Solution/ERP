@@ -140,19 +140,19 @@ async function crpoSelectProject(projectId) {
 function crpoRenderHistory() {
   const d = crpoDetails;
   const revs = (d.revisions || []).map(r => `<tr style="border-bottom:1px solid var(--border);">
-      <td style="padding:6px; text-align:center; font-weight:700;">${r.revisionNo}</td>
-      <td style="padding:6px;">${escapeHtml(r.poNumber || '—')}</td>
-      <td style="padding:6px;">${escapeHtml(formatOrdinalDateTime(r.createdAt))}</td>
-      <td style="padding:6px;">${escapeHtml(r.createdBy || '')}</td>
-      <td style="padding:6px;">${escapeHtml(r.summary || '')}</td>
-      <td style="padding:6px; text-align:center;">${r.poDocumentUrl ? `<a href="${driveLink(r.poDocumentUrl)}" target="_blank" rel="noopener">View ↗</a>` : '—'}</td>
+      <td style="padding:10px 12px; text-align:center;"><span style="display:inline-block; min-width:26px; padding:2px 8px; border-radius:20px; background:var(--brand); color:#fff; font-weight:800; font-size:0.78rem;">${r.revisionNo}</span></td>
+      <td style="padding:10px 12px; font-family:monospace; font-weight:600;">${escapeHtml(r.poNumber || '—')}</td>
+      <td style="padding:10px 12px; white-space:nowrap;">${escapeHtml(formatOrdinalDateTime(r.createdAt))}</td>
+      <td style="padding:10px 12px;">${escapeHtml(r.createdBy || '')}</td>
+      <td style="padding:10px 12px; line-height:1.45;">${escapeHtml(r.summary || '')}</td>
+      <td style="padding:10px 12px; text-align:center;">${r.poDocumentUrl ? `<a href="${driveLink(r.poDocumentUrl)}" target="_blank" rel="noopener" style="display:inline-block; border:1.5px solid var(--brand); color:var(--brand); padding:3px 12px; border-radius:var(--radius); font-weight:700; font-size:0.78rem; text-decoration:none;">View ↗</a>` : '<span style="color:var(--muted);">—</span>'}</td>
     </tr>`).join('');
   const el = document.getElementById('crpo-history');
   if (!el) return;
   el.innerHTML = `
-    ${revs ? `<div style="margin-top:18px; font-weight:700;">Revision History</div>
-    <div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; font-size:0.82rem;">
-      <thead><tr style="background:var(--highlight-bg); text-align:left;"><th style="padding:6px; text-align:center;">Rev</th><th style="padding:6px;">PO Number</th><th style="padding:6px;">Date</th><th style="padding:6px;">By</th><th style="padding:6px;">Changes</th><th style="padding:6px; text-align:center;">Document</th></tr></thead>
+    ${revs ? `<div style="margin-top:22px; font-weight:800; color:var(--brand); font-size:1.05rem;">Revision History</div>
+    <div style="overflow-x:auto; margin-top:8px; background:#fff; border:1px solid var(--border); border-radius:var(--radius);"><table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+      <thead><tr style="background:var(--highlight-bg); text-align:left; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted);"><th style="padding:9px 12px; text-align:center;">Rev</th><th style="padding:9px 12px;">PO Number</th><th style="padding:9px 12px;">Date</th><th style="padding:9px 12px;">By</th><th style="padding:9px 12px;">Changes</th><th style="padding:9px 12px; text-align:center;">Document</th></tr></thead>
       <tbody>${revs}</tbody></table></div>` : ''}`;
 }
 
@@ -365,7 +365,7 @@ function crpoRenderLines() {
   const cell = 'width:100%; min-width:0; box-sizing:border-box; padding:5px; font-size:0.85rem;';
   const wrapTxt = (i, k, align) => `<textarea rows="1" oninput="crpoUpdateLine(${i}, ${jsArg(k)}, this.value); autoGrowPoField(this);" onfocus="autoGrowPoField(this);"
     style="${cell} text-align:${align}; resize:none; overflow:hidden; font-family:inherit; min-height:28px;">${escapeHtml(String(crpoReview.lineItems[i][k] ?? ''))}</textarea>`;
-  const amt = (i, k) => `<input type="text" inputmode="decimal" value="${escapeHtml(formatIndianCurrencyInput(crpoReview.lineItems[i][k] ?? ''))}"
+  const amt = (i, k) => `<input ${k === 'gstAmount' ? `id="crpo-gst-${i}"` : ''} type="text" inputmode="decimal" value="${escapeHtml(formatIndianCurrencyInput(crpoReview.lineItems[i][k] ?? ''))}"
     oninput="crpoUpdateLine(${i}, ${jsArg(k)}, sanitizeAmountInput(this))"
     onfocus="this.value = (crpoReview.lineItems[${i}]['${k}'] ?? '').toString();"
     onblur="this.value = formatIndianCurrencyInput(crpoReview.lineItems[${i}]['${k}']);"
@@ -423,9 +423,20 @@ function crpoRenderUnmapped() {
 function crpoUpdateLine(i, key, value, rerender) {
   const li = crpoReview.lineItems[i];
   if (!li) return;
+  // GST follows quantity and rate at the row's own GST share of its basic price.
+  if (li._gstPct === undefined) {
+    const ob = crpoNum(li.quantity) * crpoNum(li.ratePerQuantity);
+    li._gstPct = ob > 0 && String(li.gstAmount ?? '').trim() !== '' ? crpoNum(li.gstAmount) / ob : null;
+  }
   li[key] = key === 'matchLineId' ? (value ? Number(value) : null) : value;
   if (rerender) { crpoRenderLines(); return; }
   const basic = crpoNum(li.quantity) * crpoNum(li.ratePerQuantity);
+  if (key === 'gstAmount') li._gstPct = basic > 0 ? crpoNum(li.gstAmount) / basic : null;
+  else if ((key === 'quantity' || key === 'ratePerQuantity') && li._gstPct != null) {
+    li.gstAmount = String(Math.round(basic * li._gstPct * 100) / 100);
+    const gEl = document.getElementById(`crpo-gst-${i}`);
+    if (gEl && document.activeElement !== gEl) gEl.value = formatIndianCurrencyInput(li.gstAmount);
+  }
   const basicEl = document.getElementById(`crpo-basic-${i}`);
   if (basicEl) basicEl.value = formatIndianCurrencyInput(String(basic));
   const totalEl = document.getElementById(`crpo-total-${i}`);
