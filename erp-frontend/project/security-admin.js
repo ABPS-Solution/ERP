@@ -770,7 +770,7 @@ function openDeviceRestrictionModal(deviceId) {
   // Adaptation 3 — grouped/ordered via getPmCardOrder() (data-driven, see
   // header comment) rather than Portal's hardcoded PM_CARD_ORDER.
   const bodyHtml = getPmCardOrder().map(card => {
-    const perms = (pmCatalog || []).filter(p => p.department === card.key || p.department === `dashboard-${card.key}`);
+    const perms = (pmCatalog || []).map(pmView).filter(p => p.department === card.key || p.department === `dashboard-${card.key}`);
     if (perms.length === 0) return '';
     return `
     <div style="margin-bottom:12px;">
@@ -778,7 +778,7 @@ function openDeviceRestrictionModal(deviceId) {
       ${perms.map(p => `
         <label style="display:flex; align-items:center; gap:8px; padding:5px 4px; font-size:0.85rem; cursor:pointer;">
           <input type="checkbox" class="sa-device-restrict-cb" value="${p.dbColumn}" ${current.has(p.dbColumn) ? 'checked' : ''} style="width:15px; height:15px;">
-          ${(p.department || '').startsWith('dashboard-') ? `📊 ${p.label}` : p.label}
+          ${(p.department || '').startsWith('dashboard-') || p._dash ? `📊 ${p.label}` : p.label}
         </label>`).join('')}
     </div>`;
   }).join('');
@@ -996,7 +996,13 @@ const PM_CARD_ORDER = [
   { key: 'qa', label: 'Quality Assurance', color: '#dc2626' },
   { key: 'production', label: 'Production', color: '#b45309' },
   { key: 'accounts', label: 'Accounts', color: '#0f766e' },
+  { key: 'approvals', label: 'Approvals', color: '#0f766e' },
+  { key: 'admin', label: 'Admin', color: '#7c3aed' },
 ];
+
+// Where a permission shows in the matrix: its own department, unless the catalog gives a different
+// group (Approvals / Admin) matching the main dashboard.
+const pmView = (p) => p.view ? { ...p, department: p.view.group, row: p.view.row, rowLabel: p.view.rowLabel, _dash: (p.department || '').startsWith('dashboard-') } : p;
 
 function getPmCardOrder() {
   const known = PM_CARD_ORDER.map(c => c.key);
@@ -1068,7 +1074,7 @@ async function selectPermissionMatrixUser(personKey) {
 
 function pmPillHtml(perm, color) {
   const enabled = !!pmUserValues[perm.dbColumn];
-  const isDashboard = (perm.department || '').startsWith('dashboard-');
+  const isDashboard = (perm.department || '').startsWith('dashboard-') || !!perm._dash;
   const label = isDashboard ? `📊 ${perm.label}` : perm.label;
   const style = enabled
     ? `background:${color}26; border:1.5px solid ${color}; color:#0f172a; font-weight:700;`
@@ -1082,7 +1088,7 @@ function renderPermissionMatrix() {
   if (!pmSelectedUser) { root.innerHTML = ""; return; }
 
   const cards = getPmCardOrder().map(card => {
-    const perms = pmCatalog.filter(p => p.department === card.key || p.department === `dashboard-${card.key}`);
+    const perms = pmCatalog.map(pmView).filter(p => p.department === card.key || p.department === `dashboard-${card.key}`);
     if (perms.length === 0) return '';
     const rowNumbers = [...new Set(perms.map(p => p.row))].sort((a, b) => a - b);
     const rowsHtml = rowNumbers.map(rowNum => {

@@ -196,31 +196,54 @@ async function refreshCqIncomingEmailsNow() {
 
 function renderCqIncomingList() {
   const list = document.getElementById("cq-incoming-list");
-  const isAdmin = localStorage.getItem("isUserAdminGlobal") === "true"; // server re-checks perm_admin regardless
+  const isAdmin = localStorage.getItem("erpIsUserAdminGlobal") === "true"; // server re-checks perm_admin regardless
   if (cqIncomingEmails.length === 0) {
     list.innerHTML = `<div style="text-align:center; padding:24px; color:var(--muted); font-size:0.85rem;">No incoming customer query emails.</div>`;
     return;
   }
-  list.innerHTML = cqIncomingEmails.map(mail => {
+  list.innerHTML = cqIncomingEmails.map((mail, i) => {
     const isOpen = cqOpenCreateFormFor === mail.messageId;
-    return `<div style="border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-bottom:12px; background:#fff;">
-      <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-        <div style="flex:1; min-width:240px;">
-          <div style="font-size:0.78rem; color:var(--muted);">${formatOrdinalDate(mail.receivedDate)} — ${escapeHtml(mail.inboxAccount || '')}</div>
-          <div style="font-weight:700; margin-top:2px;">${escapeHtml(mail.fromAddress || '—')}</div>
-          <div style="font-size:0.85rem; margin-top:2px;">${escapeHtml(mail.subject || '(no subject)')}</div>
-          <div style="font-size:0.8rem; color:var(--muted); margin-top:6px;">${escapeHtml(mail.aiSummary || mail.bodySnippet || '')}</div>
-          ${mail.threadLink ? `<a href="${escapeHtml(mail.threadLink)}" target="_blank" rel="noopener" style="color:var(--brand); font-weight:700; font-size:0.8rem; display:inline-block; margin-top:6px;">Open Email ↗</a>` : ''}
-        </div>
-        <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
-          <button class="nav-btn-styled" style="background:var(--accent); padding:7px 16px; font-size:0.8rem;" onclick="toggleCqCreateForm('${mail.messageId}')">${isOpen ? 'Close' : 'Create Query'}</button>
-          ${isAdmin ? `<button class="nav-btn-styled" style="background:#b91c1c; padding:5px 12px; font-size:0.72rem;" onclick="deleteCqIncomingEmail('${mail.messageId}')">Delete</button>` : ''}
-        </div>
+    const age = emailLeadAgeInfo((mail.receivedDate || '').slice(0, 10));
+    const ageColor = EMAIL_LEAD_AGE_COLORS[age.cls];
+    const bodyText = mail.body ? (looksLikeHtmlBody(mail.body) ? stripHtmlBodyToPlainText(mail.body) : mail.body) : (mail.bodySnippet || '(no body content available)');
+    return `<div class="contact-summary-card-parent" style="display:flex; flex-direction:column; gap:12px; border-left:4px solid ${ageColor.border};">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px;">
+        <span style="font-size:1.02rem; font-weight:800; color:var(--brand);">${escapeHtml(mail.subject || '(no subject)')}</span>
+        <span style="flex-shrink:0; font-size:0.7rem; font-weight:800; letter-spacing:0.02em; text-transform:uppercase; padding:3px 10px; border-radius:20px; white-space:nowrap; background:${ageColor.chipBg}; color:${ageColor.chipText};">${escapeHtml(age.label)}</span>
       </div>
-      <div id="cq-create-form-${mail.messageId}" style="${isOpen ? '' : 'display:none;'} margin-top:14px; border-top:1px solid var(--border); padding-top:14px;"></div>
+      <div style="font-size:0.8rem; color:var(--muted); display:flex; flex-wrap:wrap; gap:4px 18px;">
+        <span title="The ABPS mailbox this email was received into">To <span style="font-family:monospace; font-size:0.78rem;">${escapeHtml(mail.inboxAccount || 'Unknown')}</span></span>
+        <span title="The customer's email address">From <span style="font-family:monospace; font-size:0.78rem;">${escapeHtml(mail.fromAddress || 'Not recorded')}</span></span>
+        <span>${formatOrdinalDate(mail.receivedDate)}</span>
+      </div>
+      <div style="font-size:0.85rem; background:var(--highlight-bg); border:1px solid var(--border); border-radius:6px; padding:10px 12px; line-height:1.5; color:var(--text);">
+        <strong>AI Summary —</strong> ${escapeHtml(mail.aiSummary || mail.bodySnippet || '')}
+      </div>
+      <div style="display:flex; align-items:center; gap:18px; font-size:0.8rem;">
+        <span style="color:var(--brand); font-weight:600; cursor:pointer; user-select:none; display:inline-flex; align-items:center; gap:4px;" onclick="toggleCqEmailBody(${i})">
+          <span id="cq-email-caret-${i}">▸</span> View Full Email
+        </span>
+      </div>
+      <div id="cq-email-body-${i}" style="display:none; margin-top:-4px; background:#eef2f7; border:1px solid var(--border); border-radius:4px; padding:10px; font-size:0.82rem; color:var(--text);">
+        <div style="font-weight:700; margin-bottom:6px;">${escapeHtml(mail.subject || '(no subject)')}</div>
+        <div style="white-space:pre-wrap; line-height:1.5; max-height:400px; overflow-y:auto;">${escapeHtml(bodyText)}</div>
+      </div>
+      <div style="display:flex; align-items:center; justify-content:flex-end; gap:16px; padding-top:10px; border-top:1px solid var(--border);">
+        ${isAdmin ? `<button style="background:none; border:none; color:var(--muted); font-size:0.78rem; font-weight:600; cursor:pointer; padding:0;" onmouseover="this.style.color='var(--warn)'" onmouseout="this.style.color='var(--muted)'" onclick="deleteCqIncomingEmail(${jsArg(mail.messageId)})">Delete</button>` : ''}
+        <button class="btn btn-sub" style="width:auto; font-size:0.82rem; padding:9px 18px;" onclick="toggleCqCreateForm(${jsArg(mail.messageId)})">${isOpen ? 'Close' : 'Create Query'}</button>
+      </div>
+      <div id="cq-create-form-${mail.messageId}" style="${isOpen ? '' : 'display:none;'} border-top:1px solid var(--border); padding-top:14px;"></div>
     </div>`;
   }).join("");
   if (cqOpenCreateFormFor) renderCqCreateForm(cqOpenCreateFormFor);
+}
+
+function toggleCqEmailBody(i) {
+  const body = document.getElementById('cq-email-body-' + i), caret = document.getElementById('cq-email-caret-' + i);
+  if (!body || !caret) return;
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  caret.textContent = open ? '▸' : '▾';
 }
 
 async function toggleCqCreateForm(messageId) {
