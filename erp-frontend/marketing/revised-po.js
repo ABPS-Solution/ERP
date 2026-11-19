@@ -424,7 +424,7 @@ function crpoUpdateLine(i, key, value, rerender) {
   const li = crpoReview.lineItems[i];
   if (!li) return;
   // GST follows quantity and rate at the row's own GST share of its basic price.
-  if (li._gstPct === undefined) {
+  if (li._gstPct == null) {
     const ob = crpoNum(li.quantity) * crpoNum(li.ratePerQuantity);
     li._gstPct = ob > 0 && String(li.gstAmount ?? '').trim() !== '' ? crpoNum(li.gstAmount) / ob : null;
   }
