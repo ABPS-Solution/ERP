@@ -139,20 +139,20 @@ async function crpoSelectProject(projectId) {
 
 function crpoRenderHistory() {
   const d = crpoDetails;
-  const revs = (d.revisions || []).map(r => `<tr style="border-bottom:1px solid var(--border);">
-      <td style="padding:10px 12px; text-align:center;"><span style="display:inline-block; min-width:26px; padding:2px 8px; border-radius:20px; background:var(--brand); color:#fff; font-weight:800; font-size:0.78rem;">${r.revisionNo}</span></td>
-      <td style="padding:10px 12px; font-family:monospace; font-weight:600;">${escapeHtml(r.poNumber || '—')}</td>
-      <td style="padding:10px 12px; white-space:nowrap;">${escapeHtml(formatOrdinalDateTime(r.createdAt))}</td>
-      <td style="padding:10px 12px;">${escapeHtml(r.createdBy || '')}</td>
-      <td style="padding:10px 12px; line-height:1.45;">${escapeHtml(r.summary || '')}</td>
-      <td style="padding:10px 12px; text-align:center;">${r.poDocumentUrl ? `<a href="${driveLink(r.poDocumentUrl)}" target="_blank" rel="noopener" style="display:inline-block; border:1.5px solid var(--brand); color:var(--brand); padding:3px 12px; border-radius:var(--radius); font-weight:700; font-size:0.78rem; text-decoration:none;">View ↗</a>` : '<span style="color:var(--muted);">—</span>'}</td>
+  const revs = (d.revisions || []).map(r => `<tr>
+      <td style="padding:10px 12px; border:2px solid #94a3b8; text-align:center;"><span style="display:inline-block; min-width:26px; padding:2px 8px; border-radius:20px; background:var(--brand); color:#fff; font-weight:800; font-size:0.78rem;">${r.revisionNo}</span></td>
+      <td style="padding:10px 12px; border:2px solid #94a3b8; font-family:monospace; font-weight:600;">${escapeHtml(r.poNumber || '—')}</td>
+      <td style="padding:10px 12px; border:2px solid #94a3b8; white-space:nowrap;">${escapeHtml(formatOrdinalDateTime(r.createdAt))}</td>
+      <td style="padding:10px 12px; border:2px solid #94a3b8;">${escapeHtml(r.createdBy || '')}</td>
+      <td style="padding:10px 12px; border:2px solid #94a3b8; line-height:1.45;">${escapeHtml(r.summary || '')}</td>
+      <td style="padding:10px 12px; border:2px solid #94a3b8; text-align:center;">${r.poDocumentUrl ? `<a href="${driveLink(r.poDocumentUrl)}" target="_blank" rel="noopener" style="display:inline-block; border:1.5px solid var(--brand); color:var(--brand); padding:3px 12px; border-radius:var(--radius); font-weight:700; font-size:0.78rem; text-decoration:none;">View ↗</a>` : '<span style="color:var(--muted);">—</span>'}</td>
     </tr>`).join('');
   const el = document.getElementById('crpo-history');
   if (!el) return;
   el.innerHTML = `
     ${revs ? `<div style="margin-top:22px; font-weight:800; color:var(--brand); font-size:1.05rem;">Revision History</div>
-    <div style="overflow-x:auto; margin-top:8px; background:#fff; border:1px solid var(--border); border-radius:var(--radius);"><table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
-      <thead><tr style="background:var(--highlight-bg); text-align:left; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted);"><th style="padding:9px 12px; text-align:center;">Rev</th><th style="padding:9px 12px;">PO Number</th><th style="padding:9px 12px;">Date</th><th style="padding:9px 12px;">By</th><th style="padding:9px 12px;">Changes</th><th style="padding:9px 12px; text-align:center;">Document</th></tr></thead>
+    <div style="overflow-x:auto; margin-top:8px; background:#fff; border:1px solid var(--border); border-radius:var(--radius);"><table style="width:100%; border-collapse:collapse; font-size:0.85rem; border:2px solid #94a3b8;">
+      <thead><tr style="background:var(--highlight-bg); text-align:left; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted);"><th style="padding:9px 12px; border:2px solid #94a3b8; text-align:center;">Rev</th><th style="padding:9px 12px; border:2px solid #94a3b8;">PO Number</th><th style="padding:9px 12px; border:2px solid #94a3b8;">Date</th><th style="padding:9px 12px; border:2px solid #94a3b8;">By</th><th style="padding:9px 12px; border:2px solid #94a3b8;">Changes</th><th style="padding:9px 12px; border:2px solid #94a3b8; text-align:center;">Document</th></tr></thead>
       <tbody>${revs}</tbody></table></div>` : ''}`;
 }
 
