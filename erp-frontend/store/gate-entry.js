@@ -216,7 +216,7 @@ async function parseGateDocumentsWithAI() {
     if (!activeParsedGatePayloadCache || !Array.isArray(activeParsedGatePayloadCache.lineItems) || !activeParsedGatePayloadCache.lineItems.length) {
       activeParsedGatePayloadCache = activeParsedGatePayloadCache || {};
       activeParsedGatePayloadCache.lineItems = [];
-      abpsAlert("AI could not detect any line items on this document. Please try a clearer scan or a different document.");
+      abpsAlert("No item lines were found. This looks like a page with only totals or tax. Add the page that lists the items (usually page 1) along with it, or try a clearer scan.");
     }
 
     document.getElementById('gate-meta-invoice').value = activeParsedGatePayloadCache.invoiceNumber || "";

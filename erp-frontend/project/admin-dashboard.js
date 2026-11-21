@@ -150,7 +150,7 @@ function admRenderDashboard(data) {
   const { stockValue, poOrderValue, deliveredValue, onOrderValue, latePo, ldExposure, cash, poTrend } = data;
 
   // Row 1 — live
-  document.getElementById("adm-s-stockrm").textContent = admFmtInr(stockValue.rmSpare);
+  document.getElementById("adm-s-stockrm").textContent = admFmtInr(stockValue.rm);
   document.getElementById("adm-s-stockfg").textContent = admFmtInr(stockValue.fg);
   document.getElementById("adm-s-onorder").textContent = admFmtInr(onOrderValue);
   document.getElementById("adm-s-ldexposure").textContent = admFmtInr(ldExposure.total);
