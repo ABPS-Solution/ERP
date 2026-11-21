@@ -8,7 +8,7 @@
   :root { --bg:#070d19; --panel:#0f1828; --line:#1f2b42; --text:#eef3fb; --muted:#8393ad; --accent:#22c3a6; --hot:#ff4d4f; --warn:#ffb020; --blue:#3b82f6; --card:#131c2e; }
   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html, body { margin:0; height:100%; background:#000; overflow:hidden; font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color:var(--text); }
-  body { display:flex; flex-direction:column; }
+  body { display:flex; flex-direction:row; }
   button { font-family:inherit; cursor:pointer; transition:transform .12s, background .25s, border-color .25s, color .25s; }
   button:active { transform:scale(.96); }
 
@@ -52,35 +52,42 @@
   .fixed rect { stroke:var(--accent) !important; fill:rgba(34,195,166,.15) !important; }
   @keyframes pulse { 50% { filter:drop-shadow(0 0 18px var(--hot)); } }
 
-  /* ---- presenter bar ---- */
-  #bar { flex:0 0 auto; background:rgba(11,18,32,.98); border-top:1px solid var(--line); padding:10px 16px 12px; max-height:46vh; overflow:auto; }
-  .bar-top { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
-  #steps { display:flex; gap:6px; overflow-x:auto; flex:1; }
-  #steps button { flex:0 0 auto; border:1px solid var(--line); background:var(--card); color:var(--muted); border-radius:20px; padding:9px 14px; font-size:14px; }
+  /* ---- presenter bar (left, about 20% of the width) ---- */
+  #bar { flex:0 0 20%; min-width:270px; max-width:400px; background:rgba(11,18,32,.98); border-right:1px solid var(--line); padding:14px 14px 0; overflow-y:auto; display:flex; flex-direction:column; gap:12px; }
+  .bar-top { display:flex; align-items:center; gap:8px; }
+  .bar-title { flex:1; font-weight:700; font-size:15px; } .bar-title span { color:var(--accent); }
+  .hidebtn { border:1px solid var(--line); background:var(--card); color:var(--text); border-radius:10px; padding:8px 10px; font-size:13px; white-space:nowrap; }
+  #sum { color:var(--muted); font-size:13px; }
+  #steps { display:flex; flex-direction:column; gap:6px; }
+  #steps button { text-align:left; border:1px solid var(--line); background:var(--card); color:var(--muted); border-radius:12px; padding:10px 14px; font-size:14px; }
   #steps button.on { background:var(--accent); color:#04221c; border-color:var(--accent); font-weight:600; }
-  #sum { color:var(--muted); font-size:13px; white-space:nowrap; }
-  .hidebtn { border:1px solid var(--line); background:var(--card); color:var(--text); border-radius:10px; padding:9px 14px; font-size:14px; white-space:nowrap; }
-  .bar-mid { display:flex; gap:14px; align-items:stretch; }
-  #panel { flex:1; display:flex; flex-wrap:wrap; gap:12px; align-content:flex-start; min-width:0; }
+  #panel { display:flex; flex-direction:column; gap:10px; }
   .cc { background:var(--card); border:1px solid rgba(80,110,160,.22); border-radius:14px; padding:12px 14px; }
   .cc h3 { margin:0 0 8px; font-size:12px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:.06em; }
   .chips { display:flex; flex-wrap:wrap; gap:8px; }
   .chip { border:1px solid var(--line); background:#0e1626; color:var(--text); padding:11px 14px; border-radius:12px; font-size:15px; }
   .chip.on { border-color:var(--accent); background:rgba(34,195,166,.15); color:var(--accent); }
-  .srow { width:230px; } .srow label { display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px; } .srow label b { color:var(--accent); }
+  .srow { margin-bottom:8px; } .srow label { display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px; } .srow label b { color:var(--accent); }
   .srow input[type=range] { width:100%; accent-color:var(--accent); height:26px; margin:0; }
   .hint { color:var(--muted); font-size:14px; line-height:1.5; margin:0; }
-  .case { display:flex; gap:10px; align-items:center; padding:8px 10px; border:1px solid var(--line); border-radius:12px; cursor:pointer; min-width:260px; }
+  .case { display:flex; gap:10px; align-items:center; padding:8px 10px; border:1px solid var(--line); border-radius:12px; cursor:pointer; margin-bottom:8px; }
   .case.on { border-color:var(--accent); } .case i { width:36px; height:36px; border-radius:8px; flex:0 0 auto; } .case small { color:var(--muted); display:block; font-size:12px; }
-  .navbtns { display:flex; flex-direction:column; gap:8px; width:150px; }
-  .navbtns button { flex:1; border-radius:12px; border:0; font-size:16px; font-weight:600; padding:12px; }
+  .navbtns { display:flex; gap:8px; position:sticky; bottom:0; background:rgba(11,18,32,.98); padding:10px 0 12px; margin-top:auto; }
+  .navbtns button { flex:1; border-radius:12px; border:0; font-size:16px; font-weight:600; padding:14px; }
   .prev { background:var(--card); color:var(--text); border:1px solid var(--line) !important; } .next { background:var(--accent); color:#04221c; }
   .navbtns button:disabled { opacity:.4; }
-  #showbtn { position:fixed; right:16px; bottom:16px; z-index:10; display:none; align-items:center; gap:8px; border:1px solid var(--accent); background:rgba(11,18,32,.92); color:var(--accent); border-radius:24px; padding:12px 18px; font-size:15px; font-weight:600; box-shadow:0 8px 24px rgba(0,0,0,.5); }
+  #showbtn { position:fixed; left:16px; bottom:16px; z-index:10; display:none; align-items:center; gap:8px; border:1px solid var(--accent); background:rgba(11,18,32,.92); color:var(--accent); border-radius:24px; padding:12px 18px; font-size:15px; font-weight:600; box-shadow:0 8px 24px rgba(0,0,0,.5); }
   body.hidden-bar #bar { display:none; } body.hidden-bar #showbtn { display:flex; }
 </style>
 </head>
 <body>
+<div id="bar">
+  <div class="bar-top"><div class="bar-title">AB <span>POWER</span> Presenter</div><button class="hidebtn" id="fsbtn">Full screen</button><button class="hidebtn" id="hidebtn">Hide</button></div>
+  <div id="sum"></div>
+  <div id="steps"></div>
+  <div id="panel"></div>
+  <div class="navbtns"><button class="prev" id="prev">Back</button><button class="next" id="next">Next</button></div>
+</div>
 <div id="wrap">
 <div id="stage">
   <header><div class="logo">AB <span>POWER</span></div><div class="title" id="title"></div><div class="dots" id="dots"></div></header>
@@ -163,10 +170,6 @@
 </div>
 </div>
 
-<div id="bar">
-  <div class="bar-top"><div id="steps"></div><span id="sum"></span><button class="hidebtn" id="hidebtn">Hide controls</button></div>
-  <div class="bar-mid"><div id="panel"></div><div class="navbtns"><button class="next" id="next">Next</button><button class="prev" id="prev">Back</button></div></div>
-</div>
 <button id="showbtn">Show controls</button>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -438,14 +441,14 @@ function renderBar() {
   switch (s.step) {
     case 0: h = `<div class="cc"><h3>Start</h3><p class="hint">Greet the visitor, ask about their facility, then tap Next.</p></div>`; break;
     case 1: h = `<div class="cc"><h3>Facility type</h3>${chips(IS.FACILITIES, k => s.facility === k, 'facility')}</div>
-      <div class="cc"><h3>Size &amp; supply</h3><div style="display:flex; flex-wrap:wrap; gap:6px 22px">${slider('itMW', 'IT load', 1, 50, 1)}${slider('pf', 'Power factor', 0.75, 0.97, 0.01)}${slider('thd', 'THD', 5, 40, 1)}${slider('tariff', 'Tariff', 5, 14, 0.5)}${slider('demand', 'Demand charge', 200, 700, 10)}</div></div>`; break;
+      <div class="cc"><h3>Size &amp; supply</h3><div>${slider('itMW', 'IT load', 1, 50, 1)}${slider('pf', 'Power factor', 0.75, 0.97, 0.01)}${slider('thd', 'THD', 5, 40, 1)}${slider('tariff', 'Tariff', 5, 14, 0.5)}${slider('demand', 'Demand charge', 200, 700, 10)}</div></div>`; break;
     case 2: h = `<div class="cc"><h3>Problems they face</h3>${chips(IS.PROBLEMS, k => s.problems.includes(k), 'problem')}</div>`; break;
     case 3: h = `<div class="cc"><h3>On screen</h3><p class="hint">Indicative cost of these problems: <b style="color:var(--text)">${IS.inr(c.annualProblemCost)} per year</b>. Change the sliders in step 1 if the visitor corrects anything.</p></div>`; break;
     case 4: h = `<div class="cc"><h3>Solution</h3>${chips(IS.PRODUCTS, k => s.product === k, 'product')}</div>
       <div class="cc"><h3>3D view</h3><button class="chip ${s.door ? 'on' : ''}" data-act="door">Doors: ${s.door ? 'Open' : 'Closed'}</button></div>
       <div class="cc"><h3>Configured</h3><p class="hint">${c.panels} panel(s) · ${c.bays} bay(s) each${s.product !== 'ahf' ? ` · ${c.steps} × 50 kVAR steps` : ''}${s.product !== 'apfc' ? ` · ${c.ahfModules} AHF module(s)` : ''}</p></div>`; break;
     case 5: h = `<div class="cc"><h3>On screen</h3><p class="hint">Bill before and after, payback of ${IS.trim(c.paybackLo)}–${IS.trim(c.paybackHi)} months.</p></div>`; break;
-    case 6: h = `<div class="cc"><h3>Relevant projects</h3><div style="display:flex; gap:8px; flex-wrap:wrap">${IS.relevantCases(s).map(p => `<div class="case ${s.caseId === p.id ? 'on' : ''}" data-case="${p.id}"><i style="background:${p.color}"></i><div>${p.title}<small>${p.result}</small></div></div>`).join('')}</div></div>
+    case 6: h = `<div class="cc"><h3>Relevant projects</h3><div>${IS.relevantCases(s).map(p => `<div class="case ${s.caseId === p.id ? 'on' : ''}" data-case="${p.id}"><i style="background:${p.color}"></i><div>${p.title}<small>${p.result}</small></div></div>`).join('')}</div></div>
       <div class="cc"><h3>Info document</h3><p class="hint">The PDF comes in the next build.</p></div>`; break;
   }
   $('panel').innerHTML = h;
@@ -474,10 +477,14 @@ $('prev').onclick = () => set({ step: Math.max(0, s.step - 1) });
 $('next').onclick = () => set({ step: s.step === IS.STEPS.length - 1 ? 0 : s.step + 1 });
 function toggleBar(hide) { document.body.classList.toggle('hidden-bar', hide); requestAnimationFrame(fit); }
 $('hidebtn').onclick = () => toggleBar(true);
+function toggleFs() { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => {}); }
+$('fsbtn').onclick = toggleFs;
+document.addEventListener('fullscreenchange', () => { $('fsbtn').textContent = document.fullscreenElement ? 'Exit full screen' : 'Full screen'; requestAnimationFrame(fit); });
 $('showbtn').onclick = () => toggleBar(false);
 addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT') return;
   if (e.key === 'ArrowRight') $('next').click(); else if (e.key === 'ArrowLeft') $('prev').click();
+  else if (e.key === 'f' || e.key === 'F') toggleFs();
   else if (e.key === 'c' || e.key === 'C') toggleBar(!document.body.classList.contains('hidden-bar'));
 });
 
