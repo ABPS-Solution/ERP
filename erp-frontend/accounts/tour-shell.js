@@ -8,7 +8,7 @@
 // formatINRComma moved to shared/format.js (ERP-only change — Portal
 // duplicates it in this file and cash-expense-shell.js).
 
-const TOUR_TOGGLES = ["advance", "check", "search", "employees"];
+const TOUR_TOGGLES = ["advance", "check", "search", "employees", "companies"];
 
 // Mirrors the constants in erp-backend's tour voucher routes — kept here
 // too since the Search filter and voucher-check display need the same
@@ -46,6 +46,7 @@ function switchTourExpenseToggle(toggle) {
   if (toggle === "check" && typeof initializeVoucherCheckPanel === "function") initializeVoucherCheckPanel();
   if (toggle === "search" && typeof initializeVoucherSearchPanel === "function") initializeVoucherSearchPanel();
   if (toggle === "employees" && typeof initializeEmployeeDetailsPanel === "function") initializeEmployeeDetailsPanel();
+  if (toggle === "companies" && typeof initializeCompanyListPanel === "function") initializeCompanyListPanel();
 }
 
 // Shared feedback banner — ERROR ONLY. Success never renders here (it used

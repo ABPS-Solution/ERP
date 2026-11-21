@@ -2715,6 +2715,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <button id="te-toggle-check" class="nav-btn-styled" onclick="switchTourExpenseToggle('check')" style="flex:1; padding:11px 16px;">Employee Tour Expense Vouchers</button>
       <button id="te-toggle-search" class="nav-btn-styled" onclick="switchTourExpenseToggle('search')" style="flex:1; padding:11px 16px;">Search Vouchers</button>
       <button id="te-toggle-employees" class="nav-btn-styled" onclick="switchTourExpenseToggle('employees')" style="flex:1; padding:11px 16px;">Employee Details</button>
+      <button id="te-toggle-companies" class="nav-btn-styled" onclick="switchTourExpenseToggle('companies')" style="flex:1; padding:11px 16px;">Company of Visit List</button>
     </div>
 
     <!-- ADVANCE VOUCHERS -->
@@ -2728,6 +2729,9 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 
     <!-- EMPLOYEE DETAILS -->
     <div id="te-panel-employees" style="display:none;"></div>
+
+    <!-- COMPANY OF VISIT LIST -->
+    <div id="te-panel-companies" style="display:none;"></div>
     </div>
   </div>
 
@@ -6815,6 +6819,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 <script src="accounts/voucher-check.js"></script>
 <script src="accounts/voucher-search.js"></script>
 <script src="accounts/employee-details.js"></script>
+<script src="accounts/company-list.js"></script>
 <script src="accounts/cash-expense-shell.js"></script>
 <script src="accounts/cash-expense-entry.js"></script>
 <script src="accounts/cash-expense-vouchers.js"></script>
