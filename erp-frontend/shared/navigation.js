@@ -282,7 +282,7 @@ async function navigateToModule(key) {
 // index.html but no enforceDynamicModuleRoleGateways visibility logic yet,
 // so refreshDepartmentTabsBar's own block-display check keeps all 5 tabs
 // hidden until the batch that owns that department adds real gating.
-const DEPT_TAB_KEYS = ['accounts', 'design', 'purchase', 'admin', 'approvals', 'marketing', 'project', 'store', 'qa', 'production'];
+const DEPT_TAB_KEYS = ['accounts', 'design', 'purchase', 'admin', 'approvals', 'marketing', 'project', 'store', 'qa', 'production', 'service'];
 const DEPT_TAB_STORAGE_KEY = 'erpActiveDeptTab';
 // Same reasoning as Portal's deptTabVisibleKeys: selectDepartmentTab must
 // consult which departments are actually permission-visible (set once per
