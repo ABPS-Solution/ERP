@@ -60,6 +60,7 @@ function jcshJobCardDisplayReset(text) {
   const list = document.getElementById("jcsh-jobcard-dropdown-list");
   if (textEl) textEl.textContent = text;
   if (hidden) hidden.value = "";
+  jcshJcOptions = []; jcshJcSelected = new Set();
   if (list) { list.style.display = "none"; list.innerHTML = ""; }
   if (disp) { disp.dataset.disabled = "1"; disp.style.opacity = "0.5"; disp.style.cursor = "not-allowed"; disp.style.color = "var(--muted)"; disp.style.background = "#f1f5f9"; }
 }
@@ -67,13 +68,40 @@ function jcshJobCardDisplayEnable() {
   const disp = document.getElementById("jcsh-jobcard-display");
   if (disp) { disp.dataset.disabled = "0"; disp.style.opacity = "1"; disp.style.cursor = "pointer"; disp.style.color = "var(--text)"; disp.style.background = "#fff"; }
 }
+// Job Cards are ticked, not picked one at a time: any number can go into one PDF (one page each).
+let jcshJcOptions = [];
+let jcshJcSelected = new Set();
 function jcshJobCardPopulate(options) {
+  jcshJcOptions = options; jcshJcSelected = new Set();
+  jcshJobCardRender();
+}
+function jcshJobCardRender() {
   const list = document.getElementById("jcsh-jobcard-dropdown-list");
   if (!list) return;
-  list.innerHTML = options.map(o => `
-    <div onclick="event.stopPropagation(); selectJCSHJobCard(${jsArg(o.value)}, ${jsArg(o.label)})"
-      style="padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem; line-height:1.35;"
-      onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">${o.label}</div>`).join("");
+  const rowStyle = "display:flex; align-items:center; gap:8px; padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.82rem; line-height:1.35;";
+  const allOn = jcshJcOptions.length > 0 && jcshJcSelected.size === jcshJcOptions.length;
+  list.innerHTML = `<label style="${rowStyle} font-weight:700; background:#f8fafc; position:sticky; top:0;">
+      <input type="checkbox" style="width:auto;" ${allOn ? "checked" : ""} onchange="jcshToggleAllJobCards(this.checked)"> Select All (${jcshJcOptions.length})</label>` +
+    jcshJcOptions.map(o => `<label style="${rowStyle}" onmouseover="this.style.background='var(--highlight-bg)'" onmouseout="this.style.background='#fff'">
+      <input type="checkbox" style="width:auto;" ${jcshJcSelected.has(o.value) ? "checked" : ""} onchange="jcshToggleJobCard(${jsArg(o.value)}, this.checked)"> ${escapeHtml(o.label)}</label>`).join("");
+}
+function jcshToggleJobCard(value, on) {
+  if (on) jcshJcSelected.add(value); else jcshJcSelected.delete(value);
+  jcshJobCardSync();
+}
+function jcshToggleAllJobCards(on) {
+  jcshJcSelected = on ? new Set(jcshJcOptions.map(o => o.value)) : new Set();
+  jcshJobCardSync();
+  jcshJobCardRender();
+}
+function jcshJobCardSync() {
+  const chosen = jcshJcOptions.filter(o => jcshJcSelected.has(o.value));
+  document.getElementById("jcsh-jobcard").value = chosen.map(o => o.value).join(",");
+  document.getElementById("jcsh-jobcard-display-text").textContent =
+    chosen.length === 0 ? "— Select Job Card Numbers —" : chosen.length === 1 ? chosen[0].label : chosen.length + " Job Cards selected";
+  const allBox = document.querySelector("#jcsh-jobcard-dropdown-list input[type=checkbox]");
+  if (allBox) allBox.checked = chosen.length === jcshJcOptions.length && chosen.length > 0;
+  updateJCSHDownloadButtonState();
 }
 function toggleJCSHJobCardDropdown() {
   const disp = document.getElementById("jcsh-jobcard-display");
@@ -83,11 +111,8 @@ function toggleJCSHJobCardDropdown() {
   document.querySelectorAll("[id$='-dropdown-list']").forEach(l => l.style.display = "none");
   list.style.display = isOpen ? "none" : "block";
 }
-function selectJCSHJobCard(jobCardNumber, label) {
-  document.getElementById("jcsh-jobcard").value = jobCardNumber;
-  document.getElementById("jcsh-jobcard-display-text").textContent = label;
-  document.getElementById("jcsh-jobcard-dropdown-list").style.display = "none";
-  updateJCSHDownloadButtonState();
+function selectJCSHJobCard(jobCardNumber) {
+  jcshToggleJobCard(jobCardNumber, true);
 }
 document.addEventListener("click", (e) => {
   if (!e.target.closest("#jcsh-jobcard-display") && !e.target.closest("#jcsh-jobcard-dropdown-list")) {
@@ -246,7 +271,7 @@ function handleJCSHBoqChange(boqId) {
     document.getElementById("jcsh-make").value = matches[0].make || "";
   }
 
-  jcshJobCardDisplayReset("— Select Job Card Number —");
+  jcshJobCardDisplayReset("— Select Job Card Numbers —");
   jcshJobCardPopulate(matches.map(jc => ({ value: jc.jobCardNumber, label: `${jc.jobCardNumber} (Set ${jc.setNumber})` })));
   jcshJobCardDisplayEnable();
 }
@@ -296,17 +321,23 @@ async function submitJCSHDownload() {
   const productRating = document.getElementById("jcsh-product-rating").value.trim();
   const descriptionOfMaterial = document.getElementById("jcsh-description-of-material").value.trim();
   const make           = document.getElementById("jcsh-make").value.trim();
-  const jobCardNumber = document.getElementById("jcsh-jobcard").value.trim();
+  const jobCardNumbers = document.getElementById("jcsh-jobcard").value.split(",").map(x => x.trim()).filter(Boolean);
+  const jobCardNumber = jobCardNumbers[0] || "";
   const productType   = document.getElementById("jcsh-product-type").value.trim();
   const sheetDate      = document.getElementById("jcsh-sheet-date").value.trim();
   const fileType       = (document.getElementById("jcsh-file-type")?.value || "pdf");
 
-  showBlockingOverlay("Downloading Job Card Sheet...");
+  if (fileType === "excel" && jobCardNumbers.length > 1) {
+    showBOQBanner("jcsh-feedback", "Excel downloads one Job Card at a time. Choose PDF for several.", "error");
+    jcshSubmitInProgress = false; btn.disabled = false; btn.textContent = originalText; updateJCSHDownloadButtonState();
+    return;
+  }
+  showBlockingOverlay(jobCardNumbers.length > 1 ? "Building " + jobCardNumbers.length + " Job Card pages..." : "Downloading Job Card Sheet...");
 
   try {
     const data = await apFetch({
       action: "generateJobCardSheetPdf",
-      projectId, customerName, productName, productRating, descriptionOfMaterial, make, jobCardNumber, productType, sheetDate, fileType
+      projectId, customerName, productName, productRating, descriptionOfMaterial, make, jobCardNumber, jobCardNumbers, productType, sheetDate, fileType, _timeoutMs: 240000
     });
     if (data.success) {
       const link = document.createElement("a");
