@@ -242,7 +242,8 @@ const IS = (() => {
 const $ = id => document.getElementById(id);
 const fit = () => {
   const w = $('wrap'), k = Math.min(w.clientWidth / 1920, w.clientHeight / 1080);
-  $('stage').style.transform = `translate(-50%,-50%) scale(${k})`;
+  const st = $('stage'); st.style.width = (w.clientWidth / k) + 'px'; st.style.height = (w.clientHeight / k) + 'px';
+  st.style.transform = `translate(-50%,-50%) scale(${k})`;
 };
 new ResizeObserver(fit).observe($('wrap')); addEventListener('resize', fit); fit();
 $('dots').innerHTML = IS.STEPS.map(() => '<i></i>').join('');
@@ -600,7 +601,7 @@ function renderBar() {
   $('sum').textContent = `${s.itMW} MW · PF ${s.pf} · THD ${s.thd}%`;
   let h = '';
   switch (s.step) {
-    case 0: h = `<div class="cc"><h3>Start</h3><p class="hint">Greet the visitor, ask about their facility, then tap Next.</p></div>`; break;
+    case 0: h = ''; break;
     case 1: h = `<div class="cc"><h3>Facility type</h3>${chips(IS.FACILITIES, k => s.facility === k, 'facility')}</div>
       <div class="cc"><h3>Size &amp; supply</h3><div>${slider('itMW', 'IT load', 1, 50, 1)}${slider('pf', 'Power factor', 0.75, 0.97, 0.01)}${slider('thd', 'THD', 5, 40, 1)}${slider('tariff', 'Tariff', 5, 14, 0.5)}${slider('demand', 'Demand charge', 200, 700, 10)}</div></div>`; break;
     case 2: h = `<div class="cc"><h3>Problems they face</h3>${chips(IS.PROBLEMS, k => s.problems.includes(k), 'problem')}</div>`; break;
