@@ -439,6 +439,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canRevisePRN            = userPermissionsObject.revisePRN === true;
   const canAuthorizePRNRevision = userPermissionsObject.authorizePRNRevision === true;
   const canReserveStoreStock    = userPermissionsObject.reserveStoreStock === true;
+  const canStockSweep           = userPermissionsObject.stockSweep === true;
   const canGateEntry            = userPermissionsObject.gateEntry === true;
   const canStoreEntryAndGrn     = userPermissionsObject.storeEntryAndGrn === true;
   const canExpectedInbounds     = userPermissionsObject.expectedDeliveries === true;
@@ -500,7 +501,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-store-entry"))            document.getElementById("mod-store-entry").style.display            = canStoreEntryAndGrn ? "block" : "none";
   if (document.getElementById("mod-expected-inbounds"))      document.getElementById("mod-expected-inbounds").style.display      = canExpectedInbounds ? "block" : "none";
   if (document.getElementById("mod-search-inward"))          document.getElementById("mod-search-inward").style.display          = userPermissionsObject.searchInwardMaterial === true ? "block" : "none";
-  if (document.getElementById("mod-stock-sweep"))            document.getElementById("mod-stock-sweep").style.display            = canReserveStoreStock ? "block" : "none";
+  if (document.getElementById("mod-stock-sweep"))            document.getElementById("mod-stock-sweep").style.display            = canStockSweep ? "block" : "none";
   if (document.getElementById("mod-boq-increase-approvals")) document.getElementById("mod-boq-increase-approvals").style.display = canApproveBOQIncrease ? "block" : "none";
   if (document.getElementById("mod-material-change-approvals")) document.getElementById("mod-material-change-approvals").style.display = userPermissionsObject.approveMaterialChange === true ? "block" : "none";
   if (document.getElementById("mod-consumable-purchase-approvals")) document.getElementById("mod-consumable-purchase-approvals").style.display = userPermissionsObject.approveConsumablePurchase === true ? "block" : "none";
@@ -576,7 +577,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   // longer keyed on Project Invoice Generation alone.
   const storeBlock = document.getElementById("dashboard-store-department-header-block");
   if (storeBlock) storeBlock.style.display = (userPermissionsObject.searchInwardMaterial === true || canCreateProjectDispatchInvoice || canAuthorizeProjectDispatchInvoice || canReviseProjectDispatchInvoice || canAuthorizeProjectDispatchInvoiceRevision || canPurchaseRequestNote || canAuthorizePRN
-    || canRevisePRN || canAuthorizePRNRevision || canReserveStoreStock || canGateEntry || canStoreEntryAndGrn
+    || canRevisePRN || canAuthorizePRNRevision || canReserveStoreStock || canStockSweep || canGateEntry || canStoreEntryAndGrn
     || canExpectedInbounds || canApproveBOQIncrease || canReleaseTicket || canSearchStoreMat || canViewLiveStock
     || canViewLiveFinishedStock || canLiveSpareStoreStock || canMaterialOutward || canAuthorizeMaterialOutward || canViewStoreDashboard)
     ? "block" : "none";
