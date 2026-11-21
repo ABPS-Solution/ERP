@@ -1569,6 +1569,12 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-commissioning-report" onclick="navigateToModule('commissioningReport')"><span class="mc-label">Upload Commissioning Report</span></div>
       </div>
+      <div class="sec-label">Service Tickets</div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-service-tickets-email" onclick="navigateToModule('serviceTicketsEmail')"><span class="mc-label">Service Tickets through Email</span></div>
+        <div class="menu-card" id="mod-service-tickets-search" onclick="navigateToModule('serviceTicketsSearch')"><span class="mc-label">Search / Edit Service Tickets</span></div>
+        <div class="menu-card" id="mod-service-tickets-approve" onclick="navigateToModule('serviceTicketsApprove')"><span class="mc-label">Approve Service Tickets</span></div>
+      </div>
     </div>
 
     <!-- ── APPROVALS (23 Oct 2026): authorize / approve screens gathered from
@@ -1907,6 +1913,21 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 
         <button class="btn btn-sub" id="gate-search-btn" onclick="triggerSequentialSearch('CARD')" style="margin-top:6px;">Search Marketing Database</button>
       </div>
+    </div>
+
+    <div id="workspace-serviceTicketsEmail" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Service Tickets through Email</h2>
+      <p style="color:var(--muted); font-size:0.92rem;">This section is being set up. Service emails will appear here as cards, and you will be able to create a Service Ticket from each one.</p>
+    </div>
+
+    <div id="workspace-serviceTicketsSearch" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Search / Edit Service Tickets</h2>
+      <p style="color:var(--muted); font-size:0.92rem;">This section is being set up. You will be able to search, filter and edit Service Tickets here.</p>
+    </div>
+
+    <div id="workspace-serviceTicketsApprove" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+      <h2 class="panel-title">Approve Service Tickets</h2>
+      <p style="color:var(--muted); font-size:0.92rem;">This section is being set up. Service Tickets waiting for approval will appear here.</p>
     </div>
 
     <div id="workspace-commissioningReport" class="workspace-panel" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">

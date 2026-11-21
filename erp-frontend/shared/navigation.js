@@ -102,7 +102,7 @@ async function navigateToModule(key) {
     window.scrollTo(0, 0);
     setTimeout(() => window.scrollTo(0, 0), 50);
     // 1. Core verification gateway check routing against userPermissions payload mapping
-    if (!userPermissions[key]) return abpsAlert("You do not have access to this section. Ask the admin if you need it.");
+    if (!userPermissions[key] && !(/^serviceTickets/.test(key) && userPermissions.viewAdminDashboard)) return abpsAlert("You do not have access to this section. Ask the admin if you need it.");
 
     const canvas = document.getElementById("step2-inline-interaction-canvas");
     if (canvas) {
@@ -549,6 +549,9 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
     // it now lives under the same Admin department tab as Security &
     // Login Access, matching Portal's identical move the same day.
     "mod-admin-dashboard-wrapper":     canViewAdminDashboard,
+    "mod-service-tickets-email":       canViewAdminDashboard,
+    "mod-service-tickets-search":      canViewAdminDashboard,
+    "mod-service-tickets-approve":     canViewAdminDashboard,
     "mod-qa-dashboard-wrapper":        canViewQaDashboard,
     "mod-project-dashboard-wrapper":   userPermissionsObject.viewProjectDashboard === true,
     "mod-approvals-dashboard-wrapper": userPermissionsObject.viewApprovalsDashboard === true,
@@ -568,7 +571,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const adminBlock = document.getElementById("dashboard-admin-department-header-block");
   if (adminBlock) adminBlock.style.display = (canSecurity || canViewAdminDashboard || canViewPendingWork || userPermissionsObject.viewItemsToCheck === true || userPermissionsObject.viewBufferSuggestions === true) ? "block" : "none";
   const serviceBlock = document.getElementById("dashboard-service-department-header-block");
-  if (serviceBlock) serviceBlock.style.display = canUploadCommissioning ? "block" : "none";
+  if (serviceBlock) serviceBlock.style.display = (canUploadCommissioning || canViewAdminDashboard) ? "block" : "none";
   const marketingBlock = document.getElementById("dashboard-marketing-department-header-block");
   if (marketingBlock) marketingBlock.style.display = (canEnterCard || canViewEmailLeads || canUploadPurchaseOrder || canUploadRevisedPo || canSearchCompany || canSearchTasks || canSearchStatus || canSearchQual || canSearchCityState || canMeetingPreparation || canMorningMeeting || canNewsLeads) ? "block" : "none";
   const projectBlock = document.getElementById("dashboard-project-department-header-block");
