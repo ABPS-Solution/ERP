@@ -321,7 +321,8 @@ async function submitJCSHDownload() {
   const productRating = document.getElementById("jcsh-product-rating").value.trim();
   const descriptionOfMaterial = document.getElementById("jcsh-description-of-material").value.trim();
   const make           = document.getElementById("jcsh-make").value.trim();
-  const jobCardNumbers = document.getElementById("jcsh-jobcard").value.split(",").map(x => x.trim()).filter(Boolean);
+  // Job Card numbers contain commas, so the ticked list is read from the selection itself, never split from text.
+  const jobCardNumbers = jcshJcOptions.filter(o => jcshJcSelected.has(o.value)).map(o => o.value);
   const jobCardNumber = jobCardNumbers[0] || "";
   const productType   = document.getElementById("jcsh-product-type").value.trim();
   const sheetDate      = document.getElementById("jcsh-sheet-date").value.trim();
