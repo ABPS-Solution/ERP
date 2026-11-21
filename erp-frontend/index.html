@@ -1339,7 +1339,6 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-purchase-order" onclick="navigateToModule('purchaseOrder')"><span class="mc-label">Upload Purchase Order</span></div>
         <div class="menu-card" id="mod-upload-revised-po" onclick="navigateToModule('uploadRevisedPo')"><span class="mc-label">Upload Revised Purchase Order</span></div>
-        <div class="menu-card" id="mod-commissioning-report" onclick="navigateToModule('commissioningReport')"><span class="mc-label">Upload Commissioning Report</span></div>
         <div class="menu-card" id="mod-order-payment" onclick="switchActiveDashboardModule('order-payment')"><span class="mc-label">Order Payment Progress</span></div>
       </div>
       <div class="sec-label">Search</div>
@@ -1556,6 +1555,18 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <div class="sec-label">Finished Goods</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-fg-add"                  onclick="switchActiveDashboardModule('fg-add')"><span class="mc-label">Add to Finished Goods Store</span></div>
+      </div>
+    </div>
+
+    <!-- ── SERVICE (21 Nov 2026): the Service team's own screens. -->
+    <div id="dashboard-service-department-header-block" class="dept-block" style="display:none; --dept-accent:#0e7490;">
+      <div class="dept-header">
+        <div class="dept-bar" style="background:#0e7490;"></div>
+        <span class="dept-name">Service Department</span>
+      </div>
+      <div class="sec-label">Upload Documents</div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-commissioning-report" onclick="navigateToModule('commissioningReport')"><span class="mc-label">Upload Commissioning Report</span></div>
       </div>
     </div>
 

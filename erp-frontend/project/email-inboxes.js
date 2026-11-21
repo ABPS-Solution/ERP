@@ -87,6 +87,7 @@ function eibRender() {
       <td ${td}><select ${revoked ? "disabled" : ""} onchange="eibSetFeed(${i}, this.value)" style="width:auto; padding:5px;">
         ${["Leads", "Customer Queries", "Both", "Excluded"].map(f => `<option value="${f}" ${c.feed === f ? "selected" : ""}>${EIB_SECTION_LABEL[f]}</option>`).join("")}
       </select></td>
+      <td ${td} style="padding:8px; border:1px solid var(--border); text-align:center;"><input type="checkbox" ${revoked ? "disabled" : ""} ${c.serviceFeed ? "checked" : ""} onchange="eibSetServiceFeed(${i}, this.checked)" title="Also read this inbox for Service Tickets through Email" style="width:18px; height:18px;"></td>
       <td ${td}><span style="font-weight:700; color:${revoked ? "var(--warn)" : "var(--accent)"};">${revoked ? "Disconnected" : "Connected"}</span></td>
       <td ${td}>${eibCountCell(c.last7Days)}</td>
       <td ${td}>${c.lastUsedAt ? formatOrdinalDateTime(c.lastUsedAt) : "Never"}<br><span style="color:var(--muted); font-size:0.75rem;">Connected by ${escapeHtml(c.connectedBy || "—")}</span></td>
@@ -145,7 +146,7 @@ function eibRender() {
     </div>
     <p style="font-size:0.8rem; color:var(--muted); margin:0 0 8px;">Gmail accounts this system reads. Each one feeds one section, or none if Excluded (for test inboxes). To add one, use the link above.</p>
     <div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; min-width:820px; border:1px solid var(--border);">
-      <thead><tr><th ${th}>Inbox</th><th ${th}>Section</th><th ${th}>Status</th><th ${th}>Mail, last 7 days</th><th ${th}>Last checked</th><th ${th}></th></tr></thead>
+      <thead><tr><th ${th}>Inbox</th><th ${th}>Section</th><th ${th}>Also Service Tickets</th><th ${th}>Status</th><th ${th}>Mail, last 7 days</th><th ${th}>Last checked</th><th ${th}></th></tr></thead>
       <tbody>${connRows || `<tr><td ${td} colspan="6">No inboxes connected.</td></tr>`}</tbody>
     </table></div>
 
@@ -222,6 +223,16 @@ async function eibSetFeed(i, feed) {
     c.feed = feed;
     eibRender();
   } catch (e) { if (e.message !== "SESSION_EXPIRED") eibFeedback(e.message, false); }
+}
+async function eibSetServiceFeed(i, on) {
+  const c = eibConnections[i];
+  try {
+    const data = await apFetch({ action: "setEmailInboxServiceFeed", email: c.email, serviceFeed: on });
+    if (!data.success) { eibFeedback(data.error || "Could not change this.", false); return loadEmailInboxes(); }
+    c.serviceFeed = on;
+    eibFeedback(on ? `${c.email} will also feed Service Tickets through Email.` : `${c.email} no longer feeds Service Tickets through Email.`, true);
+    eibRender();
+  } catch (e) { if (e.message !== "SESSION_EXPIRED") eibFeedback(friendlyErr(e), false); }
 }
 async function eibDisconnect(i) {
   const c = eibConnections[i];

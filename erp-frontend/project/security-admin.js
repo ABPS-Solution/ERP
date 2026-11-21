@@ -995,6 +995,7 @@ const PM_CARD_ORDER = [
   { key: 'store', label: 'Store', color: '#0369a1' },
   { key: 'qa', label: 'Quality Assurance', color: '#dc2626' },
   { key: 'production', label: 'Production', color: '#b45309' },
+  { key: 'service', label: 'Service', color: '#0e7490' },
   { key: 'accounts', label: 'Accounts', color: '#0f766e' },
   { key: 'approvals', label: 'Approvals', color: '#0f766e' },
   { key: 'admin', label: 'Admin', color: '#7c3aed' },

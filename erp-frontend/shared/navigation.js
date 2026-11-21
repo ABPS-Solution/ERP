@@ -566,8 +566,10 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (purchaseBlock) purchaseBlock.style.display = (canViewMaterialListPurchase || canViewRejectedMaterial || canCreatePO || canAuthorizePO || canPPSTracking || canSearchVendorCostingInfo || userPermissionsObject.vendorDirectory === true || canReviseRMPO || canAuthorizeRMPORevision || canSearchRMPO || canViewPurchaseDashboard) ? "block" : "none";
   const adminBlock = document.getElementById("dashboard-admin-department-header-block");
   if (adminBlock) adminBlock.style.display = (canSecurity || canViewAdminDashboard || canViewPendingWork || userPermissionsObject.viewItemsToCheck === true || userPermissionsObject.viewBufferSuggestions === true) ? "block" : "none";
+  const serviceBlock = document.getElementById("dashboard-service-department-header-block");
+  if (serviceBlock) serviceBlock.style.display = canUploadCommissioning ? "block" : "none";
   const marketingBlock = document.getElementById("dashboard-marketing-department-header-block");
-  if (marketingBlock) marketingBlock.style.display = (canEnterCard || canViewEmailLeads || canUploadCommissioning || canUploadPurchaseOrder || canUploadRevisedPo || canSearchCompany || canSearchTasks || canSearchStatus || canSearchQual || canSearchCityState || canMeetingPreparation || canMorningMeeting || canNewsLeads) ? "block" : "none";
+  if (marketingBlock) marketingBlock.style.display = (canEnterCard || canViewEmailLeads || canUploadPurchaseOrder || canUploadRevisedPo || canSearchCompany || canSearchTasks || canSearchStatus || canSearchQual || canSearchCityState || canMeetingPreparation || canMorningMeeting || canNewsLeads) ? "block" : "none";
   const projectBlock = document.getElementById("dashboard-project-department-header-block");
   if (projectBlock) projectBlock.style.display = (canManufacturingClearance || canProjectTimeline || canDailyTimeline || canProjectStatus || canOrderPaymentProgress || userPermissionsObject.customerQueryManagement === true || userPermissionsObject.viewProjectDashboard === true) ? "block" : "none";
   // Batch 6 (16 Sep 2026): Store's own screens landed, so this is no
