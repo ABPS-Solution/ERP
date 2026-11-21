@@ -65,13 +65,13 @@ const ERP_LOCAL_STORAGE_KEYS = [
 ];
 
 // ERP_LOCAL_STORAGE_PREFIXES — section-collapse UI state keyed per-type, so
-// it can't sit in the fixed list above (one key per material/spare/BOQ-item
-// type). erp_rm_section_*/erp_spare_section_* (store/live-stock.js),
+// it can't sit in the fixed list above (one key per material/BOQ-item
+// type). erp_rm_section_* (store/live-stock.js),
 // erp_ml_section_* (purchase/material-list.js). Swept the same way
 // erpAbpsDraft: already is. Registered 16 Sep 2026 audit — these were
 // previously never cleared on logout.
 const ERP_LOCAL_STORAGE_PREFIXES = [
-  "erp_rm_section_", "erp_spare_section_", "erp_ml_section_",
+  "erp_rm_section_", "erp_ml_section_",
 ];
 
 // clearAppLocalStorageKeepingDeviceKeys — a bare localStorage.clear() must

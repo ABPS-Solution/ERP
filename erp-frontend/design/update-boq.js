@@ -211,7 +211,7 @@ function renderBOQRevisionRows(updateId) {
   const rowsHtml = uboqRevRows.length === 0
     ? `<tr><td colspan="11" style="text-align:center; padding:20px; color:var(--muted); font-size:0.82rem;">No material rows. Click "+ Add Row".</td></tr>`
     : uboqRevRows.map((row, idx) => {
-        const isRawMaterial = row.typeOfStore !== "Spare Store";
+        const isRawMaterial = true;
         const isFgRow = row.typeOfStore === "Finished Goods Store";
         const totalMaterialRate = isRawMaterial ? ((Number(row.quantityFor1Set) || 0) * (Number(row.designRatePerQuantity) || 0)) : 0;
         const changeTag = rowChangeTag(row);
@@ -605,7 +605,7 @@ function renderUBOQMaterialRows() {
     return;
   }
   uboqMaterialRows.forEach((row, idx) => {
-    const isRawMaterial = row.typeOfStore !== "Spare Store";
+    const isRawMaterial = true;
     const isFgRow = row.typeOfStore === "Finished Goods Store";
     const totalMaterialRate = isRawMaterial ? ((Number(row.quantityFor1Set) || 0) * (Number(row.designRatePerQuantity) || 0)) : 0;
     const tr = document.createElement("tr");

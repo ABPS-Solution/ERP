@@ -7,7 +7,7 @@
 // label rather than presented as exact — see lib/adminDashboard.js's own
 // header comment for the full reasoning (no FIFO/weighted-average
 // costing exists anywhere in this schema):
-//   - RM + Spare Store value = current quantity x last purchase rate.
+//   - RM Store value = current quantity x last purchase rate.
 //   - FG (in store) value = design-costed rate, not actual landed cost.
 //
 // Custom-period type helpers (dashCustomTypeChange/dashReadCustomVal in

@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════════════════
 // store/store-ledger.js — "Store Ledger" toggle shared by Live Raw
-// Materials / Finished Goods / Spare Store Stock. One generic
+// Materials / Finished Goods Stock. One generic
 // implementation parameterized by a screen `prefix` ('rm' | 'fgstock' |
-// 'spare') and the backend's `storeType` string ('Raw Materials' |
-// 'Finished Goods' | 'Spare') — every DOM id follows `{prefix}-ledger-*`.
+//) and the backend's `storeType` string ('Raw Materials' |
+// 'Finished Goods') — every DOM id follows `{prefix}-ledger-*`.
 // Backend: routes/store.js's fetchStoreLedgerReport / downloadStoreLedgerReport.
 // ═══════════════════════════════════════════════════════════════════════
 

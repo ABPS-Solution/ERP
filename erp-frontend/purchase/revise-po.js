@@ -1921,7 +1921,7 @@ function saveAPORAllocationModal(requestId, idx) {
 // Two-phase authorize. The first call may come back needsConfirmation
 // when a PRN moved on since the draft was written — rather than discarding
 // the purchaser's vendor negotiation, the server re-clamps the affected
-// allocations and reports exactly what will become spare. The authorizer
+// allocations and reports exactly what will become free stock. The authorizer
 // sees that and re-confirms; only then does anything get written.
 async function authorizePORevisionUI(requestId, confirmStale) {
   const authBtn = document.getElementById(`apor-auth-${requestId}`);
@@ -1985,7 +1985,7 @@ async function authorizePORevisionUI(requestId, confirmStale) {
     if (!data.success && data.needsConfirmation) {
       const fmt = (n) => (Number(n)||0).toLocaleString("en-IN",{maximumFractionDigits:2});
       const lines = (data.staleNotes || []).map(s =>
-        `• ${s.prnId} / ${s.itemCode}: drafted ${fmt(s.drafted)}, but it can now only take ${fmt(s.canAbsorb)} — ${fmt(s.surplus)} becomes spare stock.`).join("\n");
+        `• ${s.prnId} / ${s.itemCode}: drafted ${fmt(s.drafted)}, but it can now only take ${fmt(s.canAbsorb)} — ${fmt(s.surplus)} goes back to free stock.`).join("\n");
       if (await abpsConfirm(`A PRN changed since this revision was drafted.\n\n${lines}\n\nAuthorize with these adjustments?`)) {
         return authorizePORevisionUI(requestId, true);
       }

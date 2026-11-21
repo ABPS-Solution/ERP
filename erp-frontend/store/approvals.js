@@ -217,11 +217,6 @@ async function checkCoverageAndApprove(ticketId, projectId, btn, storeType) {
     abpsAlert(`The Actual Quantity for ${overrunItem.materialName} is more than the BOQ Remaining Qty. Either reduce the Actual Quantity to match the BOQ Remaining Qty, or reject the entire ticket and have them create a new ticket with an Excess Material Request.`);
     return;
   }
-  const invalidSpare = findInvalidSpareAllocation(ticketId);
-  if (invalidSpare) {
-    abpsAlert(`Spare Store Extra Qty is required for ${invalidSpare.materialName} since Spare Stock Needed is set to Blocked or Restricted.`);
-    return;
-  }
   // Skips the standalone stock-coverage pre-check/manual-reallocation modal
   // entirely — that path relied on a backend field (coverageReport) that
   // never actually existed, and it's superseded anyway: the Total Stock
@@ -277,8 +272,7 @@ async function executeStoreManagerTicketActionDecision(ticketId, decisionString)
       activeEngineer: appActiveOperatorIdentityString,
       ticketId: ticketId,
       managerDecisionCommand: decisionString,
-      actualQuantities: decisionString === "APPROVE" ? collectTicketActualQuantities(ticketId) : undefined,
-      spareAllocations: decisionString === "APPROVE" ? collectSpareAllocations(ticketId) : undefined
+      actualQuantities: decisionString === "APPROVE" ? collectTicketActualQuantities(ticketId) : undefined
     });
     if (result.success) {
       // SILENT METRICS RE-INDEX: Instantly refresh home dashboard widgets states counters fields

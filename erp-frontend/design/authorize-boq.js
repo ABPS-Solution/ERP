@@ -643,7 +643,7 @@ function renderEBOQMaterialRows() {
     return;
   }
   eboqMaterialRows.forEach((row, idx) => {
-    const isRawMaterial = row.typeOfStore !== "Spare Store";
+    const isRawMaterial = true;
     const isFgRow = row.typeOfStore === "Finished Goods Store";
     const totalMaterialRate = isRawMaterial ? ((Number(row.quantityFor1Set) || 0) * (Number(row.designRatePerQuantity) || 0)) : 0;
     const tr = document.createElement("tr");

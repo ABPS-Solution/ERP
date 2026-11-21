@@ -135,7 +135,6 @@ function ticketBulkRender() {
         <span style="flex:1;"></span>
         <select onchange="ticketBulkSetStore(this.value)" style="width:auto; padding:6px 8px; font-weight:600; border:2px solid #94a3b8; border-radius:var(--radius);">
           <option value="Raw Materials Store" ${st.store === "Raw Materials Store" ? "selected" : ""}>Raw Materials Store</option>
-          <option value="Spare Store" ${st.store === "Spare Store" ? "selected" : ""}>Spare Store</option>
         </select>
       </div>
       <div style="display:flex; gap:6px; flex-wrap:wrap; max-height:110px; overflow-y:auto;">${st.jcs.map(pill).join("")}</div>

@@ -80,7 +80,6 @@ function exitStoreWorkspacePanelBackToMenu() {
   if(document.getElementById("canvas-module-revise-project-dispatch-invoice")) document.getElementById("canvas-module-revise-project-dispatch-invoice").style.display = "none";
   if(document.getElementById("canvas-module-authorize-project-dispatch-invoice-revision")) document.getElementById("canvas-module-authorize-project-dispatch-invoice-revision").style.display = "none";
   if(document.getElementById("canvas-module-store-live-fg")) document.getElementById("canvas-module-store-live-fg").style.display = "none";
-  if(document.getElementById("canvas-module-store-live-spare")) document.getElementById("canvas-module-store-live-spare").style.display = "none";
   if(document.getElementById("canvas-module-store-history-matrix")) document.getElementById("canvas-module-store-history-matrix").style.display = "none";
 
   if (typeof resetJCSHWorkspace === "function") resetJCSHWorkspace();
@@ -120,42 +119,12 @@ function renderStoreManagerApprovalsCardsFeed(pendingTicketsList) {
     
     let itemsArray = Array.isArray(ticket.items) ? ticket.items : [];
     
-    const isRawTicket = (ticket.storeTargetScope || "Raw Materials Store") === "Raw Materials Store";
-    // Service issues draw from the free stock pool, never from Spare Store
-    // (submitEngineerMaterialTicket blocks that combination server-side) —
-    // Spare Stock Needed / Spare Store Extra Qty exist to cover a raw-stock
-    // shortfall against a Job Card's BOQ allotment, a concept that doesn't
-    // apply to a free-pool issue (Service, or a legacy/pre-system ticket —
-    // widened at go-live to any department) at all. Drop both columns
-    // entirely for a free-pool ticket rather than just locking the select
-    // to "No". A legacy ticket under a non-Service department still needs
-    // this — checking legacyCompanyName, not just department, is what
-    // makes that work.
-    // Finished Goods tickets never draw on Spare Store either, so hide the
-    // two spare columns for them too.
-    const isServiceTicket = (ticket.department || "").toString().trim() === "Service" || !!ticket.legacyCompanyName
-      || (ticket.storeTargetScope || "") === "Finished Goods Store";
     let itemRowsHtml = "";
     itemsArray.forEach(item => {
       const overrunHighlightStyle = item.requiresBOQIncreaseFlag === true ? 'color: var(--warn); font-weight: 800; background: #fff5f2; padding: 2px 6px; border-radius: 4px; border: 1px solid #fca5a5;' : '';
       const reqQty = Number(item.quantity) || 0;
       const jcAllotted = (item.jcAllottedQty !== null && item.jcAllottedQty !== undefined) ? fmtQty(item.jcAllottedQty) : "—";
       const jcRemaining = (item.jcRemainingQty !== null && item.jcRemainingQty !== undefined) ? item.jcRemainingQty : null;
-      const spareCellsHtml = isServiceTicket ? "" : isRawTicket ? `
-          <td style="padding:6px; text-align:center; vertical-align:middle;">
-            <select class="ticket-spare-needed-select" data-itemcode="${item.itemCode}" onchange="handleSpareNeededChange(this)"
-              style="width:100%; padding:5px 4px; font-size:0.82rem; font-weight:600; border:1.5px solid var(--border); border-radius:4px;">
-              <option value="No" selected>No</option>
-              <option value="Blocked">Blocked</option>
-              <option value="Restricted">Restricted</option>
-            </select>
-          </td>
-          <td style="padding:6px; text-align:center; vertical-align:middle;">
-            <input type="number" class="ticket-spare-qty-input" data-itemcode="${item.itemCode}" value="" min="0" step="any" disabled
-              style="box-sizing:border-box; width:100%; margin:0; padding:5px 6px; text-align:center; font-family:monospace; font-weight:700; font-size:1.05rem; border:1.5px solid var(--border); border-radius:4px; background:#f1f5f9; color:var(--muted);" />
-          </td>` : `
-          <td style="padding:6px; text-align:center; vertical-align:middle; color:var(--muted);">—</td>
-          <td style="padding:6px; text-align:center; vertical-align:middle; color:var(--muted);">—</td>`;
       itemRowsHtml += `
         <tr>
           <td style="padding:6px; font-weight:600; text-align:left; ${overrunHighlightStyle}">
@@ -173,7 +142,6 @@ function renderStoreManagerApprovalsCardsFeed(pendingTicketsList) {
               value="${reqQty}" min="0" max="${reqQty}" step="any" oninput="clampTicketActualQtyInput(this)"
               style="box-sizing:border-box; width:100%; margin:0; padding:5px 6px; text-align:center; font-family:monospace; font-weight:700; font-size:1.05rem; border:1.5px solid var(--border); border-radius:4px;" />
           </td>
-${spareCellsHtml}
         </tr>`;
     });
     
@@ -217,8 +185,6 @@ ${spareCellsHtml}
               <col style="width:110px;">
               <col style="width:140px;">
               <col style="width:140px;">
-              ${isServiceTicket ? "" : `<col style="width:130px;">
-              <col style="width:110px;">`}
             </colgroup>
             <thead>
               <tr style="border-bottom:1px solid #e2e8f0;">
@@ -229,8 +195,6 @@ ${spareCellsHtml}
                 <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:center;">Current Stock Count</th>
                 <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:center;">Requested Quantity</th>
                 <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:center;">Actual Quantity *</th>
-                ${isServiceTicket ? "" : `<th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:center;">Spare Stock Needed</th>
-                <th style="padding:6px; font-size:0.68rem; text-transform:uppercase; color:var(--muted); text-align:center;">Spare Store Extra Qty</th>`}
               </tr>
             </thead>
             <tbody>${itemRowsHtml}</tbody>
@@ -620,127 +584,6 @@ function renderRawMaterialsStockGrid() {
         section.appendChild(bodyDiv);
         mountZone.appendChild(section);
       });
-  }
-}
-
-async function triggerLiveSpareStoreStockMetricsSync() {
-  const mountZone = document.getElementById("dashboard-live-spare-inventory-metrics-mount-zone");
-  const syncBtn   = document.getElementById("live-stock-sync-btn");
-  if (!mountZone) return;
-
-  mountZone.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--muted);"><div class="spinner" style="display:inline-block; width:16px; height:16px; border:2px solid var(--border); border-top-color:var(--brand); border-radius:50%; animation:spin 0.8s linear infinite; margin-right:8px; vertical-align:middle;"></div>Loading Spare Store...</div>`;
-
-  try {
-    const data = await apFetch({ action: "getSpareStoreStock" });
-    if (!data.success) { mountZone.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--warn);">⚠️ ${escapeHtml(data.error || 'Could not load Spare Store.')}</div>`; return; }
-    window.cachedSpareStoreStockCollection = data.stock || [];
-    renderSpareStoreStockGrid();
-  } catch(e) {
-    mountZone.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--warn);">⚠️ Refresh failed: ${escapeHtml(e.message)}</div>`;
-  } finally {
-    if (syncBtn) { syncBtn.disabled = false; syncBtn.innerHTML = "🔄 Refresh"; }
-  }
-}
-
-window.spareStockSearchQuery = "";
-function handleSpareStockSearchInput(query) {
-  window.spareStockSearchQuery = (query || "").trim().toLowerCase();
-  renderSpareStoreStockGrid();
-}
-
-function renderSpareStoreStockGrid() {
-  const mountZone = document.getElementById("dashboard-live-spare-inventory-metrics-mount-zone");
-  if (!mountZone) return;
-  const fullStock = window.cachedSpareStoreStockCollection || [];
-
-  if (fullStock.length === 0) {
-    mountZone.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:40px 20px; background:var(--card); border:1px solid var(--border); border-radius:var(--radius);"><div style="font-size:2rem; margin-bottom:10px;">📦</div><div style="font-size:0.95rem; font-weight:700; color:var(--muted);">Spare Store is Empty</div></div>`;
-    return;
-  }
-
-  const q = window.spareStockSearchQuery || "";
-  const filteredStock = !q ? fullStock : fullStock.filter(item =>
-    liveStockSearchMatches([liveStockDisplayName(item), item.itemCode, "make", item.make], q));
-
-  if (filteredStock.length === 0) {
-    mountZone.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:30px 20px; background:var(--card); border:1px solid var(--border); border-radius:var(--radius);"><div style="font-size:0.9rem; font-weight:700; color:var(--muted);">No materials matched "${q}".</div></div>`;
-    return;
-  }
-
-  {
-    const typeGroups = {};
-    filteredStock.forEach(item => {
-      const type = item.typeOfMaterial || "Uncategorized";
-      if (!typeGroups[type]) typeGroups[type] = [];
-      typeGroups[type].push(item);
-    });
-
-    mountZone.innerHTML = "";
-    Object.keys(typeGroups).sort().forEach(type => {
-      const items     = typeGroups[type];
-      const sectionId = "spare-section-body-" + type.replace(/\s+/g, '_');
-      const toggleId  = "spare-toggle-btn-" + type.replace(/\s+/g, '_');
-      const isCollapsed = localStorage.getItem("erp_spare_section_" + type) === "collapsed";
-
-      const section = document.createElement("div");
-      section.style.cssText = "grid-column:1/-1; margin-bottom:16px; background:var(--card); border:2px solid #64748b; border-radius:var(--radius); overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.04);";
-
-      const headerDiv = document.createElement("div");
-      headerDiv.style.cssText = "display:flex; justify-content:space-between; align-items:center; padding:10px 16px; background:var(--highlight-bg); border-bottom:1px solid var(--border); cursor:pointer; user-select:none;";
-      headerDiv.onclick = () => {
-        const body = document.getElementById(sectionId);
-        const btn  = document.getElementById(toggleId);
-        if (body.style.display === "none") {
-          body.style.display = "flex";
-          btn.textContent = "▲ Collapse";
-          localStorage.setItem("erp_spare_section_" + type, "expanded");
-        } else {
-          body.style.display = "none";
-          btn.textContent = "▼ Expand";
-          localStorage.setItem("erp_spare_section_" + type, "collapsed");
-        }
-      };
-      headerDiv.innerHTML = `
-        <div style="display:flex; align-items:center; gap:10px;">
-          <span style="font-size:0.78rem; font-weight:800; text-transform:uppercase; color:var(--brand); letter-spacing:0.5px;">${escapeHtml(window.typeLabelDisplay_(type))}</span>
-          <span style="font-size:0.72rem; font-weight:700; background:#e0f2fe; color:#0369a1; padding:2px 8px; border-radius:10px;">${items.length} ${items.length === 1 ? 'item' : 'items'}</span>
-        </div>
-        <button id="${toggleId}" style="background:transparent; border:1px solid var(--border); color:var(--brand); font-size:0.72rem; font-weight:700; padding:3px 10px; border-radius:4px; cursor:pointer;">
-          ${isCollapsed ? '▼ Expand' : '▲ Collapse'}
-        </button>`;
-
-      const bodyDiv = document.createElement("div");
-      bodyDiv.id = sectionId;
-      bodyDiv.style.cssText = `display:${isCollapsed ? 'none' : 'flex'}; flex-wrap:wrap; gap:10px; padding:14px;`;
-
-      items.forEach(item => {
-        const card = document.createElement("div");
-        card.style.cssText = "background:#f8fafc; border:2px solid #94a3b8; padding:12px; border-radius:var(--radius); display:flex; flex-direction:column; gap:6px; box-shadow:0 1px 3px rgba(0,0,0,0.02); width:180px; flex-shrink:0; cursor:pointer;";
-        card.title = "Click to see how Reserved stock is assigned across BOQs";
-        card.onclick = () => showStockAssignmentBreakdownModal(item.itemCode, liveStockDisplayName(item), item.unitType, item.availableStock, 'spare', item.reservedStock, item.make);
-        card.innerHTML = `
-          <div style="font-size:0.8rem; font-weight:700; color:#334155; line-height:1.4; word-break:break-word;">
-            ${escapeHtml(liveStockDisplayName(item))}
-          </div>
-          ${(item.make && !/Make:/i.test(item.materialName || '')) ? `<div style="font-size:0.72rem; font-weight:600; color:#64748b;">Make: ${escapeHtml(item.make)}</div>` : ''}
-          <div style="text-align:right; margin-top:auto;">
-            <span style="font-size:0.72rem; font-weight:700; color:#334155; margin-right:6px;">Total: <span style="font-family:monospace; font-size:0.8rem;">${trimNum((Number(item.availableStock) || 0) + (Number(item.reservedStock) || 0))}</span></span><span style="display:inline-block; font-size:0.65rem; font-weight:700; padding:2px 6px; border-radius:3px; background:#dcfce7; color:#15803d;">${(item.unitType || "NOS").toUpperCase()}</span>
-          </div>
-          <div style="border-top:1px dashed #e2e8f0; padding-top:8px; display:flex; flex-direction:column; gap:4px;">
-            <div style="display:flex; justify-content:space-between; font-size:0.78rem; font-weight:600; color:#334155;">
-              <span>Available:</span><span style="font-family:monospace; font-weight:700;">${item.availableStock}</span>
-            </div>
-            <div style="display:flex; justify-content:space-between; font-size:0.78rem; font-weight:600; color:#334155;">
-              <span>Reserved:</span><span style="font-family:monospace; font-weight:700;">${item.reservedStock || 0}</span>
-            </div>
-          </div>`;
-        bodyDiv.appendChild(card);
-      });
-
-      section.appendChild(headerDiv);
-      section.appendChild(bodyDiv);
-      mountZone.appendChild(section);
-    });
   }
 }
 
@@ -1188,10 +1031,9 @@ async function refreshRPRNDeltaLiveStock() {
     if (!data.success) return;
     document.querySelectorAll(".rprn-delta-livestock").forEach(span => {
       const code = span.dataset.itemcode;
-      const s = data.stock[code.toUpperCase()] || { raw: 0, spare: 0 };
-      const total = s.raw + s.spare;
+      const s = data.stock[code.toUpperCase()] || { raw: 0 };
+      const total = s.raw;
       span.dataset.liveRaw = s.raw;
-      span.dataset.liveSpare = s.spare;
       span.dataset.liveTotal = total;
       const tr = span.closest("tr");
       const inp = tr ? tr.querySelector(".rprn-delta-storeqty") : null;
@@ -1208,9 +1050,8 @@ async function refreshRPRNDeltaLiveStock() {
       // Stock held for this BOQ on a "PRN pending" PO counts as store
       // coverage for its first PRN (after free stock), so it adds to the cap.
       const prnPendingHeld = itemForSpan && !isDecreaseInp && !isIncreaseInp ? (Number(itemForSpan.heldForBoq) || 0) : 0;
-      const baseRaw = (addBackOwn ? s.raw + (Number(itemForSpan.storeFromRaw) || 0) : s.raw) + prnPendingHeld;
-      const baseSpare = (addBackOwn ? s.spare + (Number(itemForSpan.storeFromSpare) || 0) : s.spare) + addBackHeld;
-      const effectiveTotal = baseRaw + baseSpare;
+      const baseRaw = (addBackOwn ? s.raw + (Number(itemForSpan.storeFromRaw) || 0) : s.raw) + prnPendingHeld + addBackHeld;
+      const effectiveTotal = baseRaw;
 
       // Overwriting these with the ADD-BACK-INCLUSIVE numbers, not the
       // raw live-only ones — the input's own typing listener reads these
@@ -1220,12 +1061,11 @@ async function refreshRPRNDeltaLiveStock() {
       // actual cap/typing behavior disagreed — capping you at 50 while
       // showing 70, and re-diverging on every poll cycle.
       span.dataset.liveRaw = baseRaw;
-      span.dataset.liveSpare = baseSpare;
       span.dataset.liveTotal = effectiveTotal;
 
       const currentVal = inp ? (Math.round((parseFloat(inp.value) || 0) * 1000) / 1000) : 0;
-      const split = computeLiveStoreSplit(baseRaw, baseSpare, currentVal);
-      span.textContent = `${split.remainingRaw + split.remainingSpare} (Raw: ${split.remainingRaw}, Spare: ${split.remainingSpare})`;
+      const split = computeLiveStoreSplit(baseRaw, currentVal);
+      span.textContent = `${split.remainingRaw}`;
       const bufferedReqForCap = itemForSpan ? (Number(itemForSpan.bufferedRequirement) || 0) : Infinity;
       if (inp) {
         if (!inp.classList.contains("rprn-delta-decrease-storeqty")) {
@@ -1251,7 +1091,7 @@ async function refreshRPRNDeltaLiveStock() {
   } catch(e) { /* silent, retry next interval */ }
 }
 
-// Same live raw+spare polling as Create/Auth PRN, and the same
+// Same live stock polling as Create/Auth PRN, and the same
 // enforce-in-code cap — the input's `max` attribute alone does not stop
 // typing, so updateRevisePRNRow also reads it back to actually block
 // entering more than what's genuinely available.
@@ -1267,31 +1107,26 @@ async function refreshRevisePRNLiveStock() {
       const code = span.dataset.itemcode;
       const idx = Number(span.dataset.idx);
       const li = st.lineItems[idx];
-      const s = data.stock[code.toUpperCase()] || { raw: 0, spare: 0 };
+      const s = data.stock[code.toUpperCase()] || { raw: 0 };
 
-      // Add back THIS PRN's own reservation, per pool, using the exact
-      // recorded split — not an assumed spare-first guess.
+      // Add back THIS PRN's own reservation.
       const reservedRaw = li ? (Number(li.storeFromRaw) || 0) : 0;
-      const reservedSpare = li ? (Number(li.storeFromSpare) || 0) : 0;
       const baseRaw = s.raw + reservedRaw;
-      const baseSpare = s.spare + reservedSpare;
-      const total = baseRaw + baseSpare;
+      const total = baseRaw;
 
       span.dataset.baseraw = baseRaw;
-      span.dataset.basespare = baseSpare;
       span.dataset.reservedraw = reservedRaw;
-      span.dataset.reservedspare = reservedSpare;
 
       const inp = document.querySelector(`.rprn-store[data-idx="${idx}"]`);
       const currentTyped = inp ? (parseFloat(inp.value) || 0) : (li ? Number(li.storeQty) || 0 : 0);
-      const disp = computeRevisePRNStoreDisplay(baseRaw, baseSpare, reservedRaw, reservedSpare, currentTyped);
-      span.textContent = `${disp.remainingRaw + disp.remainingSpare} (Raw: ${disp.remainingRaw}, Spare: ${disp.remainingSpare})`;
+      const disp = computeRevisePRNStoreDisplay(baseRaw, reservedRaw, currentTyped);
+      span.textContent = `${disp.remainingRaw}`;
 
       if (inp && li) {
         const requirementCap = Number(li.bufferedRequirement) || 0;
         // The server lets a re-split grow only by free stock above Current
         // Store Qty; store_qty_from_* can run higher (29 Sep 2026).
-        const serverCap = s.raw + s.spare + (Number(li.storeQty) || 0);
+        const serverCap = s.raw + (Number(li.storeQty) || 0);
         const cap = Math.min(requirementCap, total, serverCap);
         inp.max = cap;
         if (currentTyped > cap) { inp.value = Math.round(cap * 1000) / 1000; updateRevisePRNRow(idx); }
@@ -1323,16 +1158,13 @@ function updateRevisePRNRow(idx) {
     + (newPurchase < onOrder - 1e-9 ? `  (below ${onOrder} on order)` : "");
 
   // Live-update "Store Available Stock" as the typed quantity changes —
-  // spare-first on increase, raw-first release on decrease, matching
-  // exactly how the backend will actually reserve/release it on submit.
+  // matching exactly how the backend will reserve/release it on submit.
   const stockSpan = document.querySelector(`.rprn-livestock[data-idx="${idx}"]`);
   if (stockSpan && stockSpan.dataset.baseraw !== undefined) {
     const baseRaw = Number(stockSpan.dataset.baseraw) || 0;
-    const baseSpare = Number(stockSpan.dataset.basespare) || 0;
     const reservedRaw = Number(stockSpan.dataset.reservedraw) || 0;
-    const reservedSpare = Number(stockSpan.dataset.reservedspare) || 0;
-    const disp = computeRevisePRNStoreDisplay(baseRaw, baseSpare, reservedRaw, reservedSpare, store);
-    stockSpan.textContent = `${disp.remainingRaw + disp.remainingSpare} (Raw: ${disp.remainingRaw}, Spare: ${disp.remainingSpare})`;
+    const disp = computeRevisePRNStoreDisplay(baseRaw, reservedRaw, store);
+    stockSpan.textContent = `${disp.remainingRaw}`;
   }
 }
 
@@ -1344,7 +1176,7 @@ async function refreshAPRNLiveStock() {
     if (!data.success) return;
     document.querySelectorAll(".aprn-livestock").forEach(span => {
       const code = span.dataset.itemcode;
-      const s = data.stock[code.toUpperCase()] || { raw: 0, spare: 0 };
+      const s = data.stock[code.toUpperCase()] || { raw: 0 };
       const tr = span.closest("tr");
       const inp = tr ? tr.querySelector(".aprn-storeqty") : null;
       const idx = inp ? Number(inp.dataset.idx) : null;
@@ -1363,24 +1195,20 @@ async function refreshAPRNLiveStock() {
       // at submission, so the live pool already reflects it; adding the
       // delta back again would double-count a claim or double-release a
       // release. Resplit rows carry the ABSOLUTE current split
-      // (newStoreFromRaw/newStoreFromSpare) for exactly this reason.
+      // (newStoreFromRaw) for exactly this reason.
       const isResplitRow = row && row.changeKind === 'resplit';
       // heldUse: stock held for this BOQ on a "PRN pending" PO that this PRN takes.
-      const ownRaw = row ? (isResplitRow ? (Number(row.newStoreFromRaw) || 0) : Math.max(0, Number(row.storeFromRawDelta) || 0) + (Number(row.heldUse) || 0)) : 0;
-      const ownSpare = row ? (isResplitRow ? (Number(row.newStoreFromSpare) || 0)
-        : Math.max(0, Number(row.storeFromSpareDelta) || 0) + (Number(row.previousStoreQty) || 0)) : 0;
+      const ownRaw = row ? (isResplitRow ? (Number(row.newStoreFromRaw) || 0) : Math.max(0, Number(row.storeFromRawDelta) || 0) + (Number(row.heldUse) || 0) + (Number(row.previousStoreQty) || 0)) : 0;
       const baseRaw = s.raw + ownRaw;
-      const baseSpare = s.spare + ownSpare;
-      const total = baseRaw + baseSpare;
+      const total = baseRaw;
 
       span.dataset.baseraw = baseRaw;
-      span.dataset.basespare = baseSpare;
 
       const currentTyped = inp ? (parseFloat(inp.value) || 0) : 0;
       const split = isResplitRow
-        ? computeRevisePRNStoreDisplay(baseRaw, baseSpare, ownRaw, ownSpare, currentTyped)
-        : computeLiveStoreSplit(baseRaw, baseSpare, currentTyped);
-      span.textContent = `${split.remainingRaw + split.remainingSpare} (Raw: ${split.remainingRaw}, Spare: ${split.remainingSpare})`;
+        ? computeRevisePRNStoreDisplay(baseRaw, ownRaw, currentTyped)
+        : computeLiveStoreSplit(baseRaw, currentTyped);
+      span.textContent = `${split.remainingRaw}`;
 
       if (inp) {
         const requirementCap = row
@@ -1434,22 +1262,15 @@ function updateAPRNRow(idx, value, prnId) {
   }
 
   // Live-update "Store Available Stock" as the typed quantity changes —
-  // spare is consumed first, matching exactly how the backend reserves
-  // it on submit, so what's shown updating is what will really happen.
+  // matching how the backend reserves it on submit.
   const tr = inputEl ? inputEl.closest("tr") : null;
   const stockSpan = tr ? tr.querySelector(".aprn-livestock") : null;
   if (stockSpan && stockSpan.dataset.baseraw !== undefined) {
     const baseRaw = Number(stockSpan.dataset.baseraw) || 0;
-    const baseSpare = Number(stockSpan.dataset.basespare) || 0;
-    // Resplit rows: raw-first release / spare-first extra-claim, same
-    // formula Revise PRN's own preview uses and what the backend now
-    // actually commits — NOT the generic spare-first-claim formula
-    // (computeLiveStoreSplit) Delta PRN rows use, which assumes a fresh
-    // claim rather than an edit against an existing specific split.
     const split = row.changeKind === 'resplit'
-      ? computeRevisePRNStoreDisplay(baseRaw, baseSpare, Number(row.newStoreFromRaw) || 0, Number(row.newStoreFromSpare) || 0, storeQty)
-      : computeLiveStoreSplit(baseRaw, baseSpare, storeQty);
-    stockSpan.textContent = `${split.remainingRaw + split.remainingSpare} (Raw: ${split.remainingRaw}, Spare: ${split.remainingSpare})`;
+      ? computeRevisePRNStoreDisplay(baseRaw, Number(row.newStoreFromRaw) || 0, storeQty)
+      : computeLiveStoreSplit(baseRaw, storeQty);
+    stockSpan.textContent = `${split.remainingRaw}`;
   }
 }
 
@@ -1463,10 +1284,9 @@ async function refreshPRNCreateLiveStock() {
     if (!data.success) return;
     document.querySelectorAll(".prn-create-livestock").forEach(span => {
       const code = span.dataset.itemcode;
-      const s = data.stock[code.toUpperCase()] || { raw: 0, spare: 0 };
-      const total = s.raw + s.spare;
+      const s = data.stock[code.toUpperCase()] || { raw: 0 };
+      const total = s.raw;
       span.dataset.liveRaw = s.raw;
-      span.dataset.liveSpare = s.spare;
       span.dataset.liveTotal = total;
       const tr = span.closest("tr");
       const inp = tr ? tr.querySelector(".prn-create-storeqty") : null;
@@ -1488,20 +1308,18 @@ async function refreshPRNCreateLiveStock() {
       // Stock held for this BOQ on a "PRN pending" PO counts as store
       // coverage for its first PRN (after free stock), so it adds to the cap.
       const prnPendingHeld = itemForSpan && !isDecreaseInp && !isIncreaseInp ? (Number(itemForSpan.heldForBoq) || 0) : 0;
-      const baseRaw = (addBackOwn ? s.raw + (Number(itemForSpan.storeFromRaw) || 0) : s.raw) + prnPendingHeld;
-      const baseSpare = (addBackOwn ? s.spare + (Number(itemForSpan.storeFromSpare) || 0) : s.spare) + addBackHeld;
-      const effectiveTotal = baseRaw + baseSpare;
+      const baseRaw = (addBackOwn ? s.raw + (Number(itemForSpan.storeFromRaw) || 0) : s.raw) + prnPendingHeld + addBackHeld;
+      const effectiveTotal = baseRaw;
       // Overwriting with the ADD-BACK-INCLUSIVE numbers — the dataset
-      // values were set above from s.raw/s.spare/total (live-pool-only,
+      // values were set above from s.raw/total (live-pool-only,
       // BEFORE this row's own held stock gets added back), so the cap
       // logic below and any other reader of these same dataset keys was
       // silently disagreeing with the "remaining" text this function
       // itself displays two lines down.
       span.dataset.liveRaw = baseRaw;
-      span.dataset.liveSpare = baseSpare;
       span.dataset.liveTotal = effectiveTotal;
-      const split = computeLiveStoreSplit(baseRaw, baseSpare, currentVal);
-      span.textContent = `${split.remainingRaw + split.remainingSpare} (Raw: ${split.remainingRaw}, Spare: ${split.remainingSpare})`;
+      const split = computeLiveStoreSplit(baseRaw, currentVal);
+      span.textContent = `${split.remainingRaw}`;
       const bufferedReqForCap = itemForSpan ? (Number(itemForSpan.bufferedRequirement) || 0) : Infinity;
       if (inp) {
         if (!inp.classList.contains("prn-create-decrease-storeqty")) {
@@ -1541,10 +1359,10 @@ async function refreshPRNLiveStock() {
     if (!data.success) return;
     document.querySelectorAll(".prn-livestock-total").forEach(span => {
       const code = span.dataset.itemcode;
-      const s = data.stock[code.toUpperCase()] || { raw: 0, spare: 0 };
+      const s = data.stock[code.toUpperCase()] || { raw: 0 };
       const heldLi = (prnCurrentData.lineItems || []).find(it => it.itemCode === code);
-      const total = s.raw + s.spare + (heldLi ? Number(heldLi.heldForBoq) || 0 : 0);
-      span.textContent = `${total} (Raw: ${s.raw}, Spare: ${s.spare})`;
+      const total = s.raw + (heldLi ? Number(heldLi.heldForBoq) || 0 : 0);
+      span.textContent = `${total}`;
       span.dataset.liveTotal = total;
 
       // If the currently entered Store Quantity exceeds the new live stock, clamp it down
@@ -1587,7 +1405,7 @@ function updatePRNPurchaseQtyCell(inputEl, idx) {
   if (cell) { cell.textContent = trimNum(purchaseQty); cell.style.color = "#1a2332"; }
 }
 
-// Live RM / Spare stock cards: "Name - Rating" (stored names are bare).
+// Live RM stock cards: "Name - Rating" (stored names are bare).
 function liveStockDisplayName(item) {
   const name = item.materialName || "";
   const rating = (item.rating || "").trim();

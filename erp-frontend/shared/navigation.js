@@ -448,7 +448,6 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const canSearchStoreMat       = userPermissionsObject.storeAdminMatrix === true;
   const canViewLiveStock        = userPermissionsObject.liveStoreStock === true;
   const canViewLiveFinishedStock = userPermissionsObject.liveFinishedGoodsStoreStock === true;
-  const canLiveSpareStoreStock  = userPermissionsObject.liveSpareStoreStock === true;
   const canMaterialOutward      = userPermissionsObject.materialOutward === true;
   const canViewStoreDashboard   = userPermissionsObject.viewStoreDashboard === true;
 
@@ -509,7 +508,6 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-store-matrix"))           document.getElementById("mod-store-matrix").style.display           = canSearchStoreMat ? "block" : "none";
   if (document.getElementById("mod-live-store-stock"))       document.getElementById("mod-live-store-stock").style.display       = canViewLiveStock ? "block" : "none";
   if (document.getElementById("mod-live-finished-store-stock")) document.getElementById("mod-live-finished-store-stock").style.display = canViewLiveFinishedStock ? "block" : "none";
-  if (document.getElementById("mod-live-spare-store-stock")) document.getElementById("mod-live-spare-store-stock").style.display = canLiveSpareStoreStock ? "block" : "none";
   if (document.getElementById("mod-material-outward"))       document.getElementById("mod-material-outward").style.display       = canMaterialOutward ? "block" : "none";
   const canAuthorizeMaterialOutward = userPermissionsObject.authorizeMaterialOutward === true;
   if (document.getElementById("mod-authorize-material-outward")) document.getElementById("mod-authorize-material-outward").style.display = canAuthorizeMaterialOutward ? "block" : "none";
@@ -582,7 +580,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (storeBlock) storeBlock.style.display = (userPermissionsObject.searchInwardMaterial === true || canCreateProjectDispatchInvoice || canAuthorizeProjectDispatchInvoice || canReviseProjectDispatchInvoice || canAuthorizeProjectDispatchInvoiceRevision || canPurchaseRequestNote || canAuthorizePRN
     || canRevisePRN || canAuthorizePRNRevision || canReserveStoreStock || canStockSweep || canGateEntry || canStoreEntryAndGrn
     || canExpectedInbounds || canApproveBOQIncrease || canReleaseTicket || canSearchStoreMat || canViewLiveStock
-    || canViewLiveFinishedStock || canLiveSpareStoreStock || canMaterialOutward || canAuthorizeMaterialOutward || canViewStoreDashboard)
+    || canViewLiveFinishedStock || canMaterialOutward || canAuthorizeMaterialOutward || canViewStoreDashboard)
     ? "block" : "none";
   // Production department block (Batch 7, 16 Sep 2026)
   const productionBlock = document.getElementById("dashboard-production-department-header-block");
@@ -791,22 +789,6 @@ function switchActiveDashboardModule(targetSectionId) {
     }
     document.getElementById("canvas-module-store-live-fg").style.display = "block";
     triggerLiveFinishedGoodsStoreStockMetricsSync();
-    return;
-  }
-  if (targetSectionId === "store-live-spare") {
-    document.getElementById("module-store-workspace-enclosure-panel").style.display = "block";
-    document.querySelectorAll("#module-store-workspace-enclosure-panel .workspace-panel").forEach(p => p.style.display = "none");
-    const leftControls = document.getElementById("store-panel-left-controls");
-    const centerTitle  = document.getElementById("store-panel-center-title");
-    const syncBtn      = document.getElementById("live-stock-sync-btn");
-    if (leftControls) leftControls.style.visibility = "visible";
-    if (centerTitle)  { centerTitle.style.visibility = "visible"; centerTitle.textContent = "Live Spare Store Stock"; }
-    if (syncBtn) {
-      syncBtn.removeAttribute("onclick");
-      syncBtn.onclick = function() { triggerLiveSpareStoreStockMetricsSync(); };
-    }
-    document.getElementById("canvas-module-store-live-spare").style.display = "block";
-    triggerLiveSpareStoreStockMetricsSync();
     return;
   }
   if (targetSectionId === "authorize-material-outward") {

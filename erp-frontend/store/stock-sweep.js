@@ -19,18 +19,15 @@ function initializeStockSweepPanel() {
   loadSweepCurrentStock();
 }
 
-// Current RM / Spare stock per item code (total = available + reserved),
+// Current RM stock per item code (total = available + reserved),
 // shown beside each row so Store can see what is already on the shelf.
-window.sweepStockByItem = { rm: null, spare: null };
+window.sweepStockByItem = { rm: null };
 async function loadSweepCurrentStock() {
   try {
-    const [rm, sp] = await Promise.all([
-      apFetch({ action: "pullLiveInventoryCounts" }),
-      apFetch({ action: "getSpareStoreStock" }),
-    ]);
+    const rm = await apFetch({ action: "pullLiveInventoryCounts" });
     const toMap = (list) => Object.fromEntries((list || []).map(i =>
       [i.itemCode, (Number(i.availableStock) || 0) + (Number(i.reservedStock) || 0)]));
-    window.sweepStockByItem = { rm: rm && rm.success ? toMap(rm.inventory) : null, spare: sp && sp.success ? toMap(sp.stock) : null };
+    window.sweepStockByItem = { rm: rm && rm.success ? toMap(rm.inventory) : null };
     renderSweepBasket();
   } catch (e) { /* columns just show "—" */ }
 }
@@ -43,45 +40,8 @@ function sweepStockCell(kind, itemCode) {
 
 function handleSweepTypeChange() {
   const type = document.getElementById("sweep-type").value;
-  const isBlockedExit = type === "Blocked → Restricted" || type === "Blocked → RM Store";
-  document.getElementById("sweep-material-search-wrapper").style.display = isBlockedExit ? "none" : "block";
-  document.getElementById("sweep-allocation-picker-wrapper").style.display = isBlockedExit ? "block" : "none";
-  if (isBlockedExit) loadUnfreedBlockedAllocations();
   const isCountDown = type === "Count Down";
   document.getElementById("sweep-submit-btn").textContent = isCountDown ? "Submit Count Down" : "Submit Stock Sweep";
-}
-
-async function loadUnfreedBlockedAllocations() {
-  const sel = document.getElementById("sweep-allocation-select");
-  sel.innerHTML = '<option value="">Loading...</option>';
-  try {
-    const data = await apFetch({ action: "fetchUnfreedSpareBlockedAllocations" });
-    sweepBlockedAllocationsCache = (data.success && data.allocations) ? data.allocations : [];
-    if (sweepBlockedAllocationsCache.length === 0) {
-      sel.innerHTML = '<option value="">No unfreed Blocked allocations</option>';
-      return;
-    }
-    sel.innerHTML = '<option value="">— Choose an unfreed Blocked allocation —</option>' +
-      sweepBlockedAllocationsCache.map(a =>
-        `<option value="${a.allocationId}">${escapeHtml(a.materialName)} (${a.itemCode}) — ${fmtQty(a.quantity)} — JC: ${a.jobCardNumber}</option>`
-      ).join("");
-  } catch (e) {
-    sel.innerHTML = '<option value="">Error loading allocations</option>';
-  }
-}
-
-function handleSweepAllocationPick(sel) {
-  const allocationId = sel.value;
-  if (!allocationId) return;
-  const alloc = sweepBlockedAllocationsCache.find(a => String(a.allocationId) === String(allocationId));
-  if (!alloc) return;
-  sel.value = "";
-  if (sweepBasket.some(b => b.allocationId === alloc.allocationId)) { abpsAlert("This allocation is already in the sweep list."); return; }
-  sweepBasket.push({
-    allocationId: alloc.allocationId, itemCode: alloc.itemCode, materialName: alloc.materialName,
-    unitType: "", quantity: alloc.quantity, jobCardNumber: alloc.jobCardNumber, isBlockedExit: true,
-  });
-  renderSweepBasket();
 }
 
 let sweepSearchMatches = [];
@@ -123,7 +83,7 @@ function addToSweepBasket(itemCode, materialName, rating, unitType) {
   document.getElementById("sweep-material-search").value = ""; document.getElementById("sweep-material-search").style.height = "";
   document.getElementById("sweep-material-dropdown").style.display = "none";
   if (sweepBasket.some(b => b.itemCode === itemCode)) { abpsAlert("This item is already in the sweep list — edit its quantity below instead."); return; }
-  sweepBasket.push({ itemCode, materialName, rating: rating || "", unitType: unitType || "NOS", quantity: "", isBlockedExit: false });
+  sweepBasket.push({ itemCode, materialName, rating: rating || "", unitType: unitType || "NOS", quantity: "" });
   renderSweepBasket();
 }
 
@@ -141,32 +101,19 @@ function updateSweepBasketField(itemCode, field, value) {
 function renderSweepBasket() {
   const body = document.getElementById("sweep-basket-body");
   if (sweepBasket.length === 0) {
-    body.innerHTML = '<tr id="sweep-basket-empty"><td colspan="7" style="padding:14px; border:1.5px solid #64748b; text-align:center; color:var(--muted);">No items added yet.</td></tr>';
+    body.innerHTML = '<tr id="sweep-basket-empty"><td colspan="6" style="padding:14px; border:1.5px solid #64748b; text-align:center; color:var(--muted);">No items added yet.</td></tr>';
   } else {
-    body.innerHTML = sweepBasket.map(b => b.isBlockedExit ? `
-      <tr>
-        <td style="padding:8px; border:1.5px solid #64748b; font-family:monospace; text-align:center;">${b.itemCode}</td>
-        <td style="padding:8px; border:1.5px solid #64748b;">${escapeHtml(b.materialName)} <span style="color:var(--muted); font-size:0.78rem;">(from JC: ${b.jobCardNumber})</span></td>
-        ${sweepStockCell("rm", b.itemCode)}${sweepStockCell("spare", b.itemCode)}
-        <td style="padding:8px; border:1.5px solid #64748b; font-family:monospace; color:#334155; text-align:center; font-size:1rem;">—</td>
-        <td style="padding:8px; border:1.5px solid #64748b; font-family:monospace; font-weight:700; text-align:center; font-size:1rem;">${fmtQty(b.quantity)}</td>
-        <td style="padding:8px; border:1.5px solid #64748b;"><button onclick="removeFromSweepBasketByAllocation(${b.allocationId})" style="background:none; border:none; color:#c0435a; cursor:pointer; font-size:1rem;">✕</button></td>
-      </tr>` : `
+    body.innerHTML = sweepBasket.map(b => `
       <tr>
         <td style="padding:8px; border:1.5px solid #64748b; font-family:monospace; text-align:center;">${b.itemCode}</td>
         <td style="padding:8px; border:1.5px solid #64748b;">${escapeHtml(b.materialName)}${b.rating ? ` - <span style="color:var(--brand); font-weight:700;">${escapeHtml(b.rating)}</span>` : ""}</td>
-        ${sweepStockCell("rm", b.itemCode)}${sweepStockCell("spare", b.itemCode)}
+        ${sweepStockCell("rm", b.itemCode)}
         <td style="padding:8px; border:1.5px solid #64748b; font-family:monospace; color:#334155; text-align:center; font-size:1rem;">${b.unitType || "NOS"}</td>
         <td style="padding:8px; border:1.5px solid #64748b; text-align:center;"><input type="number" min="0" step="any" required value="${b.quantity}" oninput="updateSweepBasketField(${jsArg(b.itemCode)},'quantity',this.value)" style="width:90px; padding:5px; border:1px solid var(--border); border-radius:4px; text-align:center; font-size:1rem; font-weight:700;"></td>
         <td style="padding:8px; border:1.5px solid #64748b;"><button onclick="removeFromSweepBasket(${jsArg(b.itemCode)})" style="background:none; border:none; color:#c0435a; cursor:pointer; font-size:1rem;">✕</button></td>
       </tr>`).join("");
   }
   updateSweepSubmitState();
-}
-
-function removeFromSweepBasketByAllocation(allocationId) {
-  sweepBasket = sweepBasket.filter(b => b.allocationId !== allocationId);
-  renderSweepBasket();
 }
 
 // Submit stays enabled with blank quantities so the inline banner can
@@ -176,7 +123,7 @@ function updateSweepSubmitState() {
 }
 
 async function submitStockSweep() {
-  const missing = sweepBasket.filter(b => !b.isBlockedExit && (String(b.quantity ?? '').trim() === '' || !(parseFloat(b.quantity) >= 0)));
+  const missing = sweepBasket.filter(b => (String(b.quantity ?? '').trim() === '' || !(parseFloat(b.quantity) >= 0)));
   if (missing.length > 0) {
     showBOQBanner("sweep-feedback",
       `<strong>Quantity Required:</strong> Enter a quantity of 0 or more for: ${missing.map(m => m.itemCode).join(", ")}.`,
@@ -191,13 +138,11 @@ async function submitStockSweep() {
     const data = await apFetch({
       action: "commitStockSweep",
       operatorName: appActiveOperatorIdentityString,
-      sweepItems: sweepBasket.map(b => b.isBlockedExit ? {
-        allocationId: b.allocationId, itemCode: b.itemCode, sweepType: document.getElementById("sweep-type").value,
-      } : {
+      sweepItems: sweepBasket.map(b => ({
         itemCode: b.itemCode,
         quantity: parseFloat(b.quantity),
         sweepType: document.getElementById("sweep-type").value,
-      })
+      }))
     });
     if (data.success) {
       let msg = `Sweep recorded: ${data.itemsProcessed} item(s) added and auto-distributed to BOQs.`;

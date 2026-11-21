@@ -21,7 +21,6 @@ async function initializeMaterialRequestWorkspace() {
   window._fgActiveCatalogMode = "item";
   window._ticketJobCardMaterialsCache = null;
   window._ticketBOQCache = null;
-  window.cachedSpareStoreStock = [];
   // Project-list caches are per-visit — a stale Active/Service list from
   // an earlier visit this session is harmless to keep (still correct data),
   // but re-fetch on the FIRST Outgoing Use pick of a fresh visit anyway
@@ -345,7 +344,7 @@ async function refreshLiveStockForSelectedMaterial(opts) {
   const projectId          = document.getElementById("ticket-department-outgoing-dropdown")?.value === "Sample" ? "SAMPLE" : document.getElementById("ticket-project-id-dropdown-ta-input")?.value;
   if (!selectedMaterial) { stopLiveStockPolling(); return; }
 
-  // Strip any appended stock count suffix e.g. " (0 NOS available)" from Spare Store dropdown labels
+  // Strip any appended stock count suffix e.g. " (0 NOS available)"
   const cleanMaterialName = selectedMaterial.replace(/\s*\(\d+\s+\w+\s+available\)/i, "").trim();
 
   try {
@@ -357,7 +356,7 @@ async function refreshLiveStockForSelectedMaterial(opts) {
     // silently never appeared until the live-count fetch below succeeded.
     // Only on the first draw: on the 5-second refresh the box keeps its last
     // live figures until the new live ones arrive (no cached-then-live flicker).
-    if (!isPoll && projectId && (activeStoreScope === "Raw Materials Store" || activeStoreScope === "Spare Store" || activeStoreScope === "Finished Goods Store")) {
+    if (!isPoll && projectId && (activeStoreScope === "Raw Materials Store" || activeStoreScope === "Finished Goods Store")) {
       await updateSelectedLiveStockPillCounter(null);
     }
 
@@ -431,59 +430,9 @@ async function refreshLiveStockForSelectedMaterial(opts) {
       existing.unitType       = data.stock.unitType;
     }
 
-    const spareExisting = (window.cachedSpareStoreStock||[]).find(i =>
-      (i.materialName||"").replace(/\s+/g,"").toLowerCase() === cleanKey
-    );
-    if (spareExisting) {
-      spareExisting.availableStock = data.stock.spareStock;
-
-      // FIX: Rebuild the spare store dropdown option text with the fresh count
-      if (activeStoreScope === "Spare Store") {
-        const itemDrop = document.getElementById("ticket-item-selection-dropdown");
-        if (itemDrop) {
-          Array.from(itemDrop.options).forEach(opt => {
-            const optCleanKey = opt.value.replace(/\s+/g,"").toLowerCase();
-            if (optCleanKey === cleanKey) {
-              opt.textContent = `${spareExisting.materialName}`;
-            }
-          });
-        }
-      }
-    }
-
     if (!stillCurrent()) return;
     await updateSelectedLiveStockPillCounter(data.stock);
   } catch(e) { console.warn("refreshLiveStockForSelectedMaterial error:", e.message); }
-}
-
-function checkSpareStoreSuggestion() {
-  const banner = document.getElementById("spare-store-suggestion-banner");
-  if (!banner) return;
-
-  const activeStoreScope = document.getElementById("ticket-selected-store-scope-toggle")?.value || "";
-  if (activeStoreScope !== "Raw Materials Store") {
-    banner.style.display = "none";
-    return;
-  }
-
-  const selectedMaterial = document.getElementById("ticket-item-selection-dropdown").value;
-  const qty = Math.round((parseFloat(document.getElementById("ticket-item-quantity-input").value) || 0) * 1000) / 1000;
-
-  if (!selectedMaterial || !qty || qty <= 0) {
-    banner.style.display = "none";
-    return;
-  }
-
-  const cleanSearchKey = selectedMaterial.replace(/\s+/g, '').toLowerCase();
-  const spareCache = window.cachedSpareStoreStock || [];
-  const spareMatch = spareCache.find(item => (item.materialName || "").replace(/\s+/g, '').toLowerCase() === cleanSearchKey);
-
-  if (spareMatch && spareMatch.availableStock >= qty) {
-    banner.innerHTML = `⚠️ ${spareMatch.availableStock} ${spareMatch.unitType} of <strong>${selectedMaterial}</strong> already available in Spare Store. Consider requesting from Spare Store instead of Raw Materials Store.`;
-    banner.style.display = "block";
-  } else {
-    banner.style.display = "none";
-  }
 }
 
 /**
@@ -538,55 +487,6 @@ async function addItemToShoppingBasketRow() {
   
   const cleanSearchKey = materialName.replace(/\s+/g, '').toLowerCase();
 
-  // --- SPARE STORE: block if requested qty exceeds available spare stock ---
-  if (activeStoreScope === "Spare Store") {
-    const spareCache = window.cachedSpareStoreStock || [];
-    // Match by the selected option's tagged itemCode first, not by name
-    // text — two Spare Store items can share the same Name + Rating and
-    // differ only by Make (e.g. SIEMENS vs L&T), and separately,
-    // fetchJobCardMaterials bakes "- Make: X" into materialName while
-    // getSpareStoreStock never does, so a name-only match silently fails
-    // (reads as 0 available) for any item that has a Make. Falls back to
-    // the old name-based match only if the dropdown option was never
-    // tagged (shouldn't happen — defensive only).
-    const selectedItemCode = itemSelect.options[itemSelect.selectedIndex]?.dataset.itemcode || "";
-    const spareMatch = selectedItemCode
-      ? spareCache.find(item => item.itemCode === selectedItemCode)
-      : spareCache.find(item => (item.materialName || "").replace(/\s+/g, '').toLowerCase() === cleanSearchKey);
-    const availableQty = spareMatch ? spareMatch.availableStock : 0;
-
-    if (quantity > availableQty) {
-      restoreAddBtn();
-      abpsAlert(`Only ${availableQty} ${spareMatch ? spareMatch.unitType : 'units'} of ${materialName} available in Spare Store. Please request from Raw Materials Store instead. This material is not currently available in sufficient quantity in Spare Store.`);
-      return;
-    }
-
-    const existingLineItem = ticketFindBasketLine_(spareMatch ? spareMatch.itemCode : "", cleanSearchKey);
-    let totalRequestedQuantity = quantity;
-    if (existingLineItem) {
-      totalRequestedQuantity = Math.round((totalRequestedQuantity + (Number(existingLineItem.quantity) || 0)) * 1000) / 1000;
-      if (totalRequestedQuantity > availableQty) {
-        restoreAddBtn();
-        abpsAlert(`Combined requested quantity (${totalRequestedQuantity}) exceeds available Spare Store stock (${availableQty}) for ${materialName}. Please request the remainder from Raw Materials Store instead.`);
-        return;
-      }
-      existingLineItem.quantity = totalRequestedQuantity;
-    } else {
-      dynamicTicketShoppingBasketArray.push({
-        materialName: materialName,
-        itemCode: spareMatch ? spareMatch.itemCode : "",
-        quantity: totalRequestedQuantity,
-        unitType: spareMatch ? spareMatch.unitType : "NOS",
-        requiresBOQIncreaseFlag: false,
-        allottedRemainingLimit: availableQty
-      });
-    }
-    qtyInput.value = ""; ticketItemTaClear();
-    restoreAddBtn();
-    renderDraftBasketTableViewportRows();
-    return;
-  }
-
   // --- FINISHED GOODS STORE: same JobCardMaterials allotment check as Raw Materials Store ---
   if (activeStoreScope === "Finished Goods Store") {
     const jobCardNumberValFGAdd = document.getElementById("ticket-job-card-dropdown")?.value || "";
@@ -613,7 +513,7 @@ async function addItemToShoppingBasketRow() {
 
     // Finished Goods Store has no BOQ Increase / Excess Material Request
     // path at all (see handleBOQIncreaseDecision / createBOQLimitIncreaseRequestTicket
-    // — both hardcoded to Raw Materials Store only), so unlike Raw/Spare a
+    // — both hardcoded to Raw Materials Store only), so unlike Raw a
     // request over this Job Card's remaining allotment is a hard lockout
     // here, not a soft "flag for admin approval" — there is no admin
     // approval flow on the other end to catch it.
@@ -908,7 +808,6 @@ function removeSingleBasketItemLineAtIndex(index) {
 function clearFullBasketDraftState() {
   dynamicTicketShoppingBasketArray = [];
   renderDraftBasketTableViewportRows();
-  checkSpareStoreSuggestion();
 }
 
 /**
@@ -1021,13 +920,10 @@ async function initializeStoreManagerApprovalsWorkspace() {
 // Shared builder for the "Choose Store" dropdown's option list. 
 
 // Return Material was removed — production returns now come in via Stock
-// Sweep. Spare → Raw Material stays: it's a bin-to-bin relocation, not a
-// production return, so it moved here rather than leaving with Return mode.
+// Sweep.
 function buildStoreScopeOptionsHtml_(placeholderText, restrictToService) {
-  // Service issues (post-invoice replacement/shortage/spare sent for
-  // customer servicing) can only draw from Raw or Finished Goods — Spare
-  // Store is not a valid source (see submitEngineerMaterialTicket's
-  // isServiceIssue guard, routes/store.js).
+  // Service issues (post-invoice replacement/shortage sent for customer
+  // servicing) draw from Raw or Finished Goods.
   if (restrictToService) {
     return `<option value="">${placeholderText}</option>`
       + `<option value="Raw Materials Store">Raw Materials Store</option>`
@@ -1035,7 +931,6 @@ function buildStoreScopeOptionsHtml_(placeholderText, restrictToService) {
   }
   return `<option value="">${placeholderText}</option>`
     + `<option value="Raw Materials Store">Raw Materials Store</option>`
-    + `<option value="Spare Store">Spare Store</option>`
     + `<option value="Finished Goods Store">Finished Goods Store</option>`;
 }
 
@@ -1195,7 +1090,7 @@ function handleStoreTicketTypeInterfaceLayoutChange(chosenModeString) {
   if (submitBtn) submitBtn.textContent = "Generate Material Ticket";
 
   // Rebuild the Store dropdown's option list immediately — switching back to Request Material
-  // must remove the Spare -> Raw Material option if it was showing, and switching to Return
+  // must remove stale options, and switching to Return
   // Material must add it back, even if the dropdown is currently locked/disabled at this stage.
   const storeScopeDropNow = document.getElementById("ticket-selected-store-scope-toggle");
   if (storeScopeDropNow) {
@@ -1232,53 +1127,6 @@ function toggleTicketCardBody(ticketId) {
   const isOpen = body.style.display !== "none";
   body.style.display = isOpen ? "none" : "block";
   if (caret) caret.textContent = isOpen ? "▸" : "▾";
-}
-
-function handleSpareNeededChange(sel) {
-  const row = sel.closest("tr");
-  const qtyInput = row ? row.querySelector(".ticket-spare-qty-input") : null;
-  if (!qtyInput) return;
-  if (sel.value === "No") {
-    qtyInput.value = "";
-    qtyInput.disabled = true;
-    qtyInput.style.background = "#f1f5f9";
-    qtyInput.style.color = "var(--muted)";
-  } else {
-    qtyInput.disabled = false;
-    qtyInput.style.background = "#fff";
-    qtyInput.style.color = "var(--text)";
-  }
-}
-
-function collectSpareAllocations(ticketId) {
-  const card = document.getElementById(`store-pending-ticket-card-node-${ticketId}`);
-  const result = {};
-  if (!card) return result;
-  card.querySelectorAll(".ticket-spare-needed-select").forEach(sel => {
-    if (sel.value === "No") return;
-    const row = sel.closest("tr");
-    const qtyInput = row ? row.querySelector(".ticket-spare-qty-input") : null;
-    const qty = qtyInput ? Number(qtyInput.value) : 0;
-    result[sel.dataset.itemcode] = { needed: sel.value, qty: (!isNaN(qty) && qty > 0) ? qty : 0 };
-  });
-  return result;
-}
-
-function findInvalidSpareAllocation(ticketId) {
-  const card = document.getElementById(`store-pending-ticket-card-node-${ticketId}`);
-  if (!card) return null;
-  const selects = Array.from(card.querySelectorAll(".ticket-spare-needed-select"));
-  for (const sel of selects) {
-    if (sel.value === "No") continue;
-    const row = sel.closest("tr");
-    const qtyInput = row ? row.querySelector(".ticket-spare-qty-input") : null;
-    const qty = qtyInput ? Number(qtyInput.value) : NaN;
-    if (!qtyInput || qtyInput.value.trim() === "" || isNaN(qty) || qty <= 0) {
-      const materialName = row ? row.querySelector("td")?.textContent?.trim() : sel.dataset.itemcode;
-      return { itemCode: sel.dataset.itemcode, materialName };
-    }
-  }
-  return null;
 }
 
 function clampTicketActualQtyInput(inp) {
@@ -1796,9 +1644,6 @@ function handleTicketLegacyCompanyNameInput(value) {
     storeScopeDrop.style.opacity = hasValue ? "1" : "0.5";
     storeScopeDrop.style.cursor = hasValue ? "pointer" : "not-allowed";
     if (hasValue) {
-      // Legacy tickets are no longer Service-restricted — Spare Store is
-      // permitted here (unlike the real-Service-BOQ path a few functions
-      // down, which keeps its Spare ban).
       storeScopeDrop.innerHTML = buildStoreScopeOptionsHtml_("— Select Store —", false);
     } else {
       storeScopeDrop.value = "";
@@ -1945,11 +1790,7 @@ async function loadItemCatalogForSelectedProjectAndStore() {
 
   const activeStoreScope = document.getElementById("ticket-selected-store-scope-toggle")?.value || "Raw Materials Store";
   // Free-pool tickets (Service, or legacy under go-live's widening) have no
-  // Job Card to scope the item list against. Spare Store is only reachable
-  // here for a legacy ticket — a real Service ticket's "Choose Store"
-  // dropdown never offers Spare Store as an option (buildStoreScopeOptionsHtml_'s
-  // restrictToService), so widening this condition to include Spare Store
-  // cannot affect a real Service ticket. fetchServiceItemCatalog returns
+  // Job Card to scope the item list against. fetchServiceItemCatalog returns
   // the free-pool catalog in the exact same row shape fetchJobCardMaterials
   // does, so everything below this block (basket add, submit) keeps
   // reading window._ticketJobCardMaterialsCache unmodified regardless of
@@ -1958,7 +1799,7 @@ async function loadItemCatalogForSelectedProjectAndStore() {
   // re-deriving inline — this used to be a 4th, undocumented read site that
   // diverged from them (see those functions' own header comment).
   try {
-    if (ticketIsServiceItemMode_() && (activeStoreScope === "Raw Materials Store" || activeStoreScope === "Finished Goods Store" || activeStoreScope === "Spare Store")) {
+    if (ticketIsServiceItemMode_() && (activeStoreScope === "Raw Materials Store" || activeStoreScope === "Finished Goods Store")) {
       const jcmCacheKeyService = ticketJcmCacheKeyFor_(activeStoreScope, "", chosenProjectVal);
       let jcmFetchService;
       try {
@@ -1967,108 +1808,19 @@ async function loadItemCatalogForSelectedProjectAndStore() {
         jcmFetchService = { success: false, records: [], error: e.message };
       }
       window._ticketJobCardMaterialsCache = { key: jcmCacheKeyService, records: jcmFetchService.records || [] };
-      // Spare Store's basket-add validation (addItemToShoppingBasketRow)
-      // reads window.cachedSpareStoreStock directly, same as the real
-      // Job-Card-scoped Spare flow below — keep that cache warm here too
-      // so a legacy Spare Store ticket validates against real figures
-      // instead of a stale/empty array. AWAITED, not fire-and-forget —
-      // this used to be a background .then() that left a window where the
-      // Add button was already enabled but cachedSpareStoreStock was still
-      // empty, so the very first Add click after switching to Spare Store
-      // wrongly reported "Only 0 available" until the fetch caught up.
-      if (activeStoreScope === "Spare Store") {
-        try {
-          const spareStockData = await apFetch({ action: "getSpareStoreStock" });
-          window.cachedSpareStoreStock = spareStockData.stock || [];
-        } catch (e) { /* addItemToShoppingBasketRow treats a missing entry as 0 available, same as before */ }
-      }
-
       if (jcmFetchService.success && (jcmFetchService.records || []).length > 0) {
         itemDrop.innerHTML = '<option value="" style="font-weight:700;">— Select Material —</option>';
         jcmFetchService.records.forEach(r => {
           const opt = document.createElement("option");
           opt.value = r.materialName; if (r.itemCode) opt.dataset.itemcode = r.itemCode;
           opt.textContent = r.isConsumable ? r.materialName + "  · Memo Purchase Material" : (r.memoAllowed && !(Number(r.remainingQty) > 0) ? r.materialName + "  · Not in stock, ask through Memo" : r.materialName);
-          // Two Spare Store items can legitimately share the same Name +
-          // Rating and differ only by Make (e.g. SIEMENS vs L&T variants) —
-          // the dropdown option text/value alone can't tell them apart.
-          // Tagging the real itemCode here lets addItemToShoppingBasketRow
-          // disambiguate instead of matching by name text, which would
-          // silently pick whichever one happens to come first in the cache.
-          if (activeStoreScope === "Spare Store" && r.itemCode) opt.dataset.itemcode = r.itemCode;
           itemDrop.appendChild(opt);
         });
         addZone.style.opacity = "1";
         itemDrop.disabled = false; qtyInp.disabled = false; addBtn.disabled = false;
         addBtn.style.cursor = "pointer";
       } else {
-        itemDrop.innerHTML = `<option value="">⚠️ No ${activeStoreScope === 'Finished Goods Store' ? 'Finished Goods' : activeStoreScope === 'Spare Store' ? 'Spare' : 'Raw Material'} stock currently available</option>`;
-        addZone.style.opacity = "0.5";
-      }
-      return;
-    }
-    if (activeStoreScope === "Spare Store") {
-      // Spare Store now shows exactly the same Job-Card-allotted material list as Raw Materials
-      // Store — the two share one unified JobCardMaterials row per material (see architecture
-      // note: a Spare draw and a Raw draw on the same Job Card + item both update the same row).
-      // Physical Spare stock is pre-fetched here for the Store Count pill and
-      // for addItemToShoppingBasketRow's quantity validation — it does not
-      // gate which materials are selectable, only how much of each is
-      // available. AWAITED (was fire-and-forget), same race-condition fix as
-      // the free-pool branch above — an Add click before this resolved could
-      // wrongly see an empty cachedSpareStoreStock and report "0 available".
-      try {
-        const spareStockData = await apFetch({ action: "getSpareStoreStock" });
-        window.cachedSpareStoreStock = spareStockData.stock || [];
-      } catch (e) { /* addItemToShoppingBasketRow treats a missing entry as 0 available, same as before */ }
-
-      const chosenJobCardValSpare = document.getElementById("ticket-job-card-dropdown")?.value || "";
-      if (!chosenJobCardValSpare) {
-        itemDrop.innerHTML = '<option value="">⚠️ Select a Job Card Number first</option>';
-        addZone.style.opacity = "0.5";
-        return;
-      }
-
-      const jcmCacheKeySpare = chosenJobCardValSpare + "|" + chosenProjectVal;
-      let jcmFetchSpare;
-      try {
-        jcmFetchSpare = await apFetch({ action: "fetchJobCardMaterials", jobCardNumber: chosenJobCardValSpare, projectId: chosenProjectVal });
-      } catch(e) {
-        jcmFetchSpare = { success: false, records: [], error: e.message };
-      }
-
-      // Warm the same cache the pill and Add-button use — no duplicate fetch when a material is picked.
-      window._ticketJobCardMaterialsCache = { key: jcmCacheKeySpare, records: jcmFetchSpare.records || [] };
-
-      const spareRecordsForCard = (jcmFetchSpare.records || []).filter(r =>
-        (r.typeOfStore || "").toString().trim() !== "Finished Goods Store" && !r.isConsumable
-      );
-
-      if (jcmFetchSpare.success && spareRecordsForCard.length > 0) {
-        itemDrop.innerHTML = '<option value="" style="font-weight:700;">— Select Material from Job Card —</option>';
-        let uniqueMaterialsMapSpare = {};
-        spareRecordsForCard.forEach(r => {
-          if (!uniqueMaterialsMapSpare[r.materialName]) {
-            uniqueMaterialsMapSpare[r.materialName] = true;
-            let opt = document.createElement("option");
-            opt.value = r.materialName; if (r.itemCode) opt.dataset.itemcode = r.itemCode;
-            opt.textContent = r.materialName;
-            // fetchJobCardMaterials bakes "- Make: X" into materialName,
-            // but getSpareStoreStock's own materialName never has it — so
-            // the availability check below can't match by name alone for
-            // any item with a Make value (silently reads as 0 available),
-            // and two different-Make item codes can't be told apart by
-            // name either. Tag the real itemCode so it can match on that
-            // instead. See addItemToShoppingBasketRow's Spare Store block.
-            if (r.itemCode) opt.dataset.itemcode = r.itemCode;
-            itemDrop.appendChild(opt);
-          }
-        });
-        addZone.style.opacity = "1";
-        itemDrop.disabled = false; qtyInp.disabled = false; addBtn.disabled = false;
-        addBtn.style.cursor = "pointer";
-      } else {
-        itemDrop.innerHTML = '<option value="">⚠️ No materials allotted to this BOQ</option>';
+        itemDrop.innerHTML = `<option value="">⚠️ No ${activeStoreScope === 'Finished Goods Store' ? 'Finished Goods' : 'Raw Material'} stock currently available</option>`;
         addZone.style.opacity = "0.5";
       }
       return;
@@ -2116,10 +1868,6 @@ async function loadItemCatalogForSelectedProjectAndStore() {
       }
       return;
     } else {
-      // Pre-fetch spare store stock for the suggestion banner
-      apFetch({ action: "getSpareStoreStock" })
-        .then(d => { window.cachedSpareStoreStock = d.stock || []; }).catch(() => {});
-
       // Raw Materials Store — scoped to the SELECTED JOB CARD, not the whole project.
       // Tickets are Job-Card-scoped everywhere else (pill, Add validation) — this dropdown
       // must match, or it offers materials the selected Job Card was never allotted at all.
@@ -2143,10 +1891,8 @@ async function loadItemCatalogForSelectedProjectAndStore() {
       // the moment a material is selected.
       window._ticketJobCardMaterialsCache = { key: jcmCacheKey, records: jcmFetch.records || [] };
 
-      // Raw and Spare draws share one unified row per Job Card + material,
-      // so both dropdowns list the same set — but Finished Goods items are
-      // a genuinely separate pool (their own dropdown branch above) and
-      // must never appear here.
+      // Finished Goods items are a genuinely separate pool (their own
+      // dropdown branch above) and must never appear here.
       const isProcessingDept = document.getElementById("ticket-department-outgoing-dropdown")?.value === "Processing";
       const rawRecordsForCard = (jcmFetch.records || []).filter(r =>
         (r.typeOfStore || "").toString().trim() !== "Finished Goods Store"
@@ -2184,7 +1930,6 @@ function handleTicketStoreScopeSelectionChange(chosenStoreValue) {
   window._ticketBOQCache = null;
   clearFullBasketDraftState();
   document.getElementById("ticket-live-counter-pill-zone").innerHTML = "";
-  checkSpareStoreSuggestion();
 
   // Reset only the Add Item zone below Choose Store
   const itemDrop = document.getElementById("ticket-item-selection-dropdown");

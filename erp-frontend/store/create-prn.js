@@ -1090,9 +1090,8 @@ function renderPRNCreateTable() {
 
       if (liveSpan && liveSpan.dataset.liveRaw !== undefined) {
         const baseRaw = Number(liveSpan.dataset.liveRaw) || 0;
-        const baseSpare = Number(liveSpan.dataset.liveSpare) || 0;
-        const split = computeLiveStoreSplit(baseRaw, baseSpare, val);
-        liveSpan.textContent = `${split.remainingRaw + split.remainingSpare} (Raw: ${split.remainingRaw}, Spare: ${split.remainingSpare})`;
+        const split = computeLiveStoreSplit(baseRaw, val);
+        liveSpan.textContent = `${split.remainingRaw}`;
       }
 
       const isCountUnit = (item.unit || "").toString().trim().toUpperCase() === "NOS";
@@ -1371,48 +1370,17 @@ function renderAllPRNCards(prns, boqId) {
   }
 }
 
-// Spare-first allocation of a typed claim against the combined pool —
-// mirrors exactly how the backend actually reserves it (splitStoreClaim),
-// so "Store Available Stock" updating live as you type shows the truth.
-function computeLiveStoreSplit(baseRaw, baseSpare, claimQty) {
+// Stock left after a typed claim against the live free stock — what the
+// backend reserves on submit, so the figure updating as you type is the truth.
+function computeLiveStoreSplit(baseRaw, claimQty) {
   const qty = Math.max(0, Number(claimQty) || 0);
-  const spareUsed = Math.min(qty, baseSpare);
-  const rawUsed = Math.max(0, qty - baseSpare);
-  return {
-    remainingRaw: Math.max(0, baseRaw - rawUsed),
-    remainingSpare: Math.max(0, baseSpare - spareUsed),
-  };
+  return { remainingRaw: Math.max(0, baseRaw - qty) };
 }
 
-// Revise PRN's directional formula — genuinely different from claiming
-// fresh stock. Increasing beyond the CURRENT reservation draws the
-// EXTRA amount spare-first (matching claim priority everywhere else in
-// the system). Decreasing BELOW the current reservation releases the
-// difference raw-first — explicit decision, opposite of claim priority.
-function computeRevisePRNStoreDisplay(baseRaw, baseSpare, reservedRawAtCurrent, reservedSpareAtCurrent, typed) {
-  const currentTotal = reservedRawAtCurrent + reservedSpareAtCurrent;
+// Revise PRN: the stock left once this line holds the typed quantity.
+function computeRevisePRNStoreDisplay(baseRaw, reservedRawAtCurrent, typed) {
   const target = Math.max(0, Number(typed) || 0);
-  let newReservedRaw, newReservedSpare;
-
-  if (target >= currentTotal) {
-    const extra = target - currentTotal;
-    const remainingSpareCapacity = baseSpare - reservedSpareAtCurrent; // == live free spare
-    const extraSpare = Math.min(extra, remainingSpareCapacity);
-    const extraRaw = extra - extraSpare;
-    newReservedSpare = reservedSpareAtCurrent + extraSpare;
-    newReservedRaw = reservedRawAtCurrent + extraRaw;
-  } else {
-    const release = currentTotal - target;
-    const releaseRaw = Math.min(release, reservedRawAtCurrent);
-    const releaseSpare = release - releaseRaw;
-    newReservedRaw = reservedRawAtCurrent - releaseRaw;
-    newReservedSpare = reservedSpareAtCurrent - releaseSpare;
-  }
-
-  return {
-    remainingRaw: Math.max(0, baseRaw - newReservedRaw),
-    remainingSpare: Math.max(0, baseSpare - newReservedSpare),
-  };
+  return { remainingRaw: Math.max(0, baseRaw - target) };
 }
 
 function updatePRNCheckedByStorePerson(selectEl, idx) {

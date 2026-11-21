@@ -206,9 +206,8 @@ function renderRPRNDeltaTable() {
 
       if (liveSpan && liveSpan.dataset.liveRaw !== undefined) {
         const baseRaw = Number(liveSpan.dataset.liveRaw) || 0;
-        const baseSpare = Number(liveSpan.dataset.liveSpare) || 0;
-        const split = computeLiveStoreSplit(baseRaw, baseSpare, val);
-        liveSpan.textContent = `${split.remainingRaw + split.remainingSpare} (Raw: ${split.remainingRaw}, Spare: ${split.remainingSpare})`;
+        const split = computeLiveStoreSplit(baseRaw, val);
+        liveSpan.textContent = `${split.remainingRaw}`;
       }
 
       const isCountUnit = (item.unit || "").toString().trim().toUpperCase() === "NOS";
@@ -387,11 +386,11 @@ function renderRevisePRNTable() {
   const rows = st.lineItems.map((li, idx) => {
     const blocked = !!li.awaitingPoRevision;
     const minStore = Math.max(0, (Number(li.bufferedRequirement)||0) - (Number(li.onOrderQty)||0));
-    // Store Available Stock = live free stock (raw+spare) + whatever this
+    // Store Available Stock = live free stock  + whatever this
     // PRN already has reserved — its own reservation is effectively
     // "available to itself" for re-splitting, on top of anything free.
-    // Starts from the one-time backend figure (raw only) and gets
-    // corrected to raw+spare the moment the live poll below returns.
+    // Starts from the one-time backend figure and gets
+    // corrected the moment the live poll below returns.
     const maxStore = (Number(li.storeQty)||0) + (Number(li.availableStock)||0);
     const cap = Math.min(Number(li.bufferedRequirement)||0, maxStore);
     return `

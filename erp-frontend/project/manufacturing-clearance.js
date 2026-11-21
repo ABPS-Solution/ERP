@@ -1071,5 +1071,4 @@ async function mcReactivateProject(projectId) {
   }
 }
 
-let sweepBlockedAllocationsCache = [];
 
