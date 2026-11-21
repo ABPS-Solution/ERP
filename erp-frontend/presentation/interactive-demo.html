@@ -4,10 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Interactive Presentation</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap">
 <style>
-  :root { --bg:#070d19; --panel:#0f1828; --line:#1f2b42; --text:#eef3fb; --muted:#8393ad; --accent:#22c3a6; --hot:#ff4d4f; --warn:#ffb020; --blue:#3b82f6; --card:#131c2e; }
+  :root { --bg:#012536; --panel:#013650; --line:#0f4a66; --text:#e6edf1; --muted:#9fb2bd; --accent:#ffaa06; --hot:#ff4d4f; --warn:#ffb020; --blue:#e67817; --card:#02405c; }
   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  html, body { margin:0; height:100%; background:#000; overflow:hidden; font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color:var(--text); }
+  html, body { margin:0; height:100%; background:#000; overflow:hidden; font-family: Lato, Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color:var(--text); }
   body { display:flex; flex-direction:row-reverse; }
   button { font-family:inherit; cursor:pointer; transition:transform .12s, background .25s, border-color .25s, color .25s; }
   button:active { transform:scale(.96); }
@@ -15,7 +16,7 @@
   #wrap { flex:1; position:relative; overflow:hidden; min-height:0; }
   #stage { width:1920px; height:1080px; position:absolute; left:50%; top:50%; transform-origin:center; background:radial-gradient(1200px 700px at 75% 20%, #12284a 0%, var(--bg) 62%); color:var(--text); overflow:hidden; letter-spacing:-.01em; }
   #stage::before { content:''; position:absolute; inset:-60px; background-image:linear-gradient(rgba(120,150,200,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(120,150,200,.05) 1px, transparent 1px); background-size:60px 60px; animation:drift 40s linear infinite; mask-image:radial-gradient(ellipse at 60% 40%, #000 20%, transparent 75%); }
-  #stage::after { content:''; position:absolute; width:900px; height:900px; right:-300px; top:-350px; border-radius:50%; background:radial-gradient(circle, rgba(34,195,166,.14), transparent 60%); filter:blur(20px); animation:breathe 9s ease-in-out infinite; pointer-events:none; }
+  #stage::after { content:''; position:absolute; width:900px; height:900px; right:-300px; top:-350px; border-radius:50%; background:radial-gradient(circle, rgba(255,170,6,.14), transparent 60%); filter:blur(20px); animation:breathe 9s ease-in-out infinite; pointer-events:none; }
   @keyframes drift { to { transform:translate(60px, 60px); } }
   @keyframes breathe { 50% { transform:scale(1.15); opacity:.7; } }
   header { position:absolute; z-index:2; top:0; left:0; right:0; height:96px; display:flex; align-items:center; padding:0 56px; gap:28px; }
@@ -26,66 +27,66 @@
   .view { position:absolute; z-index:1; top:96px; left:0; right:0; bottom:56px; padding:48px 56px; opacity:0; transform:translateY(30px) scale(.985); filter:blur(8px); transition:opacity .7s, transform .8s cubic-bezier(.2,.8,.2,1), filter .7s; pointer-events:none; }
   .view.on { opacity:1; transform:none; filter:none; pointer-events:auto; }
   .hint3d { position:absolute; left:56px; top:48px; color:var(--muted); font-size:18px; pointer-events:none; }
-  .pcard { position:absolute; left:56px; bottom:48px; width:520px; padding:24px 28px; border-radius:22px; background:linear-gradient(160deg, rgba(22,34,56,.92), rgba(12,19,33,.92)); border:1px solid rgba(34,195,166,.45); box-shadow:0 20px 60px rgba(0,0,0,.45); pointer-events:none; }
+  .pcard { position:absolute; left:56px; bottom:48px; width:520px; padding:24px 28px; border-radius:22px; background:linear-gradient(160deg, rgba(2,62,88,.92), rgba(1,42,64,.92)); border:1px solid rgba(255,170,6,.45); box-shadow:0 20px 60px rgba(0,0,0,.45); pointer-events:none; }
   #three canvas { cursor:grab; touch-action:none; } #three canvas:active { cursor:grabbing; }
   .view.on .panel { animation:rise .8s cubic-bezier(.2,.8,.2,1) both; }
   .view.on .panel:nth-child(2) { animation-delay:.08s } .view.on .panel:nth-child(3) { animation-delay:.16s } .view.on .panel:nth-child(4) { animation-delay:.24s }
   @keyframes rise { from { opacity:0; transform:translateY(26px); } }
   .v, .big-money, h1, h2 { font-family:'Space Grotesk', Inter, sans-serif; letter-spacing:-.02em; }
   .flow { stroke-dasharray:10 14; animation:flow 1.2s linear infinite; }
-  .flow.bad { stroke:#ff4d4f; } .flow.good { stroke:#22c3a6; }
+  .flow.bad { stroke:#ff4d4f; } .flow.good { stroke:#ffaa06; }
   @keyframes flow { to { stroke-dashoffset:-24; } }
   .barcmp { height:22px; border-radius:11px; margin-top:8px; transform-origin:left; transition:width 1.2s cubic-bezier(.2,.8,.2,1); }
   footer { position:absolute; z-index:2; bottom:0; left:0; right:0; height:56px; display:flex; align-items:center; padding:0 56px; color:var(--muted); font-size:18px; border-top:1px solid var(--line); justify-content:space-between; }
-  .panel { background:linear-gradient(160deg, rgba(22,34,56,.82), rgba(12,19,33,.82)); border:1px solid rgba(80,110,160,.22); border-radius:22px; padding:28px 32px; backdrop-filter:blur(14px); box-shadow:0 20px 60px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.05); }
+  .panel { background:linear-gradient(160deg, rgba(2,62,88,.82), rgba(1,42,64,.82)); border:1px solid rgba(120,170,200,.22); border-radius:22px; padding:28px 32px; backdrop-filter:blur(14px); box-shadow:0 20px 60px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.05); }
   .k { color:var(--muted); font-size:22px; } .v { font-size:56px; font-weight:700; margin-top:6px; } .v small { font-size:26px; color:var(--muted); font-weight:500; }
   .grid { display:grid; gap:24px; }
   h1 { font-size:96px; margin:0; line-height:1.05; } h2 { font-size:44px; margin:0 0 24px; }
   .big-money { font-size:150px; font-weight:800; color:var(--hot); line-height:1; }
-  .tag { display:inline-block; padding:8px 16px; border-radius:30px; background:rgba(34,195,166,.15); color:var(--accent); font-size:22px; margin:0 10px 10px 0; }
+  .tag { display:inline-block; padding:8px 16px; border-radius:30px; background:rgba(255,170,6,.15); color:var(--accent); font-size:22px; margin:0 10px 10px 0; }
   .row { display:flex; justify-content:space-between; padding:16px 0; border-bottom:1px solid var(--line); font-size:28px; }
   .row:last-child { border:0; } .row b { font-weight:700; }
   #three { position:absolute; left:0; top:0; width:1180px; height:928px; }
   .note { color:var(--muted); font-size:18px; margin-top:14px; }
-  .gantt .bar { height:44px; border-radius:10px; background:linear-gradient(90deg, var(--accent), var(--blue)); display:flex; align-items:center; padding-left:16px; font-size:20px; font-weight:600; color:#04221c; transform-origin:left; animation:grow .8s both; white-space:nowrap; }
+  .gantt .bar { height:44px; border-radius:10px; background:linear-gradient(90deg, var(--accent), var(--blue)); display:flex; align-items:center; padding-left:16px; font-size:20px; font-weight:600; color:#1d1200; transform-origin:left; animation:grow .8s both; white-space:nowrap; }
   @keyframes grow { from { transform:scaleX(0); } }
   svg text { font-family:inherit; }
   .node rect { transition: fill .5s, stroke .5s; }
   .hot rect { stroke:var(--hot) !important; fill:rgba(255,77,79,.18) !important; animation:pulse 1.4s infinite; }
-  .fixed rect { stroke:var(--accent) !important; fill:rgba(34,195,166,.15) !important; }
+  .fixed rect { stroke:var(--accent) !important; fill:rgba(255,170,6,.15) !important; }
   @keyframes pulse { 50% { filter:drop-shadow(0 0 18px var(--hot)); } }
 
   /* ---- presenter bar (left, about 20% of the width) ---- */
-  #bar { flex:0 0 20%; min-width:270px; max-width:400px; background:rgba(11,18,32,.98); border-left:1px solid var(--line); padding:14px 14px 0; overflow-y:auto; display:flex; flex-direction:column; gap:12px; }
+  #bar { flex:0 0 20%; min-width:270px; max-width:400px; background:rgba(1,37,56,.98); border-left:1px solid var(--line); padding:14px 14px 0; overflow-y:auto; display:flex; flex-direction:column; gap:12px; }
   .bar-top { display:flex; align-items:center; gap:8px; }
   .bar-title { flex:1; font-weight:700; font-size:15px; } .bar-title span { color:var(--accent); }
   .hidebtn { border:1px solid var(--line); background:var(--card); color:var(--text); border-radius:10px; padding:8px 10px; font-size:13px; white-space:nowrap; }
   #sum { color:var(--muted); font-size:13px; }
-  #steps { display:flex; flex-direction:column; gap:6px; }
+  #steps { color:var(--accent); font-size:13px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; }
   #steps button { text-align:left; border:1px solid var(--line); background:var(--card); color:var(--muted); border-radius:12px; padding:10px 14px; font-size:14px; }
-  #steps button.on { background:var(--accent); color:#04221c; border-color:var(--accent); font-weight:600; }
+  #steps button.on { background:var(--accent); color:#1d1200; border-color:var(--accent); font-weight:600; }
   #panel { display:flex; flex-direction:column; gap:10px; }
-  .cc { background:var(--card); border:1px solid rgba(80,110,160,.22); border-radius:14px; padding:12px 14px; }
+  .cc { background:var(--card); border:1px solid rgba(120,170,200,.22); border-radius:14px; padding:12px 14px; }
   .cc h3 { margin:0 0 8px; font-size:12px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:.06em; }
   .chips { display:flex; flex-wrap:wrap; gap:8px; }
-  .chip { border:1px solid var(--line); background:#0e1626; color:var(--text); padding:11px 14px; border-radius:12px; font-size:15px; }
-  .chip.on { border-color:var(--accent); background:rgba(34,195,166,.15); color:var(--accent); }
+  .chip { border:1px solid var(--line); background:#012b40; color:var(--text); padding:11px 14px; border-radius:12px; font-size:15px; }
+  .chip.on { border-color:var(--accent); background:rgba(255,170,6,.15); color:var(--accent); }
   .srow { margin-bottom:8px; } .srow label { display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px; } .srow label b { color:var(--accent); }
   .srow input[type=range] { width:100%; accent-color:var(--accent); height:26px; margin:0; }
   .hint { color:var(--muted); font-size:14px; line-height:1.5; margin:0; }
   .case { display:flex; gap:10px; align-items:center; padding:8px 10px; border:1px solid var(--line); border-radius:12px; cursor:pointer; margin-bottom:8px; }
   .case.on { border-color:var(--accent); } .case i { width:36px; height:36px; border-radius:8px; flex:0 0 auto; } .case small { color:var(--muted); display:block; font-size:12px; }
-  .navbtns { display:flex; gap:8px; position:sticky; bottom:0; background:rgba(11,18,32,.98); padding:10px 0 12px; margin-top:auto; }
+  .navbtns { display:flex; gap:8px; position:sticky; bottom:0; background:rgba(1,37,56,.98); padding:10px 0 12px; margin-top:auto; }
   .navbtns button { flex:1; border-radius:12px; border:0; font-size:16px; font-weight:600; padding:14px; }
-  .prev { background:var(--card); color:var(--text); border:1px solid var(--line) !important; } .next { background:var(--accent); color:#04221c; }
+  .prev { background:var(--card); color:var(--text); border:1px solid var(--line) !important; } .next { background:var(--accent); color:#1d1200; }
   .navbtns button:disabled { opacity:.4; }
-  #showbtn { position:fixed; right:16px; bottom:16px; z-index:10; display:none; align-items:center; gap:8px; border:1px solid var(--accent); background:rgba(11,18,32,.92); color:var(--accent); border-radius:24px; padding:12px 18px; font-size:15px; font-weight:600; box-shadow:0 8px 24px rgba(0,0,0,.5); }
+  #showbtn { position:fixed; right:16px; bottom:16px; z-index:10; display:none; align-items:center; gap:8px; border:1px solid var(--accent); background:rgba(1,37,56,.92); color:var(--accent); border-radius:24px; padding:12px 18px; font-size:15px; font-weight:600; box-shadow:0 8px 24px rgba(0,0,0,.5); }
   body.hidden-bar #bar { display:none; } body.hidden-bar #showbtn { display:flex; }
 </style>
 </head>
 <body>
 <div id="bar">
-  <div class="bar-top"><div class="bar-title">AB <span>POWER</span> Presenter</div><button class="hidebtn" id="fsbtn">Full screen</button><button class="hidebtn" id="hidebtn">Hide</button></div>
+  <div class="bar-top"><div class="bar-title">AB <span>POWER</span> Presenter</div><button class="hidebtn" id="hidebtn">Hide</button></div>
   <div id="sum"></div>
   <div id="steps"></div>
   <div id="panel"></div>
@@ -257,14 +258,14 @@ function sldSvg(s, stepNo) {
   const hot = new Set(s.problems.flatMap(p => IS.PROBLEMS[p].nodes)), solved = stepNo >= 4;
   const N = Object.fromEntries(SLD_NODES.map(n => [n.id, n])), w = 170, h = 70;
   const fc = solved ? 'good' : stepNo >= 2 && hot.size ? 'bad' : '';
-  const wire = d => `<path d="${d}" fill="none" stroke="#2a3954" stroke-width="6" stroke-linecap="round"/><path class="flow ${fc}" d="${d}" fill="none" stroke="#3b82f6" stroke-width="4" stroke-linecap="round"/>`;
+  const wire = d => `<path d="${d}" fill="none" stroke="#1c5a78" stroke-width="6" stroke-linecap="round"/><path class="flow ${fc}" d="${d}" fill="none" stroke="#e67817" stroke-width="4" stroke-linecap="round"/>`;
   const c = (a, b) => wire(`M${N[a].x + w} ${N[a].y + h / 2} H${N[b].x}`);
   const v = (a, b) => wire(`M${N[a].x + w / 2} ${N[a].y + h} V${N[b].y}`);
   const elbow = (a, b) => wire(`M${N[a].x + w} ${N[a].y + h / 2} H${N[b].x - 30} V${N[b].y + h / 2} H${N[b].x}`);
   const lines = c('grid', 'tx') + c('tx', 'bus') + v('dg', 'bus') + elbow('bus', 'ups') + c('ups', 'it') + elbow('bus', 'cool') + (solved ? v('bus', 'prod') : '');
   const nodes = SLD_NODES.filter(n => n.id !== 'prod' || solved).map(n => {
     const cls = n.id === 'prod' ? '' : hot.has(n.id) && stepNo >= 2 ? (solved ? 'fixed' : 'hot') : '';
-    const fill = n.id === 'prod' ? 'rgba(34,195,166,.25)' : '#101a2c', stroke = n.id === 'prod' ? '#22c3a6' : '#2c3b58';
+    const fill = n.id === 'prod' ? 'rgba(255,170,6,.25)' : '#02405c', stroke = n.id === 'prod' ? '#ffaa06' : '#2a6a88';
     return `<g class="node ${cls}"><rect x="${n.x}" y="${n.y}" width="${w}" height="${h}" rx="14" fill="${fill}" stroke="${stroke}" stroke-width="3"/>
       <text x="${n.x + w / 2}" y="${n.y + h / 2 + 9}" text-anchor="middle" fill="#eef3fb" font-size="24" font-weight="600">${n.label}</text></g>`;
   }).join('');
@@ -290,9 +291,9 @@ function drawWaves(now) {
     g.stroke();
   }
 }
-wave('waveHero', () => (Math.sin(performance.now() / 2500) + 1) * 15, () => '#22c3a6');
+wave('waveHero', () => (Math.sin(performance.now() / 2500) + 1) * 15, () => '#ffaa06');
 wave('waveBad', () => IS.state.thd, '#ff4d4f');
-wave('waveGood', () => IS.calc(IS.state).thdAfter, '#22c3a6');
+wave('waveGood', () => IS.calc(IS.state).thdAfter, '#ffaa06');
 
 // ===================== display: demo 3D panel (procedural placeholder model, interactive) =====================
 let renderer = null, scene, cam, halo, rig, M, clipPlane, raycaster;
@@ -330,20 +331,20 @@ function init3D() {
   scene.add(new THREE.HemisphereLight(0xdfe8ff, 0x0b1220, 0.9));
   const key = new THREE.DirectionalLight(0xffffff, 1.1); key.position.set(4, 7, 6); key.castShadow = true; key.shadow.mapSize.set(2048, 2048);
   Object.assign(key.shadow.camera, { left: -8, right: 8, top: 8, bottom: -8 }); scene.add(key);
-  const rim = new THREE.DirectionalLight(0x22c3a6, 0.5); rim.position.set(-6, 3, -4); scene.add(rim);
+  const rim = new THREE.DirectionalLight(0xffaa06, 0.5); rim.position.set(-6, 3, -4); scene.add(rim);
   const floor = new THREE.Mesh(new THREE.CircleGeometry(12, 64), new THREE.MeshStandardMaterial({ color: 0x0c1526, roughness: 0.9 }));
   floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
   renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.15; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   scene.fog = new THREE.Fog(0x070d19, 9, 22);
-  halo = new THREE.Mesh(new THREE.RingGeometry(2.6, 2.75, 96), new THREE.MeshBasicMaterial({ color: 0x22c3a6, transparent: true, opacity: .3 }));
+  halo = new THREE.Mesh(new THREE.RingGeometry(2.6, 2.75, 96), new THREE.MeshBasicMaterial({ color: 0xffaa06, transparent: true, opacity: .3 }));
   halo.rotation.x = -Math.PI / 2; halo.position.y = 0.005; scene.add(halo);
-  const fill = new THREE.PointLight(0x3b82f6, 0.6, 12); fill.position.set(0, 1.2, 2.5); scene.add(fill);
+  const fill = new THREE.PointLight(0xe67817, 0.6, 12); fill.position.set(0, 1.2, 2.5); scene.add(fill);
   M = {
     cab: new THREE.MeshStandardMaterial({ color: FINISH.grey, metalness: 0.35, roughness: 0.45 }), inner: new THREE.MeshStandardMaterial({ color: 0x9aa0a6, metalness: 0.2, roughness: 0.7 }),
     can: new THREE.MeshStandardMaterial({ color: 0xb8c4cf, metalness: 0.7, roughness: 0.3 }), reactor: new THREE.MeshStandardMaterial({ color: 0x2a2f36, metalness: 0.4, roughness: 0.5 }),
     rx: new THREE.MeshStandardMaterial({ color: RX_COL['7'], metalness: 0.4, roughness: 0.5 }),
     coil: new THREE.MeshStandardMaterial({ color: 0xb87333, metalness: 0.8, roughness: 0.35 }), ahf: new THREE.MeshStandardMaterial({ color: 0x1f2937, metalness: 0.3, roughness: 0.5 }),
-    fan: new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.2, roughness: 0.8 }), accent: new THREE.MeshStandardMaterial({ color: 0x22c3a6, emissive: 0x0d5c4f, roughness: 0.4 }),
+    fan: new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.2, roughness: 0.8 }), accent: new THREE.MeshStandardMaterial({ color: 0xffaa06, emissive: 0x6b4400, roughness: 0.4 }),
     screen: new THREE.MeshStandardMaterial({ color: 0x0b1220, emissive: 0x1b6bd8, emissiveIntensity: 0.6 })
   };
   allMats = Object.values(M);
@@ -395,7 +396,7 @@ function viewPreset(k) {
 function box(w, h, d, m, x, y, z, cat) { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.position.set(x, y, z); o.castShadow = o.receiveShadow = true; o.userData.cat = cat || 'part'; return o; }
 function tagPart(o, type, id, label, extra) { o.userData.part = { type, id, label }; o.userData.base = o.position.clone(); o.userData.pull = 0; o.userData.pullGoal = 0; Object.assign(o.userData, extra || {}); partMap[id] = o; pullables.push(o); return o; }
 function hlMat(m) {
-  if (!m.userData.hl) { const h = m.clone(); h.emissive = new THREE.Color(0x22c3a6); h.emissiveIntensity = 0.55; m.userData.hl = h; allMats.push(h); if (V.section) h.clippingPlanes = [clipPlane]; }
+  if (!m.userData.hl) { const h = m.clone(); h.emissive = new THREE.Color(0xffaa06); h.emissiveIntensity = 0.55; m.userData.hl = h; allMats.push(h); if (V.section) h.clippingPlanes = [clipPlane]; }
   return m.userData.hl;
 }
 function setHL(obj, on) {
@@ -415,7 +416,7 @@ function clearSel(silent) {
 function selectPart(id) {
   clearSel(true);
   const o = partMap[id]; if (!o) { applyVis(); renderBar(); renderPartCard(); return; }
-  selId = id; setHL(o, true); selBox = new THREE.BoxHelper(o, 0x22c3a6); scene.add(selBox);
+  selId = id; setHL(o, true); selBox = new THREE.BoxHelper(o, 0xffaa06); scene.add(selBox);
   applyVis(); renderBar(); renderPartCard();
 }
 function pickAt(e) {
@@ -569,7 +570,7 @@ function renderDisplay(s) {
   const billRows = (b, color) => [['Energy (kVAh)', b.energy], ['Demand charges', b.demand], ['Harmonic losses', b.losses]].map(([k, v]) => `<div class="row"><span>${k}</span><b>${IS.inr(v)}</b></div>`).join('') +
     `<div class="row" style="font-size:36px; border:0"><span>Total / month</span><b>${IS.inr(b.total)}</b></div><div class="barcmp" style="width:${b.total / c.before.total * 100}%; background:${color}; animation:grow 1.3s cubic-bezier(.2,.8,.2,1) both .3s"></div>`;
   $('bill-before').innerHTML = billRows(c.before, 'linear-gradient(90deg,#ff4d4f,#ff8a4d)');
-  $('bill-after').innerHTML = billRows(c.after, 'linear-gradient(90deg,#22c3a6,#3b82f6)');
+  $('bill-after').innerHTML = billRows(c.after, 'linear-gradient(90deg,#ffaa06,#e67817)');
   countTo($('save-m'), c.monthlySaving, IS.inr); countTo($('save-y'), c.monthlySaving * 12, IS.inr);
   $('payback').innerHTML = `${Math.max(1, Math.round(c.paybackLo))}–${Math.max(2, Math.round(c.paybackHi))} <small>months</small>`;
   const totalW = c.weeks.reduce((a, b) => a + b.w, 0); let acc = 0;
@@ -594,7 +595,7 @@ function set(patch) { s = { ...s, ...patch }; IS.publish(s); renderBar(); }
 function chips(options, isOn, act) { return `<div class="chips">${Object.entries(options).map(([k, v]) => `<button class="chip ${isOn(k) ? 'on' : ''}" data-k="${k}" data-act="${act}">${v.label}</button>`).join('')}</div>`; }
 function slider(key, label, min, max, step) { return `<div class="srow"><label>${label}<b>${FMT[key](s[key])}</b></label><input type="range" min="${min}" max="${max}" step="${step}" value="${s[key]}" data-key="${key}"></div>`; }
 function renderBar() {
-  $('steps').innerHTML = IS.STEPS.map((n, i) => `<button class="${i === s.step ? 'on' : ''}" data-step="${i}">${i}. ${n}</button>`).join('');
+  $('steps').innerHTML = `Step ${s.step + 1} of ${IS.STEPS.length}: ${IS.STEPS[s.step]}`;
   const c = IS.calc(s);
   $('sum').textContent = `${s.itMW} MW · PF ${s.pf} · THD ${s.thd}%`;
   let h = '';
@@ -662,8 +663,7 @@ $('next').onclick = () => set({ step: s.step === IS.STEPS.length - 1 ? 0 : s.ste
 function toggleBar(hide) { document.body.classList.toggle('hidden-bar', hide); requestAnimationFrame(fit); }
 $('hidebtn').onclick = () => toggleBar(true);
 function toggleFs() { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => {}); }
-$('fsbtn').onclick = toggleFs;
-document.addEventListener('fullscreenchange', () => { $('fsbtn').textContent = document.fullscreenElement ? 'Exit full screen' : 'Full screen'; requestAnimationFrame(fit); });
+document.addEventListener('fullscreenchange', () => { requestAnimationFrame(fit); });
 $('showbtn').onclick = () => toggleBar(false);
 addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT') return;
