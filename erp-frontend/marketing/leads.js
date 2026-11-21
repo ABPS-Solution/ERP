@@ -3106,7 +3106,7 @@ function isMarketingAccessRestrictedToCardDetailsOnly() {
   const broaderMarketingPerms = [
     "searchCompany", "searchTasks", "searchStatus", "searchQualification",
     "searchCityState", "emailLeads", "meetingPreparation", "morningMeeting", "newsLeads",
-    "orderPaymentProgress", "commissioningReport", "purchaseOrder", "uploadRevisedPo"
+    "commissioningReport", "purchaseOrder", "uploadRevisedPo"
   ];
   return !broaderMarketingPerms.some(key => userPermissions[key] === true);
 }

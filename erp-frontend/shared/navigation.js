@@ -329,7 +329,8 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   // ERP's permMap.js key is "marketingDashboard", not Portal's
   // "viewMarketingDashboard" — ERP's own dedicated key, not a rename.
   const canViewMarketingDashboard  = userPermissionsObject.marketingDashboard === true;
-  const canOrderPaymentProgress    = userPermissionsObject.orderPaymentProgress === true;
+  const canCreateProformaInvoice   = userPermissionsObject.createProformaInvoice === true;
+  const canProformaInvoiceStatus   = userPermissionsObject.proformaInvoiceStatus === true;
 
   if (document.getElementById("mod-card")) document.getElementById("mod-card").style.display = canEnterCard ? "block" : "none";
   if (document.getElementById("mod-email-whatsapp")) document.getElementById("mod-email-whatsapp").style.display = canViewEmailLeads ? "block" : "none";
@@ -343,7 +344,8 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-city-state")) document.getElementById("mod-city-state").style.display = canSearchCityState ? "block" : "none";
   if (document.getElementById("mod-meeting-prep")) document.getElementById("mod-meeting-prep").style.display = canMeetingPreparation ? "block" : "none";
   if (document.getElementById("mod-morning-meeting")) document.getElementById("mod-morning-meeting").style.display = canMorningMeeting ? "block" : "none";
-  if (document.getElementById("mod-order-payment")) document.getElementById("mod-order-payment").style.display = canOrderPaymentProgress ? "block" : "none";
+  if (document.getElementById("mod-proforma-create")) document.getElementById("mod-proforma-create").style.display = canCreateProformaInvoice ? "block" : "none";
+  if (document.getElementById("mod-proforma-status")) document.getElementById("mod-proforma-status").style.display = canProformaInvoiceStatus ? "block" : "none";
 
   // ── Design (BOQ + Catalog & Drawings), ported from Portal's
   // shared/navigation.js — same camelCase permission keys, same card ids
@@ -561,7 +563,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   });
 
   const accountsBlock = document.getElementById("dashboard-accounts-department-header-block");
-  if (accountsBlock) accountsBlock.style.display = (canTourExpense || canCashExpenses || canProjectCosting || canBankDocuments || canTravelTickets || canViewAccountsDashboard) ? "block" : "none";
+  if (accountsBlock) accountsBlock.style.display = (canTourExpense || canCashExpenses || canProjectCosting || canCreateProformaInvoice || canProformaInvoiceStatus || canBankDocuments || canTravelTickets || canViewAccountsDashboard) ? "block" : "none";
   const designBlock = document.getElementById("dashboard-design-department-header-block");
   if (designBlock) designBlock.style.display = (canItemCode || canCreateBOQ || canAuthorizeBOQ || canUpdateBOQ || canAuthorizeBOQUpdate || canUploadDrawings) ? "block" : "none";
   const purchaseBlock = document.getElementById("dashboard-purchase-department-header-block");
@@ -573,7 +575,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   const marketingBlock = document.getElementById("dashboard-marketing-department-header-block");
   if (marketingBlock) marketingBlock.style.display = (canEnterCard || canViewEmailLeads || canUploadPurchaseOrder || canUploadRevisedPo || canSearchCompany || canSearchTasks || canSearchStatus || canSearchQual || canSearchCityState || canMeetingPreparation || canMorningMeeting || canNewsLeads) ? "block" : "none";
   const projectBlock = document.getElementById("dashboard-project-department-header-block");
-  if (projectBlock) projectBlock.style.display = (canManufacturingClearance || canProjectTimeline || canDailyTimeline || canProjectStatus || canOrderPaymentProgress || userPermissionsObject.customerQueryManagement === true || userPermissionsObject.viewProjectDashboard === true) ? "block" : "none";
+  if (projectBlock) projectBlock.style.display = (canManufacturingClearance || canProjectTimeline || canDailyTimeline || canProjectStatus || userPermissionsObject.customerQueryManagement === true || userPermissionsObject.viewProjectDashboard === true) ? "block" : "none";
   // Batch 6 (16 Sep 2026): Store's own screens landed, so this is no
   // longer keyed on Project Invoice Generation alone.
   const storeBlock = document.getElementById("dashboard-store-department-header-block");
@@ -869,7 +871,8 @@ function switchActiveDashboardModule(targetSectionId) {
   if (targetSectionId === "project-timeline" && typeof initializeProjectTimelinePanel === "function") initializeProjectTimelinePanel();
   if (targetSectionId === "daily-timeline" && typeof initializeDailyTimelinePanel === "function") initializeDailyTimelinePanel();
   if (targetSectionId === "project-status" && typeof initializeProjectStatusPanel === "function") initializeProjectStatusPanel();
-  if (targetSectionId === "order-payment" && typeof initializeOrderPaymentPanel === "function") initializeOrderPaymentPanel();
+  if (targetSectionId === "proforma-create" && typeof initializeProformaCreatePanel === "function") initializeProformaCreatePanel();
+  if (targetSectionId === "proforma-status" && typeof initializeProformaStatusPanel === "function") initializeProformaStatusPanel();
   if (targetSectionId === "customer-queries" && typeof initializeCustomerQueriesWorkspace === "function") initializeCustomerQueriesWorkspace();
   if (targetSectionId === "items-to-check" && typeof initializeItemsToCheckPanel === "function") initializeItemsToCheckPanel();
   if (targetSectionId === "memo-tracking" && typeof initializeMemoTrackingPanel === "function") initializeMemoTrackingPanel();

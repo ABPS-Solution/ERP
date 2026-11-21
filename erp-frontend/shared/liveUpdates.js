@@ -342,11 +342,11 @@ liveRegister("marketingDashboard", {
   refresh: async () => { await mdLoadDashboard(window._mdLastCustomVal, { silent: true }); },
 });
 
-// Order Payment Progress. An open payment editor holds the refresh.
-liveRegister("orderPayment", {
-  tables: ["marketing.order_payment_schedule", "marketing.po_invoice_report_information"],
-  isVisible: () => liveIsShown(document.getElementById("opp-list")) && Array.isArray(window.oppAllProjects),
-  results: () => document.getElementById("opp-list"),
-  hold: () => !!(window.oppExpandedProjects && window.oppExpandedProjects.size),
-  refresh: async () => { await oppLoadList({ silent: true }); },
+// Proforma Invoice status. An open close-form holds the refresh.
+liveRegister("proformaInvoices", {
+  tables: ["marketing.proforma_invoices", "marketing.po_invoice_report_information"],
+  isVisible: () => liveIsShown(document.getElementById("pfs-list")) && Array.isArray(window.pfsRows),
+  results: () => document.getElementById("pfs-list"),
+  hold: () => !!window.pfsOpenForm,
+  refresh: async () => { await pfsLoad({ silent: true }); },
 });

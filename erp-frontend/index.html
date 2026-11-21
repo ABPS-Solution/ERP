@@ -1308,6 +1308,11 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-bankdocuments" style="display:none;" onclick="switchActiveDashboardModule('bankdocuments')"><span class="mc-label">Bank Related Documents</span></div>
       </div>
+      <div class="sec-label">Customer Payment</div>
+      <div class="dashboard-grid" style="margin-bottom:8px;">
+        <div class="menu-card" id="mod-proforma-create" style="display:none;" onclick="switchActiveDashboardModule('proforma-create')"><span class="mc-label">Create Proforma Invoice for Customer Payment</span></div>
+        <div class="menu-card" id="mod-proforma-status" style="display:none;" onclick="switchActiveDashboardModule('proforma-status')"><span class="mc-label">Customer Proforma Invoice Status</span></div>
+      </div>
       <div class="sec-label">Costing</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-projectcosting" onclick="switchActiveDashboardModule('projectcosting')"><span class="mc-label">Project Costing</span></div>
@@ -1340,7 +1345,6 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-purchase-order" onclick="navigateToModule('purchaseOrder')"><span class="mc-label">Upload Purchase Order</span></div>
         <div class="menu-card" id="mod-upload-revised-po" onclick="navigateToModule('uploadRevisedPo')"><span class="mc-label">Upload Revised Purchase Order</span></div>
-        <div class="menu-card" id="mod-order-payment" onclick="switchActiveDashboardModule('order-payment')"><span class="mc-label">Order Payment Progress</span></div>
       </div>
       <div class="sec-label">Search</div>
       <div class="dashboard-grid" style="margin-bottom:8px;">
@@ -2683,14 +2687,14 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
             </div>
           </div>
           <div class="dd-stat-card" style="display:flex; flex-direction:column; min-height:0;">
-            <div class="dd-stat-label" style="margin-bottom:8px;">Overdue Order Payments (current)</div>
+            <div class="dd-stat-label" style="margin-bottom:8px;">Proforma Invoices Open 5+ Working Days (current)</div>
             <div style="flex:1; min-height:0; overflow-y:auto;">
               <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
                 <thead>
                   <tr style="text-align:left; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--card);">
                     <th style="padding:4px;">Company / Project</th>
-                    <th style="padding:4px;">Expected Date</th>
-                    <th style="padding:4px; text-align:right;">Expected Amount</th>
+                    <th style="padding:4px;">PI Date</th>
+                    <th style="padding:4px; text-align:right;">PI Amount</th>
                   </tr>
                 </thead>
                 <tbody id="md-overdue-payments-tbody"></tbody>
@@ -6060,29 +6064,28 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
     </div>
   </div>
 
-  <div id="canvas-module-order-payment" class="workspace-panel" style="display:none;">
+  <div id="canvas-module-proforma-create" class="workspace-panel" style="display:none;">
     <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
       <div></div>
-      <button class="nav-btn-styled" onclick="exitOrderPaymentBackToMenu()">Return to Main Dashboard</button>
+      <button class="nav-btn-styled" onclick="exitProformaPanelBackToMenu()">Return to Main Dashboard</button>
     </div>
     <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
-    <h2 class="panel-title">Order Payment Progress</h2>
-
-    <div id="opp-aggregate-strip" style="display:none; margin-bottom:18px;"></div>
-
-    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:14px; flex-wrap:wrap;">
-      <div style="flex:1; min-width:240px; position:relative;">
-        <input type="text" id="opp-search-input" placeholder="Search Company Name or Project ID..." autocomplete="off"
-          oninput="oppFilterList(this.value)"
-          style="width:100%; padding:9px; border:2px solid #94a3b8; border-radius:var(--radius);" />
-      </div>
-      <label style="display:flex; align-items:center; gap:6px; font-size:0.85rem; font-weight:600; color:var(--muted); white-space:nowrap;">
-        <input type="checkbox" id="opp-overdue-only" onchange="oppToggleOverdueOnly(this.checked)" />
-        Only POs with a payment overdue
-      </label>
+    <h2 class="panel-title">Create Proforma Invoice for Customer Payment</h2>
+    <div id="pfc-body"></div>
     </div>
+  </div>
 
-    <div id="opp-list"></div>
+  <div id="canvas-module-proforma-status" class="workspace-panel" style="display:none;">
+    <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
+      <div></div>
+      <button class="nav-btn-styled" onclick="exitProformaPanelBackToMenu()">Return to Main Dashboard</button>
+    </div>
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+    <h2 class="panel-title">Customer Proforma Invoice Status</h2>
+    <div id="pfs-banner" style="display:none; margin-bottom:12px; padding:10px 14px; border-radius:6px; background:#fef2f2; border:1px solid #fca5a5; color:#b91c1c; font-weight:600; font-size:0.85rem;"></div>
+    <input type="text" id="pfs-search" placeholder="Search Company Name or Project ID..." autocomplete="off" oninput="pfsRender()"
+      style="width:100%; max-width:420px; padding:8px 10px; border:1px solid var(--border); border-radius:6px; margin-bottom:12px;">
+    <div id="pfs-list"></div>
     </div>
   </div>
 
@@ -6774,7 +6777,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 <script src="marketing/meeting-prep.js"></script>
 <script src="marketing/morning-meeting.js"></script>
 <script src="marketing/news-leads.js"></script>
-<script src="marketing/order-payment.js"></script>
+<script src="accounts/proforma-invoices.js"></script>
 <script src="marketing/revised-po.js"></script>
 <script src="accounts/tour-shell.js"></script>
 <script src="accounts/advance-vouchers.js"></script>
