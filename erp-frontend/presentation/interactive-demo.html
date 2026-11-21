@@ -632,7 +632,7 @@ function renderBar() {
       }
       h = `<div class="cc"><h3>Solution</h3>${chips(IS.PRODUCTS, k => s.product === k, 'product')}</div>
       <div class="cc"><h3>View</h3><div class="chips">${tg(false, 'view', 'front', 'Front')}${tg(false, 'view', 'side', 'Side')}${tg(false, 'view', 'top', 'Top')}${tg(false, 'view', 'reset', 'Reset')}${tg(V.auto, 'auto', '', 'Auto-rotate')}</div></div>
-      <div class="cc"><h3>Open up</h3><div class="chips">${tg(s.door, 'door', '', 'Doors: ' + (s.door ? 'Open' : 'Closed'))}${tg(V.explode, 'explode', '', 'Exploded')}${tg(V.section, 'section', '', 'Cut-away')}</div>
+      <div class="cc"><h3>Open up</h3><div class="chips">${tg(s.door, 'door', '', 'Doors: ' + (s.door ? 'Open' : 'Closed'))}${tg(V.explode, 'explode', '', 'Exploded')}</div>
         <h3 style="margin-top:12px">Layers</h3><div class="chips">${tg(V.shell, 'layer', 'shell', 'Cabinet')}${tg(V.doors, 'layer', 'doors', 'Doors')}${tg(V.bus, 'layer', 'bus', 'Busbar')}</div></div>
       ${selHtml}
       <div class="cc"><h3>Customize</h3>${slots.map(sl => `<div style="margin-bottom:10px"><div class="hint" style="margin-bottom:6px">${SLOTS[sl].label}</div>${slotChips(sl)}</div>`).join('')}</div>
