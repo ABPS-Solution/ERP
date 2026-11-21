@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Interactive Presentation</title>
+<style>
+  :root { --bg:#070d19; --panel:#0f1828; --line:#1f2b42; --text:#eef3fb; --muted:#8393ad; --accent:#22c3a6; --hot:#ff4d4f; --warn:#ffb020; --blue:#3b82f6; --card:#131c2e; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { margin:0; height:100%; background:#000; overflow:hidden; font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color:var(--text); }
+  body { display:flex; flex-direction:column; }
+  button { font-family:inherit; cursor:pointer; transition:transform .12s, background .25s, border-color .25s, color .25s; }
+  button:active { transform:scale(.96); }
+
+  #wrap { flex:1; position:relative; overflow:hidden; min-height:0; }
+  #stage { width:1920px; height:1080px; position:absolute; left:50%; top:50%; transform-origin:center; background:radial-gradient(1200px 700px at 75% 20%, #12284a 0%, var(--bg) 62%); color:var(--text); overflow:hidden; letter-spacing:-.01em; }
+  #stage::before { content:''; position:absolute; inset:-60px; background-image:linear-gradient(rgba(120,150,200,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(120,150,200,.05) 1px, transparent 1px); background-size:60px 60px; animation:drift 40s linear infinite; mask-image:radial-gradient(ellipse at 60% 40%, #000 20%, transparent 75%); }
+  #stage::after { content:''; position:absolute; width:900px; height:900px; right:-300px; top:-350px; border-radius:50%; background:radial-gradient(circle, rgba(34,195,166,.14), transparent 60%); filter:blur(20px); animation:breathe 9s ease-in-out infinite; pointer-events:none; }
+  @keyframes drift { to { transform:translate(60px, 60px); } }
+  @keyframes breathe { 50% { transform:scale(1.15); opacity:.7; } }
+  header { position:absolute; z-index:2; top:0; left:0; right:0; height:96px; display:flex; align-items:center; padding:0 56px; gap:28px; }
+  header::after { content:''; position:absolute; left:0; bottom:0; height:2px; width:var(--prog, 0%); background:linear-gradient(90deg, var(--accent), var(--blue)); transition:width .9s cubic-bezier(.2,.8,.2,1); box-shadow:0 0 16px var(--accent); }
+  .logo { font-family:'Space Grotesk', Inter, sans-serif; font-weight:700; font-size:30px; letter-spacing:.04em; } .logo span { color:var(--accent); }
+  .title { font-size:26px; color:var(--muted); flex:1; padding-left:28px; border-left:1px solid var(--line); }
+  .dots { display:flex; gap:10px; } .dots i { width:34px; height:6px; border-radius:3px; background:var(--line); transition:.5s; } .dots i.on { background:var(--accent); } .dots i.cur { width:60px; box-shadow:0 0 12px var(--accent); }
+  .view { position:absolute; z-index:1; top:96px; left:0; right:0; bottom:56px; padding:48px 56px; opacity:0; transform:translateY(30px) scale(.985); filter:blur(8px); transition:opacity .7s, transform .8s cubic-bezier(.2,.8,.2,1), filter .7s; pointer-events:none; }
+  .view.on { opacity:1; transform:none; filter:none; }
+  .view.on .panel { animation:rise .8s cubic-bezier(.2,.8,.2,1) both; }
+  .view.on .panel:nth-child(2) { animation-delay:.08s } .view.on .panel:nth-child(3) { animation-delay:.16s } .view.on .panel:nth-child(4) { animation-delay:.24s }
+  @keyframes rise { from { opacity:0; transform:translateY(26px); } }
+  .v, .big-money, h1, h2 { font-family:'Space Grotesk', Inter, sans-serif; letter-spacing:-.02em; }
+  .flow { stroke-dasharray:10 14; animation:flow 1.2s linear infinite; }
+  .flow.bad { stroke:#ff4d4f; } .flow.good { stroke:#22c3a6; }
+  @keyframes flow { to { stroke-dashoffset:-24; } }
+  .barcmp { height:22px; border-radius:11px; margin-top:8px; transform-origin:left; transition:width 1.2s cubic-bezier(.2,.8,.2,1); }
+  footer { position:absolute; z-index:2; bottom:0; left:0; right:0; height:56px; display:flex; align-items:center; padding:0 56px; color:var(--muted); font-size:18px; border-top:1px solid var(--line); justify-content:space-between; }
+  .panel { background:linear-gradient(160deg, rgba(22,34,56,.82), rgba(12,19,33,.82)); border:1px solid rgba(80,110,160,.22); border-radius:22px; padding:28px 32px; backdrop-filter:blur(14px); box-shadow:0 20px 60px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.05); }
+  .k { color:var(--muted); font-size:22px; } .v { font-size:56px; font-weight:700; margin-top:6px; } .v small { font-size:26px; color:var(--muted); font-weight:500; }
+  .grid { display:grid; gap:24px; }
+  h1 { font-size:96px; margin:0; line-height:1.05; } h2 { font-size:44px; margin:0 0 24px; }
+  .big-money { font-size:150px; font-weight:800; color:var(--hot); line-height:1; }
+  .tag { display:inline-block; padding:8px 16px; border-radius:30px; background:rgba(34,195,166,.15); color:var(--accent); font-size:22px; margin:0 10px 10px 0; }
+  .row { display:flex; justify-content:space-between; padding:16px 0; border-bottom:1px solid var(--line); font-size:28px; }
+  .row:last-child { border:0; } .row b { font-weight:700; }
+  #three { position:absolute; left:0; top:0; width:1180px; height:928px; }
+  .note { color:var(--muted); font-size:18px; margin-top:14px; }
+  .gantt .bar { height:44px; border-radius:10px; background:linear-gradient(90deg, var(--accent), var(--blue)); display:flex; align-items:center; padding-left:16px; font-size:20px; font-weight:600; color:#04221c; transform-origin:left; animation:grow .8s both; white-space:nowrap; }
+  @keyframes grow { from { transform:scaleX(0); } }
+  svg text { font-family:inherit; }
+  .node rect { transition: fill .5s, stroke .5s; }
+  .hot rect { stroke:var(--hot) !important; fill:rgba(255,77,79,.18) !important; animation:pulse 1.4s infinite; }
+  .fixed rect { stroke:var(--accent) !important; fill:rgba(34,195,166,.15) !important; }
+  @keyframes pulse { 50% { filter:drop-shadow(0 0 18px var(--hot)); } }
+
+  /* ---- presenter bar ---- */
+  #bar { flex:0 0 auto; background:rgba(11,18,32,.98); border-top:1px solid var(--line); padding:10px 16px 12px; max-height:46vh; overflow:auto; }
+  .bar-top { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+  #steps { display:flex; gap:6px; overflow-x:auto; flex:1; }
+  #steps button { flex:0 0 auto; border:1px solid var(--line); background:var(--card); color:var(--muted); border-radius:20px; padding:9px 14px; font-size:14px; }
+  #steps button.on { background:var(--accent); color:#04221c; border-color:var(--accent); font-weight:600; }
+  #sum { color:var(--muted); font-size:13px; white-space:nowrap; }
+  .hidebtn { border:1px solid var(--line); background:var(--card); color:var(--text); border-radius:10px; padding:9px 14px; font-size:14px; white-space:nowrap; }
+  .bar-mid { display:flex; gap:14px; align-items:stretch; }
+  #panel { flex:1; display:flex; flex-wrap:wrap; gap:12px; align-content:flex-start; min-width:0; }
+  .cc { background:var(--card); border:1px solid rgba(80,110,160,.22); border-radius:14px; padding:12px 14px; }
+  .cc h3 { margin:0 0 8px; font-size:12px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:.06em; }
+  .chips { display:flex; flex-wrap:wrap; gap:8px; }
+  .chip { border:1px solid var(--line); background:#0e1626; color:var(--text); padding:11px 14px; border-radius:12px; font-size:15px; }
+  .chip.on { border-color:var(--accent); background:rgba(34,195,166,.15); color:var(--accent); }
+  .srow { width:230px; } .srow label { display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px; } .srow label b { color:var(--accent); }
+  .srow input[type=range] { width:100%; accent-color:var(--accent); height:26px; margin:0; }
+  .hint { color:var(--muted); font-size:14px; line-height:1.5; margin:0; }
+  .case { display:flex; gap:10px; align-items:center; padding:8px 10px; border:1px solid var(--line); border-radius:12px; cursor:pointer; min-width:260px; }
+  .case.on { border-color:var(--accent); } .case i { width:36px; height:36px; border-radius:8px; flex:0 0 auto; } .case small { color:var(--muted); display:block; font-size:12px; }
+  .navbtns { display:flex; flex-direction:column; gap:8px; width:150px; }
+  .navbtns button { flex:1; border-radius:12px; border:0; font-size:16px; font-weight:600; padding:12px; }
+  .prev { background:var(--card); color:var(--text); border:1px solid var(--line) !important; } .next { background:var(--accent); color:#04221c; }
+  .navbtns button:disabled { opacity:.4; }
+  #showbtn { position:fixed; right:16px; bottom:16px; z-index:10; display:none; align-items:center; gap:8px; border:1px solid var(--accent); background:rgba(11,18,32,.92); color:var(--accent); border-radius:24px; padding:12px 18px; font-size:15px; font-weight:600; box-shadow:0 8px 24px rgba(0,0,0,.5); }
+  body.hidden-bar #bar { display:none; } body.hidden-bar #showbtn { display:flex; }
+</style>
+</head>
+<body>
+<div id="wrap">
+<div id="stage">
+  <header><div class="logo">AB <span>POWER</span></div><div class="title" id="title"></div><div class="dots" id="dots"></div></header>
+
+  <section class="view" data-v="0">
+    <div style="display:flex; height:100%; align-items:center;">
+      <div style="flex:1">
+        <div class="tag">Interactive Presentation</div>
+        <h1>Clean power for<br><span style="color:var(--accent)">your data center.</span></h1>
+        <p style="font-size:34px; color:var(--muted); max-width:900px; margin-top:32px">Let's look at your facility, find where power quality costs you money, and build your solution here, live.</p>
+      </div>
+      <canvas id="waveHero" width="700" height="360"></canvas>
+    </div>
+  </section>
+
+  <section class="view" data-v="1">
+    <div class="grid" style="grid-template-columns: 560px 1fr; height:100%">
+      <div class="grid" style="align-content:start">
+        <div class="panel"><div class="k">Facility</div><div class="v" id="f-type"></div></div>
+        <div class="panel"><div class="k">IT load → total facility load</div><div class="v" id="f-load"></div></div>
+        <div class="panel"><div class="k">Drawn from the grid</div><div class="v" id="f-kva"></div></div>
+        <div class="panel"><div class="k">Power factor · THD</div><div class="v" id="f-pq"></div></div>
+      </div>
+      <div class="panel"><h2>Your power chain</h2><div class="sld"></div></div>
+    </div>
+  </section>
+
+  <section class="view" data-v="2">
+    <div class="grid" style="grid-template-columns: 1fr 640px; height:100%">
+      <div class="panel"><h2>Where the problems are</h2><div class="sld"></div></div>
+      <div class="grid" style="align-content:start">
+        <div class="panel"><div class="k">Current waveform at your UPS input</div><canvas id="waveBad" width="576" height="260"></canvas><div class="note" id="thd-note"></div></div>
+        <div class="panel" id="prob-list"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="view" data-v="3">
+    <div style="display:flex; flex-direction:column; justify-content:center; height:100%">
+      <div class="k" style="font-size:34px">These problems are costing you about</div>
+      <div class="big-money" id="cost-total"></div>
+      <div style="font-size:40px; color:var(--muted); margin-bottom:48px">every year</div>
+      <div class="grid" style="grid-template-columns: repeat(4, 1fr);" id="cost-break"></div>
+      <div class="note">Indicative estimate from the values you shared. A detailed study gives exact figures.</div>
+    </div>
+  </section>
+
+  <section class="view" data-v="4">
+    <div id="three"></div>
+    <div style="position:absolute; left:1220px; right:56px; top:48px; bottom:48px;" class="grid">
+      <div class="panel"><div class="k">Recommended</div><div class="v" id="p-name" style="font-size:46px"></div><div id="p-tags" style="margin-top:18px"></div></div>
+      <div class="panel"><div class="k">After correction</div><canvas id="waveGood" width="560" height="200"></canvas>
+        <div class="row"><span>Power factor</span><b id="p-pf"></b></div>
+        <div class="row"><span>THD</span><b id="p-thd"></b></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="view" data-v="5">
+    <div class="grid" style="grid-template-columns: 1fr 1fr 560px; height:100%">
+      <div class="panel"><h2 style="color:var(--hot)">Monthly bill today</h2><div id="bill-before"></div></div>
+      <div class="panel"><h2 style="color:var(--accent)">With AB Power</h2><div id="bill-after"></div></div>
+      <div class="grid" style="align-content:start">
+        <div class="panel"><div class="k">You save every month</div><div class="v" style="color:var(--accent)" id="save-m"></div></div>
+        <div class="panel"><div class="k">Every year</div><div class="v" id="save-y"></div></div>
+        <div class="panel"><div class="k">Payback</div><div class="v" id="payback"></div></div>
+        <div class="note">Indicative, based on your inputs. Exact figures follow a site study.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="view" data-v="6">
+    <div class="grid" style="grid-template-columns: 1fr 640px; height:100%">
+      <div class="panel gantt"><h2>From order to running</h2><div id="gantt"></div><div class="note" id="gantt-note"></div></div>
+      <div class="panel" id="case"></div>
+    </div>
+  </section>
+
+  <footer><span>Prototype: all figures and models are placeholders, indicative only</span><span>abpowerindia.com</span></footer>
+</div>
+</div>
+
+<div id="bar">
+  <div class="bar-top"><div id="steps"></div><span id="sum"></span><button class="hidebtn" id="hidebtn">Hide controls</button></div>
+  <div class="bar-mid"><div id="panel"></div><div class="navbtns"><button class="next" id="next">Next</button><button class="prev" id="prev">Back</button></div></div>
+</div>
+<button id="showbtn">Show controls</button>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ===================== engine (placeholder numbers, indicative only) =====================
+const IS = (() => {
+  const FACILITIES = {
+    hyperscale: { label: 'Hyperscale', pue: 1.35 }, colo: { label: 'Colocation', pue: 1.5 },
+    enterprise: { label: 'Enterprise', pue: 1.7 }, edge: { label: 'Edge', pue: 1.8 }
+  };
+  const PROBLEMS = {
+    pf: { label: 'PF penalty on bill', nodes: ['grid'] }, thd: { label: 'High harmonics (THD)', nodes: ['ups', 'bus'] },
+    trip: { label: 'UPS / DG tripping', nodes: ['ups', 'dg'] }, heat: { label: 'Transformer & cable heating', nodes: ['tx'] },
+    capfail: { label: 'Capacitor failures', nodes: ['bus'] }
+  };
+  const PRODUCTS = {
+    apfc: { label: 'Detuned APFC Panel', short: 'Detuned APFC' }, ahf: { label: 'Active Harmonic Filter', short: 'AHF' },
+    hybrid: { label: 'Hybrid (APFC + AHF)', short: 'Hybrid' }
+  };
+  const CASES = [
+    { id: 'c1', title: 'Tier III colocation, Mumbai', tags: ['colo', 'hybrid', 'ahf'], size: '12 MW IT', result: 'THD 24% → 4%, PF 0.86 → 0.99', color: '#1d4e89' },
+    { id: 'c2', title: 'Hyperscale campus, Chennai', tags: ['hyperscale', 'ahf'], size: '30 MW IT', result: 'Zero UPS trips in 18 months', color: '#0f766e' },
+    { id: 'c3', title: 'Enterprise DC, Pune', tags: ['enterprise', 'apfc'], size: '3 MW IT', result: '₹38 lakh/yr penalty removed', color: '#7c3aed' },
+    { id: 'c4', title: 'Edge sites, pan-India', tags: ['edge', 'apfc', 'hybrid'], size: '40 sites', result: 'PF 0.99 on every site', color: '#b45309' }
+  ];
+  const DEFAULTS = { step: 0, facility: 'colo', itMW: 10, pf: 0.86, thd: 22, tariff: 8.5, demand: 450, problems: ['pf', 'thd'], product: 'hybrid', door: true, caseId: null };
+  const STEPS = ['Welcome', 'Your facility', 'What is happening', 'What it costs', 'Our solution', 'Your bill, before & after', 'Delivery & proof'];
+  let current = { ...DEFAULTS };
+  const listeners = [];
+  function publish(state) { current = state; listeners.forEach(l => l(current)); }
+  function subscribe(cb) { listeners.push(cb); }
+  function calc(s) {
+    const pue = FACILITIES[s.facility].pue, kW = s.itMW * 1000 * pue, tpf = 0.99, kVA = kW / s.pf, kVAafter = kW / tpf;
+    const kvar = kW * (Math.tan(Math.acos(s.pf)) - Math.tan(Math.acos(tpf)));
+    const txKVA = 2500, panels = Math.max(1, Math.ceil(kVA / (txKVA * 0.9))), kvarPerPanel = kvar / panels, stepKvar = 50;
+    const steps = Math.max(1, Math.ceil(kvarPerPanel / stepKvar));
+    const currentPerPanel = (kVA / panels) * 1000 / (Math.sqrt(3) * 415), harmA = currentPerPanel * (s.thd / 100);
+    const ahfModules = Math.max(1, Math.ceil(harmA / 100));
+    const useApfc = s.product !== 'ahf', useAhf = s.product !== 'apfc';
+    const thdAfter = useAhf ? 4 : Math.max(8, s.thd * 0.6), pfAfter = useApfc ? tpf : Math.min(0.95, s.pf + 0.04);
+    const kWhMonth = kW * 730 * 0.85;
+    const bill = (pf, thd) => { const kVAh = kWhMonth / pf, energy = kVAh * s.tariff, demandCharge = (kW / pf) * s.demand, losses = kWhMonth * (thd / 100) * 0.05 * s.tariff; return { energy, demand: demandCharge, losses, total: energy + demandCharge + losses }; };
+    const before = bill(s.pf, s.thd), after = bill(pfAfter, thdAfter), monthlySaving = before.total - after.total;
+    const downtimeYear = s.problems.includes('trip') ? s.itMW * 1.2e6 : 0, annualProblemCost = monthlySaving * 12 + downtimeYear;
+    const invest = (useApfc ? kvar * 1800 : 0) + (useAhf ? ahfModules * panels * 9e5 : 0);
+    const payback = invest / Math.max(1, monthlySaving + downtimeYear / 12);
+    const apfcBays = useApfc ? Math.ceil(steps / 6) : 0, ahfBays = useAhf ? Math.ceil(ahfModules / 4) : 0, bays = apfcBays + ahfBays;
+    const weeks = [
+      { name: 'Drawing approval', w: 2 }, { name: 'Procurement', w: 3 + Math.floor(bays / 3) },
+      { name: 'Manufacturing', w: 3 + Math.floor(bays * panels / 8) }, { name: 'Testing (FAT)', w: 1 },
+      { name: 'Dispatch', w: 1 }, { name: 'Install & commission', w: 2 }
+    ];
+    return { kW, kVA, kVAafter, kvar, panels, kvarPerPanel, steps, ahfModules, harmA, apfcBays, ahfBays, bays, pfAfter, thdAfter, before, after, monthlySaving, downtimeYear, annualProblemCost, paybackLo: payback * 0.8, paybackHi: payback * 1.2, weeks };
+  }
+  function relevantCases(s) {
+    return CASES.map(c => ({ c, score: (c.tags.includes(s.facility) ? 2 : 0) + (c.tags.includes(s.product) ? 1 : 0) })).sort((a, b) => b.score - a.score).slice(0, 3).map(x => x.c);
+  }
+  const trim = (n, d = 1) => String(+n.toFixed(d));
+  function inr(n) { if (n >= 1e7) return '₹' + trim(n / 1e7, 2) + ' Cr'; if (n >= 1e5) return '₹' + trim(n / 1e5, 1) + ' L'; return '₹' + Math.round(n).toLocaleString('en-IN'); }
+  const num = (n, d = 0) => (+n.toFixed(d)).toLocaleString('en-IN');
+  return { FACILITIES, PROBLEMS, PRODUCTS, CASES, DEFAULTS, STEPS, publish, subscribe, calc, relevantCases, inr, num, trim, get state() { return current; } };
+})();
+
+const $ = id => document.getElementById(id);
+const fit = () => {
+  const w = $('wrap'), k = Math.min(w.clientWidth / 1920, w.clientHeight / 1080);
+  $('stage').style.transform = `translate(-50%,-50%) scale(${k})`;
+};
+new ResizeObserver(fit).observe($('wrap')); addEventListener('resize', fit); fit();
+$('dots').innerHTML = IS.STEPS.map(() => '<i></i>').join('');
+
+// ===================== display: single-line diagram =====================
+const SLD_NODES = [
+  { id: 'grid', x: 30, y: 230, label: 'Grid / Meter' }, { id: 'tx', x: 250, y: 230, label: 'Transformer' },
+  { id: 'dg', x: 470, y: 40, label: 'DG set' }, { id: 'bus', x: 470, y: 230, label: 'LT Bus' },
+  { id: 'ups', x: 700, y: 130, label: 'UPS' }, { id: 'it', x: 920, y: 130, label: 'IT racks' },
+  { id: 'cool', x: 700, y: 330, label: 'Cooling / VFDs' }, { id: 'prod', x: 470, y: 440, label: 'AB Power' }
+];
+function sldSvg(s, stepNo) {
+  const hot = new Set(s.problems.flatMap(p => IS.PROBLEMS[p].nodes)), solved = stepNo >= 4;
+  const N = Object.fromEntries(SLD_NODES.map(n => [n.id, n])), w = 170, h = 70;
+  const fc = solved ? 'good' : stepNo >= 2 && hot.size ? 'bad' : '';
+  const wire = d => `<path d="${d}" fill="none" stroke="#2a3954" stroke-width="6" stroke-linecap="round"/><path class="flow ${fc}" d="${d}" fill="none" stroke="#3b82f6" stroke-width="4" stroke-linecap="round"/>`;
+  const c = (a, b) => wire(`M${N[a].x + w} ${N[a].y + h / 2} H${N[b].x}`);
+  const v = (a, b) => wire(`M${N[a].x + w / 2} ${N[a].y + h} V${N[b].y}`);
+  const elbow = (a, b) => wire(`M${N[a].x + w} ${N[a].y + h / 2} H${N[b].x - 30} V${N[b].y + h / 2} H${N[b].x}`);
+  const lines = c('grid', 'tx') + c('tx', 'bus') + v('dg', 'bus') + elbow('bus', 'ups') + c('ups', 'it') + elbow('bus', 'cool') + (solved ? v('bus', 'prod') : '');
+  const nodes = SLD_NODES.filter(n => n.id !== 'prod' || solved).map(n => {
+    const cls = n.id === 'prod' ? '' : hot.has(n.id) && stepNo >= 2 ? (solved ? 'fixed' : 'hot') : '';
+    const fill = n.id === 'prod' ? 'rgba(34,195,166,.25)' : '#101a2c', stroke = n.id === 'prod' ? '#22c3a6' : '#2c3b58';
+    return `<g class="node ${cls}"><rect x="${n.x}" y="${n.y}" width="${w}" height="${h}" rx="14" fill="${fill}" stroke="${stroke}" stroke-width="3"/>
+      <text x="${n.x + w / 2}" y="${n.y + h / 2 + 9}" text-anchor="middle" fill="#eef3fb" font-size="24" font-weight="600">${n.label}</text></g>`;
+  }).join('');
+  return `<svg viewBox="0 0 1110 530" width="100%">${lines}${nodes}</svg>`;
+}
+
+// ===================== display: waveforms =====================
+const waves = [];
+function wave(id, getThd, color) { waves.push({ cv: $(id), getThd, color }); }
+const t0 = performance.now();
+function drawWaves(now) {
+  const t = (now - t0) / 1000;
+  for (const w of waves) {
+    const g = w.cv.getContext('2d'), W = w.cv.width, H = w.cv.height, thd = w.getThd() / 100;
+    g.clearRect(0, 0, W, H);
+    g.strokeStyle = '#1f2b42'; g.lineWidth = 2; g.beginPath(); g.moveTo(0, H / 2); g.lineTo(W, H / 2); g.stroke();
+    g.strokeStyle = typeof w.color === 'function' ? w.color() : w.color; g.lineWidth = 4; g.beginPath();
+    for (let x = 0; x <= W; x += 3) {
+      const a = (x / W) * Math.PI * 6 - t * 3;
+      const y = Math.sin(a) + thd * 1.6 * Math.sin(5 * a) + thd * 1.1 * Math.sin(7 * a) + thd * 0.6 * Math.sin(11 * a);
+      g.lineTo(x, H / 2 - y * H * 0.32);
+    }
+    g.stroke();
+  }
+}
+wave('waveHero', () => (Math.sin(performance.now() / 2500) + 1) * 15, () => '#22c3a6');
+wave('waveBad', () => IS.state.thd, '#ff4d4f');
+wave('waveGood', () => IS.calc(IS.state).thdAfter, '#22c3a6');
+
+// ===================== display: demo 3D panel (procedural placeholder model) =====================
+let renderer = null, scene, cam, halo, rig, M, doors = [], appear = [], rigKey = '', camDist = 6, doorAngle = 0, camA = 0;
+const BW = 0.8, BH = 2.2, BD = 0.6, T = 0.025;
+function init3D() {
+  if (typeof THREE === 'undefined') { $('three').innerHTML = '<div style="padding:80px; color:var(--muted); font-size:28px">3D view needs the internet the first time.</div>'; return; }
+  scene = new THREE.Scene(); cam = new THREE.PerspectiveCamera(32, 1180 / 928, 0.1, 100);
+  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setSize(1180, 928); renderer.setPixelRatio(Math.min(2, devicePixelRatio)); renderer.shadowMap.enabled = true;
+  renderer.outputEncoding = THREE.sRGBEncoding; $('three').appendChild(renderer.domElement);
+  scene.add(new THREE.HemisphereLight(0xdfe8ff, 0x0b1220, 0.9));
+  const key = new THREE.DirectionalLight(0xffffff, 1.1); key.position.set(4, 7, 6); key.castShadow = true; key.shadow.mapSize.set(2048, 2048);
+  Object.assign(key.shadow.camera, { left: -8, right: 8, top: 8, bottom: -8 }); scene.add(key);
+  const rim = new THREE.DirectionalLight(0x22c3a6, 0.5); rim.position.set(-6, 3, -4); scene.add(rim);
+  const floor = new THREE.Mesh(new THREE.CircleGeometry(12, 64), new THREE.MeshStandardMaterial({ color: 0x0c1526, roughness: 0.9 }));
+  floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+  renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.15; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  scene.fog = new THREE.Fog(0x070d19, 9, 22);
+  halo = new THREE.Mesh(new THREE.RingGeometry(2.6, 2.75, 96), new THREE.MeshBasicMaterial({ color: 0x22c3a6, transparent: true, opacity: .3 }));
+  halo.rotation.x = -Math.PI / 2; halo.position.y = 0.005; scene.add(halo);
+  const fill = new THREE.PointLight(0x3b82f6, 0.6, 12); fill.position.set(0, 1.2, 2.5); scene.add(fill);
+  M = {
+    cab: new THREE.MeshStandardMaterial({ color: 0xd4d7d0, metalness: 0.35, roughness: 0.45 }), inner: new THREE.MeshStandardMaterial({ color: 0x9aa0a6, metalness: 0.2, roughness: 0.7 }),
+    can: new THREE.MeshStandardMaterial({ color: 0xb8c4cf, metalness: 0.7, roughness: 0.3 }), reactor: new THREE.MeshStandardMaterial({ color: 0x2a2f36, metalness: 0.4, roughness: 0.5 }),
+    coil: new THREE.MeshStandardMaterial({ color: 0xb87333, metalness: 0.8, roughness: 0.35 }), ahf: new THREE.MeshStandardMaterial({ color: 0x1f2937, metalness: 0.3, roughness: 0.5 }),
+    fan: new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.2, roughness: 0.8 }), accent: new THREE.MeshStandardMaterial({ color: 0x22c3a6, emissive: 0x0d5c4f, roughness: 0.4 }),
+    screen: new THREE.MeshStandardMaterial({ color: 0x0b1220, emissive: 0x1b6bd8, emissiveIntensity: 0.6 })
+  };
+  rig = new THREE.Group(); scene.add(rig); rig.userData.born = performance.now();
+}
+function box(w, h, d, m, x, y, z) { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.position.set(x, y, z); o.castShadow = o.receiveShadow = true; return o; }
+function buildRig(c) {
+  scene.remove(rig); rig = new THREE.Group(); scene.add(rig); doors = []; appear = [];
+  const layout = [...Array(c.ahfBays).fill('ahf'), ...Array(c.apfcBays).fill('apfc')];
+  const total = layout.length * BW, x0 = -total / 2;
+  let stepsLeft = c.steps, modsLeft = c.ahfModules;
+  layout.forEach((type, i) => {
+    const bx = x0 + i * BW + BW / 2, g = new THREE.Group(); g.position.x = bx; rig.add(g);
+    g.add(box(BW, BH, T, M.cab, 0, BH / 2 + 0.1, -BD / 2)); g.add(box(T, BH, BD, M.cab, -BW / 2 + T / 2, BH / 2 + 0.1, 0));
+    g.add(box(T, BH, BD, M.cab, BW / 2 - T / 2, BH / 2 + 0.1, 0)); g.add(box(BW, T, BD, M.cab, 0, BH + 0.1, 0));
+    g.add(box(BW, 0.1, BD, M.reactor, 0, 0.05, 0)); g.add(box(BW - 0.08, BH - 0.1, 0.01, M.inner, 0, BH / 2 + 0.1, -BD / 2 + 0.03));
+    if (type === 'apfc') {
+      const n = Math.min(6, stepsLeft); stepsLeft -= n;
+      for (let r = 0; r < n; r++) {
+        const sg = new THREE.Group(); sg.position.set(0, 0.35 + r * 0.31, 0); g.add(sg);
+        for (let k = 0; k < 3; k++) { const cyl = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.22, 24), M.can); cyl.position.set(-0.24 + k * 0.14, 0, 0.02); cyl.castShadow = true; sg.add(cyl); }
+        sg.add(box(0.2, 0.2, 0.26, M.reactor, 0.24, 0, 0));
+        const coil = new THREE.Mesh(new THREE.TorusGeometry(0.075, 0.025, 12, 24), M.coil); coil.position.set(0.24, 0, 0.14); sg.add(coil);
+        appear.push(sg);
+      }
+    } else {
+      const n = Math.min(4, modsLeft); modsLeft -= n;
+      for (let r = 0; r < n; r++) {
+        const mg = new THREE.Group(); mg.position.set(0, 0.45 + r * 0.46, 0); g.add(mg);
+        mg.add(box(BW - 0.12, 0.38, 0.45, M.ahf, 0, 0, 0));
+        for (let k = 0; k < 2; k++) { const f = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.01, 24), M.fan); f.rotation.x = Math.PI / 2; f.position.set(-0.15 + k * 0.3, 0, 0.23); mg.add(f); }
+        mg.add(box(0.5, 0.025, 0.01, M.accent, 0, -0.15, 0.231));
+        appear.push(mg);
+      }
+    }
+    const pivot = new THREE.Group(); pivot.position.set(-BW / 2, 0, BD / 2); g.add(pivot);
+    pivot.add(box(BW - 0.01, BH - 0.02, T, M.cab, BW / 2, BH / 2 + 0.1, 0));
+    if (i === 0) pivot.add(box(0.22, 0.16, 0.012, M.screen, BW / 2, 1.55, T));
+    pivot.add(box(0.02, 0.25, 0.03, M.reactor, BW - 0.08, 1.15, T));
+    pivot.add(box(BW - 0.2, 0.04, 0.008, i < c.ahfBays ? M.accent : M.coil, BW / 2, 2.1, T / 2 + 0.005));
+    doors.push(pivot);
+  });
+  rig.add(box(total, 0.05, 0.08, M.coil, 0, BH - 0.05, -0.1));
+  appear.forEach((o, i) => { o.scale.setScalar(0.001); o.userData.delay = i * 70; });
+  rig.userData.born = performance.now();
+  camDist = Math.max(5.2, total * 1.75); halo.scale.setScalar(Math.max(1, total / 4));
+}
+function animate3D(now) {
+  if (!renderer) return;
+  const s = IS.state, age = now - rig.userData.born, target = s.door && age > 700 ? -1.95 : 0;
+  doorAngle += (target - doorAngle) * 0.05;
+  doors.forEach(d => d.rotation.y = doorAngle);
+  appear.forEach(o => { const p = Math.min(1, Math.max(0, (age - 1100 - o.userData.delay) / 500)); const e = p === 1 ? 1 : 1 - Math.pow(2, -10 * p) * Math.cos(p * 9); o.scale.setScalar(0.001 + Math.max(0, e)); });
+  halo.material.opacity = 0.25 + Math.sin(now / 700) * 0.08;
+  camA = Math.sin(now / 7000) * 0.5 + 0.35;
+  cam.position.set(Math.sin(camA) * camDist, 1.9 + camDist * 0.12, Math.cos(camA) * camDist); cam.lookAt(0, 1.05, 0);
+  renderer.render(scene, cam);
+}
+init3D();
+
+// ===================== display: render =====================
+const counters = new Map();
+function countTo(el, val, fmt) {
+  const from = counters.has(el) ? counters.get(el) : 0; counters.set(el, val);
+  if (el._raf) cancelAnimationFrame(el._raf);
+  const t1 = performance.now(), d = 1300;
+  const f = now => { const p = Math.min(1, (now - t1) / d), e = 1 - Math.pow(1 - p, 4); el.innerHTML = fmt(from + (val - from) * e); if (p < 1) el._raf = requestAnimationFrame(f); };
+  el._raf = requestAnimationFrame(f);
+}
+let lastStep = -1;
+function renderDisplay(s) {
+  const c = IS.calc(s);
+  if (s.step !== lastStep) counters.clear();
+  document.querySelectorAll('.view').forEach(v => v.classList.toggle('on', +v.dataset.v === s.step));
+  document.querySelectorAll('#dots i').forEach((d, i) => { d.classList.toggle('on', i <= s.step); d.classList.toggle('cur', i === s.step); });
+  document.querySelector('header').style.setProperty('--prog', (s.step / (IS.STEPS.length - 1) * 100) + '%');
+  $('title').textContent = IS.STEPS[s.step];
+  document.querySelectorAll('.sld').forEach(el => el.innerHTML = sldSvg(s, s.step));
+  $('f-type').innerHTML = IS.FACILITIES[s.facility].label + ' <small>PUE ' + IS.FACILITIES[s.facility].pue + '</small>';
+  $('f-load').innerHTML = `${s.itMW} MW → ${IS.trim(c.kW / 1000)} <small>MW</small>`;
+  $('f-kva').innerHTML = `${IS.num(c.kVA)} <small>kVA</small>`;
+  $('f-pq').innerHTML = `${s.pf} <small>PF</small> · ${s.thd}<small>% THD</small>`;
+  $('thd-note').textContent = `${s.thd}% THD: distorted current heats transformers and trips sensitive equipment.`;
+  $('prob-list').innerHTML = '<div class="k" style="margin-bottom:12px">You told us</div>' + (s.problems.length ? s.problems.map(p => `<div class="row"><span>${IS.PROBLEMS[p].label}</span><b style="color:var(--hot)">●</b></div>`).join('') : '<div class="row">No issues selected</div>');
+  countTo($('cost-total'), c.annualProblemCost, IS.inr);
+  const brk = [['Extra kVAh energy', (c.before.energy - c.after.energy) * 12], ['Extra demand charges', (c.before.demand - c.after.demand) * 12], ['Harmonic heating losses', (c.before.losses - c.after.losses) * 12], ['Downtime risk', c.downtimeYear]];
+  if (s.step !== lastStep || !$('cost-break').children.length) $('cost-break').innerHTML = brk.map(([k]) => `<div class="panel"><div class="k">${k}</div><div class="v" style="font-size:46px"></div></div>`).join('');
+  [...$('cost-break').children].forEach((p, i) => countTo(p.querySelector('.v'), brk[i][1], IS.inr));
+  $('p-name').textContent = IS.PRODUCTS[s.product].label;
+  const tags = [`${c.panels} × panel`, `${c.bays} bays each`];
+  if (s.product !== 'ahf') tags.push(`${IS.num(c.kvarPerPanel)} kVAR / panel`, `${c.steps} × 50 kVAR steps`, '7% detuned');
+  if (s.product !== 'apfc') tags.push(`${c.ahfModules} × 100 A AHF`);
+  $('p-tags').innerHTML = tags.map(t => `<span class="tag">${t}</span>`).join('');
+  $('p-pf').innerHTML = `${s.pf} → <span style="color:var(--accent)">${IS.trim(c.pfAfter, 2)}</span>`;
+  $('p-thd').innerHTML = `${s.thd}% → <span style="color:var(--accent)">${IS.trim(c.thdAfter)}%</span>`;
+  const billRows = (b, color) => [['Energy (kVAh)', b.energy], ['Demand charges', b.demand], ['Harmonic losses', b.losses]].map(([k, v]) => `<div class="row"><span>${k}</span><b>${IS.inr(v)}</b></div>`).join('') +
+    `<div class="row" style="font-size:36px; border:0"><span>Total / month</span><b>${IS.inr(b.total)}</b></div><div class="barcmp" style="width:${b.total / c.before.total * 100}%; background:${color}; animation:grow 1.3s cubic-bezier(.2,.8,.2,1) both .3s"></div>`;
+  $('bill-before').innerHTML = billRows(c.before, 'linear-gradient(90deg,#ff4d4f,#ff8a4d)');
+  $('bill-after').innerHTML = billRows(c.after, 'linear-gradient(90deg,#22c3a6,#3b82f6)');
+  countTo($('save-m'), c.monthlySaving, IS.inr); countTo($('save-y'), c.monthlySaving * 12, IS.inr);
+  $('payback').innerHTML = `${Math.max(1, Math.round(c.paybackLo))}–${Math.max(2, Math.round(c.paybackHi))} <small>months</small>`;
+  const totalW = c.weeks.reduce((a, b) => a + b.w, 0); let acc = 0;
+  $('gantt').innerHTML = c.weeks.map((w, i) => { const left = acc / totalW * 100, width = w.w / totalW * 100; acc += w.w;
+    return `<div style="display:flex; align-items:center; margin:14px 0"><div style="width:300px; font-size:24px; color:var(--muted)">${w.name}</div><div style="flex:1; position:relative; height:44px"><div class="bar" style="position:absolute; left:${left}%; width:${width}%; animation-delay:${i * 0.15}s">${w.w} wk</div></div></div>`; }).join('');
+  $('gantt-note').textContent = `About ${totalW} weeks from PO to commissioning (placeholder values).`;
+  const cs = IS.CASES.find(x => x.id === s.caseId) || IS.relevantCases(s)[0];
+  $('case').innerHTML = `<div class="k">Similar project</div><div style="height:300px; border-radius:16px; margin:16px 0; background:linear-gradient(135deg, ${cs.color}, #0b1220); display:flex; align-items:flex-end; padding:20px; font-size:20px; color:#cfe">Project photo</div>
+    <h2 style="margin-bottom:10px">${cs.title}</h2><div class="row"><span>Size</span><b>${cs.size}</b></div><div class="row"><span>Result</span><b style="color:var(--accent)">${cs.result}</b></div>`;
+  const k = [s.product, c.apfcBays, c.ahfBays, c.steps, c.ahfModules].join('|');
+  if (renderer && (k !== rigKey || (s.step === 4 && lastStep !== 4))) { rigKey = k; buildRig(c); }
+  lastStep = s.step;
+}
+function loop(now) { drawWaves(now); if (IS.state.step === 4) animate3D(now); requestAnimationFrame(loop); }
+
+// ===================== presenter bar =====================
+let s = { ...IS.DEFAULTS };
+const FMT = { itMW: v => v + ' MW', pf: v => v, thd: v => v + '%', tariff: v => '₹' + v + '/kVAh', demand: v => '₹' + v + '/kVA/mo' };
+function set(patch) { s = { ...s, ...patch }; IS.publish(s); renderBar(); }
+function chips(options, isOn, act) { return `<div class="chips">${Object.entries(options).map(([k, v]) => `<button class="chip ${isOn(k) ? 'on' : ''}" data-k="${k}" data-act="${act}">${v.label}</button>`).join('')}</div>`; }
+function slider(key, label, min, max, step) { return `<div class="srow"><label>${label}<b>${FMT[key](s[key])}</b></label><input type="range" min="${min}" max="${max}" step="${step}" value="${s[key]}" data-key="${key}"></div>`; }
+function renderBar() {
+  $('steps').innerHTML = IS.STEPS.map((n, i) => `<button class="${i === s.step ? 'on' : ''}" data-step="${i}">${i}. ${n}</button>`).join('');
+  const c = IS.calc(s);
+  $('sum').textContent = `${s.itMW} MW · PF ${s.pf} · THD ${s.thd}%`;
+  let h = '';
+  switch (s.step) {
+    case 0: h = `<div class="cc"><h3>Start</h3><p class="hint">Greet the visitor, ask about their facility, then tap Next.</p></div>`; break;
+    case 1: h = `<div class="cc"><h3>Facility type</h3>${chips(IS.FACILITIES, k => s.facility === k, 'facility')}</div>
+      <div class="cc"><h3>Size &amp; supply</h3><div style="display:flex; flex-wrap:wrap; gap:6px 22px">${slider('itMW', 'IT load', 1, 50, 1)}${slider('pf', 'Power factor', 0.75, 0.97, 0.01)}${slider('thd', 'THD', 5, 40, 1)}${slider('tariff', 'Tariff', 5, 14, 0.5)}${slider('demand', 'Demand charge', 200, 700, 10)}</div></div>`; break;
+    case 2: h = `<div class="cc"><h3>Problems they face</h3>${chips(IS.PROBLEMS, k => s.problems.includes(k), 'problem')}</div>`; break;
+    case 3: h = `<div class="cc"><h3>On screen</h3><p class="hint">Indicative cost of these problems: <b style="color:var(--text)">${IS.inr(c.annualProblemCost)} per year</b>. Change the sliders in step 1 if the visitor corrects anything.</p></div>`; break;
+    case 4: h = `<div class="cc"><h3>Solution</h3>${chips(IS.PRODUCTS, k => s.product === k, 'product')}</div>
+      <div class="cc"><h3>3D view</h3><button class="chip ${s.door ? 'on' : ''}" data-act="door">Doors: ${s.door ? 'Open' : 'Closed'}</button></div>
+      <div class="cc"><h3>Configured</h3><p class="hint">${c.panels} panel(s) · ${c.bays} bay(s) each${s.product !== 'ahf' ? ` · ${c.steps} × 50 kVAR steps` : ''}${s.product !== 'apfc' ? ` · ${c.ahfModules} AHF module(s)` : ''}</p></div>`; break;
+    case 5: h = `<div class="cc"><h3>On screen</h3><p class="hint">Bill before and after, payback of ${IS.trim(c.paybackLo)}–${IS.trim(c.paybackHi)} months.</p></div>`; break;
+    case 6: h = `<div class="cc"><h3>Relevant projects</h3><div style="display:flex; gap:8px; flex-wrap:wrap">${IS.relevantCases(s).map(p => `<div class="case ${s.caseId === p.id ? 'on' : ''}" data-case="${p.id}"><i style="background:${p.color}"></i><div>${p.title}<small>${p.result}</small></div></div>`).join('')}</div></div>
+      <div class="cc"><h3>Info document</h3><p class="hint">The PDF comes in the next build.</p></div>`; break;
+  }
+  $('panel').innerHTML = h;
+  $('prev').disabled = s.step === 0;
+  $('next').textContent = s.step === IS.STEPS.length - 1 ? 'Finish' : 'Next';
+}
+document.addEventListener('click', e => {
+  const t = e.target.closest('button, .case'); if (!t) return;
+  if (t.dataset.step) return set({ step: +t.dataset.step });
+  if (t.dataset.case) return set({ caseId: s.caseId === t.dataset.case ? null : t.dataset.case });
+  const k = t.dataset.k;
+  switch (t.dataset.act) {
+    case 'facility': return set({ facility: k });
+    case 'product': return set({ product: k });
+    case 'problem': return set({ problems: s.problems.includes(k) ? s.problems.filter(p => p !== k) : [...s.problems, k] });
+    case 'door': return set({ door: !s.door });
+  }
+});
+document.addEventListener('input', e => {
+  const key = e.target.dataset.key; if (!key) return;
+  s = { ...s, [key]: +e.target.value }; IS.publish(s);
+  e.target.previousElementSibling.querySelector('b').textContent = FMT[key](s[key]);
+  $('sum').textContent = `${s.itMW} MW · PF ${s.pf} · THD ${s.thd}%`;
+});
+$('prev').onclick = () => set({ step: Math.max(0, s.step - 1) });
+$('next').onclick = () => set({ step: s.step === IS.STEPS.length - 1 ? 0 : s.step + 1 });
+function toggleBar(hide) { document.body.classList.toggle('hidden-bar', hide); requestAnimationFrame(fit); }
+$('hidebtn').onclick = () => toggleBar(true);
+$('showbtn').onclick = () => toggleBar(false);
+addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.key === 'ArrowRight') $('next').click(); else if (e.key === 'ArrowLeft') $('prev').click();
+  else if (e.key === 'c' || e.key === 'C') toggleBar(!document.body.classList.contains('hidden-bar'));
+});
+
+IS.subscribe(renderDisplay);
+renderBar(); renderDisplay(IS.state); requestAnimationFrame(loop);
+</script>
+</body>
+</html>

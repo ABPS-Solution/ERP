@@ -1630,6 +1630,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
       <div class="dashboard-grid" style="margin-bottom:8px;">
         <div class="menu-card" id="mod-security" onclick="switchActiveDashboardModule('security'); initializeSecurityAdminPanel('access');"><span class="mc-label">Security &amp; Login Access</span></div>
         <div class="menu-card" id="mod-system-settings" onclick="switchActiveDashboardModule('security'); initializeSecurityAdminPanel('system');"><span class="mc-label">System Settings</span></div>
+        <div class="menu-card" id="mod-interactive-presentation" onclick="switchActiveDashboardModule('interactive-presentation')" style="display:none;"><span class="mc-label">Interactive Presentation</span></div>
         <div class="menu-card" id="mod-items-to-check" onclick="switchActiveDashboardModule('items-to-check')" style="display:none;"><span class="mc-label">Unusual Activity to Check</span></div>
         <div class="menu-card" id="mod-buffer-suggestions" onclick="navigateToBufferSuggestions()" style="display:none;"><span class="mc-label">Buffer Suggestions</span></div>
       </div>
@@ -6459,6 +6460,20 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
     </div>
   </div>
 
+  <div id="canvas-module-interactive-presentation" class="workspace-panel" style="display:none;">
+    <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
+      <div></div>
+      <div style="display:flex; gap:8px;">
+        <button class="nav-btn-styled" onclick="interactivePresentationFullscreen()">Full Screen</button>
+        <button class="nav-btn-styled" onclick="exitInteractivePresentationBackToMenu()">Return to Main Dashboard</button>
+      </div>
+    </div>
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:12px;">
+      <h2 class="panel-title" style="margin:0 0 10px 4px;">Interactive Presentation (prototype)</h2>
+      <iframe id="ip-frame" title="Interactive Presentation" style="width:100%; height:calc(100vh - 190px); min-height:520px; border:0; border-radius:8px; background:#000;" allow="fullscreen"></iframe>
+    </div>
+  </div>
+
   <div id="canvas-module-items-to-check" class="workspace-panel" style="display:none;">
     <div class="navigation-action-header-row" style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
       <div></div>
@@ -6778,6 +6793,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield; }
 <script src="marketing/morning-meeting.js"></script>
 <script src="marketing/news-leads.js"></script>
 <script src="accounts/proforma-invoices.js"></script>
+<script src="presentation/interactive-presentation.js"></script>
 <script src="marketing/revised-po.js"></script>
 <script src="accounts/tour-shell.js"></script>
 <script src="accounts/advance-vouchers.js"></script>

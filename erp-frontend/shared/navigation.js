@@ -535,6 +535,7 @@ function enforceDynamicModuleRoleGateways(userPermissionsObject) {
   if (document.getElementById("mod-security"))     document.getElementById("mod-security").style.display     = canSecurity     ? "block" : "none";
   if (document.getElementById("mod-system-settings")) document.getElementById("mod-system-settings").style.display = canSecurity ? "block" : "none";
   if (document.getElementById("mod-buffer-suggestions")) document.getElementById("mod-buffer-suggestions").style.display = userPermissionsObject.viewBufferSuggestions === true ? "block" : "none";
+  if (document.getElementById("mod-interactive-presentation")) document.getElementById("mod-interactive-presentation").style.display = userPermissionsObject.interactivePresentation === true ? "block" : "none";
   if (document.getElementById("mod-items-to-check")) document.getElementById("mod-items-to-check").style.display = userPermissionsObject.viewItemsToCheck === true ? "block" : "none";
 
   // Dashboard-wrapper pills (show entire pill wrapper, not just a plain card)
@@ -874,6 +875,7 @@ function switchActiveDashboardModule(targetSectionId) {
   if (targetSectionId === "proforma-create" && typeof initializeProformaCreatePanel === "function") initializeProformaCreatePanel();
   if (targetSectionId === "proforma-status" && typeof initializeProformaStatusPanel === "function") initializeProformaStatusPanel();
   if (targetSectionId === "customer-queries" && typeof initializeCustomerQueriesWorkspace === "function") initializeCustomerQueriesWorkspace();
+  if (targetSectionId === "interactive-presentation" && typeof initializeInteractivePresentationPanel === "function") initializeInteractivePresentationPanel();
   if (targetSectionId === "items-to-check" && typeof initializeItemsToCheckPanel === "function") initializeItemsToCheckPanel();
   if (targetSectionId === "memo-tracking" && typeof initializeMemoTrackingPanel === "function") initializeMemoTrackingPanel();
   // Project Dispatch Invoice's four sections (19 Sep 2026, ported from
