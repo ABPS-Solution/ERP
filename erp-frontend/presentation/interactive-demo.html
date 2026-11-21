@@ -507,7 +507,7 @@ function buildRig(c, s) {
   const bus = box(total, 0.05, 0.08, M.coil, 0, BH - 0.05, -0.1, 'bus'); rig.add(bus); tagPart(bus, 'bus', 'bus', 'Copper busbar');
   appear.forEach((o, i) => { o.scale.setScalar(0.001); o.userData.delay = i * 70; });
   rig.userData.born = performance.now();
-  CAMV.defDist = Math.max(5.2, total * 1.75); flyTo({});
+  CAMV.defDist = Math.max(6.5, total * 2.2); flyTo({});
   halo.scale.setScalar(Math.max(1, total / 4));
   setSection(V.section); applyVis();
 }
