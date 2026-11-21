@@ -251,10 +251,13 @@ function ddocVersionLabel(v, isLatest) {
   return parts.join(" · ");
 }
 
-function ddocFileButtons(v) {
+function ddocFileButtons(v, withExcel) {
   const open = driveLink(v.url);
+  const dl = open + (open.includes("?") ? "&" : "?") + "dl=1";
+  // Current BOQ versions can also be downloaded as Excel (built from the saved BOQ when clicked).
   return `<a class="ddoc-btn" href="${escapeHtml(open)}" target="_blank" rel="noopener">Open</a>
-          <a class="ddoc-btn ddoc-btn-dl" href="${escapeHtml(open + (open.includes("?") ? "&" : "?") + "dl=1")}" target="_blank" rel="noopener">Download</a>`;
+          <a class="ddoc-btn ddoc-btn-dl" href="${escapeHtml(dl)}" target="_blank" rel="noopener">${withExcel ? "Download PDF" : "Download"}</a>${withExcel
+            ? `<a class="ddoc-btn ddoc-btn-dl" href="${escapeHtml(dl + "&fmt=xlsx")}" target="_blank" rel="noopener">Download Excel</a>` : ""}`;
 }
 
 function ddocRenderDocument(d, showGroup, expandVersions) {
@@ -276,7 +279,7 @@ function ddocRenderDocument(d, showGroup, expandVersions) {
           <div class="ddoc-doc-title">${badge(v, isTop)}${escapeHtml(isTop ? d.title : (v.title || d.title))}</div>
           <div class="ddoc-doc-meta">${metaOf(v, isTop)}</div>
         </div>
-        <div class="ddoc-doc-actions">${ddocFileButtons(v)}${extraActions || ""}</div>
+        <div class="ddoc-doc-actions">${ddocFileButtons(v, isTop && (d.category === "boq" || d.category === "boq_costing"))}${extraActions || ""}</div>
       </div>`;
   void expandVersions;
   const id = "ddoc-v-" + Math.random().toString(36).slice(2, 9);
