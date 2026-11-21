@@ -24,7 +24,7 @@
   .logo { font-family:'Space Grotesk', Inter, sans-serif; font-weight:700; font-size:30px; letter-spacing:.04em; } .logo span { color:var(--accent); }
   .title { font-size:26px; color:var(--muted); flex:1; padding-left:28px; border-left:1px solid var(--line); }
   .dots { display:flex; gap:10px; } .dots i { width:34px; height:6px; border-radius:3px; background:var(--line); transition:.5s; } .dots i.on { background:var(--accent); } .dots i.cur { width:60px; box-shadow:0 0 12px var(--accent); }
-  .view { position:absolute; z-index:1; top:96px; left:0; right:0; bottom:56px; padding:48px 56px; opacity:0; transform:translateY(30px) scale(.985); filter:blur(8px); transition:opacity .7s, transform .8s cubic-bezier(.2,.8,.2,1), filter .7s; pointer-events:none; }
+  .view { position:absolute; z-index:1; top:96px; left:0; right:0; bottom:0; padding:48px 56px; opacity:0; transform:translateY(30px) scale(.985); filter:blur(8px); transition:opacity .7s, transform .8s cubic-bezier(.2,.8,.2,1), filter .7s; pointer-events:none; }
   .view.on { opacity:1; transform:none; filter:none; pointer-events:auto; }
   .hint3d { position:absolute; left:56px; top:48px; color:var(--muted); font-size:18px; pointer-events:none; }
   .pcard { position:absolute; left:56px; bottom:48px; width:520px; padding:24px 28px; border-radius:22px; background:linear-gradient(160deg, rgba(2,62,88,.92), rgba(1,42,64,.92)); border:1px solid rgba(255,170,6,.45); box-shadow:0 20px 60px rgba(0,0,0,.45); pointer-events:none; }
@@ -94,7 +94,7 @@
 </head>
 <body>
 <div id="bar">
-  <div class="bar-top"><div class="bar-title">AB <span>POWER</span> Presenter</div><button class="hidebtn" id="hidebtn">Hide</button></div>
+  <div class="bar-top"><div class="bar-title"></div><button class="hidebtn" id="hidebtn">Hide</button></div>
   <div id="sum"></div>
   <div id="steps"></div>
   <div id="panel"></div>
@@ -107,7 +107,6 @@
   <section class="view" data-v="0">
     <div style="display:flex; height:100%; align-items:center;">
       <div style="flex:1">
-        <div class="tag">Interactive Presentation</div>
         <h1>Clean power for<br><span style="color:var(--accent)">your data center.</span></h1>
         <p style="font-size:34px; color:var(--muted); max-width:900px; margin-top:32px">Let's look at your facility, find where power quality costs you money, and build your solution here, live.</p>
       </div>
@@ -149,7 +148,6 @@
 
   <section class="view" data-v="4">
     <div id="three"></div>
-    <div class="hint3d">Drag to rotate · Scroll or pinch to zoom · Tap a part</div>
     <div id="part-card" class="pcard" style="display:none"></div>
     <div style="position:absolute; right:56px; width:440px; top:0; bottom:0;" class="grid">
       <div class="panel"><div class="k">Recommended</div><div class="v" id="p-name" style="font-size:46px"></div><div id="p-tags" style="margin-top:18px"></div></div>
@@ -180,7 +178,6 @@
     </div>
   </section>
 
-  <footer><span>Prototype: all figures and models are placeholders, indicative only</span><span>abpowerindia.com</span></footer>
 </div>
 </div>
 
@@ -595,7 +592,7 @@ function renderDisplay(s) {
       return '<div class="grow"><div class="gname"><b>' + (i + 1) + '</b><div>' + w.name + '<small>Week ' + from + ' to ' + a2 + '</small></div></div><div class="gtrack">' + grid + '<div class="bar" style="left:' + left + '%; width:' + width + '%; animation-delay:' + (i * 0.15) + 's">' + (small ? '' : w.w + ' wk') + '</div>' + (small ? '<span class="outlbl" style="left:calc(' + (left + width) + '% + 10px)">' + w.w + ' wk</span>' : '') + '</div></div>'; }).join('');
     return rows + '<div class="grow gaxis"><div class="gname"></div><div class="gtrack">' + axis + '<em>weeks from PO</em></div></div>';
   })();
-  $('gantt-note').innerHTML = `<span class="gtot">${totalW} weeks</span> from PO to commissioning (placeholder values).`;
+  $('gantt-note').innerHTML = `<span class="gtot">${totalW} weeks</span> from PO to commissioning.`;
   const cs = IS.CASES.find(x => x.id === s.caseId) || IS.relevantCases(s)[0];
   $('case').innerHTML = `<div class="k">Similar project</div><div style="height:300px; border-radius:16px; margin:16px 0; background:linear-gradient(135deg, ${cs.color}, #0b1220); display:flex; align-items:flex-end; padding:20px; font-size:20px; color:#cfe">Project photo</div>
     <h2 style="margin-bottom:10px">${cs.title}</h2><div class="row"><span>Size</span><b>${cs.size}</b></div><div class="row"><span>Result</span><b style="color:var(--accent)">${cs.result}</b></div>`;
@@ -614,9 +611,9 @@ function set(patch) { s = { ...s, ...patch }; IS.publish(s); renderBar(); }
 function chips(options, isOn, act) { return `<div class="chips">${Object.entries(options).map(([k, v]) => `<button class="chip ${isOn(k) ? 'on' : ''}" data-k="${k}" data-act="${act}">${v.label}</button>`).join('')}</div>`; }
 function slider(key, label, min, max, step) { return `<div class="srow"><label>${label}<b>${FMT[key](s[key])}</b></label><input type="range" min="${min}" max="${max}" step="${step}" value="${s[key]}" data-key="${key}"></div>`; }
 function renderBar() {
-  $('steps').innerHTML = `Step ${s.step + 1} of ${IS.STEPS.length}: ${IS.STEPS[s.step]}`;
+  $('steps').innerHTML = s.step ? `Step ${s.step + 1} of ${IS.STEPS.length}: ${IS.STEPS[s.step]}` : '';
   const c = IS.calc(s);
-  $('sum').textContent = `${s.itMW} MW · PF ${s.pf} · THD ${s.thd}%`;
+  $('sum').textContent = s.step ? `${s.itMW} MW · PF ${s.pf} · THD ${s.thd}%` : '';
   let h = '';
   switch (s.step) {
     case 0: h = ''; break;
@@ -675,7 +672,7 @@ document.addEventListener('input', e => {
   const key = e.target.dataset.key; if (!key) return;
   s = { ...s, [key]: +e.target.value }; IS.publish(s);
   e.target.previousElementSibling.querySelector('b').textContent = FMT[key](s[key]);
-  $('sum').textContent = `${s.itMW} MW · PF ${s.pf} · THD ${s.thd}%`;
+  $('sum').textContent = s.step ? `${s.itMW} MW · PF ${s.pf} · THD ${s.thd}%` : '';
 });
 $('prev').onclick = () => set({ step: Math.max(0, s.step - 1) });
 $('next').onclick = () => set({ step: s.step === IS.STEPS.length - 1 ? 0 : s.step + 1 });
